@@ -1,0 +1,14 @@
+{
+    "javascript.preferences.importModuleSpecifierEnding": "js",
+    "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": false,
+    "javascript.preferences.quoteStyle": "single",
+    "javascript.preferences.autoImportFileExcludePatterns": ["**/node_modules/**"],
+    "i18n-ally.localesPaths": [
+        "lang",
+        "symlinks/foundryLang",
+        "symlinks/dndLang"
+    ],
+    "i18n-ally.keystyle": "nested",
+    "i18n-ally.indent": 4,
+    "i18n-ally.sortKeys": true
+}
