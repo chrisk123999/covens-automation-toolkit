@@ -1,5 +1,4 @@
 /** @import Item5e from "../../dnd5e/module/documents/item.mjs" */
-/** @import { EquipmentData } from "../../dnd5e/module/data/item/_module.mjs" */
 
 
 /**
