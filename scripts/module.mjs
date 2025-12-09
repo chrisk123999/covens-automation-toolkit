@@ -1,6 +1,6 @@
-import {registerHooks} from './hooks.js';
-import {constants} from './lib/constants.js';
-import {test} from './test.js';
+import {registerHooks} from './hooks.mjs';
+import {constants} from './lib/constants.mjs';
+import {test} from './test.mjs';
 Hooks.once('init', () => {
     registerHooks();
 });

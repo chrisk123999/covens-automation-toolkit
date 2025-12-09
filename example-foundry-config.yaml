@@ -1,0 +1,4 @@
+# In order to benefit from intellisense provided by Foundry's typings, you'll need to create a `foundry-config.yaml` with the following line, adjusted to point at your actual install, then run `npm run createSymlinks`
+installPath: "C:\\Program Files\\Foundry Virtual Tabletop\\Version 14"
+# And also one pointing to your data folder, so that 5e can be grabbed
+dataPath: "C:\\Users\\You\\AppData\\Local\\FoundryVTT"

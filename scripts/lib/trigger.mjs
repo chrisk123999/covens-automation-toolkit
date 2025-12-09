@@ -1,5 +1,5 @@
-import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, tokenUtils} from '../utils.js';
-import {constants} from './constants.js';
+import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, tokenUtils} from '../utils.mjs';
+import {constants} from './constants.mjs';
 class Trigger {
     constructor(document, pass) {
         this.document = document;

@@ -1,4 +1,4 @@
-import {Macros} from './macros.js';
+import {Macros} from './macros.mjs';
 let _registeredMacros;
 function init() {
     _registeredMacros = new Macros.RegisteredMacros();

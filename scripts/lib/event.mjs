@@ -1,5 +1,5 @@
-import {actorUtils} from '../utils.js';
-import {Triggers} from './trigger.js';
+import {actorUtils} from '../utils.mjs';
+import {Triggers} from './trigger.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
