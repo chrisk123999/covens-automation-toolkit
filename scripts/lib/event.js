@@ -1,21 +1,28 @@
 import {actorUtils} from '../utils.js';
 import {Triggers} from './trigger.js';
-class Event {
+class CatEvent {
     constructor(pass) {
         this.pass = pass;
     }
     get sortedTriggers() {
-        let unsortedTriggers = this.triggers;
-        // Do sort here!
+        let unsortedTriggers = this.unsortedTriggers;
+        
+
+
+
+
         return unsortedTriggers;
+    }
+    get unsortedTriggers() {
+        return [];
     }
     execute() {
         let sortedTriggers = this.sortedTriggers;
     }
 }
-class WorkflowEvent extends Event {
-    constructor(workflow, pass) {
-        super();
+class WorkflowEvent extends CatEvent {
+    constructor(pass, workflow) {
+        super(pass);
         this.workflow = workflow;
         this.activity = workflow.activity;
         this.item = workflow.item;
@@ -24,7 +31,6 @@ class WorkflowEvent extends Event {
         this.scene;
         this.regions = workflow.token?.document?.regions;
         this.targets = workflow.targets;
-        this.pass = pass;
     }
     getActorTriggers(actor, pass) {
         let triggers = [];
@@ -40,7 +46,7 @@ class WorkflowEvent extends Event {
         });
         return triggers;
     }
-    get triggers() {
+    get unsortedTriggers() {
         let triggers = [];
         if (this.activity) triggers.push(new Triggers.ActivityRollTrigger(this.activity, this.pass));
         if (this.item) {

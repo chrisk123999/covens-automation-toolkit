@@ -5,7 +5,7 @@ class Trigger {
         this.identifier;
         this.name;
         this.castData;
-        this.macros;
+        this.fnMacros;
         this.pass = pass;
     }
 }
@@ -19,7 +19,7 @@ class ActivityRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: activityUtils.getSaveDC(this.document)
         };
-        this.fnMacros = this.document.flags.cat?.activityRoll ?? [];
+        this.fnMacros = this.document.flags.cat?.macros?.activityRoll ?? [];
     }
 }
 class ItemRollTrigger extends Trigger {
@@ -32,7 +32,7 @@ class ItemRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: itemUtils.getSaveDC(this.document)
         };
-        this.fnMacros = this.document.flags.cat?.itemRoll ?? [];
+        this.fnMacros = this.document.flags.cat?.macros?.itemRoll ?? [];
     }
 }
 class TokenRollTrigger extends Trigger {
@@ -41,7 +41,7 @@ class TokenRollTrigger extends Trigger {
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = tokenUtils.getCastData(this.document);
-        this.fnMacros = this.document.flags.cat?.tokenRoll ?? [];
+        this.fnMacros = this.document.flags.cat?.macros?.tokenRoll ?? [];
     }
 }
 class ActorRollTrigger extends Trigger {
@@ -50,7 +50,7 @@ class ActorRollTrigger extends Trigger {
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = actorUtils.getCastData(this.document);
-        this.fnMacros = this.document.flags.cat?.actorRoll ?? [];
+        this.fnMacros = this.document.flags.cat?.macros?.actorRoll ?? [];
     }
 }
 class EffectRollTrigger extends Trigger {
@@ -59,7 +59,7 @@ class EffectRollTrigger extends Trigger {
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = effectUtils.getCastData(this.document);
-        this.fnMacros = this.document.flags.cat?.effectRoll ?? [];
+        this.fnMacros = this.document.flags.cat?.macros?.effectRoll ?? [];
     }
 }
 class EnchantmentRollTrigger extends EffectRollTrigger {
@@ -71,7 +71,7 @@ class RegionRollTrigger extends Trigger {
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = regionUtils.getCastData(this.document);
-        this.fnMacros = this.document.flags.cat?.regionRoll ?? [];
+        this.fnMacros = this.document.flags.cat?.macros?.regionRoll ?? [];
     }
 }
 class SceneRollTrigger extends Trigger {
@@ -84,7 +84,7 @@ class SceneRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: -1
         };
-        this.fnMacros = this.document.flags.cat?.sceneRoll ?? [];
+        this.fnMacros = this.document.flags.cat?.macros?.sceneRoll ?? [];
     }
 }
 export const Triggers = {
