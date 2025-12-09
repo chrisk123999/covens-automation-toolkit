@@ -1,12 +1,16 @@
-import { activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, tokenUtils } from '../utils.js';
+import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, tokenUtils} from '../utils.js';
+import {constants} from './constants.js';
 class Trigger {
     constructor(document, pass) {
         this.document = document;
         this.identifier;
         this.name;
         this.castData;
-        this.fnMacros;
         this.pass = pass;
+        this.fnMacros = [];
+    }
+    processFnMacros(data, type, pass) {
+        this.fnMacros = data.map(i => constants.registeredMacros().getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);
     }
 }
 class ActivityRollTrigger extends Trigger {
@@ -19,7 +23,8 @@ class ActivityRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: activityUtils.getSaveDC(this.document)
         };
-        this.fnMacros = this.document.flags.cat?.macros?.activityRoll ?? [];
+        let fnMacroData = this.document.flags?.cat?.macros?.activityRoll ?? [];
+        this.processFnMacros(fnMacroData, 'activityRoll', pass);
     }
 }
 class ItemRollTrigger extends Trigger {
@@ -32,7 +37,8 @@ class ItemRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: itemUtils.getSaveDC(this.document)
         };
-        this.fnMacros = this.document.flags.cat?.macros?.itemRoll ?? [];
+        let fnMacroData = this.document.flags.cat?.macros?.itemRoll ?? [];
+        this.processFnMacros(fnMacroData, 'itemRoll', pass);
     }
 }
 class TokenRollTrigger extends Trigger {
@@ -41,7 +47,8 @@ class TokenRollTrigger extends Trigger {
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = tokenUtils.getCastData(this.document);
-        this.fnMacros = this.document.flags.cat?.macros?.tokenRoll ?? [];
+        let fnMacroData = this.document.flags.cat?.macros?.tokenRoll ?? [];
+        this.processFnMacros(fnMacroData, 'tokenRoll', pass);
     }
 }
 class ActorRollTrigger extends Trigger {
@@ -50,7 +57,8 @@ class ActorRollTrigger extends Trigger {
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = actorUtils.getCastData(this.document);
-        this.fnMacros = this.document.flags.cat?.macros?.actorRoll ?? [];
+        let fnMacroData = this.document.flags.cat?.macros?.actorRoll ?? [];
+        this.processFnMacros(fnMacroData, 'actorRoll', pass);
     }
 }
 class EffectRollTrigger extends Trigger {
@@ -59,7 +67,8 @@ class EffectRollTrigger extends Trigger {
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = effectUtils.getCastData(this.document);
-        this.fnMacros = this.document.flags.cat?.macros?.effectRoll ?? [];
+        let fnMacroData = this.document.flags.cat?.macros?.effectRoll ?? [];
+        this.processFnMacros(fnMacroData, 'effectRoll', pass);
     }
 }
 class EnchantmentRollTrigger extends EffectRollTrigger {
@@ -71,7 +80,8 @@ class RegionRollTrigger extends Trigger {
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = regionUtils.getCastData(this.document);
-        this.fnMacros = this.document.flags.cat?.macros?.regionRoll ?? [];
+        let fnMacroData = this.document.flags.cat?.macros?.regionRoll ?? [];
+        this.processFnMacros(fnMacroData, 'regionRoll', pass);
     }
 }
 class SceneRollTrigger extends Trigger {
@@ -84,7 +94,8 @@ class SceneRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: -1
         };
-        this.fnMacros = this.document.flags.cat?.macros?.sceneRoll ?? [];
+        let fnMacroData = this.document.flags.cat?.macros?.sceneRoll ?? [];
+        this.processFnMacros(fnMacroData, 'sceneRoll', pass);
     }
 }
 export const Triggers = {
