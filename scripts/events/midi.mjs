@@ -1,8 +1,7 @@
-import {Events} from '../lib/event.mjs';
+import {Events} from '../lib.mjs';
 async function rollFinished(workflow) {
-    let event = new Events.WorkflowEvent('rollFinished', workflow);
-    let test = event.execute();
-    console.log(test);
+    let event = await new Events.WorkflowEvent('rollFinished', workflow).execute();
+    console.log(event);
 }
 export const midiEvents = {
     rollFinished

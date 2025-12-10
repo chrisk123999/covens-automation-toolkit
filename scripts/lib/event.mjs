@@ -1,8 +1,9 @@
 import {actorUtils} from '../utils.mjs';
-import {Triggers} from './trigger.mjs';
+import {Triggers, Logging} from '../lib.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
+        this.name = '';
     }
     appendData(data) {
         return data;
@@ -50,6 +51,7 @@ class CatEvent {
                         identifier: trigger.identifier,
                         name: trigger.name
                     };
+                    if (trigger.sourceToken) data.sourceToken = trigger.sourceToken;
                     sortedTriggers.push(this.appendData(data));
                 });
                 
@@ -60,8 +62,18 @@ class CatEvent {
     get unsortedTriggers() {
         return [];
     }
-    execute() {
-        return this.sortedTriggers;
+    async execute() {
+        Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        for (let trigger of this.sortedTriggers) {
+            Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+            let result;
+            try {
+                result = await trigger.macro(trigger);
+            } catch (error) {
+                Logging.addMacroError(error);
+            }
+            if (result) return result;
+        }
     }
 }
 class WorkflowEvent extends CatEvent {
@@ -75,6 +87,7 @@ class WorkflowEvent extends CatEvent {
         this.scene;
         this.regions = workflow.token?.document?.regions;
         this.targets = workflow.targets;
+        this.name = 'Workflow';
     }
     appendData(data) {
         data.workflow = this.workflow;
@@ -85,17 +98,17 @@ class WorkflowEvent extends CatEvent {
         data.regions = this.regions;
         return data;
     }
-    getActorTriggers(actor, pass) {
+    getActorTriggers(actor, pass, sourceToken) {
         let triggers = [];
-        triggers.push(new Triggers.ActorRollTrigger(actor, pass));
+        triggers.push(new Triggers.ActorRollTrigger(actor, pass, {sourceToken}));
         actor.items.forEach(item => {
-            triggers.push(new Triggers.ItemRollTrigger(item, pass));
+            triggers.push(new Triggers.ItemRollTrigger(item, pass, {sourceToken}));
             item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment).forEach(effect => {
-                triggers.push(new Triggers.EnchantmentRollTrigger(effect, pass));
+                triggers.push(new Triggers.EnchantmentRollTrigger(effect, pass, {sourceToken}));
             });
         });
         actorUtils.getEffects(actor).forEach(effect => {
-            triggers.push(new Triggers.EffectRollTrigger(effect, pass));
+            triggers.push(new Triggers.EffectRollTrigger(effect, pass, {sourceToken}));
         });
         return triggers;
     }
@@ -117,8 +130,8 @@ class WorkflowEvent extends CatEvent {
             triggers.push(new Triggers.SceneRollTrigger(this.scene, 'scene' + this.pass.capitalize()));
             this.scene.tokens.forEach(token => {
                 if (!token.actor) return;
-                triggers.push(new Triggers.TokenRollTrigger(token, 'scene' + this.pass.capitalize()));
-                triggers.push(...this.getActorTriggers(token.actor, 'scene' + this.pass.capitalize()));
+                triggers.push(new Triggers.TokenRollTrigger(token, 'scene' + this.pass.capitalize(), token));
+                triggers.push(...this.getActorTriggers(token.actor, 'scene' + this.pass.capitalize(), token));
             });
         }
         if (this.regions) {
@@ -129,10 +142,10 @@ class WorkflowEvent extends CatEvent {
         if (this.targets.size) {
             this.targets.forEach(token => {
                 if (!this.actor) return;
-                triggers.push(new Triggers.TokenRollTrigger(token.document, 'target' + this.pass.capitalize()));
-                triggers.push(...this.getActorTriggers(token.actor, 'target' + this.pass.capitalize()));
+                triggers.push(new Triggers.TokenRollTrigger(token.document, 'target' + this.pass.capitalize(), token.document));
+                triggers.push(...this.getActorTriggers(token.actor, 'target' + this.pass.capitalize(), token.document));
                 token.document.regions.forEach(region => {
-                    triggers.push(new Triggers.RegionRollTrigger(region, 'target' + this.pass.capitalize()));
+                    triggers.push(new Triggers.RegionRollTrigger(region, 'target' + this.pass.capitalize(), token.document));
                 });
             });
         }

@@ -1,21 +1,22 @@
 import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, tokenUtils} from '../utils.mjs';
-import {constants} from './constants.mjs';
+import {constants} from '../lib.mjs';
 class Trigger {
-    constructor(document, pass) {
+    constructor(document, pass, {sourceToken} = {}) {
         this.document = document;
         this.identifier;
         this.name;
         this.castData;
         this.pass = pass;
         this.fnMacros = [];
+        this.sourceToken = sourceToken;
     }
     processFnMacros(data, type, pass) {
-        this.fnMacros = data.map(i => constants.registeredMacros().getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);
+        this.fnMacros = data.map(i => constants.registeredMacros.getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);
     }
 }
 class ActivityRollTrigger extends Trigger {
-    constructor(document, pass) {
-        super(document, pass);
+    constructor(document, pass, data) {
+        super(document, pass, data);
         this.identifier = this.document.midiProperties.identifier;
         this.name = this.document.name.slugify();
         this.castData = {
@@ -28,8 +29,8 @@ class ActivityRollTrigger extends Trigger {
     }
 }
 class ItemRollTrigger extends Trigger {
-    constructor(document, pass) {
-        super(document, pass);
+    constructor(document, pass, data) {
+        super(document, pass, data);
         this.identifier = this.document.system.identifier;
         this.name = this.document.name.slugify();
         this.castData = {
@@ -42,8 +43,8 @@ class ItemRollTrigger extends Trigger {
     }
 }
 class TokenRollTrigger extends Trigger {
-    constructor(document, pass) {
-        super(document, pass);
+    constructor(document, pass, data) {
+        super(document, pass, data);
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = tokenUtils.getCastData(this.document);
@@ -52,8 +53,8 @@ class TokenRollTrigger extends Trigger {
     }
 }
 class ActorRollTrigger extends Trigger {
-    constructor(document, pass) {
-        super(document, pass);
+    constructor(document, pass, data) {
+        super(document, pass, data);
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = actorUtils.getCastData(this.document);
@@ -62,8 +63,8 @@ class ActorRollTrigger extends Trigger {
     }
 }
 class EffectRollTrigger extends Trigger {
-    constructor(document, pass) {
-        super(document, pass);
+    constructor(document, pass, data) {
+        super(document, pass, data);
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = effectUtils.getCastData(this.document);
@@ -75,8 +76,8 @@ class EnchantmentRollTrigger extends EffectRollTrigger {
 
 }
 class RegionRollTrigger extends Trigger {
-    constructor(document, pass) {
-        super(document, pass);
+    constructor(document, pass, data) {
+        super(document, pass, data);
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = regionUtils.getCastData(this.document);
@@ -85,8 +86,8 @@ class RegionRollTrigger extends Trigger {
     }
 }
 class SceneRollTrigger extends Trigger {
-    constructor(document, pass) {
-        super(document, pass);
+    constructor(document, pass, data) {
+        super(document, pass, data);
         this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
         this.name = this.document.name.slugify();
         this.castData = {

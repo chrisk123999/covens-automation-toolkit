@@ -1,5 +1,9 @@
 async function use() {
     console.log('test!');
+    throw new Error('Test');
+}
+async function target() {
+    console.log('test 1');
 }
 export let test = {
     source: 'cat',
@@ -13,8 +17,14 @@ export let test = {
         },
         {
             pass: 'targetRollFinished',
-            macro: use,
+            macro: target,
             priority: 50
         }
     ]
+};
+export let brokenTest = {
+    source: 'cat',
+    identifier: 'brokenTest',
+    rules: 'all',
+    itemRoll: {}
 };
