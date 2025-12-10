@@ -76,27 +76,10 @@ class CatEvent {
         }
     }
 }
-class WorkflowEvent extends CatEvent {
-    constructor(pass, workflow) {
+class BaseWorkflowEvent extends CatEvent {
+    constructor(pass) {
         super(pass);
-        this.workflow = workflow;
-        this.activity = workflow.activity;
-        this.item = workflow.item;
-        this.actor = workflow.actor;
-        this.token = workflow.token?.document;
-        this.scene;
-        this.regions = workflow.token?.document?.regions;
-        this.targets = workflow.targets;
         this.name = 'Workflow';
-    }
-    appendData(data) {
-        data.workflow = this.workflow;
-        data.activity = this.activity;
-        data.item = this.item;
-        data.token = this.token;
-        data.scene = this.scene;
-        data.regions = this.regions;
-        return data;
     }
     getActorTriggers(actor, pass, sourceToken) {
         let triggers = [];
@@ -153,6 +136,62 @@ class WorkflowEvent extends CatEvent {
         return triggers;
     }
 }
+class WorkflowEvent extends BaseWorkflowEvent {
+    constructor(pass, workflow) {
+        super(pass);
+        this.workflow = workflow;
+        this.activity = workflow.activity;
+        this.item = workflow.item;
+        this.actor = workflow.actor;
+        this.token = workflow.token?.document;
+        this.scene = workflow.token?.document?.parent;
+        this.regions = workflow.token?.document?.regions;
+        this.targets = workflow.targets;
+    }
+    appendData(data) {
+        data.workflow = this.workflow;
+        data.activity = this.activity;
+        data.item = this.item;
+        data.token = this.token;
+        data.scene = this.scene;
+        data.regions = this.regions;
+        return data;
+    }
+}
+class PreTargetingWorkflowEvent extends WorkflowEvent {
+    constructor(pass, {activity, token, config, dialog, message}) {
+        super(pass);
+        this.activity = activity;
+        this.item = activity.item;
+        this.actor = this.item?.actor;
+        this.token = token?.document;
+        this.scene = token?.document?.parent;
+        this.regions = token?.document?.regions;
+        this.config = config;
+        this.dialog = dialog;
+        this.message = message;
+    }
+    appendData(data) {
+        data.config = this.config;
+        data.dialog = this.dialog;
+        data.message = this.message;
+    }
+}
+class TokenDamageWorkflowEvent extends WorkflowEvent {
+    constructor(pass, workflow, token, ditem) {
+        super(pass, workflow);
+        this.ditem = ditem;
+        this.targetToken = token?.document;
+    }
+    appendData(data) {
+        data = super.appendData(data);
+        data.ditem = this.ditem;
+        data.targetToken = this.targetToken;
+        return data;
+    }
+}
 export const Events = {
-    WorkflowEvent
+    WorkflowEvent,
+    PreTargetingWorkflowEvent,
+    TokenDamageWorkflowEvent
 };

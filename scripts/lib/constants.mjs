@@ -1,3 +1,42 @@
+const workflowPasses = {
+    preTargeting: 'preTargeting',
+    preItemRoll: 'preItemRoll',
+    targeting: 'targeting', // For editing targets
+    preambleComplete: 'preambleComplete', // Other stuff
+    attackRoll: 'attackRoll', // Regular adjustments to attack rolls, such as re-rolling them or editing the formula. Do not re-roll an attack after this pass.
+    attackRollBonuses: 'attackRollBonuses', // Add bonuses to attack rolls but before target AC checks.
+    attackRollMissedBonuses: 'attackRollMissedBonuses', // Add bonuses to attack rolls after checking target AC.
+    attackRollComplete: 'attackRollComplete', // Finalized attack roll, no adjustments can be made here.
+    savesComplete: 'savesComplete', // Can adjust the hitTargets and failedSaves set here (not often used).
+    damageRoll: 'damageRoll', // Regular adjustments to damage rolls, such as re-rolling them or editing the formula. Do not re-roll damage after this pass.
+    damageRollBonuses: 'damageRollBonuses', // Add bonuses to damage rolls.
+    damageRollComplete: 'damageRollComplete', // Finalized damage rolls, no adjustments should be made here.
+    utilityRoll: 'utilityRoll', // Regular adjusments to utility rolls, such as re-rolling them or editing the formula. Do not re-roll an attack after this pass.
+    utilityRollBonuses: 'utilityRollBonuses', // Add bonuses to utility rolls.
+    utilityRollComplete: 'utilityRollComplete', // Finalized utility rolls, not adjustments should be made here.
+    targetDamage: 'targetDamage', // Regular adjustments to target damage item.
+    targetDamageBonuses: 'targetDamageBonuses', // Bonus damage to specific targets.
+    targetDamageFlatReductions: 'targetDamageFlatReductions', // Flat reductions of damage to specific targets.
+    targetDamagePercentReductions: 'targetDamagePercentReductions', // Percent reductions of damage to specific targets.
+    targetDamageComplete: 'targetDamageComplete', // Other edits to damage such as preventing death.
+    rollFinished: 'rollFinished', // All other things that don't required workflow edits or adjustments.
+    onHit: 'onHit', // For retaliation-like macros.
+    cleanup: 'cleanup' // For extra late clean-up stuff.
+};
+const workflowHookNames = {
+    preTargeting: 'preTargeting',
+    preItemRoll: 'preItemRoll',
+    preambleComplete: 'preambleComplete',
+    postAttackRoll: 'postAttackRoll',
+    attackRollComplete: 'attackRollComplete',
+    savesComplete: 'savesComplete',
+    damageRollComplete: 'damageRollComplete',
+    utilityRollComplete: 'utilityRollComplete',
+    preTargetDamageApplication: 'preTargetDamageApplication',
+    rollFinished: 'rollFinished'
+};
 export const constants = {
-    registeredMacros: undefined
+    registeredMacros: undefined,
+    workflowPasses,
+    workflowHookNames
 };

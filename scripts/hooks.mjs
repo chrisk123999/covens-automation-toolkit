@@ -1,5 +1,5 @@
 import {midiEvents} from './events/midi.mjs';
+import { constants } from './lib.mjs';
 export function registerHooks() {
-    // eslint-disable-next-line no-undef
-    Hooks.on('midi-qol.premades.postRollFinished', midiEvents.rollFinished);
+    Hooks.on(constants.workflowHookNames.preTargeting, midiEvents.preTargeting);
 }
