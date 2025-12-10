@@ -1,7 +1,7 @@
 import {registerHooks} from './hooks.mjs';
-import {Logging, constants, Macros} from './lib.mjs';
-import {api} from './lib/api.mjs';
+import * as lib from './lib.mjs';
 import * as utils from './utils.mjs';
+import {api} from './api.mjs';
 import {test} from './test.mjs';
 // eslint-disable-next-line no-undef
 Hooks.once('init', () => {
@@ -9,13 +9,11 @@ Hooks.once('init', () => {
 });
 // eslint-disable-next-line no-undef
 Hooks.once('ready', () => {
-    constants.registeredMacros = new Macros.RegisteredMacros();
-    constants.registeredMacros.registerFnMacro(test);
+    lib.constants.registeredMacros = new lib.Macros.RegisteredMacros();
+    lib.constants.registeredMacros.registerFnMacro(test);
     globalThis.cat = {
         api,
-        lib: {
-            Logging
-        },
+        lib,
         utils
     };
 });
