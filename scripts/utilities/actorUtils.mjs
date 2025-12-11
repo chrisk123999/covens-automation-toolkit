@@ -4,7 +4,11 @@ function getCastData(actor) {
 function getEffects(actor) {
     return Array.from(actor.allApplicableEffects());
 }
+function getGroups(actor) {
+    return game.actors.filter(a => a.type === 'group' && a.system.creatures.includes(actor));
+}
 export const actorUtils = {
     getCastData,
-    getEffects
+    getEffects,
+    getGroups
 };

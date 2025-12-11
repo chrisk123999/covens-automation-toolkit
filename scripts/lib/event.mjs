@@ -8,6 +8,7 @@ class CatEvent {
         return data;
     }
     get sortedTriggers() {
+        const startTime = performance.now();
         let unsortedTriggers = this.unsortedTriggers;
         const names = new Set(unsortedTriggers.map(trigger => trigger.name));
         unsortedTriggers = Object.fromEntries(names.map(name => [name, unsortedTriggers.filter(trigger => trigger.name === name)]));
@@ -56,10 +57,16 @@ class CatEvent {
                 
             });
         });
-        return sortedTriggers.sort((a, b) => a.priority - b.priority);
+        sortedTriggers = sortedTriggers.sort((a, b) => a.priority - b.priority);
+        const endTime = performance.now();
+        Logging.addEntry('DEBUG', 'Trigger Collection Time: ' + (endTime - startTime) + ' milliseconds');
+        return sortedTriggers;
     }
     get unsortedTriggers() {
         return [];
+    }
+    static hasCatFlag(document) {
+        return !!document?.flags?.cat;
     }
     async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
@@ -110,56 +117,59 @@ class BaseWorkflowEvent extends CatEvent {
     }
     getActorTriggers(actor, pass, sourceToken) {
         let triggers = [];
-        triggers.push(new Triggers.ActorRollTrigger(actor, pass, {sourceToken}));
+        if (CatEvent.hasCatFlag(actor)) triggers.push(new Triggers.ActorRollTrigger(actor, pass, {sourceToken}));
         actor.items.forEach(item => {
-            triggers.push(new Triggers.ItemRollTrigger(item, pass, {sourceToken}));
-            item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment).forEach(effect => {
+            if (CatEvent.hasCatFlag(item)) triggers.push(new Triggers.ItemRollTrigger(item, pass, {sourceToken}));
+            item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
                 triggers.push(new Triggers.EnchantmentRollTrigger(effect, pass, {sourceToken}));
             });
         });
-        actorUtils.getEffects(actor).forEach(effect => {
+        actorUtils.getEffects(actor).filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
             triggers.push(new Triggers.EffectRollTrigger(effect, pass, {sourceToken}));
+        });
+        actorUtils.getGroups(actor).filter(group => CatEvent.hasCatFlag(group)).forEach(group => {
+            triggers.push(new Triggers.GroupRollTrigger(group, pass));
         });
         return triggers;
     }
     get unsortedTriggers() {
         let triggers = [];
-        if (this.activity) triggers.push(new Triggers.ActivityRollTrigger(this.activity, this.pass));
+        if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new Triggers.ActivityRollTrigger(this.activity, this.pass));
         if (this.item) {
-            triggers.push(new Triggers.ItemRollTrigger(this.item, this.pass));
-            this.item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment).forEach(effect => {
+            if (CatEvent.hasCatFlag(this.item)) triggers.push(new Triggers.ItemRollTrigger(this.item, this.pass));
+            this.item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
                 triggers.push(new Triggers.EnchantmentRollTrigger(effect, this.pass));
             });
             const cachedForUuid = this.item.flags?.dnd5e?.cachedFor;
             if (cachedForUuid && this.actor) {
                 const castActivity = fromUuidSync(cachedForUuid, {relative: this.actor});
-                if (castActivity) triggers.push(new Triggers.CastRollTrigger(castActivity, this.pass, {sourceItem: this.item}));
+                if (castActivity && CatEvent.hasCatFlag(castActivity)) triggers.push(new Triggers.CastRollTrigger(castActivity, this.pass, {sourceItem: this.item}));
             }
         }
-        if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
+        if (this.actor && CatEvent.hasCatFlag(this.actor)) triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
         if (this.token) {
-            triggers.push(new Triggers.TokenRollTrigger(this.token, 'token' + this.pass.capitalize()));
+            if (CatEvent.hasCatFlag(this.token)) triggers.push(new Triggers.TokenRollTrigger(this.token, 'token' + this.pass.capitalize()));
             this.scene = this.token.parent;
         }
         if (this.scene) {
-            triggers.push(new Triggers.SceneRollTrigger(this.scene, 'scene' + this.pass.capitalize()));
+            if (CatEvent.hasCatFlag(this.scene)) triggers.push(new Triggers.SceneRollTrigger(this.scene, 'scene' + this.pass.capitalize()));
             this.scene.tokens.forEach(token => {
                 if (!token.actor) return;
-                triggers.push(new Triggers.TokenRollTrigger(token, 'scene' + this.pass.capitalize(), token));
+                if (CatEvent.hasCatFlag(token)) triggers.push(new Triggers.TokenRollTrigger(token, 'scene' + this.pass.capitalize(), token));
                 triggers.push(...this.getActorTriggers(token.actor, 'scene' + this.pass.capitalize(), token));
             });
         }
         if (this.regions) {
-            this.regions.forEach(region => {
+            this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
                 triggers.push(new Triggers.RegionRollTrigger(region, 'region' + this.pass.capitalize()));
             });
         }
         if (this.targets?.size) {
             this.targets.forEach(token => {
                 if (!this.actor) return;
-                triggers.push(new Triggers.TokenRollTrigger(token.document, 'target' + this.pass.capitalize(), token.document));
+                if (CatEvent.hasCatFlag(token)) triggers.push(new Triggers.TokenRollTrigger(token.document, 'target' + this.pass.capitalize(), token.document));
                 triggers.push(...this.getActorTriggers(token.actor, 'target' + this.pass.capitalize(), token.document));
-                token.document.regions.forEach(region => {
+                token.document.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
                     triggers.push(new Triggers.RegionRollTrigger(region, 'target' + this.pass.capitalize(), token.document));
                 });
             });
@@ -179,6 +189,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         this.scene = workflow.token?.document?.parent;
         this.regions = workflow.token?.document?.regions;
         this.targets = workflow.targets;
+        this.groups = this.actor ? actorUtils.getGroups(this.actor) : undefined;
     }
     appendData(data) {
         data.workflow = this.workflow;
@@ -187,6 +198,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         data.token = this.token;
         data.scene = this.scene;
         data.regions = this.regions;
+        data.groups = this.groups;
         return data;
     }
 }
@@ -204,9 +216,11 @@ class PreTargetingWorkflowEvent extends BaseWorkflowEvent {
         this.message = message;
     }
     appendData(data) {
+        data = super.appendData(data);
         data.config = this.config;
         data.dialog = this.dialog;
         data.message = this.message;
+        return data;
     }
 }
 class TokenDamageWorkflowEvent extends BaseWorkflowEvent {
@@ -222,8 +236,6 @@ class TokenDamageWorkflowEvent extends BaseWorkflowEvent {
         return data;
     }
 }
-
-
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,

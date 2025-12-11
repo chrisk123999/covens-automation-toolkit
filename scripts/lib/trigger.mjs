@@ -87,6 +87,19 @@ class ActorRollTrigger extends Trigger {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('actorRoll', this.pass);
     }
 }
+class GroupRollTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        this.identifier = documentUtils.getIdentifier(this.document);
+        this.name = this.document.name.slugify();
+        this.castData = actorUtils.getCastData(this.document);
+        const fnMacroData = this.document.flags.cat?.macros?.groupRoll ?? [];
+        this.processFnMacros(fnMacroData, 'groupRoll', pass);
+    }
+    processEmbeddedMacro() {
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('groupRoll', this.pass);
+    }
+}
 class EffectRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
@@ -139,6 +152,7 @@ export const Triggers = {
     CastRollTrigger,
     TokenRollTrigger,
     ActorRollTrigger,
+    GroupRollTrigger,
     EffectRollTrigger,
     EnchantmentRollTrigger,
     RegionRollTrigger,
