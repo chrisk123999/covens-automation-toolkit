@@ -167,25 +167,34 @@ class RegisteredAutomations {
 
     /**
      * Register a compendium pack of documents with automations
-     * @param {CompendiumCollection} pack                               The compendium pack of documents to register as automations
-     * @param {object} [options={}]                                     Additional options
-     * @param {Record<string, AutomationConfig[]>} [options.configs={}] An object with identifiers as keys and configs as values
-     * @param {Record<string, string>} [options.versions={}]            An object with identifiers as keys and versions as values
-     * @param {Record<string, string>} [options.rules={}]               An object with identifiers as keys and rulesets as values
-     * @param {string} [options.source]                                 The source of the automations
+     * @param {CompendiumCollection} pack                                   The compendium pack of documents to register as automations
+     * @param {object} [options={}]                                         Additional options
+     * @param {Record<string, AutomationConfig[]>} [options.configs2014={}] An object with identifiers as keys and configs as values
+     * @param {Record<string, AutomationConfig[]>} [options.configs2024={}] An object with identifiers as keys and configs as values
+     * @param {Record<string, AutomationConfig[]>} [options.configsAll={}]  An object with identifiers as keys and configs as values
+     * @param {Record<string, string>} [options.versions={}]                An object with identifiers as keys and versions as values
+     * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
+     * @param {string} [options.source]                                     The source of the automations
      */
-    async registerAutomationCompendium(pack, {configs = {}, versions = {}, rules = {}, source} = {}) {
+    async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, source} = {}) {
         const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation.version']});
         if (!source) source = pack.metadata.packageName;
         return index.map(document => {
             const identifier = documentUtils.getIdentifier(document);
+            const rule = rules[identifier] ?? documentUtils.getRules(document);
+            let config;
+            switch (rule) {
+                case '2014': config = configs2014[identifier]; break;
+                case '2024': config = configs2024[identifier]; break;
+                default: config = configsAll[identifier]; break;
+            }
             const data = {
                 source,
-                rules: rules[identifier] ?? documentUtils.getRules(document),
+                rules: rule,
                 identifier,
                 version: versions[identifier] ?? documentUtils.getVersion(document),
                 uuid: document.uuid,
-                config: configs[identifier]
+                config
             };
             return this.registerAutomation(data);
         });
@@ -193,14 +202,16 @@ class RegisteredAutomations {
 
     /**
      * Register multiple compendium packs of documents with automations, with those packs being provided by the given module ID
-     * @param {string} id                                               The id of the module to register the compendium packs of
-     * @param {object} [options={}]                                     Additional options
-     * @param {string[]} [options.ignoredPackIds=[]]                    A list of compendium pack IDs to ignore and not register
-     * @param {Record<string, AutomationConfig[]>} [options.configs={}] An object with identifiers as keys and configs as values
-     * @param {Record<string, string>} [options.versions={}]            An object with identifiers as keys and versions as values
-     * @param {Record<string, string>} [options.rules={}]               An object with identifiers as keys and rulesets as values
+     * @param {string} id                                                   The id of the module to register the compendium packs of
+     * @param {object} [options={}]                                         Additional options
+     * @param {string[]} [options.ignoredPackIds=[]]                        A list of compendium pack IDs to ignore and not register
+     * @param {Record<string, AutomationConfig[]>} [options.configs2014={}] An object with identifiers as keys and configs as values
+     * @param {Record<string, AutomationConfig[]>} [options.configs2024={}] An object with identifiers as keys and configs as values
+     * @param {Record<string, AutomationConfig[]>} [options.configsAll={}]  An object with identifiers as keys and configs as values
+     * @param {Record<string, string>} [options.versions={}]                An object with identifiers as keys and versions as values
+     * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
      */
-    async registerAutomationModule(id, {ignoredPackIds = [], configs = {}, versions = {}, rules = {}} = {}) {
+    async registerAutomationModule(id, {ignoredPackIds = [], configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}} = {}) {
         const module = game.modules.get(id);
         if (!module?.active) return false;
         const itemPacks = module.packs.filter(pack => pack.type === 'Item' && !ignoredPackIds.includes(pack.id));
@@ -208,7 +219,7 @@ class RegisteredAutomations {
         return await Promise.all(itemPacks.map(async data => {
             const pack = game.packs.get(data.id);
             if (!pack) return false;
-            return await this.registerAutomationCompendium(pack, {configs, versions, rules, source: id});
+            return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions, rules, source: id});
         }));
     }
 }
