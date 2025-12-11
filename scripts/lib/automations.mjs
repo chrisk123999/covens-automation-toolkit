@@ -39,7 +39,7 @@ class Automation {
     source;
 
     /**
-     * @type {'2014'|'2024'}
+     * @type {'2014'|'2024'|'all'}
      */
     rules;
 
