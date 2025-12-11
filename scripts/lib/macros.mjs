@@ -3,7 +3,6 @@ class RegisteredMacros {
     constructor() {
         this.fnMacros = [];
         this.overwriteMacros = [];
-        // eslint-disable-next-line no-undef
         const fields = foundry.data.fields;
         this.macrosSchema = new fields.SchemaField({
             source: new fields.StringField({required: true, nullable: false}),

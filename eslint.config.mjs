@@ -32,6 +32,7 @@ export default defineConfig([
                 fromUuid: 'writable',
                 fromUuidSync: 'writable',
                 canvas: 'writable',
+                foundry: 'writable'
             },
 
             ecmaVersion: 'latest',

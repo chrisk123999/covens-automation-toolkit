@@ -24,16 +24,16 @@ const workflowPasses = {
     cleanup: 'cleanup' // For extra late clean-up stuff.
 };
 const workflowHookNames = {
-    preTargeting: 'preTargeting',
-    preItemRoll: 'preItemRoll',
-    preambleComplete: 'preambleComplete',
-    postAttackRoll: 'postAttackRoll',
-    attackRollComplete: 'attackRollComplete',
-    savesComplete: 'savesComplete',
-    damageRollComplete: 'damageRollComplete',
-    utilityRollComplete: 'utilityRollComplete',
-    preTargetDamageApplication: 'preTargetDamageApplication',
-    rollFinished: 'rollFinished'
+    preTargeting: 'midi-qol.preTargeting',
+    preItemRoll: 'midi-qol.premades.postNoAction',
+    preambleComplete: 'midi-qol.premades.postPreambleComplete',
+    postAttackRoll: 'midi-qol.premades.postWaitForAttackRoll',
+    attackRollComplete: 'midi-qol.premades.postAttackRollComplete',
+    savesComplete: 'midi-qol.premades.postSavesComplete',
+    damageRollComplete: 'midi-qol.premades.preDamageRollComplete',
+    utilityRollComplete: 'midi-qol.premades.preUtilityRollComplete',
+    preTargetDamageApplication: 'midi-qol.preTargetDamageApplication',
+    rollFinished: 'midi-qol.premades.postRollFinished'
 };
 export const constants = {
     registeredMacros: undefined,

@@ -3,7 +3,6 @@ import {Triggers, Logging} from '../lib.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
-        this.name = '';
     }
     appendData(data) {
         return data;
@@ -37,7 +36,8 @@ class CatEvent {
         let sortedTriggers = [];
         let uniqueMacros = new Set();
         triggers.forEach(trigger => {
-            trigger.fnMacros.forEach(fnMacro => {
+            console.log(trigger);
+            [...trigger.fnMacros, ...trigger.embeddedMacros].forEach(fnMacro => {
                 fnMacro.macros.forEach(macro => {
                     if (macro.unique) {
                         if (uniqueMacros.has(macro.unique)) return;
@@ -122,7 +122,7 @@ class BaseWorkflowEvent extends CatEvent {
                 triggers.push(new Triggers.RegionRollTrigger(region, 'region' + this.pass.capitalize()));
             });
         }
-        if (this.targets.size) {
+        if (this.targets?.size) {
             this.targets.forEach(token => {
                 if (!this.actor) return;
                 triggers.push(new Triggers.TokenRollTrigger(token.document, 'target' + this.pass.capitalize(), token.document));
@@ -132,7 +132,7 @@ class BaseWorkflowEvent extends CatEvent {
                 });
             });
         }
-        triggers = triggers.filter(trigger => trigger.fnMacros.length);
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }
 }
@@ -158,7 +158,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         return data;
     }
 }
-class PreTargetingWorkflowEvent extends WorkflowEvent {
+class PreTargetingWorkflowEvent extends BaseWorkflowEvent {
     constructor(pass, {activity, token, config, dialog, message}) {
         super(pass);
         this.activity = activity;
@@ -177,7 +177,7 @@ class PreTargetingWorkflowEvent extends WorkflowEvent {
         data.message = this.message;
     }
 }
-class TokenDamageWorkflowEvent extends WorkflowEvent {
+class TokenDamageWorkflowEvent extends BaseWorkflowEvent {
     constructor(pass, workflow, token, ditem) {
         super(pass, workflow);
         this.ditem = ditem;
@@ -190,6 +190,8 @@ class TokenDamageWorkflowEvent extends WorkflowEvent {
         return data;
     }
 }
+
+
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,

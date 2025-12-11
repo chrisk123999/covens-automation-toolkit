@@ -1,6 +1,5 @@
-async function use() {
-    console.log('test!');
-    throw new Error('Test');
+async function use(trigger) {
+    console.log(trigger);
 }
 async function target() {
     console.log('test 1');
