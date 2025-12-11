@@ -94,7 +94,7 @@ class RegisteredAutomations {
     /**
      * Get the registered Automation (or Automations), if any, by identifier & other criteria
      * @param {string} identifier                           The identifier of the automation
-     * @param {object} [options={}]           Additional options
+     * @param {object} [options={}]                         Additional options
      * @param {'all'|'2014'|'2024'} [options.rules='all']   The ruleset of the automation
      * @param {string} [options.source='all']               The source of the automation
      * @param {boolean} [options.multiple=false]            Whether to return all matching automations or only one
@@ -108,7 +108,7 @@ class RegisteredAutomations {
     /**
      * Get the registered Automation (or Automations), if any, by name & other criteria
      * @param {string} name                                 The name of the automation
-     * @param {object} [options={}]           Additional options
+     * @param {object} [options={}]                         Additional options
      * @param {'all'|'2014'|'2024'} [options.rules='all']   The ruleset of the automation
      * @param {string} [options.source='all']               The source of the automation
      * @param {boolean} [options.multiple=false]            Whether to return all matching automations or only one
