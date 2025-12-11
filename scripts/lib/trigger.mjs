@@ -1,4 +1,4 @@
-import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, tokenUtils} from '../utils.mjs';
+import {activityUtils, actorUtils, documentUtils, effectUtils, itemUtils, regionUtils, tokenUtils} from '../utils.mjs';
 import {constants, EmbeddedMacros} from '../lib.mjs';
 class Trigger {
     constructor(document, pass, {sourceToken} = {}) {
@@ -22,7 +22,7 @@ class Trigger {
 class ActivityRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.identifier = this.document.midiProperties.identifier;
+        this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = {
             castLevel: -1,
@@ -39,7 +39,7 @@ class ActivityRollTrigger extends Trigger {
 class ItemRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.identifier = this.document.system.identifier;
+        this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = {
             castLevel: -1,
@@ -56,7 +56,7 @@ class ItemRollTrigger extends Trigger {
 class TokenRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
+        this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = tokenUtils.getCastData(this.document);
         let fnMacroData = this.document.flags.cat?.macros?.tokenRoll ?? [];
@@ -69,7 +69,7 @@ class TokenRollTrigger extends Trigger {
 class ActorRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
+        this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = actorUtils.getCastData(this.document);
         let fnMacroData = this.document.flags.cat?.macros?.actorRoll ?? [];
@@ -82,7 +82,7 @@ class ActorRollTrigger extends Trigger {
 class EffectRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
+        this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = effectUtils.getCastData(this.document);
         let fnMacroData = this.document.flags.cat?.macros?.effectRoll ?? [];
@@ -98,7 +98,7 @@ class EnchantmentRollTrigger extends EffectRollTrigger {
 class RegionRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
+        this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = regionUtils.getCastData(this.document);
         let fnMacroData = this.document.flags.cat?.macros?.regionRoll ?? [];
@@ -111,7 +111,7 @@ class RegionRollTrigger extends Trigger {
 class SceneRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.identifier = this.document.flags.cat?.identifier ?? this.document.name.slugify();
+        this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = {
             castLevel: -1,

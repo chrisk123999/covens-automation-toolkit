@@ -1,10 +1,12 @@
 import {Logging} from '../lib.mjs';
 class RegisteredMacros {
+    #macrosSchema;
+    #multiMacrosSchema;
     constructor() {
         this.fnMacros = [];
         this.overwriteMacros = [];
         const fields = foundry.data.fields;
-        this.macrosSchema = new fields.SchemaField({
+        this.#macrosSchema = new fields.SchemaField({
             source: new fields.StringField({required: true, nullable: false}),
             rules: new fields.StringField({required: true, nullable: false}),
             identifier: new fields.StringField({required: true, nullable: false}),
@@ -16,7 +18,7 @@ class RegisteredMacros {
             regionRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             sceneRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
         });
-        this.multiMacrosSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
+        this.#multiMacrosSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
     }
     getFnMacros(source, rules, identifier, type, pass) {
         let fnMacro = this.overwriteMacros.find(oMacro => oMacro.source === source && oMacro.identifier === identifier && (oMacro.rules === rules || oMacro.rules === 'all')) ?? this.fnMacros.find(fnMacro => fnMacro.source === source && fnMacro.identifier === identifier && (fnMacro.rules === rules || fnMacro.rules === 'all'));
@@ -32,10 +34,10 @@ class RegisteredMacros {
         };
     }
     registerFnMacro(data) {
-        const validationError = this.macrosSchema.validate(data);
+        const validationError = this.#macrosSchema.validate(data);
         if (validationError) {
             Logging.addRegistrationError(data, validationError.asError());
-            return;
+            return false;
         }
         this.fnMacros.push(new FnMacro(data.source, data.identifier, data.rules, {
             activityRoll: data.activityRoll ?? [],
@@ -48,16 +50,14 @@ class RegisteredMacros {
         }));
     }
     registerFnMacros(data = []) {
-        const validationError = this.multiMacrosSchema.validate(data);
+        const validationError = this.#multiMacrosSchema.validate(data);
         if (validationError) {
             Logging.addRegistrationError(data, validationError.asError());
-            return;
+            return false;
         }
-        data.forEach(i => {
-            this.registerFnMacro(i);
-        });
+        return data.map(i => this.registerFnMacro(i));
     }
-
+    // TODO: Overwrite Macros
 }
 class FnMacro {
     constructor(source, identifier, rules, {activityRoll = [], itemRoll = []} = {}) {

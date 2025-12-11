@@ -8,6 +8,7 @@ Hooks.once('init', () => {
 });
 Hooks.once('ready', () => {
     lib.constants.registeredMacros = new lib.Macros.RegisteredMacros();
+    lib.constants.automations = new lib.Automations.RegisteredAutomations();
     lib.constants.registeredMacros.registerFnMacro(test);
     globalThis.cat = {
         api,

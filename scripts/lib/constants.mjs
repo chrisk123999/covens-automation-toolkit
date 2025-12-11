@@ -37,6 +37,7 @@ const workflowHookNames = {
 };
 export const constants = {
     registeredMacros: undefined,
+    automations: undefined,
     workflowPasses,
     workflowHookNames
 };

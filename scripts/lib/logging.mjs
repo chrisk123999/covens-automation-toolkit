@@ -2,10 +2,11 @@ const logs = [];
 const macroErrors = [];
 const userErrors = [];
 const registrationErrors = [];
+const automationsErrors = [];
 function addEntry(type = 'DEBUG', message) {
     logs.push('CAT | ' + type + ': ' + message);
     console.log(logs[logs.length - 1]); // Change this check a setting for displaying logs.
-    if (logs.length > 50) logs.shift();
+    if (logs.length > 100) logs.shift();
 }
 function addMacroError(message) {
     console.error(message);
@@ -21,6 +22,10 @@ function addRegistrationError(data, message) {
     registrationErrors.push([JSON.stringify(data), message]);
     console.error(data, message);
 }
+function addAutomationError(data, message) {
+    automationsErrors.push([JSON.stringify(data), message]);
+    console.error(data, message);
+}
 export const Logging = {
     logs,
     macroErrors,
@@ -29,5 +34,6 @@ export const Logging = {
     addEntry,
     addMacroError,
     addUserError,
-    addRegistrationError
+    addRegistrationError,
+    addAutomationError
 };
