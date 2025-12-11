@@ -11,7 +11,7 @@ function getIdentifier(document) {
     switch (document.documentName) {
         case 'Activity': return document.midiProperties.identifier;
         case 'Item': return document.system.identifier;
-        default: return this.document.flags.cat?.identifier ?? this.document.name.slugify();
+        default: return document.flags.cat?.identifier ?? document.name.slugify();
     }
 }
 function getConfigValue(document, key) {

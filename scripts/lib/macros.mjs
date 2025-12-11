@@ -1,11 +1,11 @@
 import {Logging} from '../lib.mjs';
+const fields = foundry.data.fields;
 class RegisteredMacros {
     #macrosSchema;
     #multiMacrosSchema;
     constructor() {
         this.fnMacros = [];
         this.overwriteMacros = [];
-        const fields = foundry.data.fields;
         this.#macrosSchema = new fields.SchemaField({
             source: new fields.StringField({required: true, nullable: false}),
             rules: new fields.StringField({required: true, nullable: false}),

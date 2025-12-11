@@ -130,6 +130,11 @@ class BaseWorkflowEvent extends CatEvent {
             this.item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment).forEach(effect => {
                 triggers.push(new Triggers.EnchantmentRollTrigger(effect, this.pass));
             });
+            const cachedForUuid = this.item.flags?.dnd5e?.cachedFor;
+            if (cachedForUuid && this.actor) {
+                const castActivity = fromUuidSync(cachedForUuid, {relative: this.actor});
+                if (castActivity) triggers.push(new Triggers.CastRollTrigger(castActivity, this.pass, {sourceItem: this.item}));
+            }
         }
         if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
         if (this.token) {

@@ -71,7 +71,7 @@ class Automation {
     }
 }
 class RegisteredAutomations {
-    static #automationsSchema = new fields.SchemaField({
+    #automationsSchema = new fields.SchemaField({
         source: new fields.StringField({required: true, nullable: false}),
         rules: new fields.StringField({required: true, nullable: false}),
         identifier: new fields.StringField({required: true, nullable: false}),
@@ -79,7 +79,7 @@ class RegisteredAutomations {
         uuid: new fields.StringField({required: true, nullable: false}),
         config: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
     });
-    static #multiAutomationsSchema = new fields.ArrayField(RegisteredAutomations.#automationsSchema);
+    #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 
     /**
      * @type {Automation[]}
@@ -124,7 +124,7 @@ class RegisteredAutomations {
      * @param {AutomationData} data 
      */
     registerAutomation(data) {
-        const validationError = RegisteredAutomations.#automationsSchema.validate(data);
+        const validationError = this.#automationsSchema.validate(data);
         if (validationError) {
             Logging.addAutomationError(data, validationError);
             return false;
@@ -140,7 +140,7 @@ class RegisteredAutomations {
      * @param {AutomationData[]} data 
      */
     registerAutomations(data) {
-        const validationError = RegisteredAutomations.#multiAutomationsSchema.validate(data);
+        const validationError = this.#multiAutomationsSchema.validate(data);
         if (validationError) {
             Logging.addAutomationError(data, validationError);
             return false;

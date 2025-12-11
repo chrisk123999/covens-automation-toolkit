@@ -29,11 +29,19 @@ class ActivityRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: activityUtils.getSaveDC(this.document)
         };
-        let fnMacroData = this.document.flags?.cat?.macros?.activityRoll ?? [];
+        const fnMacroData = this.document.flags?.cat?.macros?.activityRoll ?? [];
         this.processFnMacros(fnMacroData, 'activityRoll', pass);
     }
     processEmbeddedMacro() {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('activityRoll', this.pass);
+    }
+}
+class CastRollTrigger extends ActivityRollTrigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        this.sourceItem = data.sourceItem;
+        const fnMacroData = this.document.flags?.cat?.macros?.castRoll ?? [];
+        this.processFnMacros(fnMacroData, 'castRoll', pass);
     }
 }
 class ItemRollTrigger extends Trigger {
@@ -46,7 +54,7 @@ class ItemRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: itemUtils.getSaveDC(this.document)
         };
-        let fnMacroData = this.document.flags.cat?.macros?.itemRoll ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.itemRoll ?? [];
         this.processFnMacros(fnMacroData, 'itemRoll', pass);
     }
     processEmbeddedMacro() {
@@ -59,7 +67,7 @@ class TokenRollTrigger extends Trigger {
         this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = tokenUtils.getCastData(this.document);
-        let fnMacroData = this.document.flags.cat?.macros?.tokenRoll ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.tokenRoll ?? [];
         this.processFnMacros(fnMacroData, 'tokenRoll', pass);
     }
     processEmbeddedMacro() {
@@ -72,7 +80,7 @@ class ActorRollTrigger extends Trigger {
         this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = actorUtils.getCastData(this.document);
-        let fnMacroData = this.document.flags.cat?.macros?.actorRoll ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.actorRoll ?? [];
         this.processFnMacros(fnMacroData, 'actorRoll', pass);
     }
     processEmbeddedMacro() {
@@ -85,7 +93,7 @@ class EffectRollTrigger extends Trigger {
         this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = effectUtils.getCastData(this.document);
-        let fnMacroData = this.document.flags.cat?.macros?.effectRoll ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.effectRoll ?? [];
         this.processFnMacros(fnMacroData, 'effectRoll', pass);
     }
     processEmbeddedMacro() {
@@ -101,7 +109,7 @@ class RegionRollTrigger extends Trigger {
         this.identifier = documentUtils.getIdentifier(this.document);
         this.name = this.document.name.slugify();
         this.castData = regionUtils.getCastData(this.document);
-        let fnMacroData = this.document.flags.cat?.macros?.regionRoll ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.regionRoll ?? [];
         this.processFnMacros(fnMacroData, 'regionRoll', pass);
     }
     processEmbeddedMacro() {
@@ -118,7 +126,7 @@ class SceneRollTrigger extends Trigger {
             baseLevel: -1,
             saveDC: -1
         };
-        let fnMacroData = this.document.flags.cat?.macros?.sceneRoll ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.sceneRoll ?? [];
         this.processFnMacros(fnMacroData, 'sceneRoll', pass);
     }
     processEmbeddedMacro() {
@@ -128,6 +136,7 @@ class SceneRollTrigger extends Trigger {
 export const Triggers = {
     ItemRollTrigger,
     ActivityRollTrigger,
+    CastRollTrigger,
     TokenRollTrigger,
     ActorRollTrigger,
     EffectRollTrigger,
