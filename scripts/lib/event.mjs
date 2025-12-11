@@ -1,5 +1,5 @@
-import {actorUtils} from '../utils.mjs';
-import {Triggers, Logging} from '../lib.mjs';
+import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, tokenUtils} from '../utils.mjs';
+import {Triggers, Logging, constants} from '../lib.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
@@ -36,7 +36,6 @@ class CatEvent {
         let sortedTriggers = [];
         let uniqueMacros = new Set();
         triggers.forEach(trigger => {
-            console.log(trigger);
             [...trigger.fnMacros, ...trigger.embeddedMacros].forEach(fnMacro => {
                 fnMacro.macros.forEach(macro => {
                     if (macro.unique) {
@@ -62,18 +61,46 @@ class CatEvent {
     get unsortedTriggers() {
         return [];
     }
-    async execute() {
+    async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
         for (let trigger of this.sortedTriggers) {
-            Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macro.name + ' from ' + trigger.name);
             let result;
-            try {
-                result = await trigger.macro(trigger);
-            } catch (error) {
-                Logging.addMacroError(error);
+            if (typeof trigger.macro === 'string') {
+                Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+                await this.executeScript(trigger.macro, trigger);
+            } else {
+                Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+                try {
+                    result = await trigger.macro(trigger);
+                } catch (error) {
+                    Logging.addMacroError(error);
+                }
             }
             if (result) return result;
         }
+    }
+    async executeScript(script, ...scope) {
+        const defaultScope = {
+            activityUtils,
+            actorUtils,
+            effectUtils,
+            itemUtils,
+            regionUtils,
+            tokenUtils,
+            constants
+        };
+        scope = {...defaultScope, ...scope};
+        let argNames = Object.keys(scope);
+        if (argNames.some(k => Number.isNumeric(k))) throw new Error('Illegal numeric Macro parameter passed to execution scope.');
+        let argValues = Object.values(scope);
+        let fn = new foundry.utils.AsyncFunction(...argNames, '{' + script + '}\n');
+        let result;
+        try {
+            result = await fn(...argValues);
+        } catch (error) {
+            Logging.addMacroError(error);
+        }
+        return result;
     }
 }
 class BaseWorkflowEvent extends CatEvent {
