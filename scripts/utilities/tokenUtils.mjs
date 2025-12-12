@@ -1,6 +1,6 @@
-function getCastData(token) {
+function getSavedCastData(token) {
     return token.flags.cat?.castData;
 }
 export const tokenUtils = {
-    getCastData
+    getSavedCastData
 };

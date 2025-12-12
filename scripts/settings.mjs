@@ -15,7 +15,6 @@ export function registerSettings() {
     addSetting({
         key: 'gmID',
         type: String,
-        default: '',
-        category: 'development'
+        default: ''
     });
 }

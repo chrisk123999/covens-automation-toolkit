@@ -35,9 +35,13 @@ const workflowHookNames = {
     preTargetDamageApplication: 'midi-qol.preTargetDamageApplication',
     rollFinished: 'midi-qol.premades.postRollFinished'
 };
+const movementPasses = {
+    moved: 'moved'
+};
 export const constants = {
     registeredMacros: undefined,
     automations: undefined,
     workflowPasses,
-    workflowHookNames
+    workflowHookNames,
+    movementPasses
 };

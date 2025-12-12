@@ -1,5 +1,5 @@
-import {genericUtils} from '../utilities/genericUtils.mjs';
-import {queryUtils} from '../utilities/queryUtils.mjs';
+import {genericUtils, queryUtils} from '../utils.mjs';
+import {constants, Events} from '../lib.mjs';
 async function moveToken(token, movement, options, user) {
     if (!queryUtils.isTheGM()) return;
     if (!token.actor) return;
@@ -16,15 +16,16 @@ async function moveToken(token, movement, options, user) {
     previousCoords.x += xDiff;
     previousCoords.y += yDiff;
     let ignore = genericUtils.getProperty(options, 'cat.movement.ignore');
-    let skipMove = genericUtils.getCPRSetting('movementPerformance') < 2 && !isFinalMovement;
+    //let skipMove = genericUtils.getCPRSetting('movementPerformance') < 2 && !isFinalMovement;
+    let skipMove = false;
     let previousRegions = token.parent.regions.filter(region => token.testInsideRegion(region, movement.origin));
     await token.object.movementAnimationPromise;
     if (!ignore) {
         let teleport = CONFIG.Token.movement.actions[movement.passed.waypoints.at(-1).action]?.teleport;
         genericUtils.setProperty(options, 'cat.movement.teleport', teleport);
         if (!skipMove) {
-            if (isFinalMovement) ;//await auras.updateAuras(token, options);
-            //Stuff here
+            //if (isFinalMovement);//await auras.updateAuras(token, options);
+            await new Events.TokenMovementEvent(token, constants.movementPasses.moved, options).run();
         }
 
     }

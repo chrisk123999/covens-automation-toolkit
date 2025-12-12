@@ -6,8 +6,16 @@
  */
 function getSaveDC(item) {
     if (item.hasSave) return item.system.activities.getByType('save')[0].save.dc.value;
-    return item.actor?.system?.abilities?.[item.abilityMod]?.dc ?? 10;
+    return item.actor?.system?.abilities?.[item.abilityMod]?.dc ?? item?.actor?.system?.attributes?.spell?.dc ?? 10;
+}
+function getSavedCastData(item) {
+    return {
+        castLevel: document.flags?.cat?.castData?.castLevel ?? -1,
+        baseLevel: document.flags?.cat?.castData?.baseLevel ?? -1,
+        saveDC: getSaveDC(document)
+    };
 }
 export const itemUtils = {
-    getSaveDC
+    getSaveDC,
+    getSavedCastData
 };

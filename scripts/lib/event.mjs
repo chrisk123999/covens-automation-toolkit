@@ -113,7 +113,6 @@ class CatEvent {
 class BaseWorkflowEvent extends CatEvent {
     constructor(pass) {
         super(pass);
-        this.name = 'Workflow';
     }
     getActorTriggers(actor, pass, sourceToken) {
         let triggers = [];
@@ -123,12 +122,15 @@ class BaseWorkflowEvent extends CatEvent {
             item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
                 triggers.push(new Triggers.EnchantmentRollTrigger(effect, pass, {sourceToken}));
             });
+            item.system.activities?.contents?.filter(activity => CatEvent.hasCatFlag(activity)).forEach(activity => {
+                triggers.push(new Triggers.ActivityRollTrigger(activity, pass, {sourceToken}));
+            });
         });
         actorUtils.getEffects(actor).filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
             triggers.push(new Triggers.EffectRollTrigger(effect, pass, {sourceToken}));
         });
-        actorUtils.getGroups(actor).filter(group => CatEvent.hasCatFlag(group)).forEach(group => {
-            triggers.push(new Triggers.GroupRollTrigger(group, pass));
+        actorUtils.getGroups(actor).forEach(group => {
+            if (CatEvent.hasCatFlag(group)) triggers.push(new Triggers.GroupRollTrigger(group, pass));
         });
         return triggers;
     }
@@ -237,8 +239,54 @@ class TokenDamageWorkflowEvent extends BaseWorkflowEvent {
         return data;
     }
 }
+class TokenMovementEvent extends CatEvent {
+    constructor(token, pass) {
+        super(pass);
+        this.token = token;
+        this.actor = token.actor;
+        this.scene = token.parent;
+        this.groups = actorUtils.getGroups(this.actor);
+    }
+    appendData(data) {
+        data = super.appendData(data);
+        data.groups = this.groups;
+    }
+    getActorTriggers(actor, pass, data) {
+        let triggers = [];
+        if (CatEvent.hasCatFlag(actor)) triggers.push(new Triggers.ActorMoveTrigger(actor, pass));
+        actor.items.forEach(item => {
+            if (CatEvent.hasCatFlag(item)) triggers.push(new Triggers.ItemMoveTrigger(item, pass));
+            item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
+                triggers.push(new Triggers.EnchantmentMoveTrigger(effect, pass));
+            });
+            item.system.activities.filter(activity => CatEvent.hasCatFlag(activity)).forEach(activity => {
+                triggers.push(new Triggers.ActivityMoveTrigger(activity, pass, data));
+            });
+        });
+        actorUtils.getEffects(actor).filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
+            triggers.push(new Triggers.EffectRollTrigger(effect, pass));
+        });
+        actorUtils.getGroups(actor).forEach(group => {
+            if (CatEvent.hasCatFlag(group)) triggers.push(new Triggers.GroupMoveTrigger(group, pass));
+        });
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+        return triggers;
+    }
+    get unsortedTriggers() {
+        let triggers = [];
+        triggers.push(...this.getActorTriggers(this.actor, this.pass));
+        if (CatEvent.hasCatFlag(this.scene)) triggers.push(new Triggers.SceneMoveTrigger(this.scene, this.pass));
+        this.scene.tokens.forEach(token => {
+            if (!token.actor) return;
+            if (CatEvent.hasCatFlag(token)) triggers.push(new Triggers.TokenMoveTrigger(token, 'scene' + this.pass.capitalize(), token));
+            triggers.push(...this.getActorTriggers(token.actor, 'scene' + this.pass.capitalize(), token));
+        });
+        return triggers;
+    }
+}
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
-    TokenDamageWorkflowEvent
+    TokenDamageWorkflowEvent,
+    TokenMovementEvent
 };

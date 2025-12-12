@@ -1,4 +1,5 @@
 import {constants} from '../lib.mjs';
+import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, sceneUtils, tokenUtils} from '../utils.mjs';
 function getRules(document) {
     let rules = document.flags.cat?.automation?.rules;
     if (rules) return rules;
@@ -20,10 +21,26 @@ function getConfigValue(document, key) {
 function getVersion(document) {
     return document.flags.cat?.automation?.version;
 }
+function getSavedCastData(document) {
+    switch(document.documentName) {
+        case 'Activity': return activityUtils.getSavedCastData(document);
+        case 'Item': return itemUtils.getSavedCastData(document);
+        case 'Token': return tokenUtils.getSavedCastData(document);
+        case 'Actor': return actorUtils.getSavedCastData(document);
+        case 'Effect': return effectUtils.getCastData(document);
+        case 'Region': return regionUtils.getCastData(document);
+        default: return {
+            castLevel: -1,
+            baseLevel: -1,
+            saveDC: -1
+        };
+    }
+}
 export const documentUtils = {
     getRules,
     getSource,
     getIdentifier,
     getConfigValue,
-    getVersion
+    getVersion,
+    getSavedCastData
 };

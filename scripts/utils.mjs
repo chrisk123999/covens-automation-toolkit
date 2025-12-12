@@ -7,3 +7,4 @@ export {effectUtils} from './utilities/effectUtils.mjs';
 export {documentUtils} from './utilities/documentUtils.mjs';
 export {genericUtils} from './utilities/genericUtils.mjs';
 export {queryUtils} from './utilities/queryUtils.mjs';
+export {sceneUtils} from './utilities/sceneUtils.mjs';
