@@ -5,3 +5,5 @@ export {actorUtils} from './utilities/actorUtils.mjs';
 export {tokenUtils} from './utilities/tokenUtils.mjs';
 export {effectUtils} from './utilities/effectUtils.mjs';
 export {documentUtils} from './utilities/documentUtils.mjs';
+export {genericUtils} from './utilities/genericUtils.mjs';
+export {queryUtils} from './utilities/queryUtils.mjs';

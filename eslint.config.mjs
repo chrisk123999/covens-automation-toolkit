@@ -36,19 +36,21 @@ export default defineConfig([
                 fromUuidSync: 'writable',
                 canvas: 'writable',
                 foundry: 'writable',
-                game: 'writable'
+                game: 'writable',
+                TokenDocument: 'writable',
+                CONFIG: 'writable'
             },
 
             ecmaVersion: 'latest',
-            sourceType: 'module',
+            sourceType: 'module'
         },
         rules: {
             indent: ['error', 4, {
-                SwitchCase: 1,
+                SwitchCase: 1
             }],
             quotes: ['error', 'single', {
                 avoidEscape: true,
-                allowTemplateLiterals: true,
+                allowTemplateLiterals: true
             }],
             semi: ['error', 'always'],
             'no-unused-vars': ['off'],
@@ -56,6 +58,6 @@ export default defineConfig([
             '@stylistic/object-curly-spacing': ['error', 'never'],
             'space-infix-ops': 'error',
             'comma-dangle': ['error', 'never']
-        },
+        }
     }
 ]);

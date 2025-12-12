@@ -196,6 +196,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         data.activity = this.activity;
         data.item = this.item;
         data.token = this.token;
+        data.actor = this.actor;
         data.scene = this.scene;
         data.regions = this.regions;
         data.groups = this.groups;
