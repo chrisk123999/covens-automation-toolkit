@@ -3,9 +3,32 @@ import {Triggers, Logging, constants} from '../lib.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
+        this.trigger;
     }
     appendData(data) {
         return data;
+    }
+    getActorTriggers(actor, pass) {
+        const triggers = [];
+        actor.items.forEach(item => {
+            if (CatEvent.hasCatFlag(item)) triggers.push(new this.trigger(item, pass));
+            item.effects.filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
+                triggers.push(new this.trigger(effect, pass));
+            });
+            item.system.activities?.contents?.filter(activity => CatEvent.hasCatFlag(activity)).forEach(activity => {
+                triggers.push(new this.trigger(activity, pass));
+            });
+        });
+        actorUtils.getGroups(actor).forEach(group => {
+            if (CatEvent.hasCatFlag(group)) triggers.push(new this.trigger(group, pass));
+        });
+        actorUtils.getEncounters(actor).forEach(encounter => {
+            if (CatEvent.hasCatFlag(encounter)) triggers.push(new this.trigger(encounter, pass));
+        });
+        actorUtils.getVehicles(actor).forEach(vehicle => {
+            if (CatEvent.hasCatFlag(vehicle)) triggers.push(new this.trigger(vehicle, pass));
+        });
+        return triggers;
     }
     get sortedTriggers() {
         const startTime = performance.now();
@@ -86,6 +109,24 @@ class CatEvent {
             if (result) return result;
         }
     }
+    runSync() {
+        Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        for (let trigger of this.sortedTriggers) {
+            let result;
+            if (typeof trigger.macro === 'string') {
+                Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+                this.executeScript(trigger.macro, trigger);
+            } else {
+                Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+                try {
+                    result = trigger.macro(trigger);
+                } catch (error) {
+                    Logging.addMacroError(error);
+                }
+            }
+            if (result) return result;
+        }
+    }
     async executeScript(script, ...scope) {
         const defaultScope = {
             activityUtils,
@@ -116,7 +157,7 @@ class BaseWorkflowEvent extends CatEvent {
         this.name = 'Workflow';
     }
     getActorTriggers(actor, pass, sourceToken) {
-        let triggers = [];
+        const triggers = [];
         if (CatEvent.hasCatFlag(actor)) triggers.push(new Triggers.ActorRollTrigger(actor, pass, {sourceToken}));
         actor.items.forEach(item => {
             if (CatEvent.hasCatFlag(item)) triggers.push(new Triggers.ItemRollTrigger(item, pass, {sourceToken}));
@@ -253,45 +294,25 @@ class TokenDamageWorkflowEvent extends BaseWorkflowEvent {
 class TokenMovementEvent extends CatEvent {
     constructor(token, pass) {
         super(pass);
+        this.name = 'Movement';
+        this.trigger = Triggers.MoveTrigger;
         this.token = token;
         this.actor = token.actor;
         this.scene = token.parent;
         this.groups = actorUtils.getGroups(this.actor);
-        this.name = 'Movement';
     }
     appendData(data) {
         data = super.appendData(data);
         data.groups = this.groups;
     }
-    getActorTriggers(actor, pass, data) {
-        let triggers = [];
-        if (CatEvent.hasCatFlag(actor)) triggers.push(new Triggers.ActorMoveTrigger(actor, pass));
-        actor.items.forEach(item => {
-            if (CatEvent.hasCatFlag(item)) triggers.push(new Triggers.ItemMoveTrigger(item, pass));
-            item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
-                triggers.push(new Triggers.EnchantmentMoveTrigger(effect, pass));
-            });
-            item.system.activities.filter(activity => CatEvent.hasCatFlag(activity)).forEach(activity => {
-                triggers.push(new Triggers.ActivityMoveTrigger(activity, pass, data));
-            });
-        });
-        actorUtils.getEffects(actor).filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
-            triggers.push(new Triggers.EffectRollTrigger(effect, pass));
-        });
-        actorUtils.getGroups(actor).forEach(group => {
-            if (CatEvent.hasCatFlag(group)) triggers.push(new Triggers.GroupMoveTrigger(group, pass));
-        });
-        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
-        return triggers;
-    }
     get unsortedTriggers() {
         let triggers = [];
         triggers.push(...this.getActorTriggers(this.actor, this.pass));
-        if (CatEvent.hasCatFlag(this.scene)) triggers.push(new Triggers.SceneMoveTrigger(this.scene, this.pass));
+        if (CatEvent.hasCatFlag(this.scene)) triggers.push(new Triggers.MoveTrigger(this.scene, this.pass));
         this.scene.tokens.forEach(token => {
             if (!token.actor) return;
-            if (CatEvent.hasCatFlag(token)) triggers.push(new Triggers.TokenMoveTrigger(token, 'scene' + this.pass.capitalize(), token));
-            triggers.push(...this.getActorTriggers(token.actor, 'scene' + this.pass.capitalize(), token));
+            if (CatEvent.hasCatFlag(token)) triggers.push(new Triggers.MoveTrigger(token, 'scene' + this.pass.capitalize(), token));
+            triggers.push(...this.getActorTriggers(token.actor, 'scene' + this.pass.capitalize()));
         });
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
@@ -300,9 +321,10 @@ class TokenMovementEvent extends CatEvent {
 class RegionEvent extends CatEvent {
     constructor(regions, pass, tokens) {
         super(pass);
+        this.name = 'Region';
+        this.Trigger = Triggers.RegionTrigger;
         this.regions = regions;
         this.tokens = tokens;
-        this.name = 'Region';
     }
     get unsortedTriggers() {
         let triggers = [];
@@ -320,8 +342,9 @@ class RegionEvent extends CatEvent {
 class EffectEvent extends CatEvent {
     constructor(effect, pass, {options, updates}) {
         super(pass);
-        this.effect = effect;
         this.name = 'Effect';
+        this.trigger = Triggers.EffectTrigger;
+        this.effect = effect;
         if (effect.parent instanceof Actor) {
             this.actor = effect.parent;
         }
@@ -339,28 +362,6 @@ class EffectEvent extends CatEvent {
         this.vehicles = actorUtils.getVehicles(this.actor);
         this.options = options;
         this.updates = updates;
-    }
-    getActorTriggers(actor, pass) {
-        let triggers = [];
-        actor.items.forEach(item => {
-            if (CatEvent.hasCatFlag(item)) triggers.push(new Triggers.EffectTrigger(item, pass));
-            item.effects.filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
-                triggers.push(new Triggers.EffectTrigger(effect, pass));
-            });
-            item.system.activities?.contents?.filter(activity => CatEvent.hasCatFlag(activity)).forEach(activity => {
-                triggers.push(new Triggers.EffectTrigger(activity, pass));
-            });
-        });
-        actorUtils.getGroups(actor).forEach(group => {
-            if (CatEvent.hasCatFlag(group)) triggers.push(new Triggers.EffectTrigger(group, pass));
-        });
-        actorUtils.getEncounters(actor).forEach(encounter => {
-            if (CatEvent.hasCatFlag(encounter)) triggers.push(new Triggers.EffectTrigger(encounter, pass));
-        });
-        actorUtils.getVehicles(actor).forEach(vehicle => {
-            if (CatEvent.hasCatFlag(vehicle)) triggers.push(new Triggers.EffectTrigger(vehicle, pass));
-        });
-        return triggers;
     }
     get unsortedTriggers() {
         let triggers = [];
@@ -395,6 +396,22 @@ class EffectEvent extends CatEvent {
         data.updates = this.updates;
         return data;
     }
+}
+class CombatEvent extends CatEvent {
+    constructor(combat, pass, token, options) {
+        super(pass);
+        this.name = 'Combat';
+        this.trigger;
+        this.combat = combat;
+        this.token = token;
+        this.actor = token.actor;
+        this.regions = token.regions;
+        this.scene = token.parent;
+        this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
+    }
+    
 }
 export const Events = {
     WorkflowEvent,
