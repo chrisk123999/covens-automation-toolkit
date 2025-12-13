@@ -66,7 +66,7 @@ class CatEvent {
                         if (uniqueMacros.has(macro.unique)) return;
                         uniqueMacros.add(macro.unique);
                     }
-                    let data = {
+                    const data = {
                         macro: macro.macro,
                         priority: macro.priority,
                         castData: trigger.castData,
@@ -300,6 +300,8 @@ class TokenMovementEvent extends CatEvent {
         this.actor = token.actor;
         this.scene = token.parent;
         this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
     }
     appendData(data) {
         data = super.appendData(data);
@@ -413,6 +415,7 @@ class CombatEvent extends CatEvent {
     }
     
 }
+//TODO: Refactor appendData.
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
