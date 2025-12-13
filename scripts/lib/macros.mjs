@@ -10,13 +10,7 @@ class RegisteredMacros {
             source: new fields.StringField({required: true, nullable: false}),
             rules: new fields.StringField({required: true, nullable: false}),
             identifier: new fields.StringField({required: true, nullable: false}),
-            activityRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            itemRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            tokenRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            actorRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            effectRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            regionRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            sceneRoll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
+            roll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
         });
         this.#multiMacrosSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
     }
@@ -40,13 +34,7 @@ class RegisteredMacros {
             return false;
         }
         this.fnMacros.push(new FnMacro(data.source, data.identifier, data.rules, {
-            activityRoll: data.activityRoll ?? [],
-            itemRoll: data.itemRoll ?? [],
-            tokenRoll: data.tokenRoll ?? [],
-            actorRoll: data.actorRoll ?? [],
-            effectRoll: data.effectRoll ?? [],
-            regionRoll: data.regionRoll ?? [],
-            sceneRoll: data.sceneRoll ?? []
+            roll: data.roll ?? []
         }));
     }
     registerFnMacros(data = []) {
@@ -60,13 +48,12 @@ class RegisteredMacros {
     // TODO: Overwrite Macros
 }
 class FnMacro {
-    constructor(source, identifier, rules, {activityRoll = [], itemRoll = []} = {}) {
+    constructor(source, identifier, rules, {roll = []} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
         this.macros = {
-            activityRoll,
-            itemRoll
+            roll
         };
     }
 }

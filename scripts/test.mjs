@@ -8,7 +8,7 @@ export let test = {
     source: 'cat',
     identifier: 'test',
     rules: 'all',
-    itemRoll: [
+    roll: [
         {
             pass: 'rollFinished',
             macro: use,

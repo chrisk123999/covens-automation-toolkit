@@ -25,7 +25,7 @@ async function moveToken(token, movement, options, user) {
         genericUtils.setProperty(options, 'cat.movement.teleport', teleport);
         if (!skipMove) {
             //if (isFinalMovement);//await auras.updateAuras(token, options);
-            await new Events.TokenMovementEvent(token, constants.movementPasses.moved, options).run();
+            await new Events.MovementEvent(token, constants.movementPasses.moved, {options}).run();
         }
         const moveRay = new foundry.canvas.geometry.Ray(previousCoords, coords);
         const currentRegions = Array.from(token.regions);
@@ -40,10 +40,10 @@ async function moveToken(token, movement, options, user) {
         }, []);
         let enteredAndLeftRegions = [];
         if (!teleport) enteredAndLeftRegions = throughRegions.filter(i => !leavingRegions.includes(i) && !enteringRegions.includes(i) && !stayingRegions.includes(i));
-        if (leavingRegions.length) await new Events.RegionEvent(leavingRegions, 'left', [token]).run();
-        if (enteringRegions.length) await new Events.RegionEvent(enteringRegions, 'enter', [token]).run();
-        if (stayingRegions.length) await new Events.RegionEvent(stayingRegions, 'stay', [token]).run();
-        if (enteredAndLeftRegions.length) await new Events.RegionEvent(enteredAndLeftRegions, 'passedThrough', [token]).run();
+        if (leavingRegions.length) await new Events.RegionEvent(leavingRegions, 'left', {tokens: [token]}).run();
+        if (enteringRegions.length) await new Events.RegionEvent(enteringRegions, 'enter', {tokens: [token]}).run();
+        if (stayingRegions.length) await new Events.RegionEvent(stayingRegions, 'stay', {tokens: [token]}).run();
+        if (enteredAndLeftRegions.length) await new Events.RegionEvent(enteredAndLeftRegions, 'passedThrough', {tokens: [token]}).run();
     }
 }
 export const movementEvents = {

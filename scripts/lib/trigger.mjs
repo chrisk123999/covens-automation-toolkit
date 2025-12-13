@@ -19,125 +19,15 @@ class Trigger {
         this.embeddedMacros = [];
     }
 }
-class ActivityRollTrigger extends Trigger {
+class RollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
         this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.activityRoll ?? [];
-        this.processFnMacros(fnMacroData, 'activityRoll', pass);
+        const fnMacroData = this.document.flags.cat?.macros?.roll ?? [];
+        this.processFnMacros(fnMacroData, 'roll', pass);
     }
     processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('activityRoll', this.pass);
-    }
-}
-class CastRollTrigger extends ActivityRollTrigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.sourceItem = data.sourceItem;
-        const fnMacroData = this.document.flags.cat?.macros?.castRoll ?? [];
-        this.processFnMacros(fnMacroData, 'castRoll', pass);
-    }
-}
-class ItemRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.itemRoll ?? [];
-        this.processFnMacros(fnMacroData, 'itemRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('itemRoll', this.pass);
-    }
-}
-class TokenRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.tokenRoll ?? [];
-        this.processFnMacros(fnMacroData, 'tokenRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('tokenRoll', this.pass);
-    }
-}
-class ActorRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.actorRoll ?? [];
-        this.processFnMacros(fnMacroData, 'actorRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('actorRoll', this.pass);
-    }
-}
-class GroupRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.groupRoll ?? [];
-        this.processFnMacros(fnMacroData, 'groupRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('groupRoll', this.pass);
-    }
-}
-class EncounterRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.encounterRoll ?? [];
-        this.processFnMacros(fnMacroData, 'encounterRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('encounterRoll', this.pass);
-    }
-}
-class VehicleRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.vehicleRoll ?? [];
-        this.processFnMacros(fnMacroData, 'vehicleRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('vehicleRoll', this.pass);
-    }
-}
-class EffectRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.effectRoll ?? [];
-        this.processFnMacros(fnMacroData, 'effectRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('effectRoll', this.pass);
-    }
-}
-class EnchantmentRollTrigger extends EffectRollTrigger {
-
-}
-class RegionRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.regionRoll ?? [];
-        this.processFnMacros(fnMacroData, 'regionRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('regionRoll', this.pass);
-    }
-}
-class SceneRollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.sceneRoll ?? [];
-        this.processFnMacros(fnMacroData, 'sceneRoll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('sceneRoll', this.pass);
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('roll', this.pass);
     }
 }
 class MoveTrigger extends Trigger {
@@ -164,7 +54,7 @@ class RegionTrigger extends Trigger {
 }
 class EffectTrigger extends Trigger {
     constructor(document, pass, data) {
-        super(document, pass);
+        super(document, pass, data);
         this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
         this.processFnMacros(fnMacroData, 'effect', pass);
@@ -175,18 +65,7 @@ class EffectTrigger extends Trigger {
 }
 export const Triggers = {
     Trigger,
-    ItemRollTrigger,
-    ActivityRollTrigger,
-    CastRollTrigger,
-    TokenRollTrigger,
-    ActorRollTrigger,
-    GroupRollTrigger,
-    EncounterRollTrigger,
-    VehicleRollTrigger,
-    EffectRollTrigger,
-    EnchantmentRollTrigger,
-    RegionRollTrigger,
-    SceneRollTrigger,
+    RollTrigger,
     MoveTrigger,
     RegionTrigger,
     EffectTrigger
