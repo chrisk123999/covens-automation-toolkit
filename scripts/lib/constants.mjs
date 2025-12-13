@@ -44,7 +44,10 @@ const movementHookNames = {
 const effectHookNames = {
     createActiveEffect: 'createActiveEffect',
     deleteActiveEffect: 'deleteActiveEffect',
-    updateActiveEffect: 'updateActiveEffect'
+    updateActiveEffect: 'updateActiveEffect',
+    preCreateActiveEffect: 'preCreateActiveEffect',
+    preDeleteActiveEffect: 'preDeleteActiveEffect',
+    preUpdateActiveEffect: 'preUpdateActiveEffect'
 };
 export const constants = {
     registeredMacros: undefined,

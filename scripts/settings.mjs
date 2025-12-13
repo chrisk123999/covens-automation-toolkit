@@ -17,4 +17,9 @@ export function registerSettings() {
         type: String,
         default: ''
     });
+    addSetting({
+        key: 'displayDebugLogs',
+        type: Boolean,
+        default: true // Change this to false eventually.
+    });
 }

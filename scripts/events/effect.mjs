@@ -15,8 +15,23 @@ async function updateActiveEffect(effect, updates, options, userId) {
     if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
     await new Events.EffectEvent(effect, 'updated', {options, updates}).run();
 }
+function preCreateActiveEffect(effect, updates, options, userId) {
+    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    new Events.EffectEvent(effect, 'preCreated', {options, updates}).runSync();
+}
+function preDeleteActiveEffect(effect, updates, options, userId) {
+    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    new Events.EffectEvent(effect, 'preDeleted', {options, updates}).runSync();
+}
+function preUpdateActiveEffect(effect, updates, options, userId) {
+    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    new Events.EffectEvent(effect, 'preUpdated', {options, updates}).runSync();
+}
 export const effectEvents = {
     createActiveEffect,
     deleteActiveEffect,
-    updateActiveEffect
+    updateActiveEffect,
+    preCreateActiveEffect,
+    preDeleteActiveEffect,
+    preUpdateActiveEffect
 };

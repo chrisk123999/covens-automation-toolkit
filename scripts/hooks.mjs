@@ -18,4 +18,7 @@ export function registerHooks() {
     Hooks.on(constants.effectHookNames.createActiveEffect, effectEvents.createActiveEffect);
     Hooks.on(constants.effectHookNames.deleteActiveEffect, effectEvents.deleteActiveEffect);
     Hooks.on(constants.effectHookNames.updateActiveEffect, effectEvents.updateActiveEffect);
+    Hooks.on(constants.effectHookNames.preCreateActiveEffect, effectEvents.preCreateActiveEffect);
+    Hooks.on(constants.effectHookNames.preDeleteActiveEffect, effectEvents.preDeleteActiveEffect);
+    Hooks.on(constants.effectHookNames.preUpdateActiveEffect, effectEvents.preUpdateActiveEffect);
 }
