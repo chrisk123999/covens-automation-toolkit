@@ -1,0 +1,22 @@
+import {queryUtils} from '../utils.mjs';
+import {Events} from '../lib.mjs';
+async function createActiveEffect(effect, options, userId) {
+    if (!queryUtils.isTheGM()) return;
+    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    await new Events.EffectEvent(effect, 'created', options).run();
+}
+async function deleteActiveEffect(effect, options, userId) {
+    if (!queryUtils.isTheGM()) return;
+    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    await new Events.EffectEvent(effect, 'deleted', options).run();
+}
+async function updateActiveEffect(effect, updates, options, userId) {
+    if (!queryUtils.isTheGM()) return;
+    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    await new Events.EffectEvent(effect, 'updated', {options, updates}).run();
+}
+export const effectEvents = {
+    createActiveEffect,
+    deleteActiveEffect,
+    updateActiveEffect
+};

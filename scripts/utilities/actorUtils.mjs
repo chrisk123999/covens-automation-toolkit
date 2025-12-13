@@ -19,6 +19,12 @@ function getEncounters(actor) {
 function getVehicles(actor, {position = 'all'} = {}) {
     return game.actors.filter(a => a.type === 'vehicle' && ((position === 'all' || position === 'crew') && a.system.crew.value.includes(actor.uuid) || ((position === 'all' || position === 'passenger') && a.system.passengers.value.includes(actor.uuid))));
 }
+function getTokens(actor) {
+    return actor.getActiveTokens();
+}
+function getFirstToken(actor) {
+    return getTokens(actor)?.[0]?.document;
+}
 export const actorUtils = {
     getCastData,
     getEffects,
@@ -26,5 +32,7 @@ export const actorUtils = {
     getSavedCastData,
     getEncounterMembers,
     getEncounters,
-    getVehicles
+    getVehicles,
+    getTokens,
+    getFirstToken
 };

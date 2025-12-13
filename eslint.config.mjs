@@ -38,7 +38,9 @@ export default defineConfig([
                 foundry: 'writable',
                 game: 'writable',
                 TokenDocument: 'writable',
-                CONFIG: 'writable'
+                CONFIG: 'writable',
+                Actor: 'writable',
+                Item: 'writable'
             },
 
             ecmaVersion: 'latest',

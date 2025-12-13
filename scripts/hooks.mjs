@@ -1,5 +1,5 @@
 import {constants} from './lib.mjs';
-import {workflowEvents, movementEvents} from './event.mjs';
+import {workflowEvents, movementEvents, effectEvents} from './event.mjs';
 export function registerHooks() {
     // Workflow Events
     Hooks.on(constants.workflowHookNames.preTargeting, workflowEvents.preTargeting);
@@ -14,4 +14,8 @@ export function registerHooks() {
     Hooks.on(constants.workflowHookNames.rollFinished, workflowEvents.rollFinished);
     // Movement Events
     Hooks.on(constants.movementHookNames.moveToken, movementEvents.moveToken);
+    // Effect Events
+    Hooks.on(constants.effectHookNames.createActiveEffect, effectEvents.createActiveEffect);
+    Hooks.on(constants.effectHookNames.deleteActiveEffect, effectEvents.deleteActiveEffect);
+    Hooks.on(constants.effectHookNames.updateActiveEffect, effectEvents.updateActiveEffect);
 }

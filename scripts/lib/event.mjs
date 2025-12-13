@@ -155,7 +155,7 @@ class BaseWorkflowEvent extends CatEvent {
                 if (castActivity && CatEvent.hasCatFlag(castActivity)) triggers.push(new Triggers.CastRollTrigger(castActivity, this.pass, {sourceItem: this.item}));
             }
         }
-        if (this.actor && CatEvent.hasCatFlag(this.actor)) triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
+        if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
         if (this.token) {
             if (CatEvent.hasCatFlag(this.token)) triggers.push(new Triggers.TokenRollTrigger(this.token, 'token' + this.pass.capitalize()));
             this.scene = this.token.parent;
@@ -297,7 +297,7 @@ class TokenMovementEvent extends CatEvent {
         return triggers;
     }
 }
-class RegionTokenEvent extends CatEvent {
+class RegionEvent extends CatEvent {
     constructor(regions, pass, tokens) {
         super(pass);
         this.regions = regions;
@@ -317,10 +317,90 @@ class RegionTokenEvent extends CatEvent {
         data.tokens = this.tokens;
     }
 }
+class EffectEvent extends CatEvent {
+    constructor(effect, pass, {options, updates}) {
+        super(pass);
+        this.effect = effect;
+        this.name = 'Effect';
+        if (effect.parent instanceof Actor) {
+            this.actor = effect.parent;
+        }
+        if (effect.parent instanceof Item) {
+            this.item = effect.parent;
+            this.actor = this.item.actor;
+        }
+        this.token = actorUtils.getFirstToken(this.actor);
+        if (this.token) {
+            this.scene = this.token.parent;
+            this.regions = this.token.regions;
+        }
+        this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
+        this.options = options;
+        this.updates = updates;
+    }
+    getActorTriggers(actor, pass) {
+        let triggers = [];
+        actor.items.forEach(item => {
+            if (CatEvent.hasCatFlag(item)) triggers.push(new Triggers.EffectTrigger(item, pass));
+            item.effects.filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
+                triggers.push(new Triggers.EffectTrigger(effect, pass));
+            });
+            item.system.activities?.contents?.filter(activity => CatEvent.hasCatFlag(activity)).forEach(activity => {
+                triggers.push(new Triggers.EffectTrigger(activity, pass));
+            });
+        });
+        actorUtils.getGroups(actor).forEach(group => {
+            if (CatEvent.hasCatFlag(group)) triggers.push(new Triggers.EffectTrigger(group, pass));
+        });
+        actorUtils.getEncounters(actor).forEach(encounter => {
+            if (CatEvent.hasCatFlag(encounter)) triggers.push(new Triggers.EffectTrigger(encounter, pass));
+        });
+        actorUtils.getVehicles(actor).forEach(vehicle => {
+            if (CatEvent.hasCatFlag(vehicle)) triggers.push(new Triggers.EffectTrigger(vehicle, pass));
+        });
+        return triggers;
+    }
+    get unsortedTriggers() {
+        let triggers = [];
+        if (CatEvent.hasCatFlag(this.effect)) triggers.push(new Triggers.EffectTrigger(this.effect, this.pass));
+        triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
+        if (this.scene) {
+            if (CatEvent.hasCatFlag(this.scene)) triggers.push(new Triggers.EffectTrigger(this.scene, 'scene' + this.pass.capitalize()));
+            this.scene.tokens.forEach(token => {
+                if (!token.actor) return;
+                if (CatEvent.hasCatFlag(token)) triggers.push(new Triggers.EffectTrigger(token, 'scene' + this.pass.capitalize()));
+                triggers.push(...this.getActorTriggers(token.actor, 'scene' + this.pass.capitalize()));
+            });
+        }
+        if (this.regions) {
+            this.regions.filter(region => RegionEvent.hasCatFlag(region)).forEach(region => {
+                triggers.push(new Triggers.EffectTrigger(region, 'region' + this.pass.capitalize()));
+            });
+        }
+        return triggers;
+    }
+    appendData(data) {
+        data = super.appendData(data);
+        data.item = this.item;
+        data.actor = this.actor;
+        data.token = this.token;
+        data.regions = this.regions;
+        data.scene = this.regions;
+        data.groups = this.groups;
+        data.vehicles = this.vehicles;
+        data.encounters = this.encounters;
+        data.options = this.options;
+        data.updates = this.updates;
+        return data;
+    }
+}
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
     TokenDamageWorkflowEvent,
     TokenMovementEvent,
-    RegionTokenEvent
+    RegionEvent,
+    EffectEvent
 };

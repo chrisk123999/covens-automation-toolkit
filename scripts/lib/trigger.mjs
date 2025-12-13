@@ -231,6 +231,17 @@ class RegionTrigger extends Trigger {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('region', this.pass);
     }
 }
+class EffectTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document);
+        this.name = this.document.name.slugify();
+        const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
+        this.processFnMacros(fnMacroData, 'effect', pass);
+    }
+    processEmbeddedMacro() {
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('effect', this.pass);
+    }
+}
 export const Triggers = {
     ItemRollTrigger,
     ActivityRollTrigger,
@@ -252,5 +263,6 @@ export const Triggers = {
     EffectMoveTrigger,
     EnchantmentMoveTrigger,
     GroupMoveTrigger,
-    RegionTrigger
+    RegionTrigger,
+    EffectTrigger
 };

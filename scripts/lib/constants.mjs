@@ -41,11 +41,17 @@ const movementPasses = {
 const movementHookNames = {
     moveToken: 'moveToken'
 };
+const effectHookNames = {
+    createActiveEffect: 'createActiveEffect',
+    deleteActiveEffect: 'deleteActiveEffect',
+    updateActiveEffect: 'updateActiveEffect'
+};
 export const constants = {
     registeredMacros: undefined,
     automations: undefined,
     workflowPasses,
     workflowHookNames,
     movementPasses,
-    movementHookNames
+    movementHookNames,
+    effectHookNames
 };
