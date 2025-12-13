@@ -10,9 +10,9 @@ function getSaveDC(item) {
 }
 function getSavedCastData(item) {
     return {
-        castLevel: document.flags?.cat?.castData?.castLevel ?? -1,
-        baseLevel: document.flags?.cat?.castData?.baseLevel ?? -1,
-        saveDC: getSaveDC(document)
+        castLevel: item.flags.cat?.castData?.castLevel ?? -1,
+        baseLevel: item.flags.cat?.castData?.baseLevel ?? -1,
+        saveDC: getSaveDC(item)
     };
 }
 export const itemUtils = {

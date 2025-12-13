@@ -4,9 +4,9 @@ function getSaveDC(activity) {
 }
 function getSavedCastData(activity) {
     return {
-        castLevel: document.flags?.cat?.castData?.castLevel ?? -1,
-        baseLevel: document.flags?.cat?.castData?.baseLevel ?? -1,
-        saveDC: getSaveDC(document)
+        castLevel: activity.flags.cat?.castData?.castLevel ?? -1,
+        baseLevel: activity.flags.cat?.castData?.baseLevel ?? -1,
+        saveDC: getSaveDC(activity)
     };
 }
 export const activityUtils = {

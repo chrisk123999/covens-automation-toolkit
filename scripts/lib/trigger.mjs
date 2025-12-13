@@ -23,7 +23,7 @@ class ActivityRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
         this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags?.cat?.macros?.activityRoll ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.activityRoll ?? [];
         this.processFnMacros(fnMacroData, 'activityRoll', pass);
     }
     processEmbeddedMacro() {
@@ -34,7 +34,7 @@ class CastRollTrigger extends ActivityRollTrigger {
     constructor(document, pass, data) {
         super(document, pass, data);
         this.sourceItem = data.sourceItem;
-        const fnMacroData = this.document.flags?.cat?.macros?.castRoll ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.castRoll ?? [];
         this.processFnMacros(fnMacroData, 'castRoll', pass);
     }
 }
@@ -91,6 +91,17 @@ class EncounterRollTrigger extends Trigger {
     }
     processEmbeddedMacro() {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('encounterRoll', this.pass);
+    }
+}
+class VehicleRollTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        this.name = this.document.name.slugify();
+        const fnMacroData = this.document.flags.cat?.macros?.vehicleRoll ?? [];
+        this.processFnMacros(fnMacroData, 'vehicleRoll', pass);
+    }
+    processEmbeddedMacro() {
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('vehicleRoll', this.pass);
     }
 }
 class EffectRollTrigger extends Trigger {
@@ -228,6 +239,7 @@ export const Triggers = {
     ActorRollTrigger,
     GroupRollTrigger,
     EncounterRollTrigger,
+    VehicleRollTrigger,
     EffectRollTrigger,
     EnchantmentRollTrigger,
     RegionRollTrigger,

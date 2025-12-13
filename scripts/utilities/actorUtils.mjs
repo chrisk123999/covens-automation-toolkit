@@ -16,11 +16,15 @@ async function getEncounterMembers(actor) {
 function getEncounters(actor) {
     return game.actors.filter(a => a.type === 'encounter' && a.system.members.uuids.has(actor.uuid));
 }
+function getVehicles(actor, {position = 'all'} = {}) {
+    return game.actors.filter(a => a.type === 'vehicle' && ((position === 'all' || position === 'crew') && a.system.crew.value.includes(actor.uuid) || ((position === 'all' || position === 'passenger') && a.system.passengers.value.includes(actor.uuid))));
+}
 export const actorUtils = {
     getCastData,
     getEffects,
     getGroups,
     getSavedCastData,
     getEncounterMembers,
-    getEncounters
+    getEncounters,
+    getVehicles
 };

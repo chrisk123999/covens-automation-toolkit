@@ -2,7 +2,7 @@ import {Logging} from '../lib.mjs';
 export class EmbeddedMacros {
     constructor(document) {
         this.document = document;
-        this.embeddedMacros = document?.flags?.cat?.embeddedMacros ?? [];
+        this.embeddedMacros = document.flags.cat?.embeddedMacros ?? [];
     }
     getMacros(event, pass) {
         return this.embeddedMacros.filter(macro => macro.event === event && macro.pass === pass);

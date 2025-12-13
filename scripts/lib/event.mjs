@@ -66,7 +66,7 @@ class CatEvent {
         return [];
     }
     static hasCatFlag(document) {
-        return !!document?.flags?.cat;
+        return !!document.flags.cat;
     }
     async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
@@ -136,7 +136,9 @@ class BaseWorkflowEvent extends CatEvent {
         actorUtils.getEncounters(actor).forEach(encounter => {
             if (CatEvent.hasCatFlag(encounter)) triggers.push(new Triggers.EncounterRollTrigger(encounter, pass, {sourceToken}));
         });
-        //TODO: Vehicles.
+        actorUtils.getVehicles(actor).forEach(vehicle => {
+            if (CatEvent.hasCatFlag(vehicle)) triggers.push(new Triggers.VehicleRollTrigger(vehicle, pass, {sourceToken}));
+        });
         return triggers;
     }
     get unsortedTriggers() {
@@ -147,7 +149,7 @@ class BaseWorkflowEvent extends CatEvent {
             this.item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
                 triggers.push(new Triggers.EnchantmentRollTrigger(effect, this.pass));
             });
-            const cachedForUuid = this.item.flags?.dnd5e?.cachedFor;
+            const cachedForUuid = this.item.flags.dnd5e?.cachedFor;
             if (cachedForUuid && this.actor) {
                 const castActivity = fromUuidSync(cachedForUuid, {relative: this.actor});
                 if (castActivity && CatEvent.hasCatFlag(castActivity)) triggers.push(new Triggers.CastRollTrigger(castActivity, this.pass, {sourceItem: this.item}));
@@ -198,6 +200,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         this.targets = workflow.targets;
         this.groups = this.actor ? actorUtils.getGroups(this.actor) : undefined;
         this.encounters = this.actor ? actorUtils.getEncounters(this.actor) : undefined;
+        this.vehicles = this.actor ? actorUtils.getVehicles(this.actor) : undefined;
     }
     appendData(data) {
         data.workflow = this.workflow;
@@ -209,6 +212,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         data.regions = this.regions;
         data.groups = this.groups;
         data.encounters = this.encounters;
+        data.vehicles = this.vehicles;
         return data;
     }
 }
