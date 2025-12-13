@@ -9,6 +9,9 @@ Hooks.once('init', () => {
     registerHooks();
 });
 Hooks.once('ready', () => {
+    if (game.user.isGM) {
+        game.settings.set('cat', 'gmID', game.user.id);
+    }
     lib.constants.registeredMacros = new lib.Macros.RegisteredMacros();
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
     lib.constants.registeredMacros.registerFnMacro(test);

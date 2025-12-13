@@ -46,7 +46,7 @@ async function rollFinished(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.cleanup, workflow).run();
 }
-export const midiEvents = {
+export const workflowEvents = {
     preTargeting,
     preItemRoll,
     preambleComplete,

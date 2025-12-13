@@ -113,6 +113,7 @@ class CatEvent {
 class BaseWorkflowEvent extends CatEvent {
     constructor(pass) {
         super(pass);
+        this.name = 'Workflow';
     }
     getActorTriggers(actor, pass, sourceToken) {
         let triggers = [];
@@ -130,8 +131,12 @@ class BaseWorkflowEvent extends CatEvent {
             triggers.push(new Triggers.EffectRollTrigger(effect, pass, {sourceToken}));
         });
         actorUtils.getGroups(actor).forEach(group => {
-            if (CatEvent.hasCatFlag(group)) triggers.push(new Triggers.GroupRollTrigger(group, pass));
+            if (CatEvent.hasCatFlag(group)) triggers.push(new Triggers.GroupRollTrigger(group, pass, {sourceToken}));
         });
+        actorUtils.getEncounters(actor).forEach(encounter => {
+            if (CatEvent.hasCatFlag(encounter)) triggers.push(new Triggers.EncounterRollTrigger(encounter, pass, {sourceToken}));
+        });
+        //TODO: Vehicles.
         return triggers;
     }
     get unsortedTriggers() {
@@ -192,6 +197,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         this.regions = workflow.token?.document?.regions;
         this.targets = workflow.targets;
         this.groups = this.actor ? actorUtils.getGroups(this.actor) : undefined;
+        this.encounters = this.actor ? actorUtils.getEncounters(this.actor) : undefined;
     }
     appendData(data) {
         data.workflow = this.workflow;
@@ -202,6 +208,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         data.scene = this.scene;
         data.regions = this.regions;
         data.groups = this.groups;
+        data.encounters = this.encounters;
         return data;
     }
 }
@@ -246,6 +253,7 @@ class TokenMovementEvent extends CatEvent {
         this.actor = token.actor;
         this.scene = token.parent;
         this.groups = actorUtils.getGroups(this.actor);
+        this.name = 'Movement';
     }
     appendData(data) {
         data = super.appendData(data);
@@ -281,12 +289,34 @@ class TokenMovementEvent extends CatEvent {
             if (CatEvent.hasCatFlag(token)) triggers.push(new Triggers.TokenMoveTrigger(token, 'scene' + this.pass.capitalize(), token));
             triggers.push(...this.getActorTriggers(token.actor, 'scene' + this.pass.capitalize(), token));
         });
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
+    }
+}
+class RegionTokenEvent extends CatEvent {
+    constructor(regions, pass, tokens) {
+        super(pass);
+        this.regions = regions;
+        this.tokens = tokens;
+        this.name = 'Region';
+    }
+    get unsortedTriggers() {
+        let triggers = [];
+        this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
+            triggers.push(new Triggers.RegionTrigger(region, this.pass, {tokens: this.tokens}));
+        });
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+        return triggers;
+    }
+    appendData(data) {
+        data = super.appendData(data);
+        data.tokens = this.tokens;
     }
 }
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
     TokenDamageWorkflowEvent,
-    TokenMovementEvent
+    TokenMovementEvent,
+    RegionTokenEvent
 };

@@ -1,14 +1,17 @@
-import {midiEvents} from './events/midi.mjs';
 import {constants} from './lib.mjs';
+import {workflowEvents, movementEvents} from './event.mjs';
 export function registerHooks() {
-    Hooks.on(constants.workflowHookNames.preTargeting, midiEvents.preTargeting);
-    Hooks.on(constants.workflowHookNames.preItemRoll, midiEvents.preItemRoll);
-    Hooks.on(constants.workflowHookNames.preambleComplete, midiEvents.preambleComplete);
-    Hooks.on(constants.workflowHookNames.postAttackRoll, midiEvents.postAttackRoll);
-    Hooks.on(constants.workflowHookNames.attackRollComplete, midiEvents.attackRollComplete);
-    Hooks.on(constants.workflowHookNames.savesComplete, midiEvents.savesComplete);
-    Hooks.on(constants.workflowHookNames.damageRollComplete, midiEvents.damageRollComplete);
-    Hooks.on(constants.workflowHookNames.utilityRollComplete, midiEvents.utilityRollComplete);
-    Hooks.on(constants.workflowHookNames.preTargetDamageApplication, midiEvents.preTargetDamageApplication);
-    Hooks.on(constants.workflowHookNames.rollFinished, midiEvents.rollFinished);
+    // Workflow Events
+    Hooks.on(constants.workflowHookNames.preTargeting, workflowEvents.preTargeting);
+    Hooks.on(constants.workflowHookNames.preItemRoll, workflowEvents.preItemRoll);
+    Hooks.on(constants.workflowHookNames.preambleComplete, workflowEvents.preambleComplete);
+    Hooks.on(constants.workflowHookNames.postAttackRoll, workflowEvents.postAttackRoll);
+    Hooks.on(constants.workflowHookNames.attackRollComplete, workflowEvents.attackRollComplete);
+    Hooks.on(constants.workflowHookNames.savesComplete, workflowEvents.savesComplete);
+    Hooks.on(constants.workflowHookNames.damageRollComplete, workflowEvents.damageRollComplete);
+    Hooks.on(constants.workflowHookNames.utilityRollComplete, workflowEvents.utilityRollComplete);
+    Hooks.on(constants.workflowHookNames.preTargetDamageApplication, workflowEvents.preTargetDamageApplication);
+    Hooks.on(constants.workflowHookNames.rollFinished, workflowEvents.rollFinished);
+    // Movement Events
+    Hooks.on(constants.movementHookNames.moveToken, movementEvents.moveToken);
 }

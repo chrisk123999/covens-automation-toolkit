@@ -82,6 +82,17 @@ class GroupRollTrigger extends Trigger {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('groupRoll', this.pass);
     }
 }
+class EncounterRollTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        this.name = this.document.name.slugify();
+        const fnMacroData = this.document.flags.cat?.macros?.encounterRoll ?? [];
+        this.processFnMacros(fnMacroData, 'encounterRoll', pass);
+    }
+    processEmbeddedMacro() {
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('encounterRoll', this.pass);
+    }
+}
 class EffectRollTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
@@ -198,6 +209,17 @@ class GroupMoveTrigger extends Trigger {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('groupMove', this.pass);
     }
 }
+class RegionTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        this.name = this.document.name.slugify();
+        const fnMacroData = this.document.flags.cat?.macros?.region ?? [];
+        this.processFnMacros(fnMacroData, 'region', pass);
+    }
+    processEmbeddedMacro() {
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('region', this.pass);
+    }
+}
 export const Triggers = {
     ItemRollTrigger,
     ActivityRollTrigger,
@@ -205,6 +227,7 @@ export const Triggers = {
     TokenRollTrigger,
     ActorRollTrigger,
     GroupRollTrigger,
+    EncounterRollTrigger,
     EffectRollTrigger,
     EnchantmentRollTrigger,
     RegionRollTrigger,
@@ -216,5 +239,6 @@ export const Triggers = {
     SceneMoveTrigger,
     EffectMoveTrigger,
     EnchantmentMoveTrigger,
-    GroupMoveTrigger
+    GroupMoveTrigger,
+    RegionTrigger
 };

@@ -38,10 +38,14 @@ const workflowHookNames = {
 const movementPasses = {
     moved: 'moved'
 };
+const movementHookNames = {
+    moveToken: 'moveToken'
+};
 export const constants = {
     registeredMacros: undefined,
     automations: undefined,
     workflowPasses,
     workflowHookNames,
-    movementPasses
+    movementPasses,
+    movementHookNames
 };
