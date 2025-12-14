@@ -23,4 +23,6 @@ export function registerHooks() {
     Hooks.on(constants.effectHookNames.preUpdateActiveEffect, effectEvents.preUpdateActiveEffect);
     // Combat Events
     Hooks.on(constants.combatHookNames.updateCombat, combatEvents.updateCombat);
+    Hooks.on(constants.combatHookNames.combatStart, combatEvents.combatStart);
+    Hooks.on(constants.combatHookNames.deleteCombat, combatEvents.deleteCombat);
 }

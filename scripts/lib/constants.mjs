@@ -50,7 +50,9 @@ const effectHookNames = {
     preUpdateActiveEffect: 'preUpdateActiveEffect'
 };
 const combatHookNames = {
-    updateCombat: 'updateCombat'
+    updateCombat: 'updateCombat',
+    combatStart: 'combatStart',
+    deleteCombat: 'deleteCombat'
 };
 export const constants = {
     registeredMacros: undefined,

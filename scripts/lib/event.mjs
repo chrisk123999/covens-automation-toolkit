@@ -141,7 +141,7 @@ class CatEvent {
         return [];
     }
     static hasCatFlag(document) {
-        return !!document.flags.cat;
+        return !!(document.flags.cat?.macros || document.flags.cat?.embeddedMacros);
     }
     async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
@@ -440,7 +440,7 @@ class EffectEvent extends CatEvent {
         return data;
     }
 }
-class SingleCombatEvent extends CatEvent {
+class CombatEvent extends CatEvent {
     constructor(combat, pass, token, {context, combatant, previousCombatant, round, turn, previousRound, previousTurn}) {
         super(pass);
         this.name = 'Combat';
@@ -491,26 +491,6 @@ class SingleCombatEvent extends CatEvent {
         return data;
     }
 }
-class MultiCombatEvent extends CatEvent {
-    constructor(combat, pass, tokens, {context, combatant, previousCombatant, round, turn, previousRound, previousTurn}) {
-        super(pass);
-        this.name = 'Combat';
-        this.trigger = Triggers.CombatTrigger;
-        this.combat = combat;
-        this.combatant = combatant;
-        this.previousCombatant = previousCombatant;
-        this.tokens = tokens;
-        this.round = round;
-        this.turn = turn;
-        this.previousRound = previousRound;
-        this.previousTurn = previousTurn;
-    }
-    get unsortedTriggers() {
-        let triggers = [];
-
-        return triggers;
-    }
-}
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
@@ -518,5 +498,5 @@ export const Events = {
     MovementEvent,
     RegionEvent,
     EffectEvent,
-    SingleCombatEvent
+    CombatEvent
 };
