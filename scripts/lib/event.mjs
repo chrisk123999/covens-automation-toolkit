@@ -440,12 +440,14 @@ class EffectEvent extends CatEvent {
         return data;
     }
 }
-class CombatEvent extends CatEvent {
-    constructor(combat, pass, token, {options}) {
+class SingleCombatEvent extends CatEvent {
+    constructor(combat, pass, token, {context, combatant, previousCombatant, round, turn, previousRound, previousTurn}) {
         super(pass);
         this.name = 'Combat';
-        this.trigger;
+        this.trigger = Triggers.CombatTrigger;
         this.combat = combat;
+        this.combatant = combatant;
+        this.previousCombatant = previousCombatant;
         this.token = token;
         this.actor = token.actor;
         this.regions = token.regions;
@@ -453,9 +455,61 @@ class CombatEvent extends CatEvent {
         this.groups = actorUtils.getGroups(this.actor);
         this.encounters = actorUtils.getEncounters(this.actor);
         this.vehicles = actorUtils.getVehicles(this.actor);
-        this.options = options;
+        this.context = context;
+        this.round = round;
+        this.turn = turn;
+        this.previousRound = previousRound;
+        this.previousTurn = previousTurn;
     }
-    
+    get unsortedTriggers() {
+        let triggers = [];
+        triggers.push(...this.getActorTriggers(this.actor, this.pass));
+        if (this.scene) {
+            triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+        }
+        if (this.regions) {
+            this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
+                triggers.push(new Triggers.EffectTrigger(region, 'region' + this.pass.capitalize()));
+            });
+        }
+        this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
+        this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
+        this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
+        triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+        return triggers;
+    }
+    appendData(data) {
+        data = super.appendData(data);
+        data.context = this.context;
+        data.combatant = this.combatant;
+        data.previousCombatant = this.previousCombatant;
+        data.round = this.round;
+        data.turn = this.turn;
+        data.previousRound = this.previousRound;
+        data.previousTurn = this.previousTurn;
+        return data;
+    }
+}
+class MultiCombatEvent extends CatEvent {
+    constructor(combat, pass, tokens, {context, combatant, previousCombatant, round, turn, previousRound, previousTurn}) {
+        super(pass);
+        this.name = 'Combat';
+        this.trigger = Triggers.CombatTrigger;
+        this.combat = combat;
+        this.combatant = combatant;
+        this.previousCombatant = previousCombatant;
+        this.tokens = tokens;
+        this.round = round;
+        this.turn = turn;
+        this.previousRound = previousRound;
+        this.previousTurn = previousTurn;
+    }
+    get unsortedTriggers() {
+        let triggers = [];
+
+        return triggers;
+    }
 }
 export const Events = {
     WorkflowEvent,
@@ -463,5 +517,6 @@ export const Events = {
     TokenDamageWorkflowEvent,
     MovementEvent,
     RegionEvent,
-    EffectEvent
+    EffectEvent,
+    SingleCombatEvent
 };

@@ -16,8 +16,8 @@ async function getEncounterMembers(actor) {
 function getEncounters(actor) {
     return game.actors.filter(a => a.type === 'encounter' && a.system.members.uuids.has(actor.uuid));
 }
-function getVehicles(actor, {positions = ['crew', 'cargo', 'draft']} = {}) {
-    return game.actors.filter(a => a.type === 'vehicle' && ((positions.includes('crew') && a.system.crew.value.includes(actor.uuid)) || ((positions.includes('cargo') && a.system.cargo.value.includes(actor.uuid)) || ((positions.includes('draft') && a.system.draft.value.includes(actor.uuid))))));
+function getVehicles(actor, {positions = ['crew', 'passenger', 'draft']} = {}) {
+    return game.actors.filter(a => a.type === 'vehicle' && ((positions.includes('crew') && a.system.crew.value.includes(actor.uuid)) || ((positions.includes('passenger') && a.system.passengers.value.includes(actor.uuid)) || ((positions.includes('draft') && a.system.draft.value.includes(actor.uuid))))));
 }
 function getTokens(actor) {
     return actor.getActiveTokens();

@@ -49,6 +49,9 @@ const effectHookNames = {
     preDeleteActiveEffect: 'preDeleteActiveEffect',
     preUpdateActiveEffect: 'preUpdateActiveEffect'
 };
+const combatHookNames = {
+    updateCombat: 'updateCombat'
+};
 export const constants = {
     registeredMacros: undefined,
     automations: undefined,
@@ -56,5 +59,6 @@ export const constants = {
     workflowHookNames,
     movementPasses,
     movementHookNames,
-    effectHookNames
+    effectHookNames,
+    combatHookNames
 };

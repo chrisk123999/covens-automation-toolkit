@@ -1,5 +1,5 @@
 import {constants} from './lib.mjs';
-import {workflowEvents, movementEvents, effectEvents} from './event.mjs';
+import {workflowEvents, movementEvents, effectEvents, combatEvents} from './event.mjs';
 export function registerHooks() {
     // Workflow Events
     Hooks.on(constants.workflowHookNames.preTargeting, workflowEvents.preTargeting);
@@ -21,4 +21,6 @@ export function registerHooks() {
     Hooks.on(constants.effectHookNames.preCreateActiveEffect, effectEvents.preCreateActiveEffect);
     Hooks.on(constants.effectHookNames.preDeleteActiveEffect, effectEvents.preDeleteActiveEffect);
     Hooks.on(constants.effectHookNames.preUpdateActiveEffect, effectEvents.preUpdateActiveEffect);
+    // Combat Events
+    Hooks.on(constants.combatHookNames.updateCombat, combatEvents.updateCombat);
 }

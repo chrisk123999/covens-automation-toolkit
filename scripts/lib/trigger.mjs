@@ -63,10 +63,22 @@ class EffectTrigger extends Trigger {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('effect', this.pass);
     }
 }
+class CombatTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        this.name = this.document.name.slugify();
+        const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
+        this.processFnMacros(fnMacroData, 'combat', pass); 
+    }
+    processEmbeddedMacro() {
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('effect', this.pass);
+    }
+}
 export const Triggers = {
     Trigger,
     RollTrigger,
     MoveTrigger,
     RegionTrigger,
-    EffectTrigger
+    EffectTrigger,
+    CombatTrigger
 };
