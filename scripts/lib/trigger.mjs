@@ -16,18 +16,29 @@ class Trigger {
         this.fnMacros = data.map(i => constants.registeredMacros.getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);
     }
     processEmbeddedMacro() {
-        this.embeddedMacros = [];
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros(this.type, this.pass);
+    }
+    processDistanceMacros() {
+        if (this.fnMacros.length) {
+            this.fnMacros.forEach(fnMacro => {
+                fnMacro.macros = fnMacro.macros.map(macro => {
+                    if (!macro.distance && !macro.configDistance) return macro;
+                    const maxDistance = macro.configDistance ? documentUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
+                    const distance = this.distances[this.targetToken.id];
+                    if (maxDistance >= distance) return macro;
+                    return false;
+                }).filter(i => i);
+            });
+        }
     }
 }
 class RollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
+    constructor(document, pass, data, distances) {
+        super(document, pass, data, distances);
         this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.roll ?? [];
         this.processFnMacros(fnMacroData, 'roll', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('roll', this.pass);
+        if (this.distances) this.processDistanceMacros();
     }
 }
 class MoveTrigger extends Trigger {
@@ -36,9 +47,7 @@ class MoveTrigger extends Trigger {
         this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.move ?? [];
         this.processFnMacros(fnMacroData, 'move', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('move', this.pass);
+        this.type = 'move';
     }
 }
 class RegionTrigger extends Trigger {
@@ -47,9 +56,7 @@ class RegionTrigger extends Trigger {
         this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.region ?? [];
         this.processFnMacros(fnMacroData, 'region', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('region', this.pass);
+        this.type = 'region';
     }
 }
 class EffectTrigger extends Trigger {
@@ -58,9 +65,7 @@ class EffectTrigger extends Trigger {
         this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
         this.processFnMacros(fnMacroData, 'effect', pass);
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('effect', this.pass);
+        this.type = 'effect';
     }
 }
 class CombatTrigger extends Trigger {
@@ -68,10 +73,8 @@ class CombatTrigger extends Trigger {
         super(document, pass, data);
         this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
-        this.processFnMacros(fnMacroData, 'combat', pass); 
-    }
-    processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros('effect', this.pass);
+        this.processFnMacros(fnMacroData, 'combat', pass);
+        this.type = 'combat';
     }
 }
 export const Triggers = {

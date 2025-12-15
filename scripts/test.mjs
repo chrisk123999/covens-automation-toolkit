@@ -4,6 +4,10 @@ async function use(trigger) {
 async function target() {
     console.log('test 1');
 }
+async function nearby(trigger) {
+    console.log('it worked!');
+    console.log(trigger);
+}
 export let test = {
     source: 'cat',
     identifier: 'test',
@@ -18,6 +22,12 @@ export let test = {
             pass: 'targetRollFinished',
             macro: target,
             priority: 50
+        },
+        {
+            pass: 'nearbyRollFinished',
+            macro: nearby,
+            priority: 50,
+            distance: 60
         }
     ],
     move: [

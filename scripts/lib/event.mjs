@@ -82,6 +82,15 @@ class CatEvent {
         });
         return triggers;
     }
+    getNearbyTriggers(scene, pass, data) {
+        const triggers = [];
+        scene.tokens.forEach(token => {
+            if (!token.actor) return;
+            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {targetToken: token, distances: this.distances}));
+            triggers.push(...this.getActorTriggers(token.actor, pass, {targetToken: token, distances: this.distances}));
+        });
+        return triggers;
+    }
     get sortedTriggers() {
         const startTime = performance.now();
         let unsortedTriggers = this.unsortedTriggers;
@@ -234,37 +243,38 @@ class BaseWorkflowEvent extends CatEvent {
     }
     get unsortedTriggers() {
         let triggers = [];
-        if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new Triggers.RollTrigger(this.activity, this.pass));
+        if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new this.trigger(this.activity, this.pass));
         if (this.item) {
-            if (CatEvent.hasCatFlag(this.item)) triggers.push(new Triggers.RollTrigger(this.item, this.pass));
+            if (CatEvent.hasCatFlag(this.item)) triggers.push(new this.trigger(this.item, this.pass));
             this.item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
-                triggers.push(new Triggers.RollTrigger(effect, this.pass));
+                triggers.push(new this.trigger(effect, this.pass));
             });
             const cachedForUuid = this.item.flags.dnd5e?.cachedFor;
             if (cachedForUuid && this.actor) {
                 const castActivity = fromUuidSync(cachedForUuid, {relative: this.actor});
-                if (castActivity && CatEvent.hasCatFlag(castActivity)) triggers.push(new Triggers.RollTrigger(castActivity, this.pass, {sourceItem: this.item}));
+                if (castActivity && CatEvent.hasCatFlag(castActivity)) triggers.push(new this.trigger(castActivity, this.pass, {sourceItem: this.item}));
             }
         }
         if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
         if (this.token) {
-            if (CatEvent.hasCatFlag(this.token)) triggers.push(new Triggers.RollTrigger(this.token, 'token' + this.pass.capitalize()));
+            if (CatEvent.hasCatFlag(this.token)) triggers.push(new this.trigger(this.token, 'token' + this.pass.capitalize()));
         }
         if (this.scene) {
             triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+            triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + this.pass.capitalize()));
         }
         if (this.regions) {
             this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-                triggers.push(new Triggers.RollTrigger(region, 'region' + this.pass.capitalize()));
+                triggers.push(new this.trigger(region, 'region' + this.pass.capitalize()));
             });
         }
         if (this.targets?.size) {
             this.targets.forEach(token => {
                 if (!this.actor) return;
-                if (CatEvent.hasCatFlag(token)) triggers.push(new Triggers.RollTrigger(token.document, 'target' + this.pass.capitalize(), token.document));
-                triggers.push(...this.getActorTriggers(token.actor, 'target' + this.pass.capitalize(), {sourceToken: token.document}));
+                if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token.document, 'target' + this.pass.capitalize(), {sourceToken: token.document}, this.distances));
+                triggers.push(...this.getActorTriggers(token.actor, 'target' + this.pass.capitalize(), {sourceToken: token.document}, this.distances));
                 token.document.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-                    triggers.push(new Triggers.RollTrigger(region, 'target' + this.pass.capitalize(), {sourceToken: token.document}));
+                    triggers.push(new this.trigger(region, 'target' + this.pass.capitalize(), {sourceToken: token.document}, this.distances));
                 });
             });
         }
@@ -301,6 +311,10 @@ class WorkflowEvent extends BaseWorkflowEvent {
         this.groups = this.actor ? actorUtils.getGroups(this.actor) : [];
         this.encounters = this.actor ? actorUtils.getEncounters(this.actor) : [];
         this.vehicles = this.actor ? actorUtils.getVehicles(this.actor) : [];
+        if (this.token && this.scene) {
+            this.distances = {};
+            this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+        }
     }
     appendData(data) {
         return {
