@@ -86,8 +86,8 @@ class CatEvent {
         const triggers = [];
         scene.tokens.forEach(token => {
             if (!token.actor) return;
-            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {targetToken: token, distances: this.distances}));
-            triggers.push(...this.getActorTriggers(token.actor, pass, {targetToken: token, distances: this.distances}));
+            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances}));
+            triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances}));
         });
         return triggers;
     }
@@ -374,6 +374,8 @@ class MovementEvent extends CatEvent {
         this.encounters = actorUtils.getEncounters(this.actor);
         this.vehicles = actorUtils.getVehicles(this.actor);
         this.options = options;
+        this.distances = {};
+        this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
     }
     get unsortedTriggers() {
         let triggers = [];
@@ -382,32 +384,8 @@ class MovementEvent extends CatEvent {
         this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
         triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+        triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + this.pass.capitalize()));
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
-        return triggers;
-    }
-}
-class MovementNearEvent extends CatEvent {
-    constructor(token, pass, {options}) {
-        super(pass);
-        this.name = 'Movement Near';
-        this.trigger = Triggers.MoveTrigger;
-        this.token = token;
-        this.actor = token.actor;
-        this.regions = token.regions;
-        this.scene = token.parent;
-        this.groups = actorUtils.getGroups(this.actor);
-        this.encounters = actorUtils.getEncounters(this.actor);
-        this.vehicles = actorUtils.getVehicles(this.actor);
-        this.options = options;
-        this.tokens = this.token.parent.tokens.filter(token => token.actor && ['npc', 'character'].includes(token.actor.type) && token.id != this.token.id);
-        this.distances = {};
-        this.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
-        console.log(this.distances);
-    }
-    get unsortedTriggers() {
-        let triggers = [];
-        //DO this!
-        console.log(triggers);
         return triggers;
     }
 }
@@ -536,7 +514,6 @@ export const Events = {
     PreTargetingWorkflowEvent,
     TokenDamageWorkflowEvent,
     MovementEvent,
-    MovementNearEvent,
     RegionEvent,
     EffectEvent,
     CombatEvent

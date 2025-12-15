@@ -1,4 +1,4 @@
-import {documentUtils} from '../utils.mjs';
+import {documentUtils, genericUtils} from '../utils.mjs';
 import {constants, EmbeddedMacros} from '../lib.mjs';
 class Trigger {
     constructor(document, pass, data) {
@@ -23,9 +23,22 @@ class Trigger {
             this.fnMacros.forEach(fnMacro => {
                 fnMacro.macros = fnMacro.macros.map(macro => {
                     if (!macro.distance && !macro.configDistance) return macro;
-                    const maxDistance = macro.configDistance ? documentUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
                     const distance = this.distances[this.targetToken.id];
+                    if (distance < 0) return false;
+                    const maxDistance = macro.configDistance ? documentUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
                     if (maxDistance >= distance) return macro;
+                    return false;
+                }).filter(i => i);
+            });
+        }
+        if (this.embeddedMacros.length) {
+            this.embeddedMacros.forEach(embeddedMacro => {
+                embeddedMacro.macros = embeddedMacro.macros.map(macro => {
+                    if (!macro.distance) return macro;
+                    const distance = this.distances[this.targetToken.id];
+                    if (distance < 0) return;
+                    const maxDistance = macro.distance;
+                    if (genericUtils.convertDistance(this.scene, maxDistance) >= genericUtils.convertDistance(this.scene, distance)) return macro;
                     return false;
                 }).filter(i => i);
             });
@@ -47,6 +60,7 @@ class MoveTrigger extends Trigger {
         this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.move ?? [];
         this.processFnMacros(fnMacroData, 'move', pass);
+        this.processDistanceMacros();
         this.type = 'move';
     }
 }

@@ -32,9 +32,10 @@ export let test = {
     ],
     move: [
         {
-            pass: 'movedNear',
-            macro: use,
-            priority: 50
+            pass: 'nearbyMoved',
+            macro: nearby,
+            priority: 50,
+            distance: 20
         }
     ]
 };
