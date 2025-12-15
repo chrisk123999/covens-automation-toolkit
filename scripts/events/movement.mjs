@@ -26,6 +26,7 @@ async function moveToken(token, movement, options, user) {
         if (!skipMove) {
             //if (isFinalMovement);//await auras.updateAuras(token, options);
             await new Events.MovementEvent(token, constants.movementPasses.moved, {options}).run();
+            await new Events.MovementNearEvent(token, 'movedNear', {options}).run();
         }
         const moveRay = new foundry.canvas.geometry.Ray(previousCoords, coords);
         const currentRegions = Array.from(token.regions);

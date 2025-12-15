@@ -19,6 +19,13 @@ export let test = {
             macro: target,
             priority: 50
         }
+    ],
+    move: [
+        {
+            pass: 'movedNear',
+            macro: use,
+            priority: 50
+        }
     ]
 };
 export let brokenTest = {

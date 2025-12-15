@@ -36,7 +36,8 @@ const workflowHookNames = {
     rollFinished: 'midi-qol.premades.postRollFinished'
 };
 const movementPasses = {
-    moved: 'moved'
+    moved: 'moved',
+    movedNear: 'movedNear'
 };
 const movementHookNames = {
     moveToken: 'moveToken'
