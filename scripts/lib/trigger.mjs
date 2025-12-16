@@ -52,6 +52,7 @@ class RollTrigger extends Trigger {
         const fnMacroData = this.document.flags.cat?.macros?.roll ?? [];
         this.processFnMacros(fnMacroData, 'roll', pass);
         if (this.distances) this.processDistanceMacros();
+        this.type = 'roll';
     }
 }
 class MoveTrigger extends Trigger {
@@ -79,6 +80,7 @@ class EffectTrigger extends Trigger {
         this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
         this.processFnMacros(fnMacroData, 'effect', pass);
+        if (this.distances) this.processDistanceMacros();
         this.type = 'effect';
     }
 }
@@ -86,8 +88,9 @@ class CombatTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
         this.name = this.document.name.slugify();
-        const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
+        const fnMacroData = this.document.flags.cat?.macros?.combat ?? [];
         this.processFnMacros(fnMacroData, 'combat', pass);
+        if (this.distances) this.processDistanceMacros();
         this.type = 'combat';
     }
 }

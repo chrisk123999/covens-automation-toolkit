@@ -11,7 +11,9 @@ class RegisteredMacros {
             rules: new fields.StringField({required: true, nullable: false}),
             identifier: new fields.StringField({required: true, nullable: false}),
             roll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            move: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
+            move: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            combat: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            effect: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
         });
         this.#multiMacrosSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
     }
@@ -36,7 +38,9 @@ class RegisteredMacros {
         }
         this.fnMacros.push(new FnMacro(data.source, data.identifier, data.rules, {
             roll: data.roll ?? [],
-            move: data.move ?? []
+            move: data.move ?? [],
+            combat: data.combat ?? [],
+            effect: data.effect ?? []
         }));
     }
     registerFnMacros(data = []) {
@@ -50,13 +54,15 @@ class RegisteredMacros {
     // TODO: Overwrite Macros
 }
 class FnMacro {
-    constructor(source, identifier, rules, {roll = [], move = []} = {}) {
+    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = []} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
         this.macros = {
             roll,
-            move
+            move,
+            combat,
+            effect
         };
     }
 }

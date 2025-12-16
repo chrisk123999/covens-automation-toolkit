@@ -1,11 +1,15 @@
 async function use(trigger) {
     console.log(trigger);
 }
-async function target() {
-    console.log('test 1');
+async function target(trigger) {
+    console.log('Target!');
+    console.log(trigger);
 }
 async function nearby(trigger) {
-    console.log('it worked!');
+    console.log('Nearby!');
+    console.log(trigger);
+}
+async function turnStart(trigger) {
     console.log(trigger);
 }
 export let test = {
@@ -33,6 +37,19 @@ export let test = {
     move: [
         {
             pass: 'nearbyMoved',
+            macro: nearby,
+            priority: 50,
+            distance: 20
+        }
+    ],
+    combat: [
+        {
+            pass: 'turnStart',
+            macro: turnStart,
+            priority: 50
+        },
+        {
+            pass: 'nearbyTurnStart',
             macro: nearby,
             priority: 50,
             distance: 20
