@@ -87,8 +87,8 @@ class CatEvent {
         const triggers = [];
         scene.tokens.forEach(token => {
             if (!token.actor) return;
-            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances, dispositions: this.dispositions, token: this.token}));
-            triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances, dispositions: this.dispositions, token: this.token}));
+            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
+            triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
         });
         return triggers;
     }
@@ -541,10 +541,8 @@ class AuraEvent extends CatEvent {
         this.vehicles = actorUtils.getVehicles(this.actor);
         this.options = options;
         this.distances = {};
-        this.dispositions = {};
         this.scene.tokens.forEach(token => {
             this.distances[token.id] = tokenUtils.getDistance(this.token, token);
-            this.dispositions[token.id] = token.disposition;
         });
         this.targetToken = targetToken;
     }
