@@ -1,9 +1,10 @@
-import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, tokenUtils} from '../utils.mjs';
+import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils, itemUtils, regionUtils, tokenUtils} from '../utils.mjs';
 import {Triggers, Logging, constants} from '../lib.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
         this.trigger;
+        this._sortedTriggers;
     }
     appendData(data = {}) {
         return {
@@ -86,12 +87,13 @@ class CatEvent {
         const triggers = [];
         scene.tokens.forEach(token => {
             if (!token.actor) return;
-            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances}));
-            triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances}));
+            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances, dispositions: this.dispositions, token: this.token}));
+            triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances, dispositions: this.dispositions, token: this.token}));
         });
         return triggers;
     }
     get sortedTriggers() {
+        if (this._sortedTriggers) return this._sortedTriggers;
         const startTime = performance.now();
         let unsortedTriggers = this.unsortedTriggers;
         const names = new Set(unsortedTriggers.map(trigger => trigger.name));
@@ -144,7 +146,8 @@ class CatEvent {
         sortedTriggers = sortedTriggers.sort((a, b) => a.priority - b.priority);
         const endTime = performance.now();
         Logging.addEntry('DEBUG', 'Trigger Collection Time: ' + (endTime - startTime) + ' milliseconds');
-        return sortedTriggers;
+        this._sortedTriggers = sortedTriggers;
+        return this._sortedTriggers;
     }
     get unsortedTriggers() {
         return [];
@@ -154,11 +157,12 @@ class CatEvent {
     }
     async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        const results = [];
         for (let trigger of this.sortedTriggers) {
             let result;
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macro.name + ' from ' + trigger.name);
-                await this.executeScript(trigger.macro, trigger);
+                result = await this.executeScript(trigger.macro, trigger);
             } else {
                 Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macro.name + ' from ' + trigger.name);
                 try {
@@ -167,16 +171,18 @@ class CatEvent {
                     Logging.addMacroError(error);
                 }
             }
-            if (result) return result;
+            if (result) results.push(result);
         }
+        return results;
     }
     runSync() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        const results = [];
         for (let trigger of this.sortedTriggers) {
             let result;
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macro.name + ' from ' + trigger.name);
-                this.executeScriptSync(trigger.macro, trigger);
+                result = this.executeScriptSync(trigger.macro, trigger);
             } else {
                 Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macro.name + ' from ' + trigger.name);
                 try {
@@ -185,8 +191,9 @@ class CatEvent {
                     Logging.addMacroError(error);
                 }
             }
-            if (result) return result;
+            if (result) results.push(result);
         }
+        return results;
     }
     async executeScript(script, ...scope) {
         const defaultScope = {
@@ -439,7 +446,6 @@ class EffectEvent extends CatEvent {
         this.vehicles = actorUtils.getVehicles(this.actor);
         this.options = options;
         this.updates = updates;
-
     }
     get unsortedTriggers() {
         let triggers = [];
@@ -521,6 +527,94 @@ class CombatEvent extends CatEvent {
         return data;
     }
 }
+class AuraEvent extends CatEvent {
+    constructor(token, pass, {options, targetToken}) {
+        super(pass);
+        this.name = 'Aura';
+        this.trigger = Triggers.AuraTrigger;
+        this.token = token;
+        this.actor = token.actor;
+        this.regions = token.regions;
+        this.scene = token.parent;
+        this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
+        this.options = options;
+        this.distances = {};
+        this.dispositions = {};
+        this.scene.tokens.forEach(token => {
+            this.distances[token.id] = tokenUtils.getDistance(this.token, token);
+            this.dispositions[token.id] = token.disposition;
+        });
+        this.targetToken = targetToken;
+    }
+    async run() {
+        Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        const removedEffects = [];
+        const effects = actorUtils.getEffects(this.actor).filter(effect => effect.flags.cat?.auraEffect);
+        await Promise.all(effects.map(async effect => {
+            let identifier = documentUtils.getIdentifier(effect);
+            if (!identifier) {
+                removedEffects.push(effect);
+                return;
+            }
+            let origin = await fromUuid(effect.origin);
+            if (!origin) {
+                removedEffects.push(effect);
+                return;
+            }
+            let originIdentifier = documentUtils.getIdentifier(origin);
+            if (!originIdentifier) {
+                removedEffects.push(effect);
+                return;
+            }
+            const trigger = this.sortedTriggers.find(trigger => trigger.identifier === originIdentifier);
+            if (!trigger) {
+                removedEffects.push(effect);
+                return;
+            }
+            if (trigger.document.uuid != effect.origin) removedEffects.push(effect);
+        }));
+        if (removedEffects.length) await documentUtils.deleteEmbeddedDocuments(this.actor, 'ActiveEffect', removedEffects.map(effect => effect.id));
+        const effectDatas = [];
+        const results = [];
+        for (let trigger of this.sortedTriggers) {
+            let result;
+            if (typeof trigger.macro === 'string') {
+                Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+                result = await this.executeScript(trigger.macro, trigger);
+            } else {
+                Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+                try {
+                    result = await trigger.macro(trigger);
+                } catch (error) {
+                    Logging.addMacroError(error);
+                }
+            }
+            if (result) {
+                if (result.effectData) {
+                    genericUtils.setProperty(result.effectData, 'flags.cat.auraEffect', true);
+                    genericUtils.setProperty(result.effectData, 'origin', trigger.document.uuid);
+                    genericUtils.setProperty(result.effectData, 'flags.cat.identifier', trigger.identifier + 'Aura');
+                    effectDatas.push(result.effectData);
+                }
+                results.push(result);
+            }
+        }
+        if (effectDatas.length) await effectUtils.createEffects(this.actor, effectDatas);
+        return results;
+    }
+    get unsortedTriggers() {
+        let triggers = this.getNearbyTriggers(this.scene, this.pass);
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+        return triggers;
+    }
+    appendData(data) {
+        data = super.appendData(data);
+        data.targetToken = this.targetToken;
+        return data;
+    }
+}
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
@@ -528,5 +622,6 @@ export const Events = {
     MovementEvent,
     RegionEvent,
     EffectEvent,
-    CombatEvent
+    CombatEvent,
+    AuraEvent
 };

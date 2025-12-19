@@ -50,10 +50,21 @@ const effectHookNames = {
     preDeleteActiveEffect: 'preDeleteActiveEffect',
     preUpdateActiveEffect: 'preUpdateActiveEffect'
 };
+const effectPasses = {
+    created: 'created',
+    deleted: 'deleted',
+    updated: 'updated',
+    preCreated: 'preCreated',
+    preDeleted: 'preDeleted',
+    preUpdated: 'preUpdated'
+};
 const combatHookNames = {
     updateCombat: 'updateCombat',
     combatStart: 'combatStart',
     deleteCombat: 'deleteCombat'
+};
+const auraPasses = {
+    update: 'update'
 };
 export const constants = {
     registeredMacros: undefined,
@@ -63,5 +74,7 @@ export const constants = {
     movementPasses,
     movementHookNames,
     effectHookNames,
-    combatHookNames
+    effectPasses,
+    combatHookNames,
+    auraPasses
 };

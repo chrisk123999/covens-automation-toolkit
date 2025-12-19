@@ -1,5 +1,6 @@
 import {genericUtils, queryUtils, regionUtils} from '../utils.mjs';
 import {constants, Events} from '../lib.mjs';
+import {auraEvents} from '../event.mjs';
 async function moveToken(token, movement, options, user) {
     if (!queryUtils.isTheGM()) return;
     if (!token.actor) return;
@@ -24,7 +25,7 @@ async function moveToken(token, movement, options, user) {
         const teleport = CONFIG.Token.movement.actions[movement.passed.waypoints.at(-1).action]?.teleport;
         genericUtils.setProperty(options, 'cat.movement.teleport', teleport);
         if (!skipMove) {
-            //if (isFinalMovement);//await auras.updateAuras(token, options);
+            if (isFinalMovement) await auraEvents.updateAuras(token, options);
             await new Events.MovementEvent(token, constants.movementPasses.moved, {options}).run();
         }
         const moveRay = new foundry.canvas.geometry.Ray(previousCoords, coords);

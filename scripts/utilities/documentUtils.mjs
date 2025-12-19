@@ -1,5 +1,5 @@
 import {constants} from '../lib.mjs';
-import {activityUtils, actorUtils, effectUtils, itemUtils, regionUtils, sceneUtils, tokenUtils} from '../utils.mjs';
+import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, sceneUtils, tokenUtils} from '../utils.mjs';
 function getRules(document) {
     let rules = document.flags.cat?.automation?.rules;
     if (rules) return rules;
@@ -36,11 +36,22 @@ function getSavedCastData(document) {
         };
     }
 }
+async function deleteEmbeddedDocuments(document, type, ids, options) {
+    const hasPermission = queryUtils.hasPermission(document, game.user.id);
+    let documents;
+    if (hasPermission) {
+        documents = await document.deleteEmbeddedDocuments(type, ids, options);
+    } else {
+        //Do this
+    }
+    return document;
+}
 export const documentUtils = {
     getRules,
     getSource,
     getIdentifier,
     getConfigValue,
     getVersion,
-    getSavedCastData
+    getSavedCastData,
+    deleteEmbeddedDocuments
 };

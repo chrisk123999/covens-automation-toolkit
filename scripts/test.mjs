@@ -1,3 +1,4 @@
+import {actorUtils} from './utils.mjs';
 async function use(trigger) {
     console.log(trigger);
 }
@@ -11,6 +12,13 @@ async function nearby(trigger) {
 }
 async function turnStart(trigger) {
     console.log(trigger);
+}
+async function aura(trigger) {
+    let effect = actorUtils.getEffectByIdentifier(trigger.actor, trigger.identifier + 'Aura');
+    if (effect && effect.origin === trigger.document.uuid) return;
+    const effectData = trigger.document.effects.contents[0].toObject();
+    effectData.origin = trigger.document.uuid;
+    return {effectData};
 }
 export let test = {
     source: 'cat',
@@ -53,6 +61,15 @@ export let test = {
             macro: nearby,
             priority: 50,
             distance: 20
+        }
+    ],
+    aura: [
+        {
+            pass: 'update',
+            macro: aura,
+            priority: 50,
+            distance: 10,
+            dispositions: ['ally']
         }
     ]
 };

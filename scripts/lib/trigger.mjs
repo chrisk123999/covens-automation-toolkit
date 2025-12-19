@@ -4,7 +4,7 @@ class Trigger {
     constructor(document, pass, data) {
         this.document = document;
         this.identifier = documentUtils.getIdentifier(document);
-        this.name;
+        this.name = this.document.name.slugify();
         this.castData = documentUtils.getSavedCastData(document);
         this.pass = pass;
         this.fnMacros = [];
@@ -26,8 +26,14 @@ class Trigger {
                     const distance = this.distances[this.targetToken.id];
                     if (distance < 0) return false;
                     const maxDistance = macro.configDistance ? documentUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
-                    if (maxDistance >= distance) return macro;
-                    return false;
+                    if (maxDistance < distance) return false;
+                    const dispositions = macro.configDispositions ? documentUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
+                    if (dispositions) {
+                        const isAlly = this.token.disposition == this.targetToken.disposition;
+                        const isEnemy = this.token.disposition != this.targetToken.disposition;
+                        if (!(dispositions.includes('all') || (dispositions.includes('ally') && isAlly) || (dispositions.includes('enemy') && isEnemy))) return false;
+                    }
+                    return macro;
                 }).filter(i => i);
             });
         }
@@ -48,7 +54,6 @@ class Trigger {
 class RollTrigger extends Trigger {
     constructor(document, pass, data, distances) {
         super(document, pass, data, distances);
-        this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.roll ?? [];
         this.processFnMacros(fnMacroData, 'roll', pass);
         if (this.distances) this.processDistanceMacros();
@@ -58,7 +63,6 @@ class RollTrigger extends Trigger {
 class MoveTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.move ?? [];
         this.processFnMacros(fnMacroData, 'move', pass);
         this.processDistanceMacros();
@@ -68,7 +72,6 @@ class MoveTrigger extends Trigger {
 class RegionTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.region ?? [];
         this.processFnMacros(fnMacroData, 'region', pass);
         this.type = 'region';
@@ -77,7 +80,6 @@ class RegionTrigger extends Trigger {
 class EffectTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
         this.processFnMacros(fnMacroData, 'effect', pass);
         if (this.distances) this.processDistanceMacros();
@@ -87,11 +89,19 @@ class EffectTrigger extends Trigger {
 class CombatTrigger extends Trigger {
     constructor(document, pass, data) {
         super(document, pass, data);
-        this.name = this.document.name.slugify();
         const fnMacroData = this.document.flags.cat?.macros?.combat ?? [];
         this.processFnMacros(fnMacroData, 'combat', pass);
         if (this.distances) this.processDistanceMacros();
         this.type = 'combat';
+    }
+}
+class AuraTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.aura ?? [];
+        this.processFnMacros(fnMacroData, 'aura', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'aura';
     }
 }
 export const Triggers = {
@@ -100,5 +110,6 @@ export const Triggers = {
     MoveTrigger,
     RegionTrigger,
     EffectTrigger,
-    CombatTrigger
+    CombatTrigger,
+    AuraTrigger
 };

@@ -1,3 +1,4 @@
+import {documentUtils} from '../utils.mjs';
 function getCastData(actor) {
     return actor.flags.cat?.castData;
 }
@@ -25,6 +26,9 @@ function getTokens(actor) {
 function getFirstToken(actor) {
     return getTokens(actor)?.[0]?.document;
 }
+function getEffectByIdentifier(actor, identifier) {
+    return getEffects(actor).find(i => documentUtils.getIdentifier(i) === identifier);
+}
 export const actorUtils = {
     getCastData,
     getEffects,
@@ -34,5 +38,6 @@ export const actorUtils = {
     getEncounters,
     getVehicles,
     getTokens,
-    getFirstToken
+    getFirstToken,
+    getEffectByIdentifier
 };
