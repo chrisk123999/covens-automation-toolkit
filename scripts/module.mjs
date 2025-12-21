@@ -7,6 +7,7 @@ import {test} from './test.mjs';
 Hooks.once('init', () => {
     registerSettings();
     registerHooks();
+    lib.queries.registerQueries();
 });
 Hooks.once('ready', () => {
     if (game.user.isGM) {

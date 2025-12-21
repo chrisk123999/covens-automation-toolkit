@@ -11,6 +11,9 @@ function gmID() {
 function isTheGM() {
     return gmID() === game.user.id;
 }
+function gmUser() {
+    return game.users.get(gmID());
+}
 function hasPermission(document, userId) {
     const user = game.users.get(userId);
     if (!user) return false;
@@ -24,9 +27,14 @@ function firstOwner(document, useId) {
     if (playerOwners.length > 0) return useId ? playerOwners[0] : game.users.get(playerOwners[0]);
     return useId ? gmID() : game.users.get(gmID());
 }
+async function query(name, user, queryData, timeout = 300) {
+    return await user.query('cat.' + name, queryData, {timeout});
+}
 export const queryUtils = {
     gmID,
     isTheGM,
     hasPermission,
-    firstOwner
+    firstOwner,
+    query,
+    gmUser
 };

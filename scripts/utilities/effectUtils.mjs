@@ -2,13 +2,15 @@ import {queryUtils} from '../utils.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
-async function createEffects(document, effectDatas, effectOptions) {
+async function createEffects(document, effectDatas, effectOptions, {forceGM = false} = {}) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
-    if (hasPermission) {
+    if (hasPermission && !forceGM) {
         effects = await document.createEmbeddedDocuments('ActiveEffect', effectDatas);
     } else {
-        // Do this.
+        const uuids = await queryUtils.query('createEffects', queryUtils.gmUser(), {uuid: document.uuid, effectDatas, effectOptions});
+        if (!uuids) return;
+        effects = (await Promise.all(uuids.map(async uuid => fromUuid(uuid)))).filter(i => i);
     }
     return effects;
 }

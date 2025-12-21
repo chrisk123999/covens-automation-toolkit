@@ -5,3 +5,4 @@ export {Triggers} from './lib/trigger.mjs';
 export {Events} from './lib/event.mjs';
 export {Automations} from './lib/automations.mjs';
 export {EmbeddedMacros} from './lib/embeddedMacros.mjs';
+export {queries} from './lib/query.mjs';
