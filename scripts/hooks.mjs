@@ -1,5 +1,5 @@
 import {constants} from './lib.mjs';
-import {workflowEvents, movementEvents, effectEvents, combatEvents} from './event.mjs';
+import {workflowEvents, movementEvents, effectEvents, combatEvents, auraEvents} from './event.mjs';
 export function registerHooks() {
     // Workflow Events
     Hooks.on(constants.workflowHookNames.preTargeting, workflowEvents.preTargeting);
@@ -25,4 +25,8 @@ export function registerHooks() {
     Hooks.on(constants.combatHookNames.updateCombat, combatEvents.updateCombat);
     Hooks.on(constants.combatHookNames.combatStart, combatEvents.combatStart);
     Hooks.on(constants.combatHookNames.deleteCombat, combatEvents.deleteCombat);
+    // Aura Events
+    Hooks.on(constants.auraHookNames.canvasReady, auraEvents.canvasReady);
+    Hooks.on(constants.auraHookNames.createToken, auraEvents.createToken);
+    Hooks.on(constants.auraHookNames.deleteToken, auraEvents.deleteToken);
 }

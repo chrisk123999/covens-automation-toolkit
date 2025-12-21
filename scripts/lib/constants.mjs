@@ -58,6 +58,13 @@ const effectPasses = {
     preDeleted: 'preDeleted',
     preUpdated: 'preUpdated'
 };
+const combatPasses = {
+    turnEnd: 'turnEnd',
+    everyTurn: 'everyTurn',
+    turnStart: 'turnStart',
+    combatStart: 'combatStart',
+    combatEnd: 'combatEnd'
+};
 const combatHookNames = {
     updateCombat: 'updateCombat',
     combatStart: 'combatStart',
@@ -65,6 +72,20 @@ const combatHookNames = {
 };
 const auraPasses = {
     update: 'update'
+};
+const auraHookNames = {
+    createToken: 'createToken',
+    deleteToken: 'deleteToken',
+    canvasReady: 'canvasReady'
+};
+const regionPasses = {
+    created: 'created',
+    deleted: 'deleted',
+    moved: 'moved',
+    left: 'left',
+    enter: 'enter',
+    stay: 'stay',
+    passedThrough: 'passedThrough'
 };
 export const constants = {
     registeredMacros: undefined,
@@ -76,5 +97,8 @@ export const constants = {
     effectHookNames,
     effectPasses,
     combatHookNames,
-    auraPasses
+    combatPasses,
+    auraPasses,
+    auraHookNames,
+    regionPasses
 };

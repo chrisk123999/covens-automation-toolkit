@@ -4,14 +4,15 @@ import {auraEvents} from '../event.mjs';
 async function moveToken(token, movement, options, user) {
     if (!queryUtils.isTheGM()) return;
     if (!token.actor) return;
-    if (token.actor.type === 'group') return;
     if (token.parent.id != canvas.scene.id) return;
+    const validTypes = ['npc', 'character', 'vehicle'];
+    if (!validTypes.includes(token.actor.type)) return;
     const isFinalMovement = !movement.pending.waypoints.length;
     const previousCoords = genericUtils.duplicate(movement.origin);
     const coords = genericUtils.duplicate(movement.destination);
     if (!previousCoords) return;
-    const xDiff = token.width * canvas.grid.size / 2;
-    const yDiff = token.height * canvas.grid.size / 2;
+    const xDiff = token.width * token.parent.grid.size / 2;
+    const yDiff = token.height * token.parent.grid.size / 2;
     coords.x += xDiff;
     coords.y += yDiff;
     previousCoords.x += xDiff;
@@ -25,7 +26,7 @@ async function moveToken(token, movement, options, user) {
         const teleport = CONFIG.Token.movement.actions[movement.passed.waypoints.at(-1).action]?.teleport;
         genericUtils.setProperty(options, 'cat.movement.teleport', teleport);
         if (!skipMove) {
-            if (isFinalMovement) await auraEvents.updateAuras(token, options);
+            if (isFinalMovement) await auraEvents.updateAuras(token.parent.tokens, {options, targetToken: token});
             await new Events.MovementEvent(token, constants.movementPasses.moved, {options}).run();
         }
         const moveRay = new foundry.canvas.geometry.Ray(previousCoords, coords);
@@ -41,10 +42,10 @@ async function moveToken(token, movement, options, user) {
         }, []);
         let enteredAndLeftRegions = [];
         if (!teleport) enteredAndLeftRegions = throughRegions.filter(i => !leavingRegions.includes(i) && !enteringRegions.includes(i) && !stayingRegions.includes(i));
-        if (leavingRegions.length) await new Events.RegionEvent(leavingRegions, 'left', {tokens: [token]}).run();
-        if (enteringRegions.length) await new Events.RegionEvent(enteringRegions, 'enter', {tokens: [token]}).run();
-        if (stayingRegions.length) await new Events.RegionEvent(stayingRegions, 'stay', {tokens: [token]}).run();
-        if (enteredAndLeftRegions.length) await new Events.RegionEvent(enteredAndLeftRegions, 'passedThrough', {tokens: [token]}).run();
+        if (leavingRegions.length) await new Events.RegionEvent(leavingRegions, constants.regionPasses.left, {tokens: [token]}).run();
+        if (enteringRegions.length) await new Events.RegionEvent(enteringRegions, constants.regionPasses.enter, {tokens: [token]}).run();
+        if (stayingRegions.length) await new Events.RegionEvent(stayingRegions, constants.regionPasses.stay, {tokens: [token]}).run();
+        if (enteredAndLeftRegions.length) await new Events.RegionEvent(enteredAndLeftRegions, constants.regionPasses.passedThrough, {tokens: [token]}).run();
     }
 }
 export const movementEvents = {
