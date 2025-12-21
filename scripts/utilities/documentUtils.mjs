@@ -42,7 +42,7 @@ async function deleteEmbeddedDocuments(document, type, ids, options, {forceGM = 
     if (hasPermission && !forceGM) {
         documents = await document.deleteEmbeddedDocuments(type, ids, options);
     } else {
-        const uuids = await queryUtils.query('deleteEmbeddedDocuments', queryUtils.gmUser(), {uuid: document.uuid, type, ids, options});
+        const uuids = await queryUtils.query('cat.deleteEmbeddedDocuments', queryUtils.gmUser(), {uuid: document.uuid, type, ids, options});
         if (!uuids) return;
         documents = (await Promise.all(uuids.map(async uuid => fromUuid(uuid)))).filter(i => i);
     }

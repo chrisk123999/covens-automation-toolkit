@@ -8,7 +8,7 @@ async function createEffects(document, effectDatas, effectOptions, {forceGM = fa
     if (hasPermission && !forceGM) {
         effects = await document.createEmbeddedDocuments('ActiveEffect', effectDatas);
     } else {
-        const uuids = await queryUtils.query('createEffects', queryUtils.gmUser(), {uuid: document.uuid, effectDatas, effectOptions});
+        const uuids = await queryUtils.query('cat.createEffects', queryUtils.gmUser(), {uuid: document.uuid, effectDatas, effectOptions});
         if (!uuids) return;
         effects = (await Promise.all(uuids.map(async uuid => fromUuid(uuid)))).filter(i => i);
     }
