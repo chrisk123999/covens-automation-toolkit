@@ -610,6 +610,7 @@ class AuraEvent extends CatEvent {
     appendData(data) {
         data = super.appendData(data);
         data.targetToken = this.targetToken;
+        data.options = this.options;
         return data;
     }
 }
@@ -632,7 +633,7 @@ class ItemEvent extends CatEvent {
         this.updates = updates;
     }
     get unsortedTriggers() {
-        const triggers = [];
+        let triggers = [];
         if (CatEvent.hasCatFlag(this.item)) triggers.push(new Triggers.ItemTrigger(this.item, this.pass));
         triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
         if (this.scene) {
@@ -647,7 +648,63 @@ class ItemEvent extends CatEvent {
         this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
         this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
+    }
+    appendData(data) {
+        data = super.appendData(data);
+        data.options = this.options;
+        data.updates = this.updates;
+        return data;
+    }
+}
+class ItemsEvent extends CatEvent {
+    constructor(items, pass, {ddbCharacter} = {}) {
+        super(pass);
+        this.name = 'Item';
+        this.trigger = Triggers.ItemTrigger;
+        this.items = items;
+        this.ddbCharacter = ddbCharacter;
+    }
+    get unsortedTriggers() {
+        let triggers = [];
+        this.items.forEach(item => {
+            if (CatEvent.hasCatFlag(item)) triggers.push(new Triggers.ItemTrigger(item, this.pass));
+        });
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+        return triggers;
+    }
+    appendData(data) {
+        super.appendData(data);
+        data.ddbCharacter = this.ddbCharacter;
+        return data;
+    }
+    get sortedTriggers() {
+        if (this._sortedTriggers) return this._sortedTriggers;
+        const startTime = performance.now();
+        let unsortedTriggers = this.unsortedTriggers;
+        let sortedTriggers = [];
+        unsortedTriggers.forEach(trigger => {
+            [...trigger.fnMacros, ...trigger.embeddedMacros].forEach(fnMacro => {
+                fnMacro.macros.forEach(macro => {
+                    const data = {
+                        macro: macro.macro,
+                        priority: macro.priority,
+                        castData: trigger.castData,
+                        document: trigger.document,
+                        identifier: trigger.identifier,
+                        name: trigger.name
+                    };
+                    if (trigger.sourceToken) data.sourceToken = trigger.sourceToken;
+                    sortedTriggers.push(this.appendData(data));
+                });
+            });
+        });
+        sortedTriggers = sortedTriggers.sort((a, b) => a.priority - b.priority);
+        const endTime = performance.now();
+        Logging.addEntry('DEBUG', 'Trigger Collection Time: ' + (endTime - startTime) + ' milliseconds');
+        this._sortedTriggers = sortedTriggers;
+        return this._sortedTriggers;
     }
 }
 export const Events = {
@@ -659,5 +716,6 @@ export const Events = {
     EffectEvent,
     CombatEvent,
     AuraEvent,
-    ItemEvent
+    ItemEvent,
+    ItemsEvent
 };

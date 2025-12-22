@@ -1,7 +1,7 @@
 import {constants, Events} from '../lib.mjs';
 import {queryUtils} from '../utils.mjs';
 async function bulkUpdated(items) {
-
+    await new Events.ItemsEvent(items, constants.itemPasses.bulkUpdated).run();
 }
 async function createItem(item, options, userId) {
     if (!queryUtils.isTheGM() || !item.actor) return;
@@ -16,7 +16,7 @@ async function updateItem(item, updates, options, userId) {
     await new Events.ItemEvent(item, constants.itemPasses.deleted, {options, updates}).run();
 }
 async function actorMunched({actor, ddbCharacter}) {
-
+    await new Events.ItemsEvent(actor.items, constants.itemPasses.munched, {ddbCharacter}).run();
 }
 export const itemEvents = {
     bulkUpdated,

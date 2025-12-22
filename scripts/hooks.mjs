@@ -33,4 +33,5 @@ export function registerHooks() {
     Hooks.on(constants.itemHookNames.createItem, itemEvents.createItem);
     Hooks.on(constants.itemHookNames.deleteItem, itemEvents.deleteItem);
     Hooks.on(constants.itemHookNames.updateItem, itemEvents.updateItem);
+    Hooks.on(constants.itemHookNames.munched, itemEvents.actorMunched);
 }

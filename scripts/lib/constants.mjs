@@ -97,7 +97,8 @@ const itemPasses = {
 const itemHookNames = {
     createItem: 'createItem',
     deleteItem: 'deleteItem',
-    updateItem: 'updateItem'
+    updateItem: 'updateItem',
+    munched: 'ddb-importer.characterProcessDataComplete'
 };
 export const constants = {
     registeredMacros: undefined,
