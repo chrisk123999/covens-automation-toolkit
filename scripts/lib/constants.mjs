@@ -100,6 +100,13 @@ const itemHookNames = {
     updateItem: 'updateItem',
     munched: 'ddb-importer.characterProcessDataComplete'
 };
+const restHookNames = {
+    restCompleted: 'dnd5e.restCompleted'
+};
+const restPasses = {
+    short: 'short',
+    long: 'long'
+};
 export const constants = {
     registeredMacros: undefined,
     automations: undefined,
@@ -116,5 +123,7 @@ export const constants = {
     auraHookNames,
     regionPasses,
     itemPasses,
-    itemHookNames
+    itemHookNames,
+    restHookNames,
+    restPasses
 };

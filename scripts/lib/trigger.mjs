@@ -113,6 +113,15 @@ class ItemTrigger extends Trigger {
         this.type = 'item';
     }
 }
+class RestTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.rest ?? [];
+        this.processFnMacros(fnMacroData, 'rest', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'rest';
+    }
+}
 export const Triggers = {
     Trigger,
     RollTrigger,
@@ -121,5 +130,6 @@ export const Triggers = {
     EffectTrigger,
     CombatTrigger,
     AuraTrigger,
-    ItemTrigger
+    ItemTrigger,
+    RestTrigger
 };

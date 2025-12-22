@@ -16,7 +16,7 @@ async function deleteToken(token, options, useId) {
     await updateAuras(token.parent.tokens.filter(t => t.id != token.id), {options, targetToken: token});
 }
 async function canvasReady(canvas) {
-    if (!queryUtils.isTheGM() || !canvas.scene || !constants.gameReady) return;
+    if (!queryUtils.isTheGM() || !canvas.scene) return;
     await updateAuras(canvas.scene.tokens);
 }
 async function effect(effect, options) {

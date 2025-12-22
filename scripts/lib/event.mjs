@@ -96,35 +96,40 @@ class CatEvent {
         if (this._sortedTriggers) return this._sortedTriggers;
         const startTime = performance.now();
         let unsortedTriggers = this.unsortedTriggers;
-        const names = new Set(unsortedTriggers.map(trigger => trigger.name));
-        unsortedTriggers = Object.fromEntries(names.map(name => [name, unsortedTriggers.filter(trigger => trigger.name === name)]));
-        let maxMap = {};
-        names.forEach(name => {
-            let maxLevel = Math.max(...unsortedTriggers[name].map(trigger => trigger.castData.castLevel));
-            let maxDC = Math.max(...unsortedTriggers[name].map(trigger => trigger.castData.saveDC));
-            maxMap[name] = {
-                maxLevel: maxLevel,
-                maxDC: maxDC
-            };
-        });
         let triggers = [];
-        names.forEach(name => {
-            let maxLevel = maxMap[name].maxLevel;
-            let maxDC = maxMap[name].maxDC;
-            let maxDCTrigger = unsortedTriggers[name].find(trigger => trigger.castData.saveDC === maxDC);
-            let selectedTrigger;
-            if (maxDCTrigger.castData.castLevel === maxLevel) {
-                selectedTrigger = maxDCTrigger;
-            } else {
-                selectedTrigger = unsortedTriggers[name].find(j => j.castData.castLevel === maxLevel);
-            }
-            triggers.push(selectedTrigger);
-        });
+        if (!this.canOverlap) {
+            const names = new Set(unsortedTriggers.map(trigger => trigger.name));
+            unsortedTriggers = Object.fromEntries(names.map(name => [name, unsortedTriggers.filter(trigger => trigger.name === name)]));
+            let maxMap = {};
+            names.forEach(name => {
+                let maxLevel = Math.max(...unsortedTriggers[name].map(trigger => trigger.castData.castLevel));
+                let maxDC = Math.max(...unsortedTriggers[name].map(trigger => trigger.castData.saveDC));
+                maxMap[name] = {
+                    maxLevel: maxLevel,
+                    maxDC: maxDC
+                };
+            });
+            names.forEach(name => {
+                let maxLevel = maxMap[name].maxLevel;
+                let maxDC = maxMap[name].maxDC;
+                let maxDCTrigger = unsortedTriggers[name].find(trigger => trigger.castData.saveDC === maxDC);
+                let selectedTrigger;
+                if (maxDCTrigger.castData.castLevel === maxLevel) {
+                    selectedTrigger = maxDCTrigger;
+                } else {
+                    selectedTrigger = unsortedTriggers[name].find(j => j.castData.castLevel === maxLevel);
+                }
+                triggers.push(selectedTrigger);
+            });
+
+        } else {
+            triggers = unsortedTriggers;
+        }
         let sortedTriggers = [];
         let uniqueMacros = new Set();
         triggers.forEach(trigger => {
-            [...trigger.fnMacros, ...trigger.embeddedMacros].forEach(fnMacro => {
-                fnMacro.macros.forEach(macro => {
+            [...trigger.fnMacros, ...trigger.embeddedMacros].forEach(i => {
+                i.macros.forEach(macro => {
                     if (macro.unique) {
                         if (uniqueMacros.has(macro.unique)) return;
                         uniqueMacros.add(macro.unique);
@@ -140,7 +145,6 @@ class CatEvent {
                     if (trigger.sourceToken) data.sourceToken = trigger.sourceToken;
                     sortedTriggers.push(this.appendData(data));
                 });
-                
             });
         });
         sortedTriggers = sortedTriggers.sort((a, b) => a.priority - b.priority);
@@ -155,8 +159,9 @@ class CatEvent {
     static hasCatFlag(document) {
         return !!(document.flags.cat?.macros || document.flags.cat?.embeddedMacros);
     }
-    async run() {
+    async run({canOverlap = false} = {}) {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        this.canOverlap = canOverlap;
         const results = [];
         for (let trigger of this.sortedTriggers) {
             let result;
@@ -175,8 +180,9 @@ class CatEvent {
         }
         return results;
     }
-    runSync() {
+    runSync({canOverlap = false} = {}) {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        this.canOverlap = canOverlap;
         const results = [];
         for (let trigger of this.sortedTriggers) {
             let result;
@@ -679,32 +685,49 @@ class ItemsEvent extends CatEvent {
         data.ddbCharacter = this.ddbCharacter;
         return data;
     }
-    get sortedTriggers() {
-        if (this._sortedTriggers) return this._sortedTriggers;
-        const startTime = performance.now();
-        let unsortedTriggers = this.unsortedTriggers;
-        let sortedTriggers = [];
-        unsortedTriggers.forEach(trigger => {
-            [...trigger.fnMacros, ...trigger.embeddedMacros].forEach(fnMacro => {
-                fnMacro.macros.forEach(macro => {
-                    const data = {
-                        macro: macro.macro,
-                        priority: macro.priority,
-                        castData: trigger.castData,
-                        document: trigger.document,
-                        identifier: trigger.identifier,
-                        name: trigger.name
-                    };
-                    if (trigger.sourceToken) data.sourceToken = trigger.sourceToken;
-                    sortedTriggers.push(this.appendData(data));
-                });
+}
+class RestEvent extends CatEvent {
+    constructor(actor, pass, {result, config}) {
+        super(pass);
+        this.name = 'Rest';
+        this.trigger = Triggers.RestTrigger;
+        this.actor = actor;
+        this.token = actorUtils.getFirstToken(this.actor);
+        if (this.token) {
+            this.scene = this.token.parent;
+            this.regions = this.token.regions;
+        }
+        this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
+        this.result = result;
+        this.config = config;
+        this.distances = {};
+        this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+    }
+    get unsortedTriggers() {
+        let triggers = [];
+        triggers.push(...this.getActorTriggers(this.actor, this.pass));
+        if (this.scene) {
+            triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+            triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + this.pass.capitalize()));
+        }
+        if (this.regions) {
+            this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
+                triggers.push(new this.trigger(region, 'region' + this.pass.capitalize()));
             });
-        });
-        sortedTriggers = sortedTriggers.sort((a, b) => a.priority - b.priority);
-        const endTime = performance.now();
-        Logging.addEntry('DEBUG', 'Trigger Collection Time: ' + (endTime - startTime) + ' milliseconds');
-        this._sortedTriggers = sortedTriggers;
-        return this._sortedTriggers;
+        }
+        this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
+        this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
+        this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
+        triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+        return triggers;
+    }
+    appendData(data) {
+        data = super.appendData(data);
+        data.result = this.result;
+        data.config = this.config;
     }
 }
 export const Events = {
@@ -717,5 +740,6 @@ export const Events = {
     CombatEvent,
     AuraEvent,
     ItemEvent,
-    ItemsEvent
+    ItemsEvent,
+    RestEvent
 };
