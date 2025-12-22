@@ -463,6 +463,7 @@ class EffectEvent extends CatEvent {
         this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
         this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }
     appendData(data) {
@@ -511,7 +512,6 @@ class CombatEvent extends CatEvent {
         this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
         triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
-        console.log(triggers);
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }
@@ -613,6 +613,43 @@ class AuraEvent extends CatEvent {
         return data;
     }
 }
+class ItemEvent extends CatEvent {
+    constructor(item, pass, {options, updates}) {
+        super(pass);
+        this.name = 'Item';
+        this.trigger = Triggers.ItemTrigger;
+        this.item = item;
+        this.actor = this.item.actor;
+        this.token = actorUtils.getFirstToken(this.actor);
+        if (this.token) {
+            this.scene = this.token.parent;
+            this.regions = this.token.regions;
+        }
+        this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
+        this.options = options;
+        this.updates = updates;
+    }
+    get unsortedTriggers() {
+        const triggers = [];
+        if (CatEvent.hasCatFlag(this.item)) triggers.push(new Triggers.ItemTrigger(this.item, this.pass));
+        triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
+        if (this.scene) {
+            triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+            triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + this.pass.capitalize()));
+        }
+        if (this.regions) {
+            this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
+                triggers.push(new Triggers.EffectTrigger(region, 'region' + this.pass.capitalize()));
+            });
+        }
+        this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
+        this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
+        this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
+        return triggers;
+    }
+}
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
@@ -621,5 +658,6 @@ export const Events = {
     RegionEvent,
     EffectEvent,
     CombatEvent,
-    AuraEvent
+    AuraEvent,
+    ItemEvent
 };

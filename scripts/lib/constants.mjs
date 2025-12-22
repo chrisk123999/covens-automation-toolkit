@@ -87,9 +87,22 @@ const regionPasses = {
     stay: 'stay',
     passedThrough: 'passedThrough'
 };
+const itemPasses = {
+    created: 'created',
+    deleted: 'deleted',
+    updated: 'updated',
+    bulkUpdated: 'bulkUpdated',
+    munched: 'munched'
+};
+const itemHookNames = {
+    createItem: 'createItem',
+    deleteItem: 'deleteItem',
+    updateItem: 'updateItem'
+};
 export const constants = {
     registeredMacros: undefined,
     automations: undefined,
+    gameReady: false,
     workflowPasses,
     workflowHookNames,
     movementPasses,
@@ -100,5 +113,7 @@ export const constants = {
     combatPasses,
     auraPasses,
     auraHookNames,
-    regionPasses
+    regionPasses,
+    itemPasses,
+    itemHookNames
 };

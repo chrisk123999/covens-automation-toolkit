@@ -104,6 +104,15 @@ class AuraTrigger extends Trigger {
         this.type = 'aura';
     }
 }
+class ItemTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.item ?? [];
+        this.processFnMacros(fnMacroData, 'item', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'item';
+    }
+}
 export const Triggers = {
     Trigger,
     RollTrigger,
@@ -111,5 +120,6 @@ export const Triggers = {
     RegionTrigger,
     EffectTrigger,
     CombatTrigger,
-    AuraTrigger
+    AuraTrigger,
+    ItemTrigger
 };
