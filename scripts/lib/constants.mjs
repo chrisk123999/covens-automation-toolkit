@@ -56,7 +56,9 @@ const effectPasses = {
     updated: 'updated',
     preCreated: 'preCreated',
     preDeleted: 'preDeleted',
-    preUpdated: 'preUpdated'
+    preUpdated: 'preUpdated',
+    doCreated: 'doCreated',
+    doDeleted: 'doDeleted'
 };
 const combatPasses = {
     turnEnd: 'turnEnd',

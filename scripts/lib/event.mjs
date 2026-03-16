@@ -428,17 +428,22 @@ class RegionEvent extends CatEvent {
     }
 }
 class EffectEvent extends CatEvent {
-    constructor(effect, pass, {options, updates}) {
+    constructor(effect, pass, {options, updates, actor}) {
         super(pass);
         this.name = 'Effect';
         this.trigger = Triggers.EffectTrigger;
         this.effect = effect;
-        if (effect.parent instanceof Actor) {
-            this.actor = effect.parent;
-        }
-        if (effect.parent instanceof Item) {
-            this.item = effect.parent;
-            this.actor = this.item.actor;
+        if (!actor) {
+            if (effect.parent instanceof Actor) {
+                this.actor = effect.parent;
+            }
+            if (effect.parent instanceof Item) {
+                this.item = effect.parent;
+                this.actor = this.item.actor;
+            }
+
+        } else {
+            this.actor = actor;
         }
         this.token = actorUtils.getFirstToken(this.actor);
         if (this.token) {

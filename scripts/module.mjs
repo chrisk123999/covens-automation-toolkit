@@ -4,6 +4,7 @@ import * as lib from './lib.mjs';
 import * as utils from './utils.mjs';
 import {api} from './api.mjs';
 import {test} from './test.mjs';
+import {documentPatching, effectPatching} from './patching.mjs';
 Hooks.once('init', () => {
     registerSettings();
     lib.queries.registerQueries();
@@ -15,6 +16,8 @@ Hooks.once('ready', () => {
     lib.constants.registeredMacros = new lib.Macros.RegisteredMacros();
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
     registerHooks();
+    documentPatching.patch(true);
+    effectPatching.patch(true);
     lib.constants.registeredMacros.registerFnMacro(test);
     globalThis.cat = {
         api,

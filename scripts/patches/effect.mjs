@@ -1,0 +1,20 @@
+import {effectEvents} from '../event.mjs';
+import {Logging} from '../lib.mjs';
+async function create(wrapped, data = {}, operation = {}) {
+    let results = await effectEvents.doCreateActiveEffect(data, operation);
+    if (results && results.find(i => i)) return;
+    let effect =  await wrapped(data, operation);
+    return effect;
+}
+function patch(enabled) {
+    if (enabled) {
+        Logging.addEntry('DEBUG', 'Patching: ActiveEffect.implementation.create');
+        libWrapper.register('cat', 'ActiveEffect.implementation.create', create, 'MIXED');
+    } else {
+        Logging.addEntry('DEBUG', 'Unpatching: ActiveEffect.implementation.create');
+        libWrapper.unregister('cat', 'ActiveEffect.implementation.create');
+    }
+}
+export const effectPatching = {
+    patch
+};
