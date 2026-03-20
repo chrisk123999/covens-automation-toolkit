@@ -4,8 +4,7 @@ import {auraEvents} from '../event.mjs';
 async function doCreateActiveEffect(data, options) {
     let parent = options.parent;
     if (!parent) return;
-    if (!(parent instanceof Actor) || (parent instanceof Item && parent.actor)) return;
-    return await new Events.EffectEvent(data, constants.effectPasses.doCreated, {options, actor: parent}).run();
+    return await new Events.EffectEvent(data, constants.effectPasses.doCreated, {options, parent}).run();
 }
 async function doDeleteActiveEffect(effect, options) {
     return await new Events.EffectEvent(effect, constants.effectPasses.doDeleted, {options}).run();

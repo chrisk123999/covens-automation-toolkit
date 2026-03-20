@@ -5,6 +5,7 @@ class CatEvent {
         this.pass = pass;
         this.trigger;
         this._sortedTriggers;
+        this.multiResult = false;
     }
     appendData(data = {}) {
         return {
@@ -162,7 +163,7 @@ class CatEvent {
     async run({canOverlap = false} = {}) {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
         this.canOverlap = canOverlap;
-        const results = [];
+        const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
             if (typeof trigger.macro === 'string') {
@@ -176,14 +177,20 @@ class CatEvent {
                     Logging.addMacroError(error);
                 }
             }
-            if (result) results.push(result);
+            if (result) {
+                if (!this.multiResult) {
+                    return result;
+                } else {
+                    results.push(result);
+                }
+            }
         }
         return results;
     }
     runSync({canOverlap = false} = {}) {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
         this.canOverlap = canOverlap;
-        const results = [];
+        const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
             if (typeof trigger.macro === 'string') {
@@ -197,7 +204,13 @@ class CatEvent {
                     Logging.addMacroError(error);
                 }
             }
-            if (result) results.push(result);
+            if (result) {
+                if (!this.multiResult) {
+                    return result;
+                } else {
+                    results.push(result);
+                }
+            }
         }
         return results;
     }
@@ -428,12 +441,12 @@ class RegionEvent extends CatEvent {
     }
 }
 class EffectEvent extends CatEvent {
-    constructor(effect, pass, {options, updates, actor}) {
+    constructor(effect, pass, {options, updates, parent}) {
         super(pass);
         this.name = 'Effect';
         this.trigger = Triggers.EffectTrigger;
         this.effect = effect;
-        if (!actor) {
+        if (!parent) {
             if (effect.parent instanceof Actor) {
                 this.actor = effect.parent;
             }
@@ -443,7 +456,13 @@ class EffectEvent extends CatEvent {
             }
 
         } else {
-            this.actor = actor;
+            if (parent instanceof Actor) {
+                this.actor = parent;
+            }
+            if (parent instanceof Item) {
+                this.item = parent;
+                this.actor = parent.actor;
+            }
         }
         this.token = actorUtils.getFirstToken(this.actor);
         if (this.token) {

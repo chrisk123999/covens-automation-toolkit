@@ -1,8 +1,8 @@
 import {effectEvents} from '../event.mjs';
 import {Logging} from '../lib.mjs';
 async function create(wrapped, data = {}, operation = {}) {
-    let results = await effectEvents.doCreateActiveEffect(data, operation);
-    if (results && results.find(i => i)) return;
+    let result = await effectEvents.doCreateActiveEffect(data, operation);
+    if (result) return;
     let effect =  await wrapped(data, operation);
     return effect;
 }
