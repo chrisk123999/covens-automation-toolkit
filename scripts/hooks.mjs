@@ -5,6 +5,7 @@ export function registerHooks() {
     Hooks.on(constants.workflowHookNames.preTargeting, workflowEvents.preTargeting);
     Hooks.on(constants.workflowHookNames.preItemRoll, workflowEvents.preItemRoll);
     Hooks.on(constants.workflowHookNames.preambleComplete, workflowEvents.preambleComplete);
+    Hooks.on(constants.workflowHookNames.preAttackRollConfig, workflowEvents.attackRollConfig);
     Hooks.on(constants.workflowHookNames.postAttackRoll, workflowEvents.postAttackRoll);
     Hooks.on(constants.workflowHookNames.attackRollComplete, workflowEvents.attackRollComplete);
     Hooks.on(constants.workflowHookNames.savesComplete, workflowEvents.savesComplete);

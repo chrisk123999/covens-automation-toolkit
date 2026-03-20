@@ -13,6 +13,9 @@ async function preambleComplete(workflow) {
     event = await new Events.WorkflowEvent(constants.workflowPasses.preambleComplete, workflow).run();
     if (event) return false;
 }
+async function attackRollConfig(workflow) {
+    await new Events.WorkflowEvent(constants.workflowPasses.attackRollConfig, workflow).run();
+}
 async function postAttackRoll(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRoll, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollBonuses, workflow).run();
@@ -50,6 +53,7 @@ export const workflowEvents = {
     preTargeting,
     preItemRoll,
     preambleComplete,
+    attackRollConfig,
     postAttackRoll,
     attackRollComplete,
     savesComplete,

@@ -3,6 +3,7 @@ const workflowPasses = {
     preItemRoll: 'preItemRoll',
     targeting: 'targeting', // For editing targets
     preambleComplete: 'preambleComplete', // Other stuff
+    attackRollConfig: 'attackRollConfig', // For adjustments to attack roll advantage and disadvantage.
     attackRoll: 'attackRoll', // Regular adjustments to attack rolls, such as re-rolling them or editing the formula. Do not re-roll an attack after this pass.
     attackRollBonuses: 'attackRollBonuses', // Add bonuses to attack rolls but before target AC checks.
     attackRollMissedBonuses: 'attackRollMissedBonuses', // Add bonuses to attack rolls after checking target AC.
@@ -27,6 +28,7 @@ const workflowHookNames = {
     preTargeting: 'midi-qol.preTargeting',
     preItemRoll: 'midi-qol.premades.postNoAction',
     preambleComplete: 'midi-qol.premades.postPreambleComplete',
+    preAttackRollConfig: 'midi-qol.premades.preAttackRollConfig',
     postAttackRoll: 'midi-qol.premades.postWaitForAttackRoll',
     attackRollComplete: 'midi-qol.premades.postAttackRollComplete',
     savesComplete: 'midi-qol.premades.postSavesComplete',
