@@ -31,13 +31,14 @@ class RegisteredMacros {
             macros
         };
     }
-    registerFnMacro(data) {
+    registerFnMacro(data, overwrite = false) {
         const validationError = this.#macrosSchema.validate(data);
         if (validationError) {
             Logging.addRegistrationError(data, validationError.asError());
             return false;
         }
-        this.fnMacros.push(new FnMacro(data.source, data.identifier, data.rules, {
+        let fnArray = !overwrite ? this.fnMacros : this.overwriteMacros;
+        fnArray.push(new FnMacro(data.source, data.identifier, data.rules, {
             roll: data.roll ?? [],
             move: data.move ?? [],
             combat: data.combat ?? [],
@@ -45,15 +46,14 @@ class RegisteredMacros {
             aura: data.aura ?? []
         }));
     }
-    registerFnMacros(data = []) {
+    registerFnMacros(data = [], overwrite = false) {
         const validationError = this.#multiMacrosSchema.validate(data);
         if (validationError) {
             Logging.addRegistrationError(data, validationError.asError());
             return false;
         }
-        return data.map(i => this.registerFnMacro(i));
+        return data.map(i => this.registerFnMacro(i), overwrite);
     }
-    // TODO: Overwrite Macros
 }
 class FnMacro {
     constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], aura = []} = {}) {

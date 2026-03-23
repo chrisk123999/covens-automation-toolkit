@@ -24,13 +24,14 @@ const fields = foundry.data.fields;
  */
 
 class Automation {
-    constructor(source, rules, identifier, uuid, version, {config} = {}) {
+    constructor(source, rules, identifier, uuid, version, {config, notes} = {}) {
         this.source = source;
         this.rules = rules;
         this.identifier = identifier;
         this.version = version;
         this.uuid = uuid;
         this.config = config;
+        this.notes = notes;
     }
 
     /**
@@ -62,6 +63,11 @@ class Automation {
      * @type {AutomationConfig[]}
      */
     config;
+
+    /**
+     * @type {string}
+     */
+    notes;
     
     async getDocument() {
         return await fromUuid(this.uuid);
@@ -77,7 +83,8 @@ class RegisteredAutomations {
         identifier: new fields.StringField({required: true, nullable: false}),
         version: new fields.StringField({required: true, nullable: false}),
         uuid: new fields.StringField({required: true, nullable: false}),
-        config: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
+        config: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+        notes: new fields.StringField({required: false, nullable: false})
     });
     #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 
@@ -130,7 +137,8 @@ class RegisteredAutomations {
             return false;
         }
         this.automations.push(new Automation(data.source, data.rules, data.identifier, data.uuid, data.version, {
-            config: data.config
+            config: data.config,
+            notes: data.notes
         }));
         this.sources.add(data.source);
     }
@@ -176,17 +184,27 @@ class RegisteredAutomations {
      * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
      * @param {string} [options.source]                                     The source of the automations
      */
-    async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, source} = {}) {
+    async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, source, notes2014 = {}, notes2024 = {}, notesAll = {}} = {}) {
         const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation.version']});
         if (!source) source = pack.metadata.packageName;
         return index.map(document => {
             const identifier = documentUtils.getIdentifier(document);
             const rule = rules[identifier] ?? documentUtils.getRules(document);
             let config;
+            let notes;
             switch (rule) {
-                case '2014': config = configs2014[identifier]; break;
-                case '2024': config = configs2024[identifier]; break;
-                default: config = configsAll[identifier]; break;
+                case '2014':
+                    config = configs2014[identifier];
+                    notes = notes2014[identifier];
+                    break;
+                case '2024':
+                    config = configs2024[identifier];
+                    notes = notes2024[identifier];
+                    break;
+                default:
+                    config = configsAll[identifier];
+                    notes = notesAll[identifier];
+                    break;
             }
             const data = {
                 source,
@@ -194,7 +212,8 @@ class RegisteredAutomations {
                 identifier,
                 version: versions[identifier] ?? documentUtils.getVersion(document),
                 uuid: document.uuid,
-                config
+                config,
+                notes
             };
             return this.registerAutomation(data);
         });
@@ -211,7 +230,7 @@ class RegisteredAutomations {
      * @param {Record<string, string>} [options.versions={}]                An object with identifiers as keys and versions as values
      * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
      */
-    async registerAutomationModule(id, {ignoredPackIds = [], configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}} = {}) {
+    async registerAutomationModule(id, {ignoredPackIds = [], configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, notes2014 = {}, notes2024 = {}, notesAll = {}} = {}) {
         const module = game.modules.get(id);
         if (!module?.active) return false;
         const itemPacks = module.packs.filter(pack => pack.type === 'Item' && !ignoredPackIds.includes(pack.id));
@@ -219,7 +238,7 @@ class RegisteredAutomations {
         return await Promise.all(itemPacks.map(async data => {
             const pack = game.packs.get(data.id);
             if (!pack) return false;
-            return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions, rules, source: id});
+            return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions, rules, source: id, notes2014, notes2024, notesAll});
         }));
     }
 }

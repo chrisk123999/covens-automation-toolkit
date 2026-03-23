@@ -122,6 +122,15 @@ class RestTrigger extends Trigger {
         this.type = 'rest';
     }
 }
+class CheckTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.check ?? [];
+        this.processFnMacros(fnMacroData, 'check', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'check';
+    }
+}
 export const Triggers = {
     Trigger,
     RollTrigger,
@@ -131,5 +140,6 @@ export const Triggers = {
     CombatTrigger,
     AuraTrigger,
     ItemTrigger,
-    RestTrigger
+    RestTrigger,
+    CheckTrigger
 };
