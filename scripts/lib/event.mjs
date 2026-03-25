@@ -161,9 +161,10 @@ class CatEvent {
     static hasCatFlag(document) {
         return !!(document.flags.cat?.macros || document.flags.cat?.embeddedMacros);
     }
-    async run({canOverlap = false} = {}) {
+    async run({canOverlap = false, multiResult = false} = {}) {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
         this.canOverlap = canOverlap;
+        this.multiResult = multiResult;
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
@@ -178,6 +179,7 @@ class CatEvent {
                     Logging.addMacroError(error);
                 }
             }
+            //Possibly update trigger.roll here!
             if (result) {
                 if (!this.multiResult) {
                     return result;
@@ -188,9 +190,10 @@ class CatEvent {
         }
         return results;
     }
-    runSync({canOverlap = false} = {}) {
+    runSync({canOverlap = false, multiResult = false} = {}) {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
         this.canOverlap = canOverlap;
+        this.multiResult = multiResult;
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
@@ -752,11 +755,9 @@ class RestEvent extends CatEvent {
         data.config = this.config;
     }
 }
-class CheckEvent extends CatEvent {
-    constructor(actor, pass, {config, dialog, message, rolls}) {
+class BaseRollEvent extends CatEvent {
+    constructor(actor, pass, {config, dialog, message, roll}) {
         super(pass);
-        this.name = 'Check';
-        this.trigger = Triggers.CheckTrigger;
         this.actor = actor;
         this.token = actorUtils.getFirstToken(this.actor);
         if (this.token) {
@@ -769,7 +770,7 @@ class CheckEvent extends CatEvent {
         this.config = config;
         this.dialog = dialog;
         this.message = message;
-        this.rolls = rolls;
+        this.roll = roll;
         this.distances = {};
         if (this.scene) this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
     }
@@ -796,8 +797,36 @@ class CheckEvent extends CatEvent {
         data.config = this.config;
         data.dialog = this.dialog;
         data.message = this.message;
-        data.rolls = this.rolls;
+        data.roll = this.roll;
     }
+}
+class CheckEvent extends BaseRollEvent {
+    constructor(actor, pass, data) {
+        super(actor, pass, data);
+        this.name = 'Check';
+        this.trigger = Triggers.CheckTrigger;
+    }
+}
+class SkillEvent extends BaseRollEvent {
+    constructor(actor, pass, data) {
+        super(actor, pass, data);
+        this.name = 'Skill';
+        this.trigger = Triggers.SkillTrigger;
+    } 
+}
+class SaveEvent extends BaseRollEvent {
+    constructor(actor, pass, data) {
+        super(actor, pass, data);
+        this.name = 'Save';
+        this.trigger = Triggers.SaveTrigger;
+    } 
+}
+class ToolEvent extends BaseRollEvent {
+    constructor(actor, pass, data) {
+        super(actor, pass, data);
+        this.name = 'Tool';
+        this.trigger = Triggers.ToolTrigger;
+    } 
 }
 export const Events = {
     WorkflowEvent,
@@ -811,5 +840,8 @@ export const Events = {
     ItemEvent,
     ItemsEvent,
     RestEvent,
-    CheckEvent
+    CheckEvent,
+    SkillEvent,
+    SaveEvent,
+    ToolEvent
 };

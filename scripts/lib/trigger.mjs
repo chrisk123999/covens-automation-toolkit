@@ -131,6 +131,33 @@ class CheckTrigger extends Trigger {
         this.type = 'check';
     }
 }
+class SkillTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.skill ?? [];
+        this.processFnMacros(fnMacroData, 'skill', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'skill';
+    }
+}
+class SaveTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.save ?? [];
+        this.processFnMacros(fnMacroData, 'save', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'save';
+    }
+}
+class ToolTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.tool ?? [];
+        this.processFnMacros(fnMacroData, 'tool', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'tool';
+    }
+}
 export const Triggers = {
     Trigger,
     RollTrigger,
@@ -141,5 +168,8 @@ export const Triggers = {
     AuraTrigger,
     ItemTrigger,
     RestTrigger,
-    CheckTrigger
+    CheckTrigger,
+    SkillTrigger,
+    SaveTrigger,
+    ToolTrigger
 };

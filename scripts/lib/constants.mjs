@@ -111,6 +111,13 @@ const restPasses = {
     short: 'short',
     long: 'long'
 };
+const rollPasses = {
+    situational: 'situational',
+    context: 'context',
+    bonus: 'bonus',
+    post: 'post',
+    targetSituational: 'targetSituational'
+};
 export const constants = {
     registeredMacros: undefined,
     automations: undefined,
@@ -129,5 +136,6 @@ export const constants = {
     itemPasses,
     itemHookNames,
     restHookNames,
-    restPasses
+    restPasses,
+    rollPasses
 };
