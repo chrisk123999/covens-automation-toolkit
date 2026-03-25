@@ -156,13 +156,28 @@ class CatEvent {
         return this._sortedTriggers;
     }
     get unsortedTriggers() {
-        return [];
+        let triggers = [];
+        triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
+        if (this.scene) {
+            triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+            triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + this.pass.capitalize()));
+        }
+        if (this.regions) {
+            this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
+                triggers.push(new this.trigger(region, 'region' + this.pass.capitalize()));
+            });
+        }
+        this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
+        this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
+        this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
+        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+        return triggers;
     }
     static hasCatFlag(document) {
         return !!(document.flags.cat?.macros || document.flags.cat?.embeddedMacros);
     }
     async run({canOverlap = false, multiResult = false} = {}) {
-        Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.actor.name);
         this.canOverlap = canOverlap;
         this.multiResult = multiResult;
         const results = this.multiResult ? [] : undefined;
@@ -373,11 +388,12 @@ class PreTargetingWorkflowEvent extends BaseWorkflowEvent {
         }
     }
     appendData(data) {
-        data = super.appendData(data);
-        data.config = this.config;
-        data.dialog = this.dialog;
-        data.message = this.message;
-        return data;
+        return {
+            ...super.appendData(data),
+            config: this.config,
+            dialog: this.dialog,
+            message: this.message
+        };
     }
 }
 class TokenDamageWorkflowEvent extends WorkflowEvent {
@@ -387,10 +403,11 @@ class TokenDamageWorkflowEvent extends WorkflowEvent {
         this.targetToken = token?.document;
     }
     appendData(data) {
-        data = super.appendData(data);
-        data.ditem = this.ditem;
-        data.targetToken = this.targetToken;
-        return data;
+        return {
+            ...super.appendData(data),
+            ditem: this.ditem,
+            targetToken: this.targetToken
+        };
     }
 }
 class MovementEvent extends CatEvent {
@@ -438,8 +455,10 @@ class RegionEvent extends CatEvent {
         return triggers;
     }
     appendData(data) {
-        data = super.appendData(data);
-        data.tokens = this.tokens;
+        return {
+            ...super.appendData(data),
+            tokens: this.tokens
+        };
     }
 }
 class EffectEvent extends CatEvent {
@@ -499,10 +518,11 @@ class EffectEvent extends CatEvent {
         return triggers;
     }
     appendData(data) {
-        data = super.appendData(data);
-        data.options = this.options;
-        data.updates = this.updates;
-        return data;
+        return {
+            ...super.appendData(data),
+            options: this.options,
+            updates: this.updates
+        };
     }
 }
 class CombatEvent extends CatEvent {
@@ -548,15 +568,16 @@ class CombatEvent extends CatEvent {
         return triggers;
     }
     appendData(data) {
-        data = super.appendData(data);
-        data.context = this.context;
-        data.combatant = this.combatant;
-        data.previousCombatant = this.previousCombatant;
-        data.round = this.round;
-        data.turn = this.turn;
-        data.previousRound = this.previousRound;
-        data.previousTurn = this.previousTurn;
-        return data;
+        return {
+            ...super.appendData(data),
+            context: this.context,
+            combatant: this.combatant,
+            previousCombatant: this.previousCombatant,
+            round: this.round,
+            turn: this.turn,
+            previousRound: this.previousRound,
+            previousTurn: this.previousTurn
+        };
     }
 }
 class AuraEvent extends CatEvent {
@@ -564,6 +585,7 @@ class AuraEvent extends CatEvent {
         super(pass);
         this.name = 'Aura';
         this.trigger = Triggers.AuraTrigger;
+        this.multiResult = true;
         this.token = token;
         this.actor = token.actor;
         this.regions = token.regions;
@@ -640,10 +662,11 @@ class AuraEvent extends CatEvent {
         return triggers;
     }
     appendData(data) {
-        data = super.appendData(data);
-        data.targetToken = this.targetToken;
-        data.options = this.options;
-        return data;
+        return {
+            ...super.appendData(data),
+            targetToken: this.targetToken,
+            options: this.options
+        };
     }
 }
 class ItemEvent extends CatEvent {
@@ -684,10 +707,11 @@ class ItemEvent extends CatEvent {
         return triggers;
     }
     appendData(data) {
-        data = super.appendData(data);
-        data.options = this.options;
-        data.updates = this.updates;
-        return data;
+        return {
+            ...super.appendData(data),
+            options: this.options,
+            updates: this.updates
+        };
     }
 }
 class ItemsEvent extends CatEvent {
@@ -707,9 +731,10 @@ class ItemsEvent extends CatEvent {
         return triggers;
     }
     appendData(data) {
-        super.appendData(data);
-        data.ddbCharacter = this.ddbCharacter;
-        return data;
+        return {
+            ...super.appendData(data),
+            ddbCharacter: this.ddbCharacter
+        };
     }
 }
 class RestEvent extends CatEvent {
@@ -731,28 +756,12 @@ class RestEvent extends CatEvent {
         this.distances = {};
         if (this.scene) this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
     }
-    get unsortedTriggers() {
-        let triggers = [];
-        triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
-        if (this.scene) {
-            triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
-            triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + this.pass.capitalize()));
-        }
-        if (this.regions) {
-            this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-                triggers.push(new this.trigger(region, 'region' + this.pass.capitalize()));
-            });
-        }
-        this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
-        this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
-        this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
-        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
-        return triggers;
-    }
     appendData(data) {
-        data = super.appendData(data);
-        data.result = this.result;
-        data.config = this.config;
+        return {
+            ...super.appendData(data),
+            result: this.result,
+            config: this.config
+        };
     }
 }
 class BaseRollEvent extends CatEvent {
@@ -774,30 +783,14 @@ class BaseRollEvent extends CatEvent {
         this.distances = {};
         if (this.scene) this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
     }
-    get unsortedTriggers() {
-        let triggers = [];
-        triggers.push(...this.getActorTriggers(this.actor, 'actor' + this.pass.capitalize()));
-        if (this.scene) {
-            triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
-            triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + this.pass.capitalize()));
-        }
-        if (this.regions) {
-            this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-                triggers.push(new this.trigger(region, 'region' + this.pass.capitalize()));
-            });
-        }
-        this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
-        this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
-        this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
-        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
-        return triggers;
-    }
     appendData(data) {
-        data = super.appendData(data);
-        data.config = this.config;
-        data.dialog = this.dialog;
-        data.message = this.message;
-        data.roll = this.roll;
+        return {
+            ...super.appendData(data),
+            config: this.config,
+            dialog: this.dialog,
+            message: this.message,
+            roll: this.roll
+        };
     }
 }
 class CheckEvent extends BaseRollEvent {
@@ -828,6 +821,35 @@ class ToolEvent extends BaseRollEvent {
         this.trigger = Triggers.ToolTrigger;
     } 
 }
+class TimeEvent extends CatEvent {
+    constructor(actor, pass, {worldTime, diff, options}) {
+        super(pass);
+        this.name = 'Time';
+        this.trigger = Triggers.TimeTrigger;
+        this.actor = actor;
+        this.token = actorUtils.getFirstToken(this.actor);
+        if (this.token) {
+            this.scene = this.token.parent;
+            this.regions = this.token.regions;
+        }
+        this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
+        this.worldTime = worldTime;
+        this.diff = diff;
+        this.options = options;
+        this.distances = {};
+        if (this.scene) this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            worldTime: this.worldTime,
+            diff: this.diff,
+            optiosn: this.options
+        };
+    }
+}
 export const Events = {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
@@ -843,5 +865,6 @@ export const Events = {
     CheckEvent,
     SkillEvent,
     SaveEvent,
-    ToolEvent
+    ToolEvent,
+    TimeEvent
 };

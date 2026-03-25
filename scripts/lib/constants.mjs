@@ -118,6 +118,12 @@ const rollPasses = {
     post: 'post',
     targetSituational: 'targetSituational'
 };
+const timeHookNames = {
+    updateWorldTime: 'updateWorldTime'
+};
+const timePasses = {
+    timeUpdated: 'timeUpdated'
+};
 export const constants = {
     registeredMacros: undefined,
     automations: undefined,
@@ -137,5 +143,7 @@ export const constants = {
     itemHookNames,
     restHookNames,
     restPasses,
-    rollPasses
+    rollPasses,
+    timeHookNames,
+    timePasses
 };

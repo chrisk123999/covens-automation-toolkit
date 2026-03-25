@@ -1,5 +1,6 @@
 import {constants} from './lib.mjs';
-import {workflowEvents, movementEvents, effectEvents, combatEvents, auraEvents, itemEvents, restEvents} from './event.mjs';
+import {workflowEvents, movementEvents, effectEvents, combatEvents, auraEvents, itemEvents, restEvents, timeEvents} from './event.mjs';
+import {queryUtils} from './utils.mjs';
 export function registerHooks() {
     // Workflow Events
     Hooks.on(constants.workflowHookNames.preTargeting, workflowEvents.preTargeting);
@@ -13,28 +14,33 @@ export function registerHooks() {
     Hooks.on(constants.workflowHookNames.utilityRollComplete, workflowEvents.utilityRollComplete);
     Hooks.on(constants.workflowHookNames.preTargetDamageApplication, workflowEvents.preTargetDamageApplication);
     Hooks.on(constants.workflowHookNames.rollFinished, workflowEvents.rollFinished);
-    // Movement Events
-    Hooks.on(constants.movementHookNames.moveToken, movementEvents.moveToken);
+    // Rest Events
+    Hooks.on(constants.restHookNames.restCompleted, restEvents.restCompleted);
+    // Item Events
+    Hooks.on(constants.itemHookNames.munched, itemEvents.actorMunched);
     // Effect Events
-    Hooks.on(constants.effectHookNames.createActiveEffect, effectEvents.createActiveEffect);
-    Hooks.on(constants.effectHookNames.deleteActiveEffect, effectEvents.deleteActiveEffect);
-    Hooks.on(constants.effectHookNames.updateActiveEffect, effectEvents.updateActiveEffect);
     Hooks.on(constants.effectHookNames.preCreateActiveEffect, effectEvents.preCreateActiveEffect);
     Hooks.on(constants.effectHookNames.preDeleteActiveEffect, effectEvents.preDeleteActiveEffect);
     Hooks.on(constants.effectHookNames.preUpdateActiveEffect, effectEvents.preUpdateActiveEffect);
-    // Combat Events
-    Hooks.on(constants.combatHookNames.updateCombat, combatEvents.updateCombat);
-    Hooks.on(constants.combatHookNames.combatStart, combatEvents.combatStart);
-    Hooks.on(constants.combatHookNames.deleteCombat, combatEvents.deleteCombat);
-    // Aura Events
-    Hooks.on(constants.auraHookNames.createToken, auraEvents.createToken);
-    Hooks.on(constants.auraHookNames.deleteToken, auraEvents.deleteToken);
-    Hooks.on(constants.auraHookNames.canvasReady, auraEvents.canvasReady);
-    // Item Events
-    Hooks.on(constants.itemHookNames.createItem, itemEvents.createItem);
-    Hooks.on(constants.itemHookNames.deleteItem, itemEvents.deleteItem);
-    Hooks.on(constants.itemHookNames.updateItem, itemEvents.updateItem);
-    Hooks.on(constants.itemHookNames.munched, itemEvents.actorMunched);
-    // Rest Events
-    Hooks.on(constants.restHookNames.restCompleted, restEvents.restCompleted);
+    Hooks.on(constants.effectHookNames.createActiveEffect, effectEvents.createActiveEffect);
+    Hooks.on(constants.effectHookNames.deleteActiveEffect, effectEvents.deleteActiveEffect);
+    Hooks.on(constants.effectHookNames.updateActiveEffect, effectEvents.updateActiveEffect);
+    if (queryUtils.isTheGM()) {
+        // Movement Events
+        Hooks.on(constants.movementHookNames.moveToken, movementEvents.moveToken);
+        // Combat Events
+        Hooks.on(constants.combatHookNames.updateCombat, combatEvents.updateCombat);
+        Hooks.on(constants.combatHookNames.combatStart, combatEvents.combatStart);
+        Hooks.on(constants.combatHookNames.deleteCombat, combatEvents.deleteCombat);
+        // Aura Events
+        Hooks.on(constants.auraHookNames.createToken, auraEvents.createToken);
+        Hooks.on(constants.auraHookNames.deleteToken, auraEvents.deleteToken);
+        Hooks.on(constants.auraHookNames.canvasReady, auraEvents.canvasReady);
+        // Item Events
+        Hooks.on(constants.itemHookNames.createItem, itemEvents.createItem);
+        Hooks.on(constants.itemHookNames.deleteItem, itemEvents.deleteItem);
+        Hooks.on(constants.itemHookNames.updateItem, itemEvents.updateItem);
+        // Time Events
+        Hooks.on(constants.timeHookNames.updateWorldTime, timeEvents.updateWorldTime);
+    }
 }

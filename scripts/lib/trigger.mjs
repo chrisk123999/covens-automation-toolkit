@@ -158,6 +158,15 @@ class ToolTrigger extends Trigger {
         this.type = 'tool';
     }
 }
+class TimeTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.time ?? [];
+        this.processFnMacros(fnMacroData, 'time', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'time';
+    }
+}
 export const Triggers = {
     Trigger,
     RollTrigger,
@@ -171,5 +180,6 @@ export const Triggers = {
     CheckTrigger,
     SkillTrigger,
     SaveTrigger,
-    ToolTrigger
+    ToolTrigger,
+    TimeTrigger
 };
