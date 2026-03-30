@@ -10,6 +10,7 @@ class RegisteredMacros {
             source: new fields.StringField({required: true, nullable: false}),
             rules: new fields.StringField({required: true, nullable: false}),
             identifier: new fields.StringField({required: true, nullable: false}),
+            generic: new fields.BooleanField({required: false, nullable: false}),
             aura: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             check: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             combat: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
