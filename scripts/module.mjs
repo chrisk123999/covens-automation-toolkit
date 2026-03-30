@@ -10,9 +10,7 @@ Hooks.once('init', () => {
     lib.queries.registerQueries();
 });
 Hooks.once('ready', () => {
-    if (game.user.isGM) {
-        game.settings.set('cat', 'gmID', game.user.id);
-    }
+    if (game.user.isGM) game.settings.set('cat', 'gmID', game.user.id);
     lib.constants.registeredMacros = new lib.Macros.RegisteredMacros();
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
     registerHooks();

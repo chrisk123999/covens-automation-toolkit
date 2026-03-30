@@ -10,11 +10,18 @@ class RegisteredMacros {
             source: new fields.StringField({required: true, nullable: false}),
             rules: new fields.StringField({required: true, nullable: false}),
             identifier: new fields.StringField({required: true, nullable: false}),
-            roll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            move: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            aura: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            check: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             combat: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             effect: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            aura: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
+            move: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            region: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            rest: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            save: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            skill: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            time: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            tool: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            roll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
         });
         this.#multiMacrosSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
     }
@@ -39,11 +46,18 @@ class RegisteredMacros {
         }
         let fnArray = !overwrite ? this.fnMacros : this.overwriteMacros;
         fnArray.push(new FnMacro(data.source, data.identifier, data.rules, {
-            roll: data.roll ?? [],
-            move: data.move ?? [],
+            aura: data.aura ?? [],
+            check: data.check ?? [],
             combat: data.combat ?? [],
             effect: data.effect ?? [],
-            aura: data.aura ?? []
+            move: data.move ?? [],
+            region: data.region ?? [],
+            rest: data.rest ?? [],
+            save: data.save ?? [],
+            skill: data.skill ?? [],
+            time: data.time ?? [],
+            tool: data.tool ?? [],
+            roll: data.roll ?? []
         }));
     }
     registerFnMacros(data = [], overwrite = false) {
@@ -56,16 +70,23 @@ class RegisteredMacros {
     }
 }
 class FnMacro {
-    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], aura = []} = {}) {
+    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], aura = [], check = [], region = [], rest = [], save = [], skill = [], time = [], tool = []} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
         this.macros = {
-            roll,
-            move,
+            aura,
+            check,
             combat,
             effect,
-            aura
+            move,
+            region,
+            rest,
+            save,
+            skill,
+            time,
+            tool,
+            roll
         };
     }
 }
