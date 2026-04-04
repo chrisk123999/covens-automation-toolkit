@@ -4,7 +4,7 @@ import * as lib from './lib.mjs';
 import * as utils from './utils.mjs';
 import {api} from './api.mjs';
 import {test} from './test.mjs';
-import {actorPatching, documentPatching, effectPatching} from './patching.mjs';
+import {activityPatching, actorPatching, documentPatching, effectPatching} from './patching.mjs';
 Hooks.once('init', () => {
     registerSettings();
     lib.queries.registerQueries();
@@ -17,6 +17,7 @@ Hooks.once('ready', () => {
     documentPatching.patch(true);
     effectPatching.patch(true);
     actorPatching.patch(true);
+    activityPatching.patch(true);
     lib.constants.registeredMacros.registerFnMacro(test);
     globalThis.cat = {
         api,

@@ -29,6 +29,12 @@ function getFirstToken(actor) {
 function getEffectByIdentifier(actor, identifier) {
     return getEffects(actor).find(i => documentUtils.getIdentifier(i) === identifier);
 }
+function getBestAbility(actor, abilities) {
+    return abilities.reduce((best, key) => {
+        if (!actor.system.abilities[key]) return best;
+        return actor.system.abilities[key].mod > actor.system.abilities[best].mod ? key : best;
+    });
+}
 export const actorUtils = {
     getCastData,
     getEffects,
@@ -39,5 +45,6 @@ export const actorUtils = {
     getVehicles,
     getTokens,
     getFirstToken,
-    getEffectByIdentifier
+    getEffectByIdentifier,
+    getBestAbility
 };

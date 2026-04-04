@@ -103,6 +103,7 @@ class CatEvent {
             if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
             triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
         });
+        return triggers;
     }
     get sortedTriggers() {
         if (this._sortedTriggers) return this._sortedTriggers;
