@@ -3,7 +3,7 @@ import {actorUtils} from '../utils.mjs';
 function getRollData(wrapped, options) {
     const rollData = wrapped(options);
     const abilities = this.flags.cat?.abilities;
-    if (!abilities) return rollData;
+    if (!abilities || !this.actor) return rollData;
     const bestAbility = actorUtils.getBestAbility(this.actor, [this.ability, ...abilities]);
     rollData.mod = this.actor?.system.abilities?.[bestAbility]?.mod ?? 0;
     return rollData;
