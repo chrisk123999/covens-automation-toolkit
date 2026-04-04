@@ -186,7 +186,7 @@ class CatEvent {
         return triggers;
     }
     static hasCatFlag(document) {
-        return !!(document.flags.cat?.macros || document.flags.cat?.embeddedMacros);
+        return !!(document.flags?.cat?.macros || document.flags?.cat?.embeddedMacros);
     }
     async run({canOverlap = false, multiResult = false} = {}) {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.actor.name);
@@ -327,7 +327,7 @@ class BaseWorkflowEvent extends CatEvent {
         if (this.targets?.size) {
             this.targets.forEach(token => {
                 if (!this.actor) return;
-                if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token.document, 'target' + this.pass.capitalize(), {sourceToken: token.document}, this.distances));
+                if (CatEvent.hasCatFlag(token.document)) triggers.push(new this.trigger(token.document, 'target' + this.pass.capitalize(), {sourceToken: token.document}, this.distances));
                 triggers.push(...this.getActorTriggers(token.actor, 'target' + this.pass.capitalize(), {sourceToken: token.document}, this.distances));
                 token.document.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
                     triggers.push(new this.trigger(region, 'target' + this.pass.capitalize(), {sourceToken: token.document}, this.distances));
@@ -456,25 +456,51 @@ class MovementEvent extends CatEvent {
     }
 }
 class RegionEvent extends CatEvent {
-    constructor(regions, pass, {tokens}) {
+    constructor(regions, pass, {tokens, workflow, options, updates}) {
         super(pass);
         this.name = 'Region';
         this.Trigger = Triggers.RegionTrigger;
         this.regions = regions;
         this.tokens = tokens;
+        this.workflow = workflow;
+        this.options = options;
+        this.updates = updates;
     }
     get unsortedTriggers() {
         let triggers = [];
         this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-            triggers.push(new Triggers.RegionTrigger(region, this.pass, {tokens: this.tokens}));
+            triggers.push(new Triggers.RegionTrigger(region, this.pass, {tokens: this.tokens, workflow: this.workflow, options: this.options, updates: this.updates}));
         });
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }
+    async run() {
+        if (this.regions.length > 1) {
+            Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.regions.length + ' regions');
+        } else {
+            Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.regions[0].name);
+        }
+        for (let trigger of this.sortedTriggers) {
+            if (typeof trigger.macro === 'string') {
+                Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+                await this.executeScript(trigger.macro, trigger);
+            } else {
+                Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macro.name + ' from ' + trigger.name);
+                try {
+                    await trigger.macro(trigger);
+                } catch (error) {
+                    Logging.addMacroError(error);
+                }
+            }
+        }
+    }
     appendData(data) {
         return {
             ...super.appendData(data),
-            tokens: this.tokens
+            tokens: this.tokens,
+            workflow: this.workflow,
+            options: this.options,
+            updates: this.updates
         };
     }
 }
@@ -484,6 +510,7 @@ class EffectEvent extends CatEvent {
         this.name = 'Effect';
         this.trigger = Triggers.EffectTrigger;
         this.effect = effect;
+        console.log(this.effect);
         if (!parent) {
             if (effect.parent instanceof Actor) {
                 this.actor = effect.parent;

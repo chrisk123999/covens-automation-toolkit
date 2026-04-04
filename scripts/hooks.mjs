@@ -1,5 +1,5 @@
 import {constants} from './lib.mjs';
-import {workflowEvents, movementEvents, effectEvents, combatEvents, auraEvents, itemEvents, restEvents, timeEvents} from './event.mjs';
+import {workflowEvents, movementEvents, effectEvents, combatEvents, auraEvents, itemEvents, restEvents, timeEvents, regionEvents} from './event.mjs';
 import {queryUtils} from './utils.mjs';
 export function registerHooks() {
     // Workflow Events
@@ -25,6 +25,11 @@ export function registerHooks() {
     Hooks.on(constants.effectHookNames.createActiveEffect, effectEvents.createActiveEffect);
     Hooks.on(constants.effectHookNames.deleteActiveEffect, effectEvents.deleteActiveEffect);
     Hooks.on(constants.effectHookNames.updateActiveEffect, effectEvents.updateActiveEffect);
+    // Region Events
+    Hooks.on(constants.regionHooksNames.createRegion, regionEvents.createRegion);
+    Hooks.on(constants.regionHooksNames.updateRegion, regionEvents.updateRegion);
+    Hooks.on(constants.regionHooksNames.deleteRegion, regionEvents.deleteRegion);
+    Hooks.on(constants.workflowHookNames.regionPlaced, regionEvents.createWorkflowRegion);
     if (queryUtils.isTheGM()) {
         // Movement Events
         Hooks.on(constants.movementHookNames.moveToken, movementEvents.moveToken);

@@ -9,7 +9,7 @@ function getIntersections(region, A, B, boolOnly = false) {
     region.polygons.forEach(shape => {
         if (boolOnly && totalIntersections.length) return;
         if (shape.segmentIntersections) {
-            let intersections = shape.segmentIntersections(A, B);
+            const intersections = shape.segmentIntersections(A, B);
             totalIntersections.push(... intersections);
         } else {
             const intersections = [];

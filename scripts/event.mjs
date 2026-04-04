@@ -10,3 +10,4 @@ export {skillEvents} from './events/skill.mjs';
 export {saveEvents} from './events/save.mjs';
 export {toolEvents} from './events/tool.mjs';
 export {timeEvents} from './events/time.mjs';
+export {regionEvents} from './events/region.mjs';

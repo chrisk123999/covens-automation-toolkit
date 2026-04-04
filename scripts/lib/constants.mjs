@@ -35,7 +35,8 @@ const workflowHookNames = {
     damageRollComplete: 'midi-qol.premades.preDamageRollComplete',
     utilityRollComplete: 'midi-qol.premades.preUtilityRollComplete',
     preTargetDamageApplication: 'midi-qol.preTargetDamageApplication',
-    rollFinished: 'midi-qol.premades.postRollFinished'
+    rollFinished: 'midi-qol.premades.postRollFinished',
+    regionPlaced: 'midi-qol.premades.postTemplatePlaced'
 };
 const movementPasses = {
     moved: 'moved',
@@ -82,8 +83,14 @@ const auraHookNames = {
     deleteToken: 'deleteToken',
     canvasReady: 'canvasReady'
 };
+const regionHooksNames = {
+    createRegion: 'createRegion',
+    updateRegion: 'updateRegion',
+    deleteRegion: 'deleteRegion'
+};
 const regionPasses = {
     created: 'created',
+    updated: 'updated',
     deleted: 'deleted',
     moved: 'moved',
     left: 'left',
@@ -138,6 +145,7 @@ export const constants = {
     combatPasses,
     auraPasses,
     auraHookNames,
+    regionHooksNames,
     regionPasses,
     itemPasses,
     itemHookNames,
