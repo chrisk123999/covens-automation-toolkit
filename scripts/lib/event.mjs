@@ -17,7 +17,8 @@ class CatEvent {
             regions: this.regions,
             groups: this.groups,
             encounters: this.encounters,
-            vehicles: this.vehicles
+            vehicles: this.vehicles,
+            level: this.level
         };
     }
     getActorTriggers(actor, pass, data) {
@@ -94,6 +95,15 @@ class CatEvent {
         });
         return triggers;
     }
+    getLevelTriggers(level, pass, data) {
+        const triggers = [];
+        if (CatEvent.hasCatFlag(level)) triggers.push(new this.trigger(level, pass, data));
+        level.parent.tokens.filter(token => token.level === level.id).forEach(token => {
+            if (!token.actor) return;
+            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
+            triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
+        });
+    }
     get sortedTriggers() {
         if (this._sortedTriggers) return this._sortedTriggers;
         const startTime = performance.now();
@@ -167,6 +177,7 @@ class CatEvent {
                 triggers.push(new this.trigger(region, 'region' + this.pass.capitalize()));
             });
         }
+        if (this.level) triggers.push(...this.getLevelTriggers(this.level, 'level' + this.pass.capitalize()));
         this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
         this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
@@ -311,6 +322,7 @@ class BaseWorkflowEvent extends CatEvent {
                 triggers.push(new this.trigger(region, 'region' + this.pass.capitalize()));
             });
         }
+        if (this.level) triggers.push(...this.getLevelTriggers(this.level, 'level' + this.pass.capitalize()));
         if (this.targets?.size) {
             this.targets.forEach(token => {
                 if (!this.actor) return;
@@ -357,6 +369,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         if (this.token && this.scene) {
             this.distances = {};
             this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+            this.level = this.scene.levels.get(this.token.level);
         }
     }
     appendData(data) {
@@ -385,6 +398,7 @@ class PreTargetingWorkflowEvent extends BaseWorkflowEvent {
         if (this.token && this.scene) {
             this.distances = {};
             this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+            this.level = this.scene.levels.get(this.token.level);
         }
     }
     appendData(data) {
@@ -425,6 +439,7 @@ class MovementEvent extends CatEvent {
         this.options = options;
         this.distances = {};
         this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+        this.level = this.scene.levels.get(this.token.level);
     }
     get unsortedTriggers() {
         let triggers = [];
@@ -434,6 +449,7 @@ class MovementEvent extends CatEvent {
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
         triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
         triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + this.pass.capitalize()));
+        triggers.push(...this.getLevelTriggers(this.level, 'level' + this.pass.capitalize()));
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }
@@ -491,6 +507,7 @@ class EffectEvent extends CatEvent {
             this.regions = this.token.regions;
             this.distances = {};
             this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+            this.level = this.scene.levels.get(this.token.level);
         }
         this.groups = actorUtils.getGroups(this.actor);
         this.encounters = actorUtils.getEncounters(this.actor);
@@ -511,6 +528,7 @@ class EffectEvent extends CatEvent {
                 triggers.push(new Triggers.EffectTrigger(region, 'region' + this.pass.capitalize()));
             });
         }
+        if (this.level) triggers.push(...this.getLevelTriggers(this.level, 'level' + this.pass.capitalize()));
         this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
         this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
@@ -547,6 +565,7 @@ class CombatEvent extends CatEvent {
         this.previousTurn = previousTurn;
         this.distances = {};
         this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+        this.level = this.scene.levels.get(this.token.level);
     }
     get unsortedTriggers() {
         let triggers = [];
@@ -564,6 +583,7 @@ class CombatEvent extends CatEvent {
         this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
         triggers.push(...this.getSceneTriggers(this.scene, 'scene' + this.pass.capitalize()));
+        if (this.level) triggers.push(...this.getLevelTriggers(this.level, 'level' + this.pass.capitalize()));
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }
@@ -599,6 +619,7 @@ class AuraEvent extends CatEvent {
             this.distances[token.id] = tokenUtils.getDistance(this.token, token);
         });
         this.targetToken = targetToken;
+        this.level = this.scene.levels.get(this.token.level);
     }
     async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
@@ -680,6 +701,7 @@ class ItemEvent extends CatEvent {
         if (this.token) {
             this.scene = this.token.parent;
             this.regions = this.token.regions;
+            this.level = this.scene.levels.get(this.token.level);
         }
         this.groups = actorUtils.getGroups(this.actor);
         this.encounters = actorUtils.getEncounters(this.actor);
@@ -700,6 +722,7 @@ class ItemEvent extends CatEvent {
                 triggers.push(new Triggers.EffectTrigger(region, 'region' + this.pass.capitalize()));
             });
         }
+        if (this.level) triggers.push(...this.getLevelTriggers(this.level, 'level' + this.pass.capitalize()));
         this.groups.forEach(group => triggers.push(...this.getGroupTriggers(group, 'group' + this.pass.capitalize())));
         this.vehicles.forEach(vehicle => triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + this.pass.capitalize())));
         this.encounters.forEach(encounter => triggers.push(...this.getEncounterTriggers(encounter, 'encounter' + this.pass.capitalize())));
@@ -747,6 +770,7 @@ class RestEvent extends CatEvent {
         if (this.token) {
             this.scene = this.token.parent;
             this.regions = this.token.regions;
+            this.level = this.scene.levels.get(this.token.level);
         }
         this.groups = actorUtils.getGroups(this.actor);
         this.encounters = actorUtils.getEncounters(this.actor);
@@ -772,6 +796,7 @@ class BaseRollEvent extends CatEvent {
         if (this.token) {
             this.scene = this.token.parent;
             this.regions = this.token.regions;
+            this.level = this.scene.levels.get(this.token.level);
         }
         this.groups = actorUtils.getGroups(this.actor);
         this.encounters = actorUtils.getEncounters(this.actor);
@@ -831,6 +856,7 @@ class TimeEvent extends CatEvent {
         if (this.token) {
             this.scene = this.token.parent;
             this.regions = this.token.regions;
+            this.level = this.scene.levels.get(this.token.level);
         }
         this.groups = actorUtils.getGroups(this.actor);
         this.encounters = actorUtils.getEncounters(this.actor);
