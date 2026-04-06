@@ -1,3 +1,6 @@
+import {RegisteredMacros} from './macros.mjs';
+import {RegisteredAutomations} from './automations.mjs';
+
 const workflowPasses = {
     preTargeting: 'preTargeting',
     preItemRoll: 'preItemRoll',
@@ -111,6 +114,12 @@ const itemHookNames = {
     updateItem: 'updateItem',
     munched: 'ddb-importer.characterProcessDataComplete'
 };
+const sheetHookNames = {
+    getHeaderControlsActiveEffectConfig: 'getHeaderControlsActiveEffectConfig',
+    getHeaderControlsActorSheetV2: 'getHeaderControlsActorSheetV2',
+    getHeaderControlsItemSheet5e: 'getHeaderControlsItemSheet5e',
+    getHeaderControlsRegionConfig: 'getHeaderControlsRegionConfig'
+};
 const restHookNames = {
     restCompleted: 'dnd5e.restCompleted'
 };
@@ -131,8 +140,19 @@ const timeHookNames = {
 const timePasses = {
     timeUpdated: 'timeUpdated'
 };
-export const constants = {
+const MEDKIT_STATUSES = {
+    UNKNOWN: 'unknown',
+    OUTDATED_CPR: 'outdated-cpr',
+    OUTDATED_OTHER: 'outdated-other',
+    AVAILABLE: 'available',
+    UP_TO_DATE_CPR: 'up-to-date-cpr',
+    CONFIGURABLE: 'configurable',
+    UP_TO_DATE_OTHER: 'up-to-date-other'
+};
+export default {
+    /** @type {RegisteredMacros} */
     registeredMacros: undefined,
+    /** @type {RegisteredAutomations} */
     automations: undefined,
     gameReady: false,
     workflowPasses,
@@ -152,6 +172,8 @@ export const constants = {
     restHookNames,
     restPasses,
     rollPasses,
+    sheetHookNames,
     timeHookNames,
-    timePasses
+    timePasses,
+    MEDKIT_STATUSES
 };

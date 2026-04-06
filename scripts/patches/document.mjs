@@ -1,5 +1,5 @@
-import {effectEvents} from '../event.mjs';
-import {Logging} from '../lib.mjs';
+import {effectEvents} from '../events/_module.mjs';
+import {Logging} from '../lib/_module.mjs';
 async function deleteEmbeddedDocuments(wrapped, embeddedName, ids, operation = {}) {
     if (embeddedName != 'ActiveEffect') return await await wrapped(embeddedName, ids, operation);
     if (!(parent instanceof Actor) || (parent instanceof Item && parent.actor)) return await await wrapped(embeddedName, ids, operation);
@@ -19,6 +19,6 @@ function patch(enabled) {
         libWrapper.unregister('cat', 'foundry.abstract.Document.prototype.deleteEmbeddedDocuments');
     }
 }
-export const documentPatching = {
+export default {
     patch
 };

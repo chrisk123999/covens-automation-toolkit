@@ -1,6 +1,6 @@
 /** @import {CompendiumCollection} from '@client/documents/collections/_module.mjs' */
-import {Logging} from '../lib.mjs';
-import {documentUtils} from '../utils.mjs';
+import {Logging} from '../lib/_module.mjs';
+import {documentUtils} from '../utilities/_module.mjs';
 const fields = foundry.data.fields;
 
 /**
@@ -76,7 +76,7 @@ class Automation {
         return this.config.find(i => i.key === key)?.default;
     }
 }
-class RegisteredAutomations {
+export class RegisteredAutomations {
     #automationsSchema = new fields.SchemaField({
         source: new fields.StringField({required: true, nullable: false}),
         rules: new fields.StringField({required: true, nullable: false}),
@@ -242,7 +242,7 @@ class RegisteredAutomations {
         }));
     }
 }
-export const Automations = {
+export default {
     Automation,
     RegisteredAutomations
 };

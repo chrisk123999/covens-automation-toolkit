@@ -1,5 +1,5 @@
-import {constants, Events} from '../lib.mjs';
-import {queryUtils} from '../utils.mjs';
+import {constants, Events} from '../lib/_module.mjs';
+import {queryUtils} from '../utilities/_module.mjs';
 async function updateCombat(combat, updates, context) {
     if (!queryUtils.isTheGM()) return;
     if (!updates.turn && !updates.round) return;
@@ -40,7 +40,7 @@ async function deleteCombat(combat, updates, context) {
         await new Events.CombatEvent(combat, constants.combatPasses.combatEnd, combatant.token, {context, combatant, round: currentRound, turn: currentTurn, previousCombatant, previousRound, previousTurn}).run();
     }
 }
-export const combatEvents = {
+export default {
     updateCombat,
     combatStart,
     deleteCombat

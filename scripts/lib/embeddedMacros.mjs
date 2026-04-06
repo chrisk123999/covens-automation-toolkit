@@ -1,5 +1,5 @@
-import {Logging} from '../lib.mjs';
-export class EmbeddedMacros {
+import {Logging} from '../lib/_module.mjs';
+export default class EmbeddedMacros {
     constructor(document) {
         this.document = document;
         this.embeddedMacros = document.flags.cat?.embeddedMacros ?? [];

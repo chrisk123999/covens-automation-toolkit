@@ -1,6 +1,6 @@
-import {genericUtils} from './genericUtils.mjs';
+import genericUtils from './genericUtils.mjs';
 function gmID() {
-    let gmID = game.settings.get('cat', 'gmID');
+    let gmID = game.users.activeGM?.id;
     const preferredGMId = game.settings.get('midi-qol', 'PreferredGM');  
     if (preferredGMId !== '') {
         const preferredGM = game.users.get(preferredGMId);
@@ -30,7 +30,7 @@ function firstOwner(document, useId) {
 async function query(name, user, queryData, timeout = 300) {
     return await user.query('cat.' + name, queryData, {timeout});
 }
-export const queryUtils = {
+export default {
     gmID,
     isTheGM,
     hasPermission,

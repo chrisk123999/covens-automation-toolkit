@@ -1,6 +1,6 @@
-import {Logging} from '../lib.mjs';
+import {Logging} from '../lib/_module.mjs';
 const fields = foundry.data.fields;
-class RegisteredMacros {
+export class RegisteredMacros {
     #macrosSchema;
     #multiMacrosSchema;
     constructor() {
@@ -91,6 +91,6 @@ class FnMacro {
         };
     }
 }
-export const Macros = {
+export default {
     RegisteredMacros
 };

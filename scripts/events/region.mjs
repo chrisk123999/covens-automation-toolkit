@@ -1,4 +1,4 @@
-import {constants, Events} from '../lib.mjs';
+import {constants, Events} from '../lib/_module.mjs';
 async function createRegion(region, options, userId) {
     if (userId != game.user.id) return;
     if (region.flags.dnd5e?.spellLevel) return;
@@ -19,7 +19,7 @@ async function createWorkflowRegion(workflow) {
     console.log(workflow.template);
     await new Events.RegionEvent([workflow.template], constants.regionPasses.created, {workflow}).run();
 }
-export const regionEvents = {
+export default {
     createRegion,
     updateRegion,
     deleteRegion,

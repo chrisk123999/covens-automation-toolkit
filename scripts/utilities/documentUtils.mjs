@@ -1,5 +1,5 @@
-import {constants} from '../lib.mjs';
-import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, sceneUtils, tokenUtils} from '../utils.mjs';
+import {constants} from '../lib/_module.mjs';
+import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, sceneUtils, tokenUtils} from '../utilities/_module.mjs';
 function getRules(document) {
     let rules = document.flags.cat?.automation?.rules;
     if (rules) return rules;
@@ -48,7 +48,7 @@ async function deleteEmbeddedDocuments(document, type, ids, options, {forceGM = 
     }
     return document;
 }
-export const documentUtils = {
+export default {
     getRules,
     getSource,
     getIdentifier,

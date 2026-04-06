@@ -13,11 +13,6 @@ function addSetting(options) {
 }
 export function registerSettings() {
     addSetting({
-        key: 'gmID',
-        type: String,
-        default: ''
-    });
-    addSetting({
         key: 'displayDebugLogs',
         type: Boolean,
         default: true // Change this to false eventually.

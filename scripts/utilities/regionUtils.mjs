@@ -34,7 +34,7 @@ function getIntersections(region, A, B, boolOnly = false) {
     if (boolOnly) return totalIntersections.length ? true : false;
     return totalIntersections;
 }
-export const regionUtils = {
+export default {
     getCastData,
     rayIntersectsRegion,
     getIntersections

@@ -1,0 +1,28 @@
+/* Medkit Coloration */
+[data-medkit-status="unknown"] {
+    color: pink
+}
+
+[data-medkit-status="outdated-cpr"] {
+    color: red
+}
+
+[data-medkit-status="outdated-other"] {
+    color: orange
+}
+
+[data-medkit-status="available"] {
+    color: yellow
+}
+
+[data-medkit-status="up-to-date-cpr"] {
+    color: green
+}
+
+[data-medkit-status="configurable"] {
+    color: dodgerblue
+}
+
+[data-medkit-status="up-to-date-other"] {
+    color: orchid
+}

@@ -1,5 +1,5 @@
-import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils, itemUtils, regionUtils, tokenUtils} from '../utils.mjs';
-import {Triggers, Logging, constants} from '../lib.mjs';
+import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils, itemUtils, regionUtils, tokenUtils} from '../utilities/_module.mjs';
+import {Triggers, Logging, constants} from '../lib/_module.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
@@ -189,6 +189,7 @@ class CatEvent {
         return !!(document.flags?.cat?.macros || document.flags?.cat?.embeddedMacros);
     }
     async run({canOverlap = false, multiResult = false} = {}) {
+        if (!this.actor) return;
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.actor.name);
         this.canOverlap = canOverlap;
         this.multiResult = multiResult;
@@ -514,32 +515,30 @@ class EffectEvent extends CatEvent {
         if (!parent) {
             if (effect.parent instanceof Actor) {
                 this.actor = effect.parent;
-            }
-            if (effect.parent instanceof Item) {
+            } else if (effect.parent instanceof Item) {
                 this.item = effect.parent;
                 this.actor = this.item.actor;
             }
 
-        } else {
-            if (parent instanceof Actor) {
-                this.actor = parent;
-            }
-            if (parent instanceof Item) {
-                this.item = parent;
-                this.actor = parent.actor;
-            }
+        } else if (parent instanceof Actor) {
+            this.actor = parent;
+        } else if (parent instanceof Item) {
+            this.item = parent;
+            this.actor = parent.actor;
         }
-        this.token = actorUtils.getFirstToken(this.actor);
-        if (this.token) {
-            this.scene = this.token.parent;
-            this.regions = this.token.regions;
-            this.distances = {};
-            this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
-            this.level = this.scene.levels.get(this.token.level);
+        if (this.actor) {
+            this.token = actorUtils.getFirstToken(this.actor);
+            if (this.token) {
+                this.scene = this.token.parent;
+                this.regions = this.token.regions;
+                this.distances = {};
+                this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+                this.level = this.scene.levels.get(this.token.level);
+            }
+            this.groups = actorUtils.getGroups(this.actor);
+            this.encounters = actorUtils.getEncounters(this.actor);
+            this.vehicles = actorUtils.getVehicles(this.actor);
         }
-        this.groups = actorUtils.getGroups(this.actor);
-        this.encounters = actorUtils.getEncounters(this.actor);
-        this.vehicles = actorUtils.getVehicles(this.actor);
         this.options = options;
         this.updates = updates;
     }
@@ -651,6 +650,7 @@ class AuraEvent extends CatEvent {
     }
     async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        if (!this.actor) return;
         const removedEffects = [];
         const effects = actorUtils.getEffects(this.actor).filter(effect => effect.flags.cat?.auraEffect);
         await Promise.all(effects.map(async effect => {
@@ -904,7 +904,7 @@ class TimeEvent extends CatEvent {
         };
     }
 }
-export const Events = {
+export default {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
     TokenDamageWorkflowEvent,

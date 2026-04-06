@@ -1,6 +1,6 @@
-import {genericUtils, queryUtils, regionUtils} from '../utils.mjs';
-import {constants, Events} from '../lib.mjs';
-import {auraEvents} from '../event.mjs';
+import {genericUtils, queryUtils, regionUtils} from '../utilities/_module.mjs';
+import {constants, Events} from '../lib/_module.mjs';
+import {auraEvents} from '../events/_module.mjs';
 async function moveToken(token, movement, options, user) {
     if (!queryUtils.isTheGM()) return;
     if (!token.actor) return;
@@ -48,6 +48,6 @@ async function moveToken(token, movement, options, user) {
         if (enteredAndLeftRegions.length) await new Events.RegionEvent(enteredAndLeftRegions, constants.regionPasses.passedThrough, {tokens: [token]}).run();
     }
 }
-export const movementEvents = {
+export default {
     moveToken
 };

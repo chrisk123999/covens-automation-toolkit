@@ -1,0 +1,16 @@
+{
+  "CAT": {
+    "MEDKIT": {
+      "Title": "Coven's Automation Toolkit Configuration: {name}",
+      "HeaderLabel": "CAT Medkit",
+      "TABS": {
+        "Automation": "Automation",
+        "Configuration": "Configuration",
+        "Generic": "Generic Automations",
+        "Embedded": "Embedded Macros",
+        "Macros": "Registered Macros"
+      },
+      "EditEmbedded": "Edit Embedded Macros"
+    }
+  }
+}

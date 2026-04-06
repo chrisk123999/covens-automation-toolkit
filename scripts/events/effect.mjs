@@ -1,6 +1,6 @@
-import {queryUtils} from '../utils.mjs';
-import {constants, Events} from '../lib.mjs';
-import {auraEvents} from '../event.mjs';
+import {queryUtils} from '../utilities/_module.mjs';
+import {constants, Events} from '../lib/_module.mjs';
+import {auraEvents} from '../events/_module.mjs';
 async function doCreateActiveEffect(data, options) {
     let parent = options.parent;
     if (!parent) return;
@@ -38,7 +38,7 @@ function preUpdateActiveEffect(effect, updates, options, userId) {
     if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
     new Events.EffectEvent(effect, constants.effectPasses.preUpdated, {options, updates}).runSync();
 }
-export const effectEvents = {
+export default {
     createActiveEffect,
     deleteActiveEffect,
     updateActiveEffect,

@@ -19,7 +19,7 @@ function convertDistance(scene, distanceFt) {
         default: return distanceFt;
     }
 }
-export const genericUtils = {
+export default {
     setProperty,
     getProperty,
     duplicate,

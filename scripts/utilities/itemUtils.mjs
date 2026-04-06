@@ -15,7 +15,7 @@ function getSavedCastData(item) {
         saveDC: getSaveDC(item)
     };
 }
-export const itemUtils = {
+export default {
     getSaveDC,
     getSavedCastData
 };

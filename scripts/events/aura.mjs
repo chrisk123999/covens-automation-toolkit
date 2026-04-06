@@ -1,5 +1,5 @@
-import {constants, Events} from '../lib.mjs';
-import {actorUtils, queryUtils} from '../utils.mjs';
+import {constants, Events} from '../lib/_module.mjs';
+import {actorUtils, queryUtils} from '../utilities/_module.mjs';
 async function updateAuras(tokens, {options, targetToken} = {}) {
     await Promise.all(tokens.map(async token => {
         await new Events.AuraEvent(token, constants.auraPasses.update, {options, targetToken}).run();
@@ -31,7 +31,7 @@ async function effect(effect, options) {
     if (!token) return;
     await updateAuras(token.parent.tokens, {options, targetToken: token});
 }
-export const auraEvents = {
+export default {
     updateAuras,
     createToken,
     deleteToken,

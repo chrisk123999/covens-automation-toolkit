@@ -1,4 +1,4 @@
-import {documentUtils, effectUtils} from '../utils.mjs';
+import {documentUtils, effectUtils} from '../utilities/_module.mjs';
 async function createEffects({uuid, effectDatas, effectOptions}) {
     const document = await fromUuid(uuid);
     if (!document) return;
@@ -17,7 +17,7 @@ function registerQueries() {
         deleteEmbeddedDocuments
     };
 }
-export const queries = {
+export default {
     createEffects,
     deleteEmbeddedDocuments,
     registerQueries

@@ -27,7 +27,7 @@ function addAutomationError(data, message) {
     automationsErrors.push([JSON.stringify(data), message]);
     console.error(data, message);
 }
-export const Logging = {
+export default {
     logs,
     macroErrors,
     userErrors,

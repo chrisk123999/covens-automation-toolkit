@@ -1,5 +1,5 @@
-import {Logging} from '../lib.mjs';
-import {actorUtils} from '../utils.mjs';
+import {Logging} from '../lib/_module.mjs';
+import {actorUtils} from '../utilities/_module.mjs';
 function getRollData(wrapped, options) {
     const rollData = wrapped(options);
     const abilities = this.flags.cat?.abilities;
@@ -17,6 +17,6 @@ function patch(enabled) {
         libWrapper.unregister('cat', 'dnd5e.documents.activity.AttackActivity.prototype.getRollData');
     }
 }
-export const activityPatching = {
+export default {
     patch
 };

@@ -1,5 +1,5 @@
-import {effectEvents} from '../event.mjs';
-import {Logging} from '../lib.mjs';
+import {effectEvents} from '../events/_module.mjs';
+import {Logging} from '../lib/_module.mjs';
 async function create(wrapped, data = {}, operation = {}) {
     let result = await effectEvents.doCreateActiveEffect(data, operation);
     if (result) return;
@@ -15,6 +15,6 @@ function patch(enabled) {
         libWrapper.unregister('cat', 'ActiveEffect.implementation.create');
     }
 }
-export const effectPatching = {
+export default {
     patch
 };

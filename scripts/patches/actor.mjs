@@ -1,6 +1,6 @@
-import {checkEvents, saveEvents, skillEvents, toolEvents} from '../event.mjs';
-import {constants, Logging} from '../lib.mjs';
-import {genericUtils} from '../utils.mjs';
+import {checkEvents, saveEvents, skillEvents, toolEvents} from '../events/_module.mjs';
+import {constants, Logging} from '../lib/_module.mjs';
+import {genericUtils} from '../utilities/_module.mjs';
 async function check(wrapped, config, dialog = {}, message = {}) {
     const event = config.event;
     const checkId = config.ability;
@@ -194,6 +194,6 @@ function patch(enabled) {
         libWrapper.unregister('cat', 'CONFIG.Actor.documentClass.prototype.rollToolCheck');
     }
 }
-export const actorPatching = {
+export default {
     patch
 };

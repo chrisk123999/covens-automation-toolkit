@@ -1,5 +1,5 @@
-import {constants, Events} from '../lib.mjs';
-import {queryUtils} from '../utils.mjs';
+import {constants, Events} from '../lib/_module.mjs';
+import {queryUtils} from '../utilities/_module.mjs';
 async function updateWorldTime(worldTime, diff, options, userId) {
     if (!queryUtils.isTheGM()) return;
     let actors = new Set();
@@ -16,6 +16,6 @@ async function updateWorldTime(worldTime, diff, options, userId) {
         await new Events.TimeEvent(actor, constants.timePasses.timeUpdated, {worldTime, diff, options}).run();
     }
 }
-export const timeEvents = {
+export default {
     updateWorldTime
 };

@@ -1,4 +1,4 @@
-import {constants, Events} from '../lib.mjs';
+import {constants, Events} from '../lib/_module.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
     let event = await new Events.PreTargetingWorkflowEvent(constants.workflowPasses.preTargeting, {activity, token, config, dialog, message}).run();
     if (event) return false;
@@ -50,7 +50,7 @@ async function rollFinished(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.cleanup, workflow).run();
     console.log(workflow);
 }
-export const workflowEvents = {
+export default {
     preTargeting,
     preItemRoll,
     preambleComplete,

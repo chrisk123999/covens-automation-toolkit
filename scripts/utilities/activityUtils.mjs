@@ -9,7 +9,7 @@ function getSavedCastData(activity) {
         saveDC: getSaveDC(activity)
     };
 }
-export const activityUtils = {
+export default {
     getSaveDC,
     getSavedCastData
 };

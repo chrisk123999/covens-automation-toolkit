@@ -1,5 +1,5 @@
-import {constants, Events} from '../lib.mjs';
-import {queryUtils} from '../utils.mjs';
+import {constants, Events} from '../lib/_module.mjs';
+import {queryUtils} from '../utilities/_module.mjs';
 async function bulkUpdated(items) {
     await new Events.ItemsEvent(items, constants.itemPasses.bulkUpdated).run({canOverlap: true});
 }
@@ -18,7 +18,7 @@ async function updateItem(item, updates, options, userId) {
 async function actorMunched({actor, ddbCharacter}) {
     await new Events.ItemsEvent(actor.items, constants.itemPasses.munched, {ddbCharacter}).run({canOverlap: true});
 }
-export const itemEvents = {
+export default {
     bulkUpdated,
     createItem,
     deleteItem,

@@ -1,5 +1,5 @@
-import {documentUtils, genericUtils} from '../utils.mjs';
-import {constants, EmbeddedMacros} from '../lib.mjs';
+import {documentUtils, genericUtils} from '../utilities/_module.mjs';
+import {constants, EmbeddedMacros} from '../lib/_module.mjs';
 class Trigger {
     constructor(document, pass, data) {
         this.document = document;
@@ -167,7 +167,7 @@ class TimeTrigger extends Trigger {
         this.type = 'time';
     }
 }
-export const Triggers = {
+export default {
     Trigger,
     RollTrigger,
     MoveTrigger,

@@ -4,7 +4,7 @@ function getSavedCastData(token) {
 function getDistance(token, target, {wallsBlock, checkCover} = {}) {
     return MidiQOL.computeDistance(token.object, target.object, {wallsBlock, includeCover: checkCover});
 }
-export const tokenUtils = {
+export default {
     getSavedCastData,
     getDistance
 };

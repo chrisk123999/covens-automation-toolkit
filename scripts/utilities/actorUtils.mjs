@@ -1,4 +1,4 @@
-import {documentUtils} from '../utils.mjs';
+import {documentUtils} from '../utilities/_module.mjs';
 function getCastData(actor) {
     return actor.flags.cat?.castData;
 }
@@ -35,7 +35,7 @@ function getBestAbility(actor, abilities) {
         return actor.system.abilities[key].mod > actor.system.abilities[best].mod ? key : best;
     });
 }
-export const actorUtils = {
+export default {
     getCastData,
     getEffects,
     getGroups,

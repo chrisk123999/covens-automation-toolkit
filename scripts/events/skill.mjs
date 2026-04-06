@@ -1,4 +1,4 @@
-import {constants, Events} from '../lib.mjs';
+import {constants, Events} from '../lib/_module.mjs';
 async function situational(actor, data) {
     return await new Events.SkillEvent(actor, constants.rollPasses.situational, data).run();
 }
@@ -17,7 +17,7 @@ async function bonus(actor, data) {
 async function post(actor, data) {
     return await new Events.SkillEvent(actor, constants.rollPasses.post, data).run();
 }
-export const skillEvents = {
+export default {
     situational,
     context,
     bonus,

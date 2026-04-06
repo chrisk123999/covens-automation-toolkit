@@ -40,7 +40,8 @@ export default defineConfig([
                 TokenDocument: 'writable',
                 CONFIG: 'writable',
                 Actor: 'writable',
-                Item: 'writable'
+                Item: 'writable',
+                _loc: 'writable'
             },
 
             ecmaVersion: 'latest',

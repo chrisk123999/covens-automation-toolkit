@@ -1,4 +1,4 @@
-import {actorUtils} from './utils.mjs';
+import {actorUtils} from './utilities/_module.mjs';
 async function use(trigger) {
     console.log(trigger);
 }

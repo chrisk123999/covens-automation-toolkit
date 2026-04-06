@@ -1,0 +1,8 @@
+{
+  "i18n-ally.localesPaths": [
+    "lang",
+    "dnd5e/lang",
+    "foundry/lang"
+  ],
+  "i18n-ally.keystyle": "nested"
+}

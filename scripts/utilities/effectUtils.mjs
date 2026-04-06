@@ -1,4 +1,4 @@
-import {queryUtils} from '../utils.mjs';
+import {queryUtils} from '../utilities/_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
@@ -14,7 +14,7 @@ async function createEffects(document, effectDatas, effectOptions, {forceGM = fa
     }
     return effects;
 }
-export const effectUtils = {
+export default {
     getCastData,
     createEffects
 };
