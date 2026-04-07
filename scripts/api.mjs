@@ -1,9 +1,13 @@
 import {constants} from './lib/_module.mjs';
-export const api = {
-    registerFnMacro: (...args) => constants.registeredMacros?.registerFnMacro(...args),
-    registerFnMacros: (...args) => constants.registeredMacros?.registerFnMacros(...args),
-    registerAutomation: (...args) => constants.automations?.registerAutomation(...args),
-    registerAutomations: (...args) => constants.automations?.registerAutomations(...args),
-    registerAutomationCompendium: (...args) => constants.automations?.registerCompendium(...args),
-    registerAutomationModule: (...args) => constants.automations?.registerModule(...args)
+export function buildApi() {
+    const registeredMacros = constants.registeredMacros;
+    const automations = constants.automations;
+    return {
+        registerFnMacro: registeredMacros.registerFnMacro.bind(registeredMacros),
+        registerFnMacros: registeredMacros.registerFnMacros.bind(registeredMacros),
+        registerAutomation: automations.registerAutomation.bind(automations),
+        registerAutomations: automations.registerAutomations.bind(automations),
+        registerAutomationCompendium: automations.registerAutomationCompendium.bind(automations),
+        registerAutomationModule: automations.registerAutomationModule.bind(automations)
+    };
 };

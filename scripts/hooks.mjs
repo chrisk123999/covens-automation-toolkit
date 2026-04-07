@@ -69,14 +69,14 @@ function appendHeaderControl(app, controls) {
     if (embeddedOnlyTypes.includes(documentType)) {
         controls.push({
             label: headerLabel,
-            icon: 'fa-solid fa-kit-medical',
+            icon: 'fa-solid fa-cat',
             onClick: () => {} // TODO: Embedded Macros
         });
         return;
     }
     controls.push({
         label: headerLabel,
-        icon: 'fa-solid fa-kit-medical',
+        icon: 'fa-solid fa-cat',
         onClick: () => {
             if (app instanceof foundry.applications.sidebar.apps.Compendium) {
                 // TODO: Compendium Medkit
@@ -95,7 +95,7 @@ function appendHeaderControl(app, controls) {
             if (!headerButton) return;
             const item = app.document;
             if (!item) return;
-            const updated = 1; // TODO: isUpToDate
+            const currentAutomation = documentUtils.getCurrentAutomation(item);
             const source = documentUtils.getSource(item);
             const sources = [
                 'chris-premades',
@@ -108,31 +108,20 @@ function appendHeaderControl(app, controls) {
                 headerButton.dataset.medkitStatus = STATUSES.UNKNOWN;
                 return;
             }
-            const identifier = documentUtils.getIdentifier(item);
             let medkitStatus;
-            switch (updated) {
-                case 0:
-                    medkitStatus = STATUSES[`OUTDATED_${source === 'chris-premades' ? 'CPR' : 'OTHER'}`];
-                    break;
-                case 1:
-                    if (source === 'chris-premades') {
-                        if (constants.automations.getAutomationByIdentifier(identifier)?.config) {
-                            medkitStatus = STATUSES.CONFIGURABLE;
-                        } else {
-                            medkitStatus = STATUSES.UP_TO_DATE_CPR;
-                        }
-                    } else {
-                        medkitStatus = STATUSES.UP_TO_DATE_OTHER;
-                    }
-                    break;
-                
-                case -1:
-                    // TODO: preferred item, not any
-                    if (constants.automations.getAutomationByIdentifier(identifier)) medkitStatus = STATUSES.AVAILABLE;
-                    break;
-                
-                case 2:
+            // TODO: Maybe pull this out for reuse
+            if (item.flags.cat?.config?.generic) medkitStatus = STATUSES.CONFIGURABLE;
+            else if (currentAutomation) {
+                const statusSuffix = source === 'chris-premades' ? 'CPR' : 'OTHER';
+                if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) {
+                    medkitStatus = STATUSES[`OUTDATED_${statusSuffix}`];
+                } else if (currentAutomation.config) {
                     medkitStatus = STATUSES.CONFIGURABLE;
+                } else {
+                    medkitStatus = STATUSES[`UP_TO_DATE_${statusSuffix}`];
+                }
+            } else if (documentUtils.getAvailableAutomations(item).length) {
+                medkitStatus = STATUSES.AVAILABLE;
             }
             if (medkitStatus) headerButton.dataset.medkitStatus = medkitStatus;
         }, 100);

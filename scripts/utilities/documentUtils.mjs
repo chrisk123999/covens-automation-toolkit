@@ -1,15 +1,15 @@
 import {constants} from '../lib/_module.mjs';
 import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, sceneUtils, tokenUtils} from '../utilities/_module.mjs';
-function getRules(document) {
+function getRules(document, {documentType = document.documentName} = {}) {
     let rules = document.flags.cat?.automation?.rules;
     if (rules) return rules;
-    if (document.documentName === 'Item') return document.system.source.rules;
+    if (documentType === 'Item') return document.system.source.rules;
 }
 function getSource(document) {
     return document.flags.cat?.automation?.source;
 }
-function getIdentifier(document) {
-    switch (document.documentName) {
+function getIdentifier(document, {documentType = document.documentName} = {}) {
+    switch (documentType) {
         case 'Activity': return document.midiProperties.identifier;
         case 'Item': return document.system.identifier;
         default: return document.flags.cat?.identifier ?? document.name.slugify();
@@ -20,6 +20,18 @@ function getConfigValue(document, key) {
 }
 function getVersion(document) {
     return document.flags.cat?.automation?.version;
+}
+function getCurrentAutomation(document) {
+    const identifier = getIdentifier(document);
+    const rules = getRules(document);
+    const source = getSource(document);
+    if (!identifier || !rules || !source) return;
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, source});
+}
+function getAvailableAutomations(document) {
+    const identifier = getIdentifier(document);
+    const rules = getRules(document) ?? 'all';
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true});
 }
 function getSavedCastData(document) {
     switch(document.documentName) {
@@ -54,6 +66,8 @@ export default {
     getIdentifier,
     getConfigValue,
     getVersion,
+    getCurrentAutomation,
+    getAvailableAutomations,
     getSavedCastData,
     deleteEmbeddedDocuments
 };

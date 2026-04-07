@@ -1,3 +1,23 @@
 <section class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
-    <p>There's gonna be automation stuff here</p>
+    <div class="form-group" data-tooltip="CAT.MEDKIT.IdentifierTooltip">
+        <label>{{localize "CAT.MEDKIT.Identifier"}}</label>
+        <input disabled value="{{document.identifier}}">
+    </div>
+    {{formGroup sourceField name="selectedSource" choices=availableSources label=(localize "CAT.MEDKIT.Source") value=source}}
+    {{#if version}}
+    <div class="form-group">
+        <label>{{localize "CAT.MEDKIT.Version"}}</label>
+        <input disabled value="{{version}}">
+    </div>
+    {{/if}}
+    {{#if notes}}
+    <div class="form-group">
+        <label>{{localize "CAT.MEDKIT.Notes"}}</label>
+        <textarea disabled>{{notes}}</textarea>
+    </div>
+    {{/if}}
+    <div class="form-group">
+        <label>{{localize "CAT.MEDKIT.IgnoreItem"}}</label>
+        <input type="checkbox" name="ignoreItem"{{#if ignoreItem}} checked{{/if}}>
+    </div>
 </section>

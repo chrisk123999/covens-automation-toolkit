@@ -10,6 +10,7 @@ const fields = foundry.data.fields;
  * @property {string} version
  * @property {string} uuid
  * @property {AutomationConfig[]} config
+ * @property {string} [notes]
  */
 
 // TODO: More fully document
@@ -107,22 +108,8 @@ export class RegisteredAutomations {
      * @param {boolean} [options.multiple=false]            Whether to return all matching automations or only one
      * @returns {Automation[]|Automation|undefined}
      */
-    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', type = 'all', multiple = false} = {}) {
-        const predicate = automation => automation.identifier === identifier && (rules === 'all' || automation.rules === rules) && (source === 'all' || automation.source === source) && (type === 'all' || automation.type === type);
-        return multiple ? this.automations.filter(predicate) : this.automations.find(predicate);
-    }
-
-    /**
-     * Get the registered Automation (or Automations), if any, by name & other criteria
-     * @param {string} name                                 The name of the automation
-     * @param {object} [options={}]                         Additional options
-     * @param {'all'|'2014'|'2024'} [options.rules='all']   The ruleset of the automation
-     * @param {string} [options.source='all']               The source of the automation
-     * @param {boolean} [options.multiple=false]            Whether to return all matching automations or only one
-     * @returns {Automation[]|Automation|undefined}
-     */
-    getAutomationByName(name, {rules = 'all', source = 'all', type = 'all', multiple = false} = {}) {
-        const predicate = automation => automation.name === name && (rules === 'all' || automation.rules === rules) && (source === 'all' || automation.source === source) && (type === 'all' || automation.type === type);
+    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false} = {}) {
+        const predicate = automation => automation.identifier === identifier && (rules === 'all' || automation.rules === rules) && (source === 'all' || automation.source === source);
         return multiple ? this.automations.filter(predicate) : this.automations.find(predicate);
     }
 
@@ -187,9 +174,10 @@ export class RegisteredAutomations {
     async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, source, notes2014 = {}, notes2024 = {}, notesAll = {}} = {}) {
         const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation.version']});
         if (!source) source = pack.metadata.packageName;
+        const documentType = pack.metadata.type;
         return index.map(document => {
-            const identifier = documentUtils.getIdentifier(document);
-            const rule = rules[identifier] ?? documentUtils.getRules(document);
+            const identifier = documentUtils.getIdentifier(document, {documentType});
+            const rule = rules[identifier] ?? documentUtils.getRules(document, {documentType});
             let config;
             let notes;
             switch (rule) {

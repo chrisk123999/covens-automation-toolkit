@@ -41,7 +41,9 @@ export default defineConfig([
                 CONFIG: 'writable',
                 Actor: 'writable',
                 Item: 'writable',
-                _loc: 'writable'
+                _loc: 'writable',
+                _del: 'writable',
+                _replace: 'writable'
             },
 
             ecmaVersion: 'latest',
