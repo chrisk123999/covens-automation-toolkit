@@ -1,23 +1,11 @@
 <section class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
-    <div class="form-group" data-tooltip="CAT.MEDKIT.IdentifierTooltip">
-        <label>{{localize "CAT.MEDKIT.Identifier"}}</label>
-        <input disabled value="{{document.identifier}}">
-    </div>
-    {{formGroup sourceField name="selectedSource" disabled=disableSources choices=availableSources label=(localize "CAT.MEDKIT.Source") value=source}}
+    {{formGroup fields.identifier disabled=true value=document.identifier dataset=(object tooltip="CAT.MEDKIT.IdentifierTooltip")}}
+    {{formGroup fields.source name="selectedSource" disabled=disableSources choices=availableSources value=source dataset=(ifThen disableSources (object tooltip="CAT.MEDKIT.NoSourcesTooltip"))}}
     {{#if version}}
-    <div class="form-group">
-        <label>{{localize "CAT.MEDKIT.Version"}}</label>
-        <input disabled value="{{version}}">
-    </div>
+        {{formGroup fields.version disabled=true value=version}}
     {{/if}}
     {{#if notes}}
-    <div class="form-group">
-        <label>{{localize "CAT.MEDKIT.Notes"}}</label>
-        <textarea disabled>{{notes}}</textarea>
-    </div>
+        {{formGroup fields.notes disabled=true value=notes elementType="textarea"}}
     {{/if}}
-    <div class="form-group">
-        <label>{{localize "CAT.MEDKIT.IgnoreItem"}}</label>
-        <input type="checkbox" name="ignoreItem"{{#if ignoreItem}} checked{{/if}}>
-    </div>
+    {{formGroup fields.ignore name="flags.cat.ignoreItem" value=ignoreItem}}
 </section>

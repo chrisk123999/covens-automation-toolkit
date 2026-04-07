@@ -5,11 +5,9 @@ const {fields} = foundry.data;
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2) {
     #document;
-    #selectedSource;
     constructor({document, ...options}) {
         super({...options});
         this.#document = document;
-        this.#selectedSource = documentUtils.getSource(document) ?? 'none';
     }
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-item',
@@ -141,6 +139,13 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
+        context.fields = {
+            identifier: new fields.StringField({label: _loc('CAT.MEDKIT.Identifier')}),
+            source: new fields.StringField({label: _loc('CAT.MEDKIT.Source'), required: true, blank: false}),
+            version: new fields.StringField({label: _loc('CAT.MEDKIT.Version')}),
+            ignore: new fields.BooleanField({label: _loc('CAT.MEDKIT.IgnoreItem')}),
+            notes: new fields.StringField({label: _loc('CAT.MEDKIT.Notes')})
+        };
         context.document = this.document;
         const currAutomation = documentUtils.getCurrentAutomation(this.document);
         context.source = currAutomation?.source ?? documentUtils.getSource(this.document) ?? 'none';
@@ -190,11 +195,10 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
         }, {none: _loc('DND5E.None')});
         if (context.source && !(context.source in availableSources)) availableSources[context.source] = context.source;
         context.availableSources = availableSources;
-        context.sourceField = new fields.StringField({required: true, blank: false, nullable: false});
         context.disableSources = Object.keys(availableSources).length === 1;
         context.version = currAutomation?.version ?? documentUtils.getVersion(this.document);
         if (currAutomation?.notes?.length) context.notes = currAutomation.notes;
-        // TODO: ignore toggle for actor mass update
+        context.ignoreItem = this.document.flags.cat?.ignoreItem;
         
         // TODO: Configuration tab:
         // config stuff
@@ -214,13 +218,6 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
             {type: 'button', action: 'confirm', label: 'DND5E.Confirm', name: 'confirm', icon: 'fa-solid fa-check'}
         ];
         return context;
-    }
-
-    _onChangeForm(formConfig, event) {
-        super._onChangeForm(formConfig, event);
-        if (event.target.name === 'selectedSource') {
-            this.#selectedSource = event.target.value;
-        }
     }
 
     static async updateItem(item, sourceItem, {source, version, rules} = {}) {
@@ -284,21 +281,23 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
         // CPR clean flags
         // CPR fix up generic flags
         // CPR clobber flags
+        const {selectedSource, flags: {cat}} = foundry.utils.expandObject(new foundry.applications.ux.FormDataExtended(this.form).object);
         const currSource = documentUtils.getSource(this.document) ?? 'none';
-        if (currSource !== this.#selectedSource) {
-            if (this.#selectedSource === 'none') {
+        if (currSource !== selectedSource) {
+            if (selectedSource === 'none') {
                 const updateData = await fromUuid(this.document._stats.compendiumSource) ?? {};
                 genericUtils.setProperty(updateData, 'flags.cat', _del);
                 await this.document.update(updateData, {diff: false});
             } else {
                 // TODO: consider development source?
-                const selectedAutomation = documentUtils.getAvailableAutomations(this.document).find(a => a.source === this.#selectedSource);
+                const selectedAutomation = documentUtils.getAvailableAutomations(this.document).find(a => a.source === selectedSource);
                 if (selectedAutomation) {
                     const selectedDocument = await fromUuid(selectedAutomation.uuid);
                     await ItemMedkit.updateItem(this.document, selectedDocument, selectedAutomation);
                 }
             }
         }
+        await this.document.update({flags: {cat}});
         this.render();
     }
 
