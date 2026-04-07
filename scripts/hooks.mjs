@@ -95,7 +95,6 @@ function appendHeaderControl(app, controls) {
             if (!headerButton) return;
             const item = app.document;
             if (!item) return;
-            const currentAutomation = documentUtils.getCurrentAutomation(item);
             const source = documentUtils.getSource(item);
             const sources = [
                 'chris-premades',
@@ -103,25 +102,25 @@ function appendHeaderControl(app, controls) {
                 'midi-item-showcase-community',
                 'automated-crafted-creations'
             ];
-            const STATUSES = constants.MEDKIT_STATUSES;
             if (!sources.includes(source) && source) {
-                headerButton.dataset.medkitStatus = STATUSES.UNKNOWN;
+                headerButton.dataset.medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
                 return;
             }
+            const statusSuffix = source === 'chris-premades' ? 'CPR' : 'OTHER';
             let medkitStatus;
-            // TODO: Maybe pull this out for reuse
-            if (item.flags.cat?.config?.generic) medkitStatus = STATUSES.CONFIGURABLE;
-            else if (currentAutomation) {
-                const statusSuffix = source === 'chris-premades' ? 'CPR' : 'OTHER';
-                if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) {
-                    medkitStatus = STATUSES[`OUTDATED_${statusSuffix}`];
-                } else if (currentAutomation.config) {
-                    medkitStatus = STATUSES.CONFIGURABLE;
-                } else {
-                    medkitStatus = STATUSES[`UP_TO_DATE_${statusSuffix}`];
-                }
-            } else if (documentUtils.getAvailableAutomations(item).length) {
-                medkitStatus = STATUSES.AVAILABLE;
+            switch (documentUtils.getAutomationStatus(item)) {
+                case -1:
+                    medkitStatus = constants.MEDKIT_STATUSES.AVAILABLE;
+                    break;
+                case 0:
+                    medkitStatus = constants.MEDKIT_STATUSES[`OUTDATED_${statusSuffix}`];
+                    break;
+                case 1:
+                    medkitStatus = constants.MEDKIT_STATUSES[`UP_TO_DATE_${statusSuffix}`];
+                    break;
+                case 2:
+                case 3:
+                    medkitStatus = constants.MEDKIT_STATUSES.CONFIGURABLE;
             }
             if (medkitStatus) headerButton.dataset.medkitStatus = medkitStatus;
         }, 100);

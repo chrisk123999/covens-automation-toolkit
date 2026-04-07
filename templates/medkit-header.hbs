@@ -2,6 +2,6 @@
     <h1>
         <i class="fa-solid fa-cat" data-medkit-status="{{medkitStatus}}"></i>
         {{label}}
-        <p>{{localize statusLabel}}</p>
+        {{#if statusLabel}}<p>{{localize statusLabel}}</p>{{/if}}
     </h1>
 </div>

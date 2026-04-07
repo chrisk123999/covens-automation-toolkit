@@ -33,6 +33,28 @@ function getAvailableAutomations(document) {
     const rules = getRules(document) ?? 'all';
     return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true});
 }
+// TODO: May need to improve this, went with something simple
+function getAutomationStatus(document) {
+    const STATUSES = {
+        UNAVAILABLE: -2,
+        AVAILABLE: -1,
+        OUTDATED: 0,
+        UP_TO_DATE: 1,
+        CONFIGURABLE: 2,
+        GENERIC: 3
+    };
+    if (document.flags.cat?.config?.generic) return STATUSES.GENERIC;
+    else {
+        const currentAutomation = getCurrentAutomation(document);
+        if (currentAutomation) {
+            if (foundry.utils.isNewerVersion(currentAutomation.version, getVersion(document))) return STATUSES.OUTDATED;
+            if (currentAutomation.config) return STATUSES.CONFIGURABLE;
+            return STATUSES.UP_TO_DATE;
+        }
+        if (getAvailableAutomations(document).length) return STATUSES.AVAILABLE;
+    }
+    return STATUSES.UNAVAILABLE;
+}
 function getSavedCastData(document) {
     switch(document.documentName) {
         case 'Activity': return activityUtils.getSavedCastData(document);
@@ -68,6 +90,7 @@ export default {
     getVersion,
     getCurrentAutomation,
     getAvailableAutomations,
+    getAutomationStatus,
     getSavedCastData,
     deleteEmbeddedDocuments
 };

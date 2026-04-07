@@ -124,38 +124,43 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
         const currAutomation = documentUtils.getCurrentAutomation(this.document);
         context.source = currAutomation?.source ?? documentUtils.getSource(this.document) ?? 'none';
         const availableAutomations = documentUtils.getAvailableAutomations(this.document);
-        // TODO:
-        // Header:
-        // label
-        context.label = 'Example Label';
-        // statusLabel
-        context.statusLabel = 'Example Status';
-        // medkitColor
+        context.label = this.document.name;
         const knownSources = [
             'chris-premades',
             'gambits-premades',
             'midi-item-showcase-community',
             'automated-crafted-creations'
         ];
-        if (this.document.flags.cat?.config?.generic) context.medkitStatus = constants.MEDKIT_STATUSES.CONFIGURABLE;
-        else if (currAutomation) {
-            const statusSuffix = context.source === 'chris-premades' ? 'CPR' : 'OTHER';
-            if (foundry.utils.isNewerVersion(currAutomation.version, documentUtils.getVersion(this.document))) {
+        const isKnown = knownSources.includes(context.source);
+        const statusSuffix = context.source === 'chris-premades' ? 'CPR' : 'OTHER';
+        switch (documentUtils.getAutomationStatus(this.document)) {
+            case -2:
+                if (context.source !== 'none') {
+                    context.medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
+                    context.statusLabel = 'CAT.MEDKIT.STATUSES.HasUnregistered';
+                }
+                break;
+            case -1:
+                context.medkitStatus = constants.MEDKIT_STATUSES.AVAILABLE;
+                context.statusLabel = 'CAT.MEDKIT.STATUSES.Available';
+                break;
+            case 0:
                 context.medkitStatus = constants.MEDKIT_STATUSES[`OUTDATED_${statusSuffix}`];
-            } else if (currAutomation.config) {
+                context.statusLabel = 'CAT.MEDKIT.STATUSES.Outdated';
+                break;
+            case 1:
+                context.medkitStatus = constants.MEDKIT_STATUSES[isKnown ? `UP_TO_DATE_${statusSuffix}` : 'UNKNOWN'];
+                context.statusLabel = 'CAT.MEDKIT.STATUSES.UpToDate';
+                break;
+            case 2:
                 context.medkitStatus = constants.MEDKIT_STATUSES.CONFIGURABLE;
-            } else if (knownSources.includes(context.source)) {
-                context.medkitStatus = constants.MEDKIT_STATUSES[`UP_TO_DATE_${statusSuffix}`];
-            } else {
-                context.medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
-            }
-        } else if (availableAutomations.length) {
-            context.medkitStatus = constants.MEDKIT_STATUSES.AVAILABLE;
-        } else if (!knownSources.includes(context.source) && context.source !== 'none') {
-            context.medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
+                context.statusLabel = 'CAT.MEDKIT.STATUSES.Configurable';
+                break;
+            case 3:
+                context.medkitStatus = constants.MEDKIT_STATUSES.CONFIGURABLE;
+                context.statusLabel = 'CAT.MEDKIT.STATUSES.Generic';
         }
         
-        // Automation tab:
         const availableSources = availableAutomations.map(a => a.source).reduce((acc, source) => {
             if (source in acc) return acc;
             const localizationKey = `CAT.MEDKIT.SOURCES.${source}`;
@@ -165,23 +170,24 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
         if (context.source && !(context.source in availableSources)) availableSources[context.source] = context.source;
         context.availableSources = availableSources;
         context.sourceField = new fields.StringField({required: true, blank: false, nullable: false});
+        context.disableSources = Object.keys(availableSources).length === 1;
         context.version = currAutomation?.version ?? documentUtils.getVersion(this.document);
-        // automation notes
         if (currAutomation?.notes?.length) context.notes = currAutomation.notes;
-        // ignore toggle for actor mass update
+        // TODO: ignore toggle for actor mass update
         
-        // Configuration tab:
+        // TODO: Configuration tab:
         // config stuff
         
-        // Generic Automations tab:
+        // TODO: Generic Automations tab:
         // generic stuff
 
-        // Document Properties tab: Whatever this means
+        // TODO: Document Properties tab: Whatever this means
 
-        // Registered Macros tab:
+        // TODO: Registered Macros tab:
         // source
         // events
         // passes
+        
         context.buttons = [
             {type: 'button', action: 'apply', label: 'DND5E.Apply', name: 'apply', icon: 'fa-solid fa-download'},
             {type: 'button', action: 'confirm', label: 'DND5E.Confirm', name: 'confirm', icon: 'fa-solid fa-check'}

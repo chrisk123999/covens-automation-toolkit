@@ -3,7 +3,7 @@
         <label>{{localize "CAT.MEDKIT.Identifier"}}</label>
         <input disabled value="{{document.identifier}}">
     </div>
-    {{formGroup sourceField name="selectedSource" choices=availableSources label=(localize "CAT.MEDKIT.Source") value=source}}
+    {{formGroup sourceField name="selectedSource" disabled=disableSources choices=availableSources label=(localize "CAT.MEDKIT.Source") value=source}}
     {{#if version}}
     <div class="form-group">
         <label>{{localize "CAT.MEDKIT.Version"}}</label>
