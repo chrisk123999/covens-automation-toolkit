@@ -112,6 +112,27 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
         return this.#document;
     }
 
+    _getTabsConfig(group) {
+        const config = foundry.utils.deepClone(super._getTabsConfig(group));
+        if (!documentUtils.getCurrentAutomation(this.document)?.config) {
+            config.tabs.findSplice(t => t.id === 'configuration');
+        }
+        if (!this.document.flags.cat?.config?.generic) {
+            config.tabs.findSplice(t => t.id === 'generic');
+        }
+        return config;
+    }
+
+    _configureRenderOptions(options) {
+        super._configureRenderOptions(options);
+        if (!documentUtils.getCurrentAutomation(this.document)?.config) {
+            options.parts.findSplice(p => p === 'configuration');
+        }
+        if (!this.document.flags.cat?.config?.generic) {
+            options.parts.findSplice(p => p === 'generic');
+        }
+    }
+
     async _preparePartContext(partId, context) {
         const partContext = await super._preparePartContext(partId, context);
         if (partId in partContext.tabs) partContext.tab = partContext.tabs[partId];
@@ -138,7 +159,7 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
                 if (context.source !== 'none') {
                     context.medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
                     context.statusLabel = 'CAT.MEDKIT.STATUSES.HasUnregistered';
-                }
+                } else context.statusLabel = 'CAT.MEDKIT.STATUSES.Unavailable';
                 break;
             case -1:
                 context.medkitStatus = constants.MEDKIT_STATUSES.AVAILABLE;
@@ -187,7 +208,7 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
         // source
         // events
         // passes
-        
+
         context.buttons = [
             {type: 'button', action: 'apply', label: 'DND5E.Apply', name: 'apply', icon: 'fa-solid fa-download'},
             {type: 'button', action: 'confirm', label: 'DND5E.Confirm', name: 'confirm', icon: 'fa-solid fa-check'}

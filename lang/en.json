@@ -29,7 +29,8 @@
         "Outdated": "Automation Outdated",
         "UpToDate": "Automation Up-To-Date",
         "Configurable": "Automation Configurable",
-        "Generic": "Generic Feature Applied"
+        "Generic": "Generic Feature Applied",
+        "Unavailable": "No Automations Found"
       },
       "NoSourcesTooltip": "There are no available sources of automation for this document."
     }
