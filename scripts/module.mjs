@@ -9,6 +9,9 @@ Hooks.once('init', () => {
     registerSettings();
     lib.queries.registerQueries();
 });
+Hooks.once('libWrapper.Ready', () => {
+    activityPatching.patch(true); //Early so initial sheet render is correct.
+});
 Hooks.once('ready', () => {
     lib.constants.registeredMacros = new lib.Macros.RegisteredMacros();
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
@@ -16,7 +19,6 @@ Hooks.once('ready', () => {
     documentPatching.patch(true);
     effectPatching.patch(true);
     actorPatching.patch(true);
-    activityPatching.patch(true);
     lib.constants.registeredMacros.registerFnMacro(test);
     globalThis.cat = {
         api: buildApi(),

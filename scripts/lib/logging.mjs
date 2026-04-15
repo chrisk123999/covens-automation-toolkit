@@ -3,10 +3,10 @@ const macroErrors = [];
 const userErrors = [];
 const registrationErrors = [];
 const automationsErrors = [];
-function addEntry(type = 'DEBUG', message) {
+function addEntry(type = 'DEBUG', message, {force = false} = {}) {
     logs.push('CAT | ' + type + ' > ' + message);
     // 'CAT' in orange, rest default, using string concatenation
-    if (game.settings.get('cat', 'displayDebugLogs')) console.log('%cCAT%c | ' + type + ' > ' + message, 'color: orange; font-weight: bold;', 'color: inherit;');
+    if (force || game.settings.get('cat', 'displayDebugLogs')) console.log('%cCAT%c | ' + type + ' > ' + message, 'color: orange; font-weight: bold;', 'color: inherit;');
     if (logs.length > 100) logs.shift();
 }
 function addMacroError(message) {
