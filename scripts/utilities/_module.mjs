@@ -8,3 +8,4 @@ export {default as documentUtils} from './documentUtils.mjs';
 export {default as genericUtils} from './genericUtils.mjs';
 export {default as queryUtils} from './queryUtils.mjs';
 export {default as sceneUtils} from './sceneUtils.mjs';
+export {default as rollUtils} from './rollUtils.mjs';
