@@ -14,14 +14,14 @@ Hooks.once('libWrapper.Ready', () => {
     dataModelPatching.patch(true);
 });
 Hooks.once('ready', () => {
-    lib.constants.registeredMacros = new lib.Macros.RegisteredMacros();
+    lib.constants.macros = new lib.Macros.RegisteredMacros();
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
-    lib.constants.registeredScales = new lib.Scales.RegisteredScales();
+    lib.constants.scales = new lib.Scales.RegisteredScales();
     registerHooks();
     documentPatching.patch(true);
     effectPatching.patch(true);
     actorPatching.patch(true);
-    lib.constants.registeredMacros.registerFnMacro(test);
+    lib.constants.macros.registerFnMacro(test);
     globalThis.cat = {
         api: buildApi(),
         lib,

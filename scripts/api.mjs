@@ -1,10 +1,8 @@
 import {constants} from './lib/_module.mjs';
 export function buildApi() {
-    const registeredMacros = constants.registeredMacros;
+    const registeredMacros = constants.macros;
     const automations = constants.automations;
-    console.log(automations);
-    const registeredScales = constants.registeredScales;
-    console.log(registeredScales);
+    const registeredScales = constants.scales;
     return {
         registerFnMacro: registeredMacros.registerFnMacro.bind(registeredMacros),
         registerFnMacros: registeredMacros.registerFnMacros.bind(registeredMacros),

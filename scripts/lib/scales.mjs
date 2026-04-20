@@ -17,8 +17,7 @@ export class RegisteredScales {
         source: new fields.StringField({required: true, nullable: false}),
         rules: new fields.StringField({required: true, nullable: false}),
         identifier: new fields.StringField({required: true, nullable: false}),
-        // eslint-disable-next-line no-undef
-        data: new dnd5e.dataModels.advancement.scaleValue.ScaleValueConfigurationData({required: true, nullable: false})
+        data: new fields.ObjectField({required: true, nullable: false})
     });
     #multiScalesSchema = new fields.ArrayField(this.#scaleSchema);
     scales = [];

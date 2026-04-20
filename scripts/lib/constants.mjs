@@ -151,11 +151,11 @@ const MEDKIT_STATUSES = {
 };
 export default {
     /** @type {RegisteredMacros} */
-    registeredMacros: undefined,
+    macros: undefined,
     /** @type {RegisteredAutomations} */
     automations: undefined,
     /** @type {RegisteredScales} */
-    registeredScales: undefined,
+    scales: undefined,
     gameReady: false,
     workflowPasses,
     workflowHookNames,
