@@ -1,6 +1,6 @@
 import {RegisteredMacros} from './macros.mjs';
 import {RegisteredAutomations} from './automations.mjs';
-
+import {RegisteredScales} from './scales.mjs';
 const workflowPasses = {
     preTargeting: 'preTargeting',
     preItemRoll: 'preItemRoll',
@@ -154,6 +154,8 @@ export default {
     registeredMacros: undefined,
     /** @type {RegisteredAutomations} */
     automations: undefined,
+    /** @type {RegisteredScales} */
+    registeredScales: undefined,
     gameReady: false,
     workflowPasses,
     workflowHookNames,

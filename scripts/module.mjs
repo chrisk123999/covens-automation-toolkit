@@ -16,6 +16,7 @@ Hooks.once('libWrapper.Ready', () => {
 Hooks.once('ready', () => {
     lib.constants.registeredMacros = new lib.Macros.RegisteredMacros();
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
+    lib.constants.registeredScales = new lib.Scales.RegisteredScales();
     registerHooks();
     documentPatching.patch(true);
     effectPatching.patch(true);
