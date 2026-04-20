@@ -1,11 +1,11 @@
 import {Logging} from '../lib/_module.mjs';
 function availableAbilities(wrapped) {
-    const baseAbilities = wrapped();
-    if (!this.actor) return baseAbilities;
-    const allAbilities = [...baseAbilities];
-    const identifier = this.item.system.identifier;
+    const otherAbilities = this.flags?.cat?.otherAbilities ?? [];
+    const allAbilities = [...wrapped(), ...otherAbilities];
+    if (!this.actor) return new Set(allAbilities); 
+    const identifier = this.item?.system?.identifier;
     this.actor.items.forEach(item => {
-        const abilities = item.flags.cat?.alternateAbilities?.[identifier];
+        const abilities = item.flags?.cat?.alternateAbilities?.[identifier];
         if (abilities) allAbilities.push(...abilities);
     });
     return new Set(allAbilities);
