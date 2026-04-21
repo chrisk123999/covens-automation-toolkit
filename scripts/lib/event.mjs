@@ -900,7 +900,33 @@ class TimeEvent extends CatEvent {
             ...super.appendData(data),
             worldTime: this.worldTime,
             diff: this.diff,
-            optiosn: this.options
+            options: this.options
+        };
+    }
+}
+class SummonEvent extends CatEvent {
+    constructor(actor, pass, {sourceActor, updates}) {
+        super(pass);
+        this.actor = sourceActor;
+        this.token = actorUtils.getFirstToken(this.actor);
+        this.sourceActor = sourceActor;
+        this.updates = updates;
+        if (this.token) {
+            this.scene = this.token.parent;
+            this.regions = this.token.regions;
+            this.level = this.scene.levels.get(this.token.level);
+        }
+        this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
+        this.distances = {};
+        if (this.scene) this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            sourceActor: this.sourceActor,
+            updates: this.updates
         };
     }
 }
