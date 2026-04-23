@@ -89,7 +89,8 @@ const auraHookNames = {
 const regionHooksNames = {
     createRegion: 'createRegion',
     updateRegion: 'updateRegion',
-    deleteRegion: 'deleteRegion'
+    deleteRegion: 'deleteRegion',
+    preCreateRegion: 'preCreateRegion'
 };
 const regionPasses = {
     created: 'created',

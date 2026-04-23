@@ -511,7 +511,6 @@ class EffectEvent extends CatEvent {
         this.name = 'Effect';
         this.trigger = Triggers.EffectTrigger;
         this.effect = effect;
-        console.log(this.effect);
         if (!parent) {
             if (effect.parent instanceof Actor) {
                 this.actor = effect.parent;

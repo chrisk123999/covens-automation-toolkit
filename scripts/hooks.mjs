@@ -32,6 +32,7 @@ export function registerHooks() {
     Hooks.on(constants.effectHookNames.deleteActiveEffect, events.effectEvents.deleteActiveEffect);
     Hooks.on(constants.effectHookNames.updateActiveEffect, events.effectEvents.updateActiveEffect);
     // Region Events
+    Hooks.on(constants.regionHooksNames.preCreateRegion, events.regionEvents.preCreateRegion);
     Hooks.on(constants.regionHooksNames.createRegion, events.regionEvents.createRegion);
     Hooks.on(constants.regionHooksNames.updateRegion, events.regionEvents.updateRegion);
     Hooks.on(constants.regionHooksNames.deleteRegion, events.regionEvents.deleteRegion);
