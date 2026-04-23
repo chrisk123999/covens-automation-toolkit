@@ -167,6 +167,24 @@ class TimeTrigger extends Trigger {
         this.type = 'time';
     }
 }
+class SummonTriger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.summon ?? [];
+        this.processFnMacros(fnMacroData, 'summon', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'summon';
+    }
+}
+class CalledTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.called ?? [];
+        this.processFnMacros(fnMacroData, 'called', pass);
+        if (this.distances) this.processDistanceMacros();
+        this.type = 'called';
+    }
+}
 export default {
     Trigger,
     RollTrigger,
@@ -181,5 +199,7 @@ export default {
     SkillTrigger,
     SaveTrigger,
     ToolTrigger,
-    TimeTrigger
+    TimeTrigger,
+    SummonTriger,
+    CalledTrigger
 };

@@ -21,7 +21,36 @@ Hooks.once('ready', () => {
     documentPatching.patch(true);
     effectPatching.patch(true);
     actorPatching.patch(true);
-    lib.constants.macros.registerFnMacro(test);
+    lib.constants.macros.registerFnMacro(test); // Testing
+    lib.constants.scales.registerScale({ // More Testing
+        source: 'cat',
+        rules: 'all',
+        identifier: 'test',
+        data: {
+            type: 'ScaleValue',
+            configuration: {
+                distance: {
+                    units: ''
+                },
+                identifier: 'rage-damage',
+                type: 'number',
+                scale: {
+                    1: {
+                        value: 2
+                    },
+                    9: {
+                        value: 3
+                    },
+                    16: {
+                        value: 4
+                    }
+                }
+            },
+            value: {},
+            title: 'Rage Damage',
+            icon: null
+        }
+    });
     globalThis.cat = {
         api: buildApi(),
         lib,

@@ -907,7 +907,9 @@ class TimeEvent extends CatEvent {
 class SummonEvent extends CatEvent {
     constructor(actor, pass, {sourceActor, updates}) {
         super(pass);
-        this.actor = sourceActor;
+        this.name = 'Summon';
+        this.trigger = Triggers.SummonTriger;
+        this.actor = actor;
         this.token = actorUtils.getFirstToken(this.actor);
         this.sourceActor = sourceActor;
         this.updates = updates;
@@ -930,6 +932,31 @@ class SummonEvent extends CatEvent {
         };
     }
 }
+class CalledEvent extends CatEvent {
+    constructor(actor, pass, data) {
+        super(pass);
+        this.name = 'Called';
+        this.actor = actor;
+        this.token = actorUtils.getFirstToken(this.actor);
+        this.data = data;
+        if (this.token) {
+            this.scene = this.token.parent;
+            this.regions = this.token.regions;
+            this.level = this.scene.levels.get(this.token.level);
+        }
+        this.groups = actorUtils.getGroups(this.actor);
+        this.encounters = actorUtils.getEncounters(this.actor);
+        this.vehicles = actorUtils.getVehicles(this.actor);
+        this.distances = {};
+        if (this.scene) this.scene.tokens.forEach(token => this.distances[token.id] = tokenUtils.getDistance(this.token, token));
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            data: this.data
+        };
+    }
+}
 export default {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
@@ -946,5 +973,7 @@ export default {
     SkillEvent,
     SaveEvent,
     ToolEvent,
-    TimeEvent
+    TimeEvent,
+    SummonEvent,
+    CalledEvent
 };
