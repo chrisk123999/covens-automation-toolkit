@@ -1,1 +1,2 @@
 export {default as dnd5e} from './dnd5e.mjs';
+export {default as phb} from './phb.mjs';

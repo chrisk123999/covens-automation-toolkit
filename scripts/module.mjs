@@ -59,4 +59,8 @@ Hooks.once('ready', () => {
     };
     integration.dnd5e.registerAutomations();
     integration.dnd5e.registerScales();
+    if (game.modules.get('dnd-players-handbook')?.active) {
+        integration.phb.registerAutomations();
+        integration.phb.registerScales();
+    }
 });
