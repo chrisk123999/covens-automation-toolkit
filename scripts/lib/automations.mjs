@@ -25,7 +25,7 @@ const fields = foundry.data.fields;
  */
 
 class Automation {
-    constructor(source, rules, identifier, uuid, version, {config, notes} = {}) {
+    constructor(source, rules, identifier, uuid, version, {config, notes, monsterIdentifier} = {}) {
         this.source = source;
         this.rules = rules;
         this.identifier = identifier;
@@ -33,6 +33,7 @@ class Automation {
         this.uuid = uuid;
         this.config = config;
         this.notes = notes;
+        this.monsterIdentifier = monsterIdentifier;
     }
 
     /**
@@ -69,6 +70,11 @@ class Automation {
      * @type {string}
      */
     notes;
+
+    /**
+     * @type {string}
+     */
+    monsterIdentifier;
     
     async getDocument() {
         return await fromUuid(this.uuid);
@@ -85,7 +91,8 @@ export class RegisteredAutomations {
         version: new fields.StringField({required: true, nullable: false}),
         uuid: new fields.StringField({required: true, nullable: false}),
         config: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-        notes: new fields.StringField({required: false, nullable: false})
+        notes: new fields.StringField({required: false, nullable: false}),
+        monsterIdentifier: new fields.StringField({required: false, nullable: false})
     });
     #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 
@@ -106,10 +113,11 @@ export class RegisteredAutomations {
      * @param {'all'|'2014'|'2024'} [options.rules='all']   The ruleset of the automation
      * @param {string} [options.source='all']               The source of the automation
      * @param {boolean} [options.multiple=false]            Whether to return all matching automations or only one
+     * @param {string} monsterIdentifier                    Match using a monster identifier as well
      * @returns {Automation[]|Automation|undefined}
      */
-    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false} = {}) {
-        const predicate = automation => automation.identifier === identifier && (rules === 'all' || automation.rules === rules) && (source === 'all' || automation.source === source);
+    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier} = {}) {
+        const predicate = automation => automation.identifier === identifier && (rules === 'all' || automation.rules === rules) && (source === 'all' || automation.source === source) && (!monsterIdentifier || monsterIdentifier === automation.monsterIdentifier);
         return multiple ? this.automations.filter(predicate) : this.automations.find(predicate);
     }
 
@@ -125,7 +133,8 @@ export class RegisteredAutomations {
         }
         this.automations.push(new Automation(data.source, data.rules, data.identifier, data.uuid, data.version, {
             config: data.config,
-            notes: data.notes
+            notes: data.notes,
+            monsterIdentifier: data.monsterIdentifier
         }));
         this.sources.add(data.source);
         Logging.addEntry('DEBUG', 'Automation Registered: ' + data.identifier + ' from ' + data.source + ' with version ' + data.version);
@@ -158,7 +167,7 @@ export class RegisteredAutomations {
             rules: documentUtils.getRules(document),
             source: documentUtils.getSource(document)
         });
-        return automation?.getConfigValue(key);
+        return automation?.config?.[key]?.default;
     }
 
     /**
