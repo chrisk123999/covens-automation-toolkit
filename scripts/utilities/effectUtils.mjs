@@ -1,4 +1,4 @@
-import {queryUtils} from '../utilities/_module.mjs';
+import {queryUtils} from './_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
@@ -14,7 +14,24 @@ async function createEffects(document, effectDatas, effectOptions, {forceGM = fa
     }
     return effects;
 }
+function getConditions(effect) {
+    let conditions = new Set();
+    const validKeys = [
+        'macro.CE',
+        'macro.CUB',
+        'macro.StatusEffect',
+        'StatusEffect'
+    ];
+    effect.changes.forEach(element => {
+        if (validKeys.includes(element.key)) conditions.add(element.value.toLowerCase());
+    });
+    const effectConditions = effect.flags.cat?.conditions;
+    if (effectConditions) effectConditions.forEach(c => conditions.add(c.toLowerCase()));
+    conditions = conditions.union(effect.statuses ?? new Set());
+    return conditions;
+}
 export default {
     getCastData,
-    createEffects
+    createEffects,
+    getConditions
 };

@@ -1,6 +1,7 @@
 import {checkEvents, saveEvents, skillEvents, toolEvents} from '../events/_module.mjs';
-import {constants, Logging} from '../lib/_module.mjs';
+import {Logging} from '../lib/_module.mjs';
 import {genericUtils} from '../utilities/_module.mjs';
+import {conditionResistanceAndVulnerability} from '../mechanics/conditionResistanceAndVulnerability.mjs';
 async function check(wrapped, config, dialog = {}, message = {}) {
     const event = config.event;
     const checkId = config.ability;
@@ -110,6 +111,7 @@ async function save(wrapped, config, dialog = {}, message = {}) {
         if (activityUuid) genericUtils.setProperty(config, 'cat.activityUuid', activityUuid);
     }
     const options = {};
+    await conditionResistanceAndVulnerability(this, config, options);
     await saveEvents.situational(this, {config, dialog, message, saveId});
     if (activityUuid) activity = await fromUuid(activityUuid);
     if (activity) await saveEvents.targetSituational(this, {config, dialog, message, saveId});

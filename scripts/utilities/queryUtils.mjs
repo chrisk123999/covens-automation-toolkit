@@ -1,4 +1,4 @@
-import genericUtils from './genericUtils.mjs';
+import {genericUtils} from './_module.mjs';
 function gmID() {
     let gmID = game.users.activeGM?.id;
     const preferredGMId = game.settings.get('midi-qol', 'PreferredGM');  

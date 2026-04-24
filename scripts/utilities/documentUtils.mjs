@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from '../utilities/_module.mjs';
+import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
 function getRules(document, {documentType = document.documentName} = {}) {
     return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
