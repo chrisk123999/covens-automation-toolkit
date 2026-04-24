@@ -1,9 +1,7 @@
 import {constants} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, sceneUtils, tokenUtils} from '../utilities/_module.mjs';
+import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from '../utilities/_module.mjs';
 function getRules(document, {documentType = document.documentName} = {}) {
-    let rules = document.flags.cat?.automation?.rules;
-    if (rules) return rules;
-    if (documentType === 'Item') return document.system.source.rules;
+    return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
 function getSource(document) {
     return document.flags.cat?.automation?.source;
@@ -25,8 +23,10 @@ function getCurrentAutomation(document) {
     const identifier = getIdentifier(document);
     const rules = getRules(document);
     const source = getSource(document);
+    const type = document.actor?.type ?? 'character';
+    const monsterIdentifier = type === 'npc' ? getIdentifier(document.actor) : undefined;
     if (!identifier || !rules || !source) return;
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, source});
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier});
 }
 function getAvailableAutomations(document) {
     const identifier = getIdentifier(document);
