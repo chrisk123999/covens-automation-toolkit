@@ -107,6 +107,11 @@ export class RegisteredAutomations {
     sources = new Set();
 
     /**
+     * @type {Object}
+     */
+    sourceNames = {};
+
+    /**
      * Get the registered Automation (or Automations), if any, by identifier & other criteria
      * @param {string} identifier                           The identifier of the automation
      * @param {object} [options={}]                         Additional options
@@ -240,6 +245,15 @@ export class RegisteredAutomations {
             if (!pack) return false;
             return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions, rules, source: id, notes2014, notes2024, notesAll});
         }));
+    }
+
+    registerSourceName(id, name) {
+        if (!id || !name) return;
+        this.sourceNames[id] = name;
+    }
+
+    getSourceName(id) {
+        return this.sourceNames[id] ?? id;
     }
 }
 export default {

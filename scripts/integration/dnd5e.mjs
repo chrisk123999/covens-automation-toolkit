@@ -2,6 +2,7 @@ import {default as constants} from '../lib/constants.mjs';
 import documentUtils from '../utilities/documentUtils.mjs';
 import * as applications from '../applications/_module.mjs';
 async function registerAutomations() {
+    constants.automations.registerSourceName('dnd5e', 'Dungeons & Dragons Fifth Edition');
     const packs = [
         'items',
         'tradegoods',

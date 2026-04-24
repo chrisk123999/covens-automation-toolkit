@@ -1,6 +1,7 @@
 import {default as constants} from '../lib/constants.mjs';
 import documentUtils from '../utilities/documentUtils.mjs';
 async function registerAutomations() {
+    constants.automations.registerSourceName('dnd-players-handbook', 'Dungeons & Dragons Player\'s Handbook');
     const packs = [
         'classes',
         'origins',
