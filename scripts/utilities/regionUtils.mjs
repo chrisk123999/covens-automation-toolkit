@@ -34,8 +34,16 @@ function getIntersections(region, A, B, boolOnly = false) {
     if (boolOnly) return totalIntersections.length ? true : false;
     return totalIntersections;
 }
+function isObscured(region) {
+    return region.flags.cat?.visibility?.obscured;
+}
+function isMagicalDarkness(region) {
+    return region.flags.cat?.visibility?.magicalDarkness;
+}
 export default {
     getCastData,
     rayIntersectsRegion,
-    getIntersections
+    getIntersections,
+    isObscured,
+    isMagicalDarkness
 };

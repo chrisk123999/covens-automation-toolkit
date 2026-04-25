@@ -150,6 +150,40 @@ const MEDKIT_STATUSES = {
     CONFIGURABLE: 'configurable',
     UP_TO_DATE_OTHER: 'up-to-date-other'
 };
+const attacks = [
+    'msak',
+    'rsak',
+    'mwak',
+    'rwak'
+];
+const meleeAttacks = [
+    'mwak',
+    'msak'
+];
+const rangedAttacks = [
+    'rwak',
+    'rsak'
+];
+const weaponAttacks = [
+    'mwak',
+    'rwak'
+];
+const spellAttacks = [
+    'msak',
+    'rsak'
+];
+const rangedWeaponAttacks = [
+    'rwak'
+];
+const meleeWeaponAttacks = [
+    'mwak'
+];
+const rangedSpellAttacks = [
+    'rsak'
+];
+const meleeSpellAttacks = [
+    'msak'
+];
 export default {
     /** @type {RegisteredMacros} */
     macros: undefined,
@@ -178,5 +212,14 @@ export default {
     sheetHookNames,
     timeHookNames,
     timePasses,
-    MEDKIT_STATUSES
+    MEDKIT_STATUSES,
+    attacks,
+    meleeAttacks,
+    rangedAttacks,
+    weaponAttacks,
+    spellAttacks,
+    rangedWeaponAttacks,
+    meleeWeaponAttacks,
+    rangedSpellAttacks,
+    meleeSpellAttacks
 };
