@@ -30,8 +30,23 @@ function getConditions(effect) {
     conditions = conditions.union(effect.statuses ?? new Set());
     return conditions;
 }
+async function getOriginActivity(effect) {
+    const activityUuid = effect.flags.dae?.activity ?? effect.flags.cat?.activityUuid;
+    if (activityUuid) return await fromUuid(activityUuid);
+    if (!effect.origin) return;
+    const origin = await fromUuid(effect.origin);
+    if (origin.documentName !== 'ActiveEffect') return;
+    const originActivityUuid = origin.flags.dnd5e?.activity?.uuid;
+    if (originActivityUuid) return await fromUuid(originActivityUuid);
+    if (origin.parent?.documentName === 'Item') {
+        return origin.parent.system.activities?.find(activity => 
+            activity.effects.some(aEffect => aEffect.id === effect.id)
+        );
+    }
+}
 export default {
     getCastData,
     createEffects,
-    getConditions
+    getConditions,
+    getOriginActivity
 };
