@@ -19,11 +19,15 @@ function convertDistance(scene, distanceFt) {
         default: return distanceFt;
     }
 }
+function translate(key) {
+    return game.i18n.localize(key);
+}
 export default {
     setProperty,
     getProperty,
     duplicate,
     deepClone,
     mergeObject,
-    convertDistance
+    convertDistance,
+    translate
 };

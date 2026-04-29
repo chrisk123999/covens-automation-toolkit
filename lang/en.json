@@ -35,6 +35,10 @@
         "Unavailable": "No Automations Found"
       },
       "NoSourcesTooltip": "There are no available sources of automation for this document."
+    },
+    "Region": {
+      "AttackerCantSeeTarget": "Attacker Can't See Target",
+      "TargetCantSeeAttacker": "Target Can't See Attacker"
     }
   }
 }

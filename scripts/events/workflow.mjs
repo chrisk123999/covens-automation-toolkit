@@ -1,4 +1,5 @@
 import {constants, Events} from '../lib/_module.mjs';
+import {regionVisibility} from '../mechanics/regionVisibility.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
     let event = await new Events.PreTargetingWorkflowEvent(constants.workflowPasses.preTargeting, {activity, token, config, dialog, message}).run();
     if (event) return false;
@@ -14,6 +15,7 @@ async function preambleComplete(workflow) {
     if (event) return false;
 }
 async function attackRollConfig(workflow) {
+    await regionVisibility(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollConfig, workflow).run();
 }
 async function postAttackRoll(workflow) {
