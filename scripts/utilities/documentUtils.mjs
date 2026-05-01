@@ -80,6 +80,15 @@ async function deleteEmbeddedDocuments(document, type, ids, options, {forceGM = 
         if (!uuids) return;
         documents = (await Promise.all(uuids.map(async uuid => fromUuid(uuid)))).filter(i => i);
     }
+    return documents;
+}
+async function deleteDocument(document, {options, forceGM = false} = {}) {
+    const hasPermission = queryUtils.hasPermission(document, game.user.id);
+    if (hasPermission && !forceGM) {
+        await document.delete(options);
+    } else {
+        await queryUtils.query('cat.deleteDocument', queryUtils.gmUser(), {uuid: document.uuid, options});
+    }
     return document;
 }
 export default {
@@ -92,5 +101,6 @@ export default {
     getAvailableAutomations,
     getAutomationStatus,
     getSavedCastData,
-    deleteEmbeddedDocuments
+    deleteEmbeddedDocuments,
+    deleteDocument
 };

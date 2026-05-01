@@ -107,7 +107,11 @@ const itemPasses = {
     deleted: 'deleted',
     updated: 'updated',
     bulkUpdated: 'bulkUpdated',
-    munched: 'munched'
+    munched: 'munched',
+    equipped: 'equipped',
+    unequipped: 'unequipped',
+    attuned: 'attuned',
+    unattuned: 'unattuned'
 };
 const itemHookNames = {
     createItem: 'createItem',
@@ -140,6 +144,9 @@ const timeHookNames = {
 };
 const timePasses = {
     timeUpdated: 'timeUpdated'
+};
+const actorHookNames = {
+    updateActor: 'updateActor'
 };
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',
@@ -212,6 +219,7 @@ export default {
     sheetHookNames,
     timeHookNames,
     timePasses,
+    actorHookNames,
     MEDKIT_STATUSES,
     attacks,
     meleeAttacks,

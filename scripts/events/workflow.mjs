@@ -1,5 +1,6 @@
 import {constants, Events} from '../lib/_module.mjs';
 import {regionVisibility} from '../mechanics/regionVisibility.mjs';
+import specialDuration from '../mechanics/specialDuration.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
     let event = await new Events.PreTargetingWorkflowEvent(constants.workflowPasses.preTargeting, {activity, token, config, dialog, message}).run();
     if (event) return false;
@@ -49,6 +50,7 @@ async function preTargetDamageApplication(token, {workflow, ditem}) {
 async function rollFinished(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.rollFinished, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
+    await specialDuration.specialDuration(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.cleanup, workflow).run();
     console.log(workflow);
 }

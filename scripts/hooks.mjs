@@ -54,5 +54,7 @@ export function registerHooks() {
         Hooks.on(constants.itemHookNames.updateItem, events.itemEvents.updateItem);
         // Time Events
         Hooks.on(constants.timeHookNames.updateWorldTime, events.timeEvents.updateWorldTime);
+        // Actor Events
+        Hooks.on(constants.actorHookNames.updateActor, events.actorEvents.updateActor);
     }
 }

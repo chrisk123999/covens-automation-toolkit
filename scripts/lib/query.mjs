@@ -11,14 +11,22 @@ async function deleteEmbeddedDocuments({uuid, type, ids, options}) {
     const documents = await documentUtils.deleteEmbeddedDocuments(document, type, ids, options);
     return documents.map(effect => effect.uuid);
 }
+async function deleteDocument({uuid, options}) {
+    const document = await fromUuid(uuid);
+    if (!document) return;
+    await document.delete(options);
+    return uuid;
+}
 function registerQueries() {
     globalThis.CONFIG.queries.cat = {
         createEffects,
-        deleteEmbeddedDocuments
+        deleteEmbeddedDocuments,
+        deleteDocument
     };
 }
 export default {
     createEffects,
     deleteEmbeddedDocuments,
+    deleteDocument,
     registerQueries
 };

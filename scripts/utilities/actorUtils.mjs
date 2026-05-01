@@ -2,8 +2,11 @@ import {documentUtils} from '../utilities/_module.mjs';
 function getCastData(actor) {
     return actor.flags.cat?.castData;
 }
-function getEffects(actor) {
-    return Array.from(actor.allApplicableEffects());
+function getEffects(actor, {includeItemEffects = false} = {}) {
+    const effects = Array.from(actor.allApplicableEffects());
+    if (!includeItemEffects) return effects;
+    const enchantmentEffects = actor.items.contents.flatMap(item => item.effects.contents).filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment);
+    return [...effects, ...enchantmentEffects];
 }
 function getGroups(actor) {
     return game.actors.filter(a => a.type === 'group' && a.system.creatures.includes(actor));

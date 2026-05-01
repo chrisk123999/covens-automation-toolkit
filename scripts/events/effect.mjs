@@ -1,6 +1,7 @@
 import {queryUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {auraEvents} from '../events/_module.mjs';
+import specialDuration from '../mechanics/specialDuration.mjs';
 async function doCreateActiveEffect(data, options) {
     let parent = options.parent;
     if (!parent) return;
@@ -14,12 +15,15 @@ async function createActiveEffect(effect, options, userId) {
     if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
     await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
     await auraEvents.effect(effect, options);
+    if (effect.statuses.size) await specialDuration.specialDurationConditions(effect);
+    if (effect.parent instanceof Actor && effect.changes.some(change => change.key.includes('system.attributes.movement.'))) await specialDuration.specialDurationZeroSpeed(effect.parent);
 }
 async function deleteActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
     await auraEvents.effect(effect, options);
+    if (effect.statuses.size) await specialDuration.specialDurationRemovedConditions(effect);
 }
 async function updateActiveEffect(effect, updates, options, userId) {
     if (!queryUtils.isTheGM()) return;
