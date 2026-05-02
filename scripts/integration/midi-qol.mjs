@@ -11,7 +11,7 @@ async function registerAutomations() {
         Logging.addEntry('DEBUG', 'Automation Compendium Registered: ' + pack.metadata.label + ' from ' + pack.metadata.packageName);
         const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'system.source.custom', 'flags.chris-premades.info.version']});
         index.contents.forEach(entry => {
-            const version = entry.flags['chris-premades']?.info?.version ?? entry.system.source?.custom?.match(/\d+(\.\d+)+/)?.[0];
+            const version = entry.flags['chris-premades']?.info?.version ?? entry.system.source?.custom?.match(/\d+(\.\d+)+/)?.[0]; //Make Tim fix this lol
             if (!version) return;
             constants.automations.registerAutomation({
                 source: 'midi-qol',
