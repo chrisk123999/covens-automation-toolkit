@@ -26,7 +26,7 @@ class Trigger {
                     const distance = this.distances[this.targetToken.id];
                     if (distance < 0) return false;
                     const maxDistance = macro.configDistance ? documentUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
-                    if (maxDistance < distance) return false;
+                    if (genericUtils.convertDistance(this.scene, maxDistance) < genericUtils.convertDistance(this.scene, distance)) return false;
                     const dispositions = macro.configDispositions ? documentUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
                     if (dispositions) {
                         const isAlly = this.token.disposition == this.targetToken.disposition;
