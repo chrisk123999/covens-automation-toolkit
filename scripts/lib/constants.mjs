@@ -148,6 +148,9 @@ const timePasses = {
 const actorHookNames = {
     updateActor: 'updateActor'
 };
+const miscHookNames = {
+    itemUseActivitySelect: 'midi-qol.itemUseActivitySelect'
+};
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',
     OUTDATED_CPR: 'outdated-cpr',
@@ -229,5 +232,6 @@ export default {
     rangedWeaponAttacks,
     meleeWeaponAttacks,
     rangedSpellAttacks,
-    meleeSpellAttacks
+    meleeSpellAttacks,
+    miscHookNames
 };

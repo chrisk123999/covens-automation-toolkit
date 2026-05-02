@@ -1,13 +1,15 @@
 import {constants} from './lib/_module.mjs';
 import * as events from './events/_module.mjs';
 import {queryUtils} from './utilities/_module.mjs';
-import dnd5e from './integration/dnd5e.mjs';
+import {titlebar, activities} from './handlers/_module.mjs';
 export function registerHooks() {
+    // Handlers
+    Hooks.on(constants.miscHookNames.itemUseActivitySelect, activities.hiddenActivities);
     // Sheet Rendering
-    Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, dnd5e.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsActorSheetV2, dnd5e.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsItemSheet5e, dnd5e.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsRegionConfig, dnd5e.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsActorSheetV2, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsItemSheet5e, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsRegionConfig, titlebar.appendHeaderControl);
     // Workflow Events
     Hooks.on(constants.workflowHookNames.preTargeting, events.workflowEvents.preTargeting);
     Hooks.on(constants.workflowHookNames.preItemRoll, events.workflowEvents.preItemRoll);
