@@ -22,9 +22,8 @@ async function registerScales() {
     await Promise.all(packs.map(async id => {
         const pack = game.packs.get('dnd-players-handbook.' + id);
         if (!pack) return;
-        await pack.getDocuments();
-        await Promise.all(pack.contents.map(async document => {
-            if (!['class', 'subclass'].includes(document.type)) return;
+        const documents = await pack.getDocuments({type__in: ['class', 'subclass']});
+        documents.forEach(document => {
             const scales = document.system.advancement.filter(i => i.type === 'ScaleValue');
             if (!scales.length) return;
             scales.forEach(scale => {
@@ -36,7 +35,7 @@ async function registerScales() {
                     data: scale.toObject()
                 });
             });
-        }));
+        });
     }));
 }
 export default {

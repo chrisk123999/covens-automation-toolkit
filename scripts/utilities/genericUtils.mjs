@@ -22,6 +22,9 @@ function convertDistance(scene, distanceFt) {
 function translate(key) {
     return game.i18n.localize(key);
 }
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 export default {
     setProperty,
     getProperty,
@@ -29,5 +32,6 @@ export default {
     deepClone,
     mergeObject,
     convertDistance,
-    translate
+    translate,
+    sleep
 };

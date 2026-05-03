@@ -37,6 +37,7 @@ export class RegisteredScales {
         }
         this.scales.push(new Scale(data.source, data.rules, data.identifier, data.data, {classIdentifier: data.classIdentifier}));
         this.sources.add(data.source);
+        Logging.addEntry('DEBUG', 'Scale Registered: ' + data.identifier + ' from ' + data.source);
     }
     registerScales(data) {
         const validationError = this.#multiScalesSchema.validate(data);

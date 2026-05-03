@@ -24,7 +24,8 @@
         "midi-item-showcase-community": "Midi Item Showcase: Community",
         "dnd5e": "Dungeons & Dragons Fifth Edition",
         "dnd-players-handbook": "Dungeons & Dragons Player's Handbook",
-        "midi-qol": "Midi Quality of Life Improvements"
+        "midi-qol": "Midi Quality of Life Improvements",
+        "ddb-importer": "D&D Beyond Importer"
       },
       "STATUSES": {
         "HasUnregistered": "Unregistered Automation",
