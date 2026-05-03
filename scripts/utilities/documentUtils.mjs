@@ -13,47 +13,8 @@ function getIdentifier(document, {documentType = document.documentName} = {}) {
         default: return document.flags.cat?.identifier ?? document.name.slugify();
     }
 }
-function getConfigValue(document, key) {
-    return constants.automations?.getConfigValue(document, key);
-}
 function getVersion(document) {
     return document.flags.cat?.automation?.version;
-}
-function getCurrentAutomation(document) {
-    const identifier = getIdentifier(document);
-    const rules = getRules(document);
-    const source = getSource(document);
-    const type = document.actor?.type ?? 'character';
-    const monsterIdentifier = type === 'npc' ? getIdentifier(document.actor) : undefined;
-    if (!identifier || !rules || !source) return;
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier});
-}
-function getAvailableAutomations(document) {
-    const identifier = getIdentifier(document);
-    const rules = getRules(document) ?? 'all';
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true});
-}
-// TODO: May need to improve this, went with something simple
-function getAutomationStatus(document) {
-    const STATUSES = {
-        UNAVAILABLE: -2,
-        AVAILABLE: -1,
-        OUTDATED: 0,
-        UP_TO_DATE: 1,
-        CONFIGURABLE: 2,
-        GENERIC: 3
-    };
-    if (document.flags.cat?.config?.generic) return STATUSES.GENERIC;
-    else {
-        const currentAutomation = getCurrentAutomation(document);
-        if (currentAutomation) {
-            if (foundry.utils.isNewerVersion(currentAutomation.version, getVersion(document))) return STATUSES.OUTDATED;
-            if (currentAutomation.config) return STATUSES.CONFIGURABLE;
-            return STATUSES.UP_TO_DATE;
-        }
-        if (getAvailableAutomations(document).length) return STATUSES.AVAILABLE;
-    }
-    return STATUSES.UNAVAILABLE;
 }
 function getSavedCastData(document) {
     switch(document.documentName) {
@@ -95,11 +56,7 @@ export default {
     getRules,
     getSource,
     getIdentifier,
-    getConfigValue,
     getVersion,
-    getCurrentAutomation,
-    getAvailableAutomations,
-    getAutomationStatus,
     getSavedCastData,
     deleteEmbeddedDocuments,
     deleteDocument

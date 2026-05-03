@@ -1,5 +1,5 @@
 import * as applications from '../applications/_module.mjs';
-import {documentUtils} from '../utilities/_module.mjs';
+import {documentUtils, automationUtils} from '../utilities/_module.mjs';
 import {constants} from '../lib/_module.mjs'; 
 function appendHeaderControl(app, controls) {
     if (app.classList.contains('tidy5e-sheet')) return;
@@ -52,7 +52,7 @@ function appendHeaderControl(app, controls) {
             }
             const statusSuffix = source === 'chris-premades' ? 'CPR' : 'OTHER';
             let medkitStatus;
-            switch (documentUtils.getAutomationStatus(item)) {
+            switch (automationUtils.getAutomationStatus(item)) {
                 case -1:
                     medkitStatus = constants.MEDKIT_STATUSES.AVAILABLE;
                     break;

@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {documentUtils, genericUtils} from '../utilities/_module.mjs';
+import {documentUtils, genericUtils, automationUtils} from '../utilities/_module.mjs';
 const {fields} = foundry.data;
 
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
@@ -112,7 +112,7 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
 
     _getTabsConfig(group) {
         const config = foundry.utils.deepClone(super._getTabsConfig(group));
-        if (!documentUtils.getCurrentAutomation(this.document)?.config) {
+        if (!automationUtils.getCurrentAutomation(this.document)?.config) {
             config.tabs.findSplice(t => t.id === 'configuration');
         }
         if (!this.document.flags.cat?.config?.generic) {
@@ -123,7 +123,7 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
 
     _configureRenderOptions(options) {
         super._configureRenderOptions(options);
-        if (!documentUtils.getCurrentAutomation(this.document)?.config) {
+        if (!automationUtils.getCurrentAutomation(this.document)?.config) {
             options.parts.findSplice(p => p === 'configuration');
         }
         if (!this.document.flags.cat?.config?.generic) {
@@ -147,9 +147,9 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
             notes: new fields.StringField({label: _loc('CAT.MEDKIT.Notes')})
         };
         context.document = this.document;
-        const currAutomation = documentUtils.getCurrentAutomation(this.document);
-        context.source = currAutomation?.source ?? documentUtils.getSource(this.document) ?? 'none';
-        const availableAutomations = documentUtils.getAvailableAutomations(this.document);
+        const currAutomation = automationUtils.getCurrentAutomation(this.document);
+        context.source = currAutomation?.source ?? automationUtils.getSource(this.document) ?? 'none';
+        const availableAutomations = automationUtils.getAvailableAutomations(this.document);
         context.label = this.document.name;
         const knownSources = [
             'chris-premades',
@@ -159,7 +159,7 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
         ];
         const isKnown = knownSources.includes(context.source);
         const statusSuffix = context.source === 'chris-premades' ? 'CPR' : 'OTHER';
-        switch (documentUtils.getAutomationStatus(this.document)) {
+        switch (automationUtils.getAutomationStatus(this.document)) {
             case -2:
                 if (context.source !== 'none') {
                     context.medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
