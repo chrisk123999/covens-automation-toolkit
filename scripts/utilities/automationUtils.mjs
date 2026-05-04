@@ -27,7 +27,7 @@ function getAutomationStatus(item) {
             if (currentAutomation.config) return STATUSES.CONFIGURABLE;
             return STATUSES.UP_TO_DATE;
         }
-        if (getAvailableAutomations(document).length) return STATUSES.AVAILABLE;
+        if (getAvailableAutomations(item).length) return STATUSES.AVAILABLE;
     }
     return STATUSES.UNAVAILABLE;
 }
@@ -36,12 +36,30 @@ function getAvailableAutomations(item) {
     const rules = documentUtils.getRules(item) ?? 'all';
     return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true});
 }
-function getConfigValue(document, key) {
-    return constants.automations?.getConfigValue(document, key);
+function getConfigValue(item, key) {
+    return constants.automations?.getConfigValue(item, key);
+}
+function getAutomationSources() {
+    const settings = game.settings.get('cat', 'automationSources');
+    return Object.entries(settings).filter(([key, value]) => value.enabled).sort((a, b) => a[1].priority - b[1].priority).map(([key, value]) => key);
+}
+
+async function getAppliedOrPreferedAutomation(item) {
+    const currentAutomation = getCurrentAutomation(item);
+    if (currentAutomation) return currentAutomation;
+    const allAutomations = getAvailableAutomations(item);
+    if (!allAutomations.length) return;
+    const sources = getAutomationSources();
+    for (const source of sources) {
+        const match = allAutomations.find(automation => automation.source === source);
+        if (match) return match;
+    }
 }
 export default {
     getCurrentAutomation,
     getAutomationStatus,
     getAvailableAutomations,
-    getConfigValue
+    getConfigValue,
+    getAutomationSources,
+    getAppliedOrPreferedAutomation
 };
