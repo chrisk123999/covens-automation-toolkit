@@ -1,5 +1,5 @@
 function getCastData(region) {
-    return region.flags.cat?.castData ?? region.flags['midi-qol']?.castData;
+    return region.flags.cat?.castData;
 }
 function rayIntersectsRegion(region, ray) {
     return getIntersections(region, ray.A, ray.B, true);
