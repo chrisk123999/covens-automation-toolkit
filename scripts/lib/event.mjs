@@ -108,41 +108,37 @@ class CatEvent {
     get sortedTriggers() {
         if (this._sortedTriggers) return this._sortedTriggers;
         const startTime = performance.now();
-        let unsortedTriggers = this.unsortedTriggers;
-        let triggers = [];
+        const unsortedTriggers = this.unsortedTriggers;
+        let winningTriggers = new Set();
         if (!this.canOverlap) {
             const names = new Set(unsortedTriggers.map(trigger => trigger.name));
-            unsortedTriggers = Object.fromEntries(names.map(name => [name, unsortedTriggers.filter(trigger => trigger.name === name)]));
-            let maxMap = {};
+            const groupedTriggers = {};
             names.forEach(name => {
-                let maxLevel = Math.max(...unsortedTriggers[name].map(trigger => trigger.castData.castLevel));
-                let maxDC = Math.max(...unsortedTriggers[name].map(trigger => trigger.castData.saveDC));
-                maxMap[name] = {
-                    maxLevel: maxLevel,
-                    maxDC: maxDC
-                };
+                groupedTriggers[name] = unsortedTriggers.filter(trigger => trigger.name === name);
             });
             names.forEach(name => {
-                let maxLevel = maxMap[name].maxLevel;
-                let maxDC = maxMap[name].maxDC;
-                let maxDCTrigger = unsortedTriggers[name].find(trigger => trigger.castData.saveDC === maxDC);
+                let maxLevel = Math.max(...groupedTriggers[name].map(trigger => trigger.castData.castLevel));
+                let maxDC = Math.max(...groupedTriggers[name].map(trigger => trigger.castData.saveDC));
+                let maxDCTrigger = groupedTriggers[name].find(trigger => trigger.castData.saveDC === maxDC);
                 let selectedTrigger;
                 if (maxDCTrigger.castData.castLevel === maxLevel) {
                     selectedTrigger = maxDCTrigger;
                 } else {
-                    selectedTrigger = unsortedTriggers[name].find(j => j.castData.castLevel === maxLevel);
+                    selectedTrigger = groupedTriggers[name].find(j => j.castData.castLevel === maxLevel);
                 }
-                triggers.push(selectedTrigger);
+                winningTriggers.add(selectedTrigger);
             });
 
         } else {
-            triggers = unsortedTriggers;
+            unsortedTriggers.forEach(trigger => winningTriggers.add(trigger));
         }
         let sortedTriggers = [];
         let uniqueMacros = new Set();
-        triggers.forEach(trigger => {
+        unsortedTriggers.forEach(trigger => {
+            const isWinner = winningTriggers.has(trigger);
             [...trigger.fnMacros, ...trigger.embeddedMacros].forEach(i => {
                 i.macros.forEach(macro => {
+                    if (!isWinner && !macro.canOverlap) return;
                     if (macro.unique) {
                         if (uniqueMacros.has(macro.unique)) return;
                         uniqueMacros.add(macro.unique);

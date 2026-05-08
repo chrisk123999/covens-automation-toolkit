@@ -13,7 +13,7 @@ class Trigger {
         this.processEmbeddedMacro();
     }
     processFnMacros(data, type, pass) {
-        this.fnMacros = data.map(i => constants.registeredMacros.getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);
+        this.fnMacros = data.map(i => constants.macros.getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);
     }
     processEmbeddedMacro() {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros(this.type, this.pass);
@@ -26,7 +26,7 @@ class Trigger {
                     const distance = this.distances[this.targetToken.id];
                     if (distance < 0) return false;
                     const maxDistance = macro.configDistance ? documentUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
-                    if (genericUtils.convertDistance(this.scene, maxDistance) < genericUtils.convertDistance(this.scene, distance)) return false;
+                    if (maxDistance < distance) return false;
                     const dispositions = macro.configDispositions ? documentUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
                     if (dispositions) {
                         const isAlly = this.token.disposition == this.targetToken.disposition;
@@ -34,7 +34,7 @@ class Trigger {
                         if (!(dispositions.includes('all') || (dispositions.includes('ally') && isAlly) || (dispositions.includes('enemy') && isEnemy))) return false;
                     }
                     return macro;
-                }).filter(i => i);
+                }).filter(Boolean);
             });
         }
         if (this.embeddedMacros.length) {
@@ -44,9 +44,9 @@ class Trigger {
                     const distance = this.distances[this.targetToken.id];
                     if (distance < 0) return;
                     const maxDistance = macro.distance;
-                    if (genericUtils.convertDistance(this.scene, maxDistance) >= genericUtils.convertDistance(this.scene, distance)) return macro;
+                    if (maxDistance >= distance) return macro;
                     return false;
-                }).filter(i => i);
+                }).filter(Boolean);
             });
         }
     }
