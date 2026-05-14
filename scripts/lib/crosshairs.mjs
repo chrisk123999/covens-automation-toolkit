@@ -10,8 +10,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
         }
         const regionData = {
             name: 'Crosshairs Preview',
-            shapes: shapes,
-            elevation: {bottom: 99999, top: 99999}
+            shapes: shapes
         };
         const regionDoc = new CONFIG.Region.documentClass(regionData, {parent: canvas.scene});
         super(regionDoc);
