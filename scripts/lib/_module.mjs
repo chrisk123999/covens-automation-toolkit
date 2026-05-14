@@ -7,3 +7,4 @@ export {default as Macros} from './macros.mjs';
 export {default as queries} from './query.mjs';
 export {default as Triggers} from './trigger.mjs';
 export {default as Scales} from './scales.mjs';
+export {Crosshairs} from './crosshairs.mjs';
