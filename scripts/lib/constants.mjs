@@ -111,7 +111,8 @@ const itemPasses = {
     equipped: 'equipped',
     unequipped: 'unequipped',
     attuned: 'attuned',
-    unattuned: 'unattuned'
+    unattuned: 'unattuned',
+    medkit: 'medkit'
 };
 const itemHookNames = {
     createItem: 'createItem',

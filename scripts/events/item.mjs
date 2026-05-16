@@ -41,10 +41,14 @@ async function updateItem(item, updates, options, userId) {
 async function actorMunched({actor, ddbCharacter}) {
     await new Events.ItemsEvent(actor.items, constants.itemPasses.munched, {ddbCharacter}).run({canOverlap: true});
 }
+async function itemMedkit(item) {
+    await new Events.ItemEvent(item, constants.itemPasses.medkit).run();
+}
 export default {
     bulkUpdated,
     createItem,
     deleteItem,
     updateItem,
-    actorMunched
+    actorMunched,
+    itemMedkit
 };
