@@ -1,12 +1,13 @@
 import {constants} from '../lib/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 async function registerAutomations() {
-    constants.automations.registerSourceName('midi-qol', 'Midi Quality of Life Improvements');
+    const moduleId = 'midi-qol';
+    constants.automations.registerSourceName(moduleId, game.modules.get(moduleId).title);
     const packs = [
         'midiqol-sample-items'
     ];
     await Promise.all(packs.map(async id => {
-        const pack = game.packs.get('midi-qol.' + id);
+        const pack = game.packs.get(moduleId + '.' + id);
         if (!pack) return;
         Logging.addEntry('DEBUG', 'Automation Compendium Registered: ' + pack.metadata.label + ' from ' + pack.metadata.packageName);
         const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'system.source.custom', 'flags.chris-premades.info.version']});
@@ -14,7 +15,7 @@ async function registerAutomations() {
             const version = entry.flags['chris-premades']?.info?.version ?? entry.system.source?.custom?.match(/\d+(\.\d+)+/)?.[0]; //Make Tim fix this lol
             if (!version) return;
             constants.automations.registerAutomation({
-                source: 'midi-qol',
+                source: moduleId,
                 rules: entry.system.source.rules,
                 identifier: entry.system.identifier,
                 version: version,

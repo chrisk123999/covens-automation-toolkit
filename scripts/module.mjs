@@ -64,6 +64,7 @@ Hooks.once('ready', () => {
         integration.phb.registerAutomations();
         integration.phb.registerScales();
     }
+    if (game.modules.get('dnd-dungeon-masters-guide')?.active) integration.dmg.registerAutomations();
 });
 Hooks.once('ddb-importer.compendiumCreationComplete', () => {
     integration.ddbi.registerAutomations();

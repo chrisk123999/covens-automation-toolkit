@@ -1,7 +1,8 @@
 import {default as constants} from '../lib/constants.mjs';
 import documentUtils from '../utilities/documentUtils.mjs';
 async function registerAutomations() {
-    constants.automations.registerSourceName('dnd-players-handbook', 'Dungeons & Dragons Player\'s Handbook');
+    const moduleId = 'dnd-players-handbook';
+    constants.automations.registerSourceName(moduleId, game.modules.get(moduleId).title);
     const packs = [
         'classes',
         'origins',
@@ -10,17 +11,18 @@ async function registerAutomations() {
         'equipment'
     ];
     await Promise.all(packs.map(async id => {
-        const pack = game.packs.get('dnd-players-handbook.' + id);
+        const pack = game.packs.get(moduleId + '.' + id);
         if (!pack) return;
         await constants.automations.registerAutomationCompendium(pack);
     }));
 }
 async function registerScales() {
+    const moduleId = 'dnd-players-handbook';
     const packs = [
         'classes'
     ];
     await Promise.all(packs.map(async id => {
-        const pack = game.packs.get('dnd-players-handbook.' + id);
+        const pack = game.packs.get(moduleId + '.' + id);
         if (!pack) return;
         const documents = await pack.getDocuments({type__in: ['class', 'subclass']});
         documents.forEach(document => {

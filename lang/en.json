@@ -25,7 +25,8 @@
         "dnd5e": "Dungeons & Dragons Fifth Edition",
         "dnd-players-handbook": "Dungeons & Dragons Player's Handbook",
         "midi-qol": "Midi Quality of Life Improvements",
-        "ddb-importer": "D&D Beyond Importer"
+        "ddb-importer": "D&D Beyond Importer",
+        "dnd-dungeon-masters-guide": "Dungeons & Dragons Dungeon Master's Guide"
       },
       "STATUSES": {
         "HasUnregistered": "Unregistered Automation",

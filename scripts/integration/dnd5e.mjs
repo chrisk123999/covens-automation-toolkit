@@ -1,7 +1,7 @@
 import {documentUtils} from '../utilities/_module.mjs';
 import {constants} from '../lib/_module.mjs';
 async function registerAutomations() {
-    constants.automations.registerSourceName('dnd5e', 'Dungeons & Dragons Fifth Edition');
+    constants.automations.registerSourceName(game.system.id, game.system.title);
     const packs = [
         'items',
         'tradegoods',
@@ -18,7 +18,7 @@ async function registerAutomations() {
         'equipment24'
     ];
     await Promise.all(packs.map(async id => {
-        const pack = game.packs.get('dnd5e.' + id);
+        const pack = game.packs.get(game.system.id + '.' + id);
         if (!pack) return;
         await constants.automations.registerAutomationCompendium(pack);
     }));
@@ -30,7 +30,7 @@ async function registerScales() {
         'classes24'
     ];
     await Promise.all(packs.map(async id => {
-        const pack = game.packs.get('dnd5e.' + id);
+        const pack = game.packs.get(game.system.id + '.' + id);
         if (!pack) return;
         const documents = await pack.getDocuments({type__in: ['class', 'subclass']});
         documents.forEach(document => {
@@ -38,7 +38,7 @@ async function registerScales() {
             if (!scales.length) return;
             scales.forEach(scale => {
                 constants.scales.registerScale({
-                    source: 'dnd5e',
+                    source: game.system.id,
                     rules: documentUtils.getRules(document),
                     identifier: scale.identifier,
                     classIdentifier: documentUtils.getIdentifier(document),

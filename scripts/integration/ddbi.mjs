@@ -1,9 +1,9 @@
 import {constants} from '../lib/_module.mjs';
-import {genericUtils, documentUtils} from '../utilities/_module.mjs';
+import {documentUtils} from '../utilities/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 async function registerAutomations() {
-    await genericUtils.sleep(1000); //Remove this once ddb-importer.compendiumCreationComplete is added.
-    constants.automations.registerSourceName('ddb-importer', 'D&D Beyond Importer');
+    const moduleId = 'ddb-importer';
+    constants.automations.registerSourceName(moduleId, game.modules.get(moduleId).title);
     const settings = [
         'entity-background-compendium',
         'entity-class-compendium',
@@ -12,7 +12,7 @@ async function registerAutomations() {
         'entity-species-compendium',
         'entity-spell-compendium'
     ];
-    const packs = settings.map(setting => game.settings.get('ddb-importer', setting));
+    const packs = settings.map(setting => game.settings.get(moduleId, setting));
     await Promise.all(packs.map(async id => {
         const pack = game.packs.get(id);
         if (!pack) return;
@@ -22,7 +22,7 @@ async function registerAutomations() {
             const version = entry.flags.ddbimporter?.version;
             if (!version) return;
             constants.automations.registerAutomation({
-                source: 'ddb-importer',
+                source: moduleId,
                 rules: entry.system.source.rules,
                 identifier: entry.system.identifier,
                 version: version,
@@ -32,11 +32,11 @@ async function registerAutomations() {
     }));
 }
 async function registerScales() {
-    await genericUtils.sleep(1000); //Remove this once ddb-importer.compendiumCreationComplete is added.
+    const moduleId = 'ddb-importer';
     const settings = [
         'entity-class-compendium'
     ];
-    const packs = settings.map(setting => game.settings.get('ddb-importer', setting));
+    const packs = settings.map(setting => game.settings.get(moduleId, setting));
     await Promise.all(packs.map(async id => {
         const pack = game.packs.get(id);
         if (!pack) return;
@@ -46,7 +46,7 @@ async function registerScales() {
             if (!scales.length) return;
             scales.forEach(scale => {
                 constants.scales.registerScale({
-                    source: 'ddb-importer',
+                    source: moduleId,
                     rules: documentUtils.getRules(document),
                     identifier: scale.identifier,
                     classIdentifier: documentUtils.getIdentifier(document),
