@@ -1,0 +1,77 @@
+<div class="cat-dialog-shell">
+<header class="cat-dialog-header">
+    <span class="cat-dialog-title">{{localize title}}</span>
+    <button type="button" class="cat-dialog-detach" data-action="toggleDetach" data-tooltip="{{#if detached}}{{localize 'APPLICATION.ACTIONS.Attach'}}{{else}}{{localize 'APPLICATION.ACTIONS.Detach'}}{{/if}}" aria-label="{{#if detached}}{{localize 'APPLICATION.ACTIONS.Attach'}}{{else}}{{localize 'APPLICATION.ACTIONS.Detach'}}{{/if}}">
+        <i class="fas {{#if detached}}fa-arrow-down-to-square{{else}}fa-arrow-up-right-from-square{{/if}}" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="cat-dialog-close" data-action="close" data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+    </button>
+</header>
+<div id="dialog-app" class="cat-dialog-body standard-form scrollable">
+    {{#if content}}<p class="cat-dialog-content">{{{localize content}}}</p>{{/if}}
+    {{#each inputs}}
+        {{#if useHelper}}
+            {{#each options}}
+                {{formGroup field name=name value=value}}
+            {{/each}}
+        {{else if isButton}}
+            <div class="cat-body-buttons {{#if displayAsRows}}cat-stacked{{/if}}">
+                {{#each options}}
+                    <button type="submit" class="cat-body-button" data-action="confirm" id="i{{@../index}}j{{@index}}" name="{{name}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}{{#if reference}} data-reference-tooltip="{{reference}}"{{/if}}>
+                        {{#if image}}<img class="button-image" src="{{image}}">{{/if}}
+                        <span>{{localize label}}</span>
+                    </button>
+                {{/each}}
+            </div>
+        {{else if isCheckbox}}
+            {{#each options}}
+                <div class="form-group">
+                    <label for="i{{@../index}}j{{@index}}">
+                        {{#if image}}<img class="label-image" src="{{image}}" data-token-id="{{name}}">{{/if}}
+                        {{{localize label}}}
+                    </label>
+                    <div class="form-fields">
+                        <input type="checkbox" {{#if (gte ../currentNum ../totalMax)}}{{#unless isChecked}}disabled{{/unless}}{{/if}} id="i{{@../index}}j{{@index}}" name="{{name}}" {{#if isChecked}}checked{{/if}}>
+                    </div>
+                </div>
+            {{/each}}
+        {{else if isRadio}}
+            <div class="form-group">
+                <div class="form-fields">
+                    {{#each options}}
+                        <input type="radio" id="i{{@../index}}j{{@index}}" name="{{../radioName}}" value="{{name}}" {{#if isChecked}}checked{{/if}}>
+                        <label for="i{{@../index}}j{{@index}}">
+                            {{#if image}}<img class="label-image" src="{{image}}" data-token-id="{{name}}">{{/if}}
+                            {{localize label}}
+                        </label>
+                    {{/each}}
+                </div>
+            </div>
+        {{else if isSelectAmount}}
+            {{#each options}}
+                <div class="form-group">
+                    <label for="i{{@../index}}j{{@index}}">
+                        {{#if image}}<img class="label-image" src="{{image}}" data-token-id="{{name}}">{{/if}}
+                        {{{localize label}}}
+                    </label>
+                    <div class="form-fields">
+                        <select id="i{{@../index}}j{{@index}}" name="{{name}}">
+                            {{#each options}}
+                                <option value="{{this}}" {{#if (gt this ../currentMaxAmount)}}disabled{{/if}} {{#if (eq this ../currentAmount)}}selected{{/if}}>{{this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+            {{/each}}
+        {{/if}}
+    {{/each}}
+</div>
+{{#if buttons.length}}
+<footer class="cat-dialog-footer">
+    {{#each buttons}}
+        <button type="submit" data-action="confirm" name="{{name}}">{{localize label}}</button>
+    {{/each}}
+</footer>
+{{/if}}
+</div>

@@ -15,7 +15,7 @@ const compat = new FlatCompat({
 });
 
 export default defineConfig([
-    globalIgnores(['foundry/**/*']),
+    globalIgnores(['foundry/**/*', 'dnd5e/**/*', 'node_modules/**/*']),
     {
         extends: compat.extends('eslint:recommended'),
         plugins: {
@@ -37,8 +37,10 @@ export default defineConfig([
                 canvas: 'writable',
                 foundry: 'writable',
                 game: 'writable',
+                ui: 'writable',
                 TokenDocument: 'writable',
                 CONFIG: 'writable',
+                CONST: 'writable',
                 Actor: 'writable',
                 Item: 'writable',
                 _loc: 'writable',
