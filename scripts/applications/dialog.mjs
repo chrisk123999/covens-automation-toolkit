@@ -1,0 +1,447 @@
+const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundry.data.fields;
+
+// Generic dialog for macros. API matches CPR v13 DialogApp.
+export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2) {
+    #context;
+    #resolveResults;
+    #resultsPromise;
+    constructor(options) {
+        let title, content, inputs, buttons, config;
+        if (options?.length) [title, content, inputs, buttons, config] = options;
+        const init = config?.id ? {id: config.id} : {};
+        if (config?.width != null || config?.height != null) {
+            init.position = {};
+            if (config.width != null) init.position.width = config.width;
+            if (config.height != null) init.position.height = config.height;
+        }
+        super(init);
+        this.#resultsPromise = new Promise(r => this.#resolveResults = r);
+        if (!options?.length) return;
+        this.windowTitle = _loc(title);
+        this.content = content;
+        this.inputs = inputs;
+        this.buttons = buttons;
+    }
+
+    static DEFAULT_OPTIONS = {
+        id: 'cat-dialog-app',
+        classes: ['cat', 'cat-dialog'],
+        tag: 'form',
+        form: {
+            handler: DialogApp.#formHandler,
+            submitOnChange: false,
+            closeOnSubmit: false
+        },
+        actions: {
+            confirm: DialogApp.#confirm,
+            close: DialogApp.#onCloseAction,
+            toggleDetach: DialogApp.#onToggleDetach
+        },
+        window: {
+            frame: false,
+            positioned: true,
+            contentClasses: ['standard-form']
+        },
+        position: {
+            width: 'auto',
+            height: 'auto'
+        }
+    };
+
+    static PARTS = {
+        form: {
+            template: 'modules/cat/templates/dialog-app.hbs',
+            scrollable: ['']
+        }
+    };
+
+    /** @this {DialogApp} */
+    static async #onCloseAction() {
+        this.element?.classList.add('closing');
+        await new Promise(resolve => setTimeout(resolve, 200));
+        await this.close({animate: false});
+    }
+
+    /** @this {DialogApp} */
+    static #onToggleDetach() {
+        if (this.window.windowId) return this.attachWindow();
+        const rect = this.element.getBoundingClientRect();
+        // Popup outer dims must include browser chrome so the inner viewport fits the dialog.
+        // Foundry's #applyDetachedConstraints clamps to inner viewport, so under-sizing here truncates the dialog.
+        const chromeW = (window.outerWidth - window.innerWidth) || 16;
+        const chromeH = (window.outerHeight - window.innerHeight) || 80;
+        return this.detachWindow({position: {
+            width: Math.round(rect.width) + chromeW,
+            height: Math.round(rect.height) + chromeH
+        }});
+    }
+
+    /**
+     * @param {string} title - Window title (localization key).
+     * @param {string} content - Header content (HTML or localization key).
+     * @param {Array} inputs - [type, fields[], options][]. Types: button, checkbox, radio, selectAmount, selectMany, selectOption, text, number, filePicker.
+     * @param {'yesNo'|'okCancel'|'ok'|'cancel'} [buttons]
+     * @param {{id?: string, width?: number|string, height?: number|string}} [config]
+     * @returns {Promise<object|null>}
+     */
+    static async dialog(...options) {
+        return new Promise((resolve) => {
+            const dialog = new DialogApp(options);
+            dialog.addEventListener('close', () => resolve(null), {once: true});
+            // Inherit detached-window context from the currently active app (so dialogs spawned
+            // from a detached popup open in that popup, not the main client).
+            const windowId = ui.activeWindow?.window?.windowId;
+            const renderOptions = windowId ? {force: true, window: {windowId}} : {force: true};
+            dialog.render(renderOptions);
+            dialog.submit = async result => {
+                resolve(result);
+                dialog.close();
+            };
+        });
+    }
+
+    /** @this {DialogApp} */
+    static async #formHandler(event, form, formData) {
+        this.#resolveResults(foundry.utils.expandObject(formData.object));
+    }
+
+    /** @this {DialogApp} */
+    static async #confirm(event, target) {
+        await this.mergeResults(target.name);
+    }
+
+    async mergeResults(name) {
+        if (name === 'false') {
+            this.submit({buttons: false});
+            return false;
+        }
+        const results = await this.#resultsPromise;
+        results.buttons = (name === 'true') ? true : name;
+        this.submit(results);
+    }
+
+    get title() {
+        return this.windowTitle;
+    }
+
+    static #makeButton(label, name) {
+        return {type: 'submit', action: 'confirm', label, name};
+    }
+
+    static #makeRange(firstNum, lastNum) {
+        const arr = [];
+        for (let i = firstNum; i <= lastNum; i++) arr.push(i);
+        return arr;
+    }
+
+    // Convert each declarative input tuple into template-ready entry.
+    #formatInputs() {
+        const context = {content: this.content, inputs: [], buttons: []};
+        for (const [inputType, inputFields, inputOptions] of this.inputs) {
+            const entry = this.#buildInput(inputType, inputFields, inputOptions);
+            if (entry) context.inputs.push(entry);
+        }
+        switch (this.buttons) {
+            case 'yesNo':
+                context.buttons.push(DialogApp.#makeButton('Yes', 'true'), DialogApp.#makeButton('No', 'false'));
+                break;
+            case 'okCancel':
+                context.buttons.push(DialogApp.#makeButton('Confirm', 'true'), DialogApp.#makeButton('Cancel', 'false'));
+                break;
+            case 'ok':
+                context.buttons.push(DialogApp.#makeButton('Confirm', 'true'));
+                break;
+            case 'cancel':
+                context.buttons.push(DialogApp.#makeButton('Cancel', 'false'));
+                break;
+        }
+        this.#context = context;
+    }
+
+    #buildInput(type, fields, opts) {
+        switch (type) {
+            case 'button': return this.#buildButton(fields, opts);
+            case 'checkbox': return this.#buildCheckbox(fields, opts);
+            case 'radio': return this.#buildRadio(fields, opts);
+            case 'selectAmount': return this.#buildSelectAmount(fields, opts);
+            case 'selectMany': return this.#buildSelectMany(fields, opts);
+            case 'selectOption': return this.#buildSelectOption(fields, opts);
+            case 'text': return this.#buildText(fields);
+            case 'number': return this.#buildNumber(fields);
+            case 'filePicker': return this.#buildFilePicker(fields);
+        }
+    }
+
+    #buildButton(fields, opts) {
+        return {
+            isButton: true,
+            displayAsRows: opts?.displayAsRows ?? false,
+            options: fields.map(f => ({
+                label: f.label,
+                name: f.name,
+                image: f.options?.image,
+                tooltip: f.options?.tooltip,
+                reference: f.options?.reference
+            }))
+        };
+    }
+
+    #buildCheckbox(fields, opts) {
+        // Single checkbox with no totalMax / image → helper route (BooleanField).
+        if (fields.length === 1 && opts?.totalMax == null && !fields[0].options?.image) {
+            const f = fields[0];
+            return {
+                useHelper: true,
+                options: [{
+                    field: new BooleanField({label: f.label}),
+                    name: f.name,
+                    value: f.options?.isChecked ?? false
+                }]
+            };
+        }
+        const options = fields.map(f => ({
+            label: f.label,
+            name: f.name,
+            isChecked: f.options?.isChecked ?? false,
+            image: f.options?.image
+        }));
+        return {
+            isCheckbox: true,
+            options,
+            totalMax: opts?.totalMax ?? 99,
+            currentNum: options.filter(i => i.isChecked).length
+        };
+    }
+
+    #buildRadio(fields, opts) {
+        return {
+            isRadio: true,
+            options: fields.map(f => ({
+                label: f.label,
+                name: f.name,
+                isChecked: f.options?.isChecked ?? false,
+                image: f.options?.image
+            })),
+            radioName: opts?.radioName ?? 'radio'
+        };
+    }
+
+    #buildSelectAmount(fields, opts) {
+        const options = fields.map(f => {
+            const min = f.options?.minAmount ?? 0;
+            const max = f.options?.maxAmount ?? 10;
+            return {
+                label: f.label,
+                name: f.name,
+                minAmount: min,
+                maxAmount: max,
+                currentAmount: f.options?.currentAmount ?? 0,
+                weight: f.options?.weight ?? 1,
+                options: DialogApp.#makeRange(min, max),
+                image: f.options?.image
+            };
+        });
+        return this.#currentMaxAmounts({
+            isSelectAmount: true,
+            totalMax: opts?.totalMax,
+            options
+        });
+    }
+
+    #buildSelectMany(fields) {
+        return {
+            useHelper: true,
+            options: fields.map(f => {
+                const choices = (f.options?.options ?? []).reduce((acc, i) => {
+                    acc[i.value] = i.label;
+                    return acc;
+                }, {});
+                return {
+                    field: new SetField(new StringField({choices}), {label: f.label}),
+                    name: f.name,
+                    value: f.options?.value ?? []
+                };
+            })
+        };
+    }
+
+    #buildSelectOption(fields) {
+        return {
+            useHelper: true,
+            options: fields.map(f => {
+                const choices = (f.options?.options ?? []).reduce((acc, i) => {
+                    if (typeof i === 'string') acc[i] = i;
+                    else acc[i.value] = i.label;
+                    return acc;
+                }, {});
+                return {
+                    field: new StringField({label: f.label, choices, required: true, blank: false}),
+                    name: f.name,
+                    value: f.options?.currentValue ?? ''
+                };
+            })
+        };
+    }
+
+    #buildText(fields) {
+        return {
+            useHelper: true,
+            options: fields.map(f => ({
+                field: new StringField({label: f.label}),
+                name: f.name,
+                value: f.options?.currentValue ?? ''
+            }))
+        };
+    }
+
+    #buildNumber(fields) {
+        return {
+            useHelper: true,
+            options: fields.map(f => ({
+                field: new NumberField({label: f.label}),
+                name: f.name,
+                value: f.options?.currentValue ?? 0
+            }))
+        };
+    }
+
+    #buildFilePicker(fields) {
+        return {
+            useHelper: true,
+            options: fields.map(f => {
+                const type = (f.options?.type ?? 'image').toUpperCase();
+                const categories = type === 'ANY' ? CONST.MEDIA_FILE_CATEGORIES
+                    : type === 'IMAGEVIDEO' ? ['IMAGE', 'VIDEO']
+                        : type in CONST.FILE_CATEGORIES ? [type] : ['IMAGE'];
+                return {
+                    field: new FilePathField({label: f.label, categories}),
+                    name: f.name,
+                    value: f.options?.currentValue ?? ''
+                };
+            })
+        };
+    }
+
+    async _prepareContext(options) {
+        const context = await super._prepareContext(options);
+        if (!this.#context) this.#formatInputs();
+        const detached = options.window?.attach ? false : options.window?.detach ? true : !!this.window.windowId;
+        return {...context, ...this.#context, title: this.windowTitle, detached};
+    }
+
+    // Cap each option's max so combined weighted amounts stay under totalMax.
+    #currentMaxAmounts(input) {
+        const clone = foundry.utils.deepClone(input);
+        let max = clone.totalMax;
+        clone.options.forEach(o => max -= o.currentAmount * o.weight);
+        for (const i of clone.options) {
+            i.currentMaxAmount = Math.floor((max + (i.currentAmount * i.weight)) / i.weight);
+        }
+        return clone;
+    }
+
+    async _onChangeForm(formConfig, event) {
+        super._onChangeForm(formConfig, event);
+        const targetInput = event.target;
+        const ctx = this.#context;
+        const idMatch = targetInput.id?.match(/i(\d+)j(\d+)/);
+        if (!idMatch) return;
+        const [i, j] = [parseInt(idMatch[1]), parseInt(idMatch[2])];
+        switch (targetInput.type) {
+            case 'checkbox': {
+                ctx.inputs[i].options[j].isChecked = targetInput.checked;
+                ctx.inputs[i].currentNum = ctx.inputs[i].options.reduce((acc, c) => c.isChecked ? acc + 1 : acc, 0);
+                this.render(true);
+                break;
+            }
+            case 'select-one': {
+                if (ctx.inputs[i].isSelectAmount) {
+                    ctx.inputs[i].options[j].currentAmount = Number(targetInput.value);
+                    if (ctx.inputs[i].options[j]?.weight) ctx.inputs[i] = this.#currentMaxAmounts(ctx.inputs[i]);
+                    this.render(true);
+                }
+                break;
+            }
+            case 'radio': {
+                ctx.inputs[i].options.forEach(o => o.isChecked = false);
+                ctx.inputs[i].options[j].isChecked = targetInput.checked;
+                this.render(true);
+                break;
+            }
+        }
+    }
+
+    // dnd5e fills the tooltip on hover via this placeholder.
+    #applyTooltip(element) {
+        if ('tooltip' in element.dataset) return;
+        const uuid = element.dataset.referenceTooltip;
+        element.dataset.tooltip = `<section class="loading" data-uuid="${uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
+        if (element.dataset.attribution) element.dataset.tooltipClass = 'property-attribution';
+    }
+
+    // Frameless = no built-in titlebar, so wire drag on our header.
+    #enableDragging() {
+        const handle = this.element?.querySelector('.cat-dialog-header');
+        if (!handle || handle.dataset.dragWired === '1') return;
+        handle.dataset.dragWired = '1';
+        const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
+        const orig = drag._onDragMouseDown.bind(drag);
+        drag._onDragMouseDown = (event) => {
+            if (event.target.closest('button, a, input, select, [data-action]')) return;
+            orig(event);
+        };
+    }
+
+    // Frameless apps don't get default z-ordering; replicate the framed bring-to-front behaviour.
+    bringToFront() {
+        if (!this.element) return;
+        this.position.zIndex = ++ApplicationV2._maxZ;
+        this.element.style.zIndex = String(this.position.zIndex);
+        ui.activeWindow = this;
+    }
+
+    _onRender(context, options) {
+        super._onRender(context, options);
+        this.#enableDragging();
+        if (options.isFirstRender) {
+            this.bringToFront();
+            const win = this.element.ownerDocument.defaultView ?? window;
+            const w = this.element.offsetWidth || 400;
+            const h = this.element.offsetHeight || 300;
+            this.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
+        }
+        for (const elem of this.element.querySelectorAll('.label-image[data-token-id]')) {
+            const id = elem.dataset.tokenId;
+            elem.addEventListener('click', async () => {
+                const token = canvas.tokens.get(id);
+                if (token) await canvas.ping(token.center);
+            });
+            elem.addEventListener('mouseover', () => {
+                const token = canvas.tokens.get(id);
+                if (!token) return;
+                token.hover = true;
+                token.refresh();
+            });
+            elem.addEventListener('mouseout', () => {
+                const token = canvas.tokens.get(id);
+                if (!token) return;
+                token.hover = false;
+                token.refresh();
+            });
+        }
+        this.element.querySelectorAll('[data-reference-tooltip]').forEach(el => this.#applyTooltip(el));
+    }
+}
+
+// Queue dialogs so two never stack at once.
+export class DialogManager {
+    #queue = Promise.resolve();
+    async showDialog(dialogFunction, ...args) {
+        await this.#queue;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const promise = dialogFunction(...args);
+        this.#queue = promise;
+        return promise;
+    }
+}

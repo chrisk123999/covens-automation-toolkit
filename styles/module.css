@@ -1,28 +1,241 @@
-/* Medkit Coloration */
-[data-medkit-status="unknown"] {
-    color: pink
+/* CAT Variables */
+.cat {
+    --cat-bg-surface: rgb(27 29 36 / 92%);
+    --cat-bg-input: rgb(58 60 67 / 30%);
+    --cat-bg-hover: rgb(255 255 255 / 6%);
+    --cat-bg-active: rgb(85 170 255 / 14%);
+    --cat-border-light: rgb(201 199 184 / 18%);
+    --cat-border-focus: rgb(85 170 255);
+    --cat-text-primary: rgb(241 241 241);
+    --cat-text-muted: rgb(170 170 170);
+    --cat-text-accent: rgb(159 146 117);
+    --cat-radius-sm: 0.188rem;
+    --cat-radius-md: 0.25rem;
+    --cat-radius-lg: 0.5rem;
+    --cat-space-xs: 0.25rem;
+    --cat-space-sm: 0.5rem;
+    --cat-space-md: 0.75rem;
+    --cat-space-lg: 1rem;
+    --cat-shadow-soft: 0 0 0.375rem rgb(0 0 0 / 35%);
+    --cat-transition-fast: all 150ms ease;
 }
 
-[data-medkit-status="outdated-cpr"] {
-    color: red
+/* Medkit Status Colors */
+[data-medkit-status="unknown"]          { color: rgb(255 192 203); }
+[data-medkit-status="outdated-cpr"]     { color: rgb(255 0 0); }
+[data-medkit-status="outdated-other"]   { color: rgb(255 165 0); }
+[data-medkit-status="available"]        { color: rgb(255 255 0); }
+[data-medkit-status="up-to-date-cpr"]   { color: rgb(0 128 0); }
+[data-medkit-status="configurable"]     { color: rgb(30 144 255); }
+[data-medkit-status="up-to-date-other"] { color: rgb(218 112 214); }
+
+/* Frameless Dialog */
+.cat-dialog {
+    position: fixed;
+    z-index: var(--z-index-window, 100);
+    width: max-content;
+    max-width: 100vw;
+    max-height: 100vh;
+    background: var(--cat-bg-surface);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-lg);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 55%);
+    backdrop-filter: blur(6px);
+    overflow: hidden;
+    transition: opacity 200ms ease, transform 200ms ease;
 }
 
-[data-medkit-status="outdated-other"] {
-    color: orange
+.cat-dialog-shell {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+    height: 100%;
 }
 
-[data-medkit-status="available"] {
-    color: yellow
+.cat-dialog.closing {
+    opacity: 0;
+    transform: scale(0.96);
 }
 
-[data-medkit-status="up-to-date-cpr"] {
-    color: green
+.cat-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: var(--cat-space-md);
+    padding: var(--cat-space-sm) var(--cat-space-md);
+    background: rgb(0 0 0 / 25%);
+    border-bottom: 1px solid var(--cat-border-light);
+    cursor: grab;
+    user-select: none;
 }
 
-[data-medkit-status="configurable"] {
-    color: dodgerblue
+.cat-dialog-header:active {
+    cursor: grabbing;
 }
 
-[data-medkit-status="up-to-date-other"] {
-    color: orchid
+.cat-dialog-title {
+    flex: 1;
+    font-weight: 600;
+    color: var(--cat-text-primary);
+    font-size: 1rem;
 }
+
+.cat-dialog-close,
+.cat-dialog-detach {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--cat-text-muted);
+    cursor: pointer;
+    border-radius: var(--cat-radius-sm);
+    transition: var(--cat-transition-fast);
+}
+
+.cat-dialog-close:hover,
+.cat-dialog-detach:hover {
+    background: var(--cat-bg-hover);
+    color: var(--cat-text-primary);
+}
+
+.cat-dialog-body {
+    color: var(--cat-text-primary);
+    padding: var(--cat-space-md);
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cat-border-focus) transparent;
+}
+
+.cat-dialog-body::-webkit-scrollbar {
+    width: 0.5rem;
+}
+
+.cat-dialog-body::-webkit-scrollbar-thumb {
+    background: var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+}
+
+.cat-dialog-body::-webkit-scrollbar-thumb:hover {
+    background: var(--cat-border-focus);
+}
+
+.cat-dialog-header,
+.cat-dialog-footer {
+    flex: 0 0 auto;
+}
+
+.cat-dialog-content {
+    margin: 0 0 var(--cat-space-md) 0;
+    line-height: 1.45;
+}
+
+.cat-dialog-content:empty {
+    display: none;
+}
+
+.cat-dialog .cat-body-buttons {
+    display: flex;
+    flex-flow: row wrap;
+    gap: var(--cat-space-sm);
+    align-items: stretch;
+}
+
+.cat-dialog .cat-body-buttons.cat-stacked {
+    flex-direction: column;
+}
+
+.cat-dialog .cat-body-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--cat-space-sm);
+}
+
+.cat-dialog .cat-body-button .button-image {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--cat-radius-sm);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.cat-dialog-footer {
+    display: flex;
+    flex-direction: row;
+    gap: var(--cat-space-sm);
+    padding: var(--cat-space-md);
+    border-top: 1px solid var(--cat-border-light);
+    background: rgb(0 0 0 / 18%);
+}
+
+.cat-dialog-footer button {
+    flex: 1;
+}
+
+.cat-dialog input,
+.cat-dialog select,
+.cat-dialog textarea,
+.cat-dialog file-picker,
+.cat-dialog multi-select {
+    --input-background-color: var(--cat-bg-input);
+    --input-border-color: var(--cat-border-light);
+    --input-text-color: var(--cat-text-primary);
+    --input-focus-outline-color: var(--cat-border-focus);
+    --checkbox-background-color: var(--cat-bg-input);
+}
+
+.cat-dialog select option {
+    background: var(--cat-bg-surface);
+    color: var(--cat-text-primary);
+}
+
+/* Rich roll-label (expression + result inline, damage type hint below, icon) */
+.cat-dialog .cat-roll-label {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.cat-dialog .cat-roll-line {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--cat-space-sm);
+}
+
+.cat-dialog .cat-roll-result {
+    font-variant-numeric: tabular-nums;
+    color: var(--cat-text-primary);
+}
+
+.cat-dialog .cat-dmg-icon {
+    width: 1rem;
+    height: 1rem;
+    filter: brightness(0) invert(1);
+    flex-shrink: 0;
+}
+
+.cat-dialog .cat-dmg-hint {
+    font-size: 0.7em;
+    font-style: italic;
+    color: var(--cat-text-muted);
+    line-height: 1;
+}
+
+.cat-dialog .label-image {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--cat-radius-sm);
+    object-fit: cover;
+    flex-shrink: 0;
+    transition: var(--cat-transition-fast);
+}
+
+.cat-dialog .label-image:hover {
+    box-shadow: 0 0 0 2px var(--cat-border-focus);
+}
+

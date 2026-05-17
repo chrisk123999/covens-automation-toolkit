@@ -3,6 +3,7 @@ import {registerSettings} from './settings.mjs';
 import * as lib from './lib/_module.mjs';
 import * as utils from './utilities/_module.mjs';
 import {buildApi} from './api.mjs';
+import * as applications from './applications/_module.mjs';
 import {test} from './test.mjs';
 import * as patches from './patches/_module.mjs';
 import * as integration from './integration/_modules.mjs';
@@ -54,6 +55,7 @@ Hooks.once('ready', () => {
     });
     globalThis.cat = {
         api: buildApi(),
+        applications,
         lib,
         utils
     };
