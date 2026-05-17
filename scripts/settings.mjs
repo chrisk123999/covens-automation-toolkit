@@ -14,14 +14,12 @@ import {genericUtils} from './utilities/_module.mjs';
  *  reloadRequired,
  *  select
  */
-const settings = [
-    {
-        key: 'displayDebugLogs',
+const settings = {
+    displayDebugLogs: {
         type: Boolean,
         default: true // Change this to false eventually.
     },
-    {
-        key: 'automationSources',
+    automationSources: {
         type: Object,
         default: {
             dnd5e: {
@@ -46,18 +44,18 @@ const settings = [
             }
         }
     }
-];
+};
 
-function addSetting(options) {
+function addSetting(key, options) {
     const defaultOptions = {
         scope: 'world',
         config: false
     };
-    game.settings.register('cat', options.key, genericUtils.mergeObject(defaultOptions, options));
+    game.settings.register('cat', key, genericUtils.mergeObject(defaultOptions, options));
 }
 export function registerSettings() {
-    settings.sort(genericUtils.keySort('key'));
-    for (const setting of settings) {
-        addSetting(setting);
-    }
+    //settings.sort(genericUtils.keySort('key'));
+    Object.entries(settings).sort().forEach(([key, options]) => {
+        addSetting(key, options);
+    });
 }
