@@ -125,7 +125,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     if (actor) {
         document = (await documentUtils.createEmbeddedDocuments(actor, 'Item', [documentData], {keepId: true}))?.[0];
     } else {
-        document = await Item.create(documentData, {keepId: true});
+        document = await Item.create(documentData, {keepId: true}); //May need to GM socket this.
     }
     if (!document) return;
     if (!skipEvent && actor) await itemEvents.itemMedkit(document);

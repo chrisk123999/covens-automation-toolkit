@@ -13,14 +13,14 @@ function appendHeaderControl(app, controls) {
     if (embeddedOnlyTypes.includes(documentType)) {
         controls.push({
             label: headerLabel,
-            icon: 'fa-solid fa-cat',
+            icon: 'fa-solid fa-shield-cat',
             onClick: () => {} // TODO: Embedded Macros
         });
         return;
     }
     controls.push({
         label: headerLabel,
-        icon: 'fa-solid fa-cat',
+        icon: 'fa-solid fa-shield-cat',
         onClick: () => {
             if (app instanceof foundry.applications.sidebar.apps.Compendium) {
                 // TODO: Compendium Medkit

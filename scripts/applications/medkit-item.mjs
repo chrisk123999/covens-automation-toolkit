@@ -12,7 +12,7 @@ export default class ItemMedkit extends HandlebarsApplicationMixin(ApplicationV2
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-item',
         window: {
-            icon: 'fa-solid fa-cat',
+            icon: 'fa-solid fa-shield-cat',
             resizable: true,
             contentClasses: ['standard-form']
         },
