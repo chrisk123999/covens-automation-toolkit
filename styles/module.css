@@ -157,8 +157,8 @@
 }
 
 .cat-dialog .cat-body-button .button-image {
-    width: 2rem;
-    height: 2rem;
+    width: 1.25rem;
+    height: 1.25rem;
     border-radius: var(--cat-radius-sm);
     object-fit: cover;
     flex-shrink: 0;

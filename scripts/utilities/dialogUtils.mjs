@@ -11,10 +11,11 @@ async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'
     selection = await DialogApp.dialog(title, content, [], buttons);
     return selection?.buttons;
 }
-async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id} = {}) {
+async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sortAlphabetical = false} = {}) {
     let inputs = [
         ['button', [], {displayAsRows: displayAsRows}]
     ];
+    if (sortAlphabetical) buttons = [...buttons].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'en', {sensitivity: 'base'}));
     for (let [label, value, options] of buttons) {
         inputs[0][1].push({label: label, name: value, options: options ?? {}});
     }
@@ -42,15 +43,16 @@ async function numberDialog(title, content, input = {label: 'Label', name: 'iden
     //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, buttons);
     // } else result = await DialogApp.dialog(title, content, inputs, buttons);
     result = await DialogApp.dialog(title, content, inputs, buttons);
-    return result[input.name];
+    return result?.[input.name];
 }
-async function selectDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id} = {}) {
+async function selectDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id, sortAlphabetical = false} = {}) {
     if (!input.options) input.options = {};
     let inputOptions = input.options.options ?? [];
     if (!inputOptions.length) inputOptions = [game.i18n.localize('DND5E.None')];
     if (inputOptions[0].label === undefined) {
         inputOptions = inputOptions.map(text => {return {value: text, label: text};});
     }
+    if (sortAlphabetical) inputOptions = inputOptions.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     input.options.options = inputOptions;
     let inputs = [
         ['selectOption',
