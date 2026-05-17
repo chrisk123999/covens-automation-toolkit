@@ -44,7 +44,7 @@ function getAutomationSources() {
     const settings = game.settings.get('cat', 'automationSources');
     return Object.entries(settings).filter(([key, value]) => value.enabled).sort((a, b) => a[1].priority - b[1].priority).map(([key, value]) => key);
 }
-async function getAppliedOrPreferedAutomation(item) {
+function getAppliedOrPreferedAutomation(item) {
     const currentAutomation = getCurrentAutomation(item);
     if (currentAutomation) return currentAutomation;
     const allAutomations = getAvailableAutomations(item);
@@ -88,8 +88,8 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
         'system.equipped',
         'system.materials',
         'system.quantity',
-        'system.sourceClass',
         'system.source',
+        'system.sourceItem',
         'system.prepared',
         'system.method',
         'flags.core.sourceId',
@@ -101,7 +101,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     const oldDocumentData = item.toObject();
     keepPaths.forEach(field => {
         const fieldValue = genericUtils.getProperty(oldDocumentData, field);
-        if (fieldValue) genericUtils.setProperty(documentData, field);
+        if (fieldValue) genericUtils.setProperty(documentData, field, fieldValue);
     });
     genericUtils.setProperty(documentData, 'flags.cat.automation.source', automation.source);
     genericUtils.setProperty(documentData, 'flags.cat.automation.version', automation.version);
@@ -125,8 +125,9 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     if (actor) {
         document = (await documentUtils.createEmbeddedDocuments(actor, 'Item', [documentData]))?.[0];
     } else {
-        document = Item.create(documentData);
+        document = await Item.create(documentData);
     }
+    if (!document) return;
     if (!skipEvent && actor) await itemEvents.itemMedkit(document);
     if (openSheet) await document.sheet.render(true);
 }

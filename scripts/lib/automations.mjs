@@ -99,7 +99,7 @@ export class RegisteredAutomations {
         config: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
         notes: new fields.StringField({required: false, nullable: false}),
         monsterIdentifier: new fields.StringField({required: false, nullable: false}),
-        scales: new fields.ArrayField({required: false, nullable: false})
+        scales: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
     });
     #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 

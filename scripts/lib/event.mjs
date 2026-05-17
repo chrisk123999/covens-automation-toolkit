@@ -373,7 +373,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
     }
 }
 class PreTargetingWorkflowEvent extends BaseWorkflowEvent {
-    constructor(pass, {activity, token, config, dialog, message}) {
+    constructor(pass, {activity, token, config, dialog, message} = {}) {
         super(pass);
         this.activity = activity;
         this.item = activity.item;
@@ -406,7 +406,7 @@ class TokenDamageWorkflowEvent extends WorkflowEvent {
     }
 }
 class MovementEvent extends CatEvent {
-    constructor(token, pass, {options}) {
+    constructor(token, pass, {options} = {}) {
         super(pass);
         this.name = 'Movement';
         this.trigger = Triggers.MoveTrigger;
@@ -415,7 +415,7 @@ class MovementEvent extends CatEvent {
     }
 }
 class RegionEvent extends CatEvent {
-    constructor(regions, pass, {tokens, workflow, options, updates}) {
+    constructor(regions, pass, {tokens, workflow, options, updates} = {}) {
         super(pass);
         this.name = 'Region';
         this.trigger = Triggers.RegionTrigger;
@@ -464,7 +464,7 @@ class RegionEvent extends CatEvent {
     }
 }
 class EffectEvent extends CatEvent {
-    constructor(effect, pass, {options, updates, parent}) {
+    constructor(effect, pass, {options, updates, parent} = {}) {
         super(pass);
         this.name = 'Effect';
         this.trigger = Triggers.EffectTrigger;
@@ -502,7 +502,7 @@ class EffectEvent extends CatEvent {
     }
 }
 class CombatEvent extends CatEvent {
-    constructor(combat, pass, token, {context, combatant, previousCombatant, round, turn, previousRound, previousTurn}) {
+    constructor(combat, pass, token, {context, combatant, previousCombatant, round, turn, previousRound, previousTurn} = {}) {
         super(pass);
         this.name = 'Combat';
         this.trigger = Triggers.CombatTrigger;
@@ -530,7 +530,7 @@ class CombatEvent extends CatEvent {
     }
 }
 class AuraEvent extends CatEvent {
-    constructor(token, pass, {options, targetToken}) {
+    constructor(token, pass, {options, targetToken} = {}) {
         super(pass);
         this.name = 'Aura';
         this.trigger = Triggers.AuraTrigger;
@@ -610,7 +610,7 @@ class AuraEvent extends CatEvent {
     }
 }
 class ItemEvent extends CatEvent {
-    constructor(item, pass, {options, updates}) {
+    constructor(item, pass, {options, updates} = {}) {
         super(pass);
         this.name = 'Item';
         this.trigger = Triggers.ItemTrigger;
@@ -656,7 +656,7 @@ class ItemsEvent extends CatEvent {
     }
 }
 class RestEvent extends CatEvent {
-    constructor(actor, pass, {result, config}) {
+    constructor(actor, pass, {result, config} = {}) {
         super(pass);
         this.name = 'Rest';
         this.trigger = Triggers.RestTrigger;
@@ -673,7 +673,7 @@ class RestEvent extends CatEvent {
     }
 }
 class BaseRollEvent extends CatEvent {
-    constructor(actor, pass, {config, dialog, message, roll}) {
+    constructor(actor, pass, {config, dialog, message, roll} = {}) {
         super(pass);
         this.config = config;
         this.dialog = dialog;
@@ -720,7 +720,7 @@ class ToolEvent extends BaseRollEvent {
     } 
 }
 class TimeEvent extends CatEvent {
-    constructor(actor, pass, {worldTime, diff, options}) {
+    constructor(actor, pass, {worldTime, diff, options} = {}) {
         super(pass);
         this.name = 'Time';
         this.trigger = Triggers.TimeTrigger;
@@ -739,7 +739,7 @@ class TimeEvent extends CatEvent {
     }
 }
 class SummonEvent extends CatEvent {
-    constructor(actor, pass, {sourceActor, updates}) {
+    constructor(actor, pass, {sourceActor, updates} = {}) {
         super(pass);
         this.name = 'Summon';
         this.trigger = Triggers.SummonTrigger;

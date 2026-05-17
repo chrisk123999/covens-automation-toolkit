@@ -29,13 +29,17 @@ export function registerSettings() {
                 enabled: true,
                 priority: 99
             },
-            'ddb-importer': {
+            'dnd-dungeon-masters-guide': {
                 enabled: true,
                 priority: 98
             },
-            'midi-qol': {
+            'ddb-importer': {
                 enabled: true,
                 priority: 97
+            },
+            'midi-qol': {
+                enabled: true,
+                priority: 96
             }
         }
     });
