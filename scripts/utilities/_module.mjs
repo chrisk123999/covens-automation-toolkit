@@ -12,4 +12,5 @@ export {default as regionUtils} from './regionUtils.mjs';
 export {default as rollUtils} from './rollUtils.mjs';
 export {default as sceneUtils} from './sceneUtils.mjs';
 export {default as tokenUtils} from './tokenUtils.mjs';
+export {default as uiUtils} from './uiUtils.mjs';
 export {default as workflowUtils} from './workflowUtils.mjs';

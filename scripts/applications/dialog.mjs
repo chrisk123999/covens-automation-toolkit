@@ -80,7 +80,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     /**
      * @param {string} title - Window title (localization key).
      * @param {string} content - Header content (HTML or localization key).
-     * @param {Array} inputs - [type, fields[], options][]. Types: button, checkbox, radio, selectAmount, selectMany, selectOption, text, number, filePicker.
+     * @param {Array} inputs - [type, fields[], options][]. Types: button, checkbox, radio, selectAmount, selectMany, selectOption, combobox, text, number, filePicker.
      * @param {'yesNo'|'okCancel'|'ok'|'cancel'} [buttons]
      * @param {{id?: string, width?: number|string, height?: number|string}} [config]
      * @returns {Promise<object|null>}
@@ -167,6 +167,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'selectAmount': return this.#buildSelectAmount(fields, opts);
             case 'selectMany': return this.#buildSelectMany(fields, opts);
             case 'selectOption': return this.#buildSelectOption(fields, opts);
+            case 'combobox': return this.#buildCombobox(fields, opts);
+            case 'comboboxMulti': return this.#buildComboboxMulti(fields, opts);
             case 'text': return this.#buildText(fields);
             case 'number': return this.#buildNumber(fields);
             case 'filePicker': return this.#buildFilePicker(fields);
@@ -281,6 +283,41 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     value: f.options?.currentValue ?? ''
                 };
             })
+        };
+    }
+
+    #buildCombobox(fields) {
+        return {
+            isCombobox: true,
+            options: fields.map(f => ({
+                label: f.label,
+                name: f.name,
+                value: f.options?.value ?? '',
+                placeholder: f.options?.placeholder ?? '',
+                options: (f.options?.options ?? []).map(o => ({
+                    value: o.value,
+                    label: o.label,
+                    image: o.image ?? ''
+                }))
+            }))
+        };
+    }
+
+    #buildComboboxMulti(fields) {
+        return {
+            isComboboxMulti: true,
+            options: fields.map(f => ({
+                label: f.label,
+                name: f.name,
+                placeholder: f.options?.placeholder ?? '',
+                amounts: !!f.options?.amounts,
+                maxTotal: f.options?.maxTotal ?? null,
+                options: (f.options?.options ?? []).map(o => ({
+                    value: o.value,
+                    label: o.label,
+                    image: o.image ?? ''
+                }))
+            }))
         };
     }
 
@@ -410,6 +447,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             const w = this.element.offsetWidth || 400;
             const h = this.element.offsetHeight || 300;
             this.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
+            this.element.addEventListener('cat-resize', () => {
+                this.setPosition({width: 'auto', height: 'auto'});
+            });
         }
         for (const elem of this.element.querySelectorAll('.label-image[data-token-id]')) {
             const id = elem.dataset.tokenId;

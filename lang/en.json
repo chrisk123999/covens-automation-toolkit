@@ -42,6 +42,12 @@
     "Region": {
       "AttackerCantSeeTarget": "Attacker Can't See Target",
       "TargetCantSeeAttacker": "Target Can't See Attacker"
+    },
+    "Dialog": {
+      "Combobox": {
+        "Filter": "Type to filter…",
+        "NoMatches": "No matches"
+      }
     }
   }
 }

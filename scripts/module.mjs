@@ -4,9 +4,15 @@ import * as lib from './lib/_module.mjs';
 import * as utils from './utilities/_module.mjs';
 import {buildApi} from './api.mjs';
 import * as applications from './applications/_module.mjs';
+import CatCombobox from './applications/elements/combobox.mjs';
+import CatMultiCombobox from './applications/elements/multi-combobox.mjs';
 import {test} from './test.mjs';
 import * as patches from './patches/_module.mjs';
 import * as integration from './integration/_modules.mjs';
+
+customElements.define(CatCombobox.tagName, CatCombobox);
+customElements.define(CatMultiCombobox.tagName, CatMultiCombobox);
+
 Hooks.once('init', () => {
     registerSettings();
     lib.queries.registerQueries();
