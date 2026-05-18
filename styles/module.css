@@ -1,26 +1,24 @@
-/* CAT Variables */
-.cat {
-    --cat-bg-surface: rgb(27 29 36 / 92%);
-    --cat-bg-input: rgb(58 60 67 / 30%);
-    --cat-bg-hover: rgb(255 255 255 / 6%);
+:root {
     --cat-bg-active: rgb(85 170 255 / 14%);
-    --cat-border-light: rgb(201 199 184 / 18%);
+    --cat-bg-hover: rgb(255 255 255 / 6%);
+    --cat-bg-input: rgb(58 60 67 / 30%);
+    --cat-bg-surface: rgb(27 29 36 / 92%);
     --cat-border-focus: rgb(85 170 255);
-    --cat-text-primary: rgb(241 241 241);
-    --cat-text-muted: rgb(170 170 170);
-    --cat-text-accent: rgb(159 146 117);
-    --cat-radius-sm: 0.188rem;
-    --cat-radius-md: 0.25rem;
+    --cat-border-light: rgb(201 199 184 / 18%);
     --cat-radius-lg: 0.5rem;
-    --cat-space-xs: 0.25rem;
-    --cat-space-sm: 0.5rem;
-    --cat-space-md: 0.75rem;
-    --cat-space-lg: 1rem;
+    --cat-radius-md: 0.25rem;
+    --cat-radius-sm: 0.188rem;
     --cat-shadow-soft: 0 0 0.375rem rgb(0 0 0 / 35%);
+    --cat-space-lg: 1rem;
+    --cat-space-md: 0.75rem;
+    --cat-space-sm: 0.5rem;
+    --cat-space-xs: 0.25rem;
+    --cat-text-accent: rgb(159 146 117);
+    --cat-text-muted: rgb(170 170 170);
+    --cat-text-primary: rgb(241 241 241);
     --cat-transition-fast: all 150ms ease;
 }
 
-/* Medkit Status Colors */
 [data-medkit-status="unknown"]          { color: rgb(255 192 203); }
 [data-medkit-status="outdated-cpr"]     { color: rgb(255 0 0); }
 [data-medkit-status="outdated-other"]   { color: rgb(255 165 0); }
@@ -29,27 +27,27 @@
 [data-medkit-status="configurable"]     { color: rgb(30 144 255); }
 [data-medkit-status="up-to-date-other"] { color: rgb(218 112 214); }
 
-/* Frameless Dialog */
 .cat-dialog {
-    position: fixed;
+    backdrop-filter: blur(6px);
     z-index: var(--z-index-window, 100);
+    position: fixed;
     width: max-content;
+    min-width: 250px;
     max-width: 100vw;
     max-height: 100vh;
-    background: var(--cat-bg-surface);
     border: 1px solid var(--cat-border-light);
     border-radius: var(--cat-radius-lg);
-    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 55%);
-    backdrop-filter: blur(6px);
     overflow: hidden;
+    background: var(--cat-bg-surface);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 55%);
     transition: opacity 200ms ease, transform 200ms ease;
 }
 
 .cat-dialog-shell {
     display: flex;
     flex-direction: column;
-    max-height: inherit;
     height: 100%;
+    max-height: inherit;
 }
 
 .cat-dialog.closing {
@@ -58,14 +56,14 @@
 }
 
 .cat-dialog-header {
+    gap: var(--cat-space-md);
     display: flex;
     align-items: center;
-    gap: var(--cat-space-md);
     padding: var(--cat-space-sm) var(--cat-space-md);
-    background: rgb(0 0 0 / 25%);
     border-bottom: 1px solid var(--cat-border-light);
     cursor: grab;
     user-select: none;
+    background: rgb(0 0 0 / 25%);
 }
 
 .cat-dialog-header:active {
@@ -74,41 +72,41 @@
 
 .cat-dialog-title {
     flex: 1;
-    font-weight: 600;
     color: var(--cat-text-primary);
+    font-weight: 600;
     font-size: 1rem;
 }
 
 .cat-dialog-close,
 .cat-dialog-detach {
     display: inline-flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     width: 1.5rem;
     height: 1.5rem;
     padding: 0;
     border: none;
-    background: transparent;
+    border-radius: var(--cat-radius-sm);
     color: var(--cat-text-muted);
     cursor: pointer;
-    border-radius: var(--cat-radius-sm);
+    background: transparent;
     transition: var(--cat-transition-fast);
 }
 
 .cat-dialog-close:hover,
 .cat-dialog-detach:hover {
-    background: var(--cat-bg-hover);
     color: var(--cat-text-primary);
+    background: var(--cat-bg-hover);
 }
 
 .cat-dialog-body {
-    color: var(--cat-text-primary);
-    padding: var(--cat-space-md);
+    scrollbar-color: var(--cat-border-focus) transparent;
+    scrollbar-width: thin;
     flex: 1 1 auto;
     min-height: 0;
+    padding: var(--cat-space-md);
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--cat-border-focus) transparent;
+    color: var(--cat-text-primary);
 }
 
 .cat-dialog-body::-webkit-scrollbar {
@@ -116,8 +114,8 @@
 }
 
 .cat-dialog-body::-webkit-scrollbar-thumb {
-    background: var(--cat-border-light);
     border-radius: var(--cat-radius-sm);
+    background: var(--cat-border-light);
 }
 
 .cat-dialog-body::-webkit-scrollbar-thumb:hover {
@@ -139,9 +137,9 @@
 }
 
 .cat-dialog .cat-body-buttons {
+    gap: var(--cat-space-sm);
     display: flex;
     flex-flow: row wrap;
-    gap: var(--cat-space-sm);
     align-items: stretch;
 }
 
@@ -150,24 +148,24 @@
 }
 
 .cat-dialog .cat-body-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     gap: var(--cat-space-sm);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .cat-dialog .cat-body-button .button-image {
+    object-fit: cover;
+    flex-shrink: 0;
     width: 1.25rem;
     height: 1.25rem;
     border-radius: var(--cat-radius-sm);
-    object-fit: cover;
-    flex-shrink: 0;
 }
 
 .cat-dialog-footer {
+    gap: var(--cat-space-sm);
     display: flex;
     flex-direction: row;
-    gap: var(--cat-space-sm);
     padding: var(--cat-space-md);
     border-top: 1px solid var(--cat-border-light);
     background: rgb(0 0 0 / 18%);
@@ -182,29 +180,28 @@
 .cat-dialog textarea,
 .cat-dialog file-picker,
 .cat-dialog multi-select {
+    --checkbox-background-color: var(--cat-bg-input);
     --input-background-color: var(--cat-bg-input);
     --input-border-color: var(--cat-border-light);
-    --input-text-color: var(--cat-text-primary);
     --input-focus-outline-color: var(--cat-border-focus);
-    --checkbox-background-color: var(--cat-bg-input);
+    --input-text-color: var(--cat-text-primary);
 }
 
 .cat-dialog select option {
-    background: var(--cat-bg-surface);
     color: var(--cat-text-primary);
+    background: var(--cat-bg-surface);
 }
 
-/* Rich roll-label (expression + result inline, damage type hint below, icon) */
 .cat-dialog .cat-roll-label {
+    gap: 0.125rem;
     display: inline-flex;
     flex-direction: column;
-    gap: 0.125rem;
 }
 
 .cat-dialog .cat-roll-line {
+    gap: var(--cat-space-sm);
     display: inline-flex;
     align-items: center;
-    gap: var(--cat-space-sm);
 }
 
 .cat-dialog .cat-roll-result {
@@ -213,29 +210,361 @@
 }
 
 .cat-dialog .cat-dmg-icon {
+    flex-shrink: 0;
     width: 1rem;
     height: 1rem;
     filter: brightness(0) invert(1);
-    flex-shrink: 0;
 }
 
 .cat-dialog .cat-dmg-hint {
-    font-size: 0.7em;
-    font-style: italic;
     color: var(--cat-text-muted);
+    font-style: italic;
+    font-size: 0.7em;
     line-height: 1;
 }
 
 .cat-dialog .label-image {
+    object-fit: cover;
+    flex-shrink: 0;
     width: 1.75rem;
     height: 1.75rem;
     border-radius: var(--cat-radius-sm);
-    object-fit: cover;
-    flex-shrink: 0;
     transition: var(--cat-transition-fast);
 }
 
 .cat-dialog .label-image:hover {
     box-shadow: 0 0 0 2px var(--cat-border-focus);
+}
+
+.cat-dialog .form-group > label {
+    max-width: 50%;
+}
+
+.cat-dialog .form-group.cat-multi-combobox-group {
+    gap: var(--cat-space-sm);
+    grid-template-columns: auto 1fr;
+    display: grid;
+    align-items: center;
+}
+
+.cat-dialog .form-group.cat-multi-combobox-group > label {
+    grid-column: 1;
+}
+
+cat-multi-combobox {
+    display: contents;
+    font-size: var(--font-size-12);
+}
+
+cat-multi-combobox > .cat-combobox-field {
+    grid-column: 2;
+    width: 100%;
+    min-width: 180px;
+}
+
+.cat-multi-combobox-counter {
+    font-variant-numeric: tabular-nums;
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    color: var(--cat-text-muted);
+    font-size: var(--font-size-12);
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.cat-multi-combobox-counter.at-max {
+    color: var(--cat-border-focus);
+    font-weight: bold;
+}
+
+cat-multi-combobox > .cat-combobox-field .cat-combobox-input {
+    padding-right: 3rem;
+}
+
+cat-multi-combobox > .cat-multi-combobox-chips {
+    gap: var(--cat-space-xs);
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+cat-multi-combobox > .cat-multi-combobox-chips:empty {
+    display: none;
+}
+
+.cat-multi-combobox-chip {
+    gap: var(--cat-space-sm);
+    grid-template-columns: 1.5rem 1fr 3.25rem 1.25rem;
+    display: grid;
+    align-items: center;
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    background: var(--cat-bg-input);
+}
+
+.cat-multi-combobox-chip:not(:has(.cat-multi-combobox-amount)) {
+    grid-template-columns: 1.5rem 1fr 1.25rem;
+}
+
+.cat-multi-combobox-chip img {
+    object-fit: cover;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--cat-radius-sm);
+}
+
+.cat-multi-combobox-chip > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cat-multi-combobox-num {
+    position: relative;
+    width: 3.25rem;
+    height: 1.5rem;
+}
+
+.cat-multi-combobox-amount {
+    appearance: textfield;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 0 1rem 0 0.25rem;
+    font-size: var(--font-size-12);
+    text-align: center;
+}
+
+.cat-multi-combobox-amount::-webkit-outer-spin-button,
+.cat-multi-combobox-amount::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
+.cat-multi-combobox-stepper {
+    display: flex;
+    position: absolute;
+    top: 0.125rem;
+    right: 0.125rem;
+    bottom: 0.125rem;
+    flex-direction: column;
+}
+
+.cat-multi-combobox-stepper button {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    width: 0.85rem;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--cat-text-muted);
+    font-size: 0.55rem;
+    line-height: 1;
+    background: transparent;
+    box-shadow: none;
+}
+
+.cat-multi-combobox-stepper button:hover {
+    color: var(--cat-text-primary);
+    background: transparent;
+    box-shadow: none;
+}
+
+.cat-multi-combobox-stepper button:focus,
+.cat-multi-combobox-stepper button:focus-visible,
+.cat-multi-combobox-stepper button:active {
+    outline: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+.cat-multi-combobox-stepper button[disabled] {
+    opacity: 0.35;
+}
+
+.cat-combobox-options li.cat-combobox-disabled {
+    opacity: 0.4;
+}
+
+.cat-combobox-options li.cat-combobox-disabled:hover {
+    background: transparent;
+}
+
+.cat-multi-combobox-remove {
+    flex: unset;
+    width: 1.25rem;
+    height: 1.25rem;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--cat-text-muted);
+    background: transparent;
+    box-shadow: none;
+}
+
+.cat-multi-combobox-remove:hover,
+.cat-multi-combobox-remove:focus,
+.cat-multi-combobox-remove:focus-visible,
+.cat-multi-combobox-remove:active {
+    outline: none;
+    color: var(--cat-text-primary);
+    background: transparent;
+    box-shadow: none;
+}
+
+.cat-combobox-options li.selected {
+    background: var(--cat-bg-active);
+}
+
+.cat-combobox-options li .cat-combobox-check {
+    margin-left: auto;
+    color: var(--cat-border-focus);
+}
+
+cat-combobox {
+    gap: var(--cat-space-xs);
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    width: 100%;
+    min-width: 180px;
+    font-size: var(--font-size-12);
+}
+
+.cat-combobox-field {
+    position: relative;
+    width: 100%;
+}
+
+.cat-combobox-input {
+    width: 100%;
+    padding-right: 1.75rem;
+    padding-left: 1.75rem;
+}
+
+.cat-combobox-icon {
+    position: absolute;
+    top: 50%;
+    left: 0.5rem;
+    color: var(--cat-text-muted);
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.cat-combobox-selected-image {
+    object-fit: cover;
+    position: absolute;
+    top: 50%;
+    left: 0.375rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: var(--cat-radius-sm);
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.cat-combobox-clear {
+    display: flex;
+    position: absolute;
+    top: 50%;
+    right: 0.25rem;
+    flex: unset;
+    justify-content: center;
+    align-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: 0;
+    color: var(--cat-text-muted);
+    cursor: pointer;
+    background: transparent;
+    transform: translateY(-50%);
+}
+
+.cat-combobox-clear:hover {
+    color: var(--cat-text-primary);
+}
+
+.cat-combobox-options {
+    z-index: 99999;
+    position: fixed;
+    min-width: 180px;
+    max-height: 14rem;
+    margin: 0;
+    padding: var(--cat-space-xs) 0;
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    overflow-y: auto;
+    list-style: none;
+    font-size: var(--font-size-12);
+    background: var(--cat-bg-surface);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
+}
+
+.cat-combobox-options li {
+    gap: var(--cat-space-sm);
+    display: flex;
+    align-items: center;
+    padding: var(--cat-space-xs) var(--cat-space-sm);
+    color: var(--cat-text-primary);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.cat-combobox-options li span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cat-combobox-options li.highlighted,
+.cat-combobox-options li:hover {
+    background: var(--cat-bg-input);
+}
+
+.cat-combobox-options li img {
+    object-fit: cover;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--cat-radius-sm);
+}
+
+.cat-combobox-fallback-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--cat-text-muted);
+}
+
+.cat-multi-combobox-chip .cat-combobox-fallback-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.875rem;
+}
+
+.cat-combobox-options .cat-combobox-empty {
+    color: var(--cat-text-muted);
+    font-style: italic;
+    cursor: default;
+}
+
+.cat-combobox-options .cat-combobox-empty:hover {
+    background: transparent;
 }
 

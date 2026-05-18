@@ -9,7 +9,7 @@
     </button>
 </header>
 <div id="dialog-app" class="cat-dialog-body standard-form scrollable">
-    {{#if content}}<p class="cat-dialog-content">{{{localize content}}}</p>{{/if}}
+    {{#if content}}<div class="cat-dialog-content">{{{localize content}}}</div>{{/if}}
     {{#each inputs}}
         {{#if useHelper}}
             {{#each options}}
@@ -62,6 +62,26 @@
                             {{/each}}
                         </select>
                     </div>
+                </div>
+            {{/each}}
+        {{else if isCombobox}}
+            {{#each options}}
+                <div class="form-group">
+                    <label for="i{{@../index}}j{{@index}}">{{{localize label}}}</label>
+                    <div class="form-fields">
+                        <cat-combobox input-id="i{{@../index}}j{{@index}}" name="{{name}}" value="{{value}}"{{#if placeholder}} placeholder="{{placeholder}}"{{/if}}>
+                            {{#each options}}
+                                <option value="{{value}}" data-image="{{image}}">{{label}}</option>
+                            {{/each}}
+                        </cat-combobox>
+                    </div>
+                </div>
+            {{/each}}
+        {{else if isComboboxMulti}}
+            {{#each options}}
+                <div class="form-group cat-multi-combobox-group">
+                    <label for="i{{@../index}}j{{@index}}">{{{localize label}}}</label>
+                    <cat-multi-combobox input-id="i{{@../index}}j{{@index}}" name="{{name}}"{{#if amounts}} amounts{{/if}}{{#if maxTotal}} max-total="{{maxTotal}}"{{/if}}{{#if placeholder}} placeholder="{{placeholder}}"{{/if}}>{{#each options}}<option value="{{value}}" data-image="{{image}}">{{label}}</option>{{/each}}</cat-multi-combobox>
                 </div>
             {{/each}}
         {{/if}}
