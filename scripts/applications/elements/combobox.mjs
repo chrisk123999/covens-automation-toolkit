@@ -22,7 +22,8 @@ export default class CatCombobox extends HTMLElement {
         this.#options = Array.from(this.querySelectorAll('option')).map(o => ({
             value: o.value,
             label: o.textContent ?? '',
-            image: o.dataset.image ?? ''
+            image: o.dataset.image ?? '',
+            tag: o.dataset.tag ?? ''
         })).sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
         this.replaceChildren();
 
@@ -139,6 +140,12 @@ export default class CatCombobox extends HTMLElement {
             const span = document.createElement('span');
             span.textContent = o.label;
             li.append(span);
+            if (o.tag) {
+                const tag = document.createElement('span');
+                tag.className = 'cat-combobox-tag';
+                tag.textContent = o.tag;
+                li.append(tag);
+            }
             if (i === highlightIdx) li.classList.add('highlighted');
             this.#list.append(li);
         });

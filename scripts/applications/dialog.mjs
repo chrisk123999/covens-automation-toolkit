@@ -183,6 +183,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 label: f.label,
                 name: f.name,
                 image: f.options?.image,
+                imageClass: f.options?.imageClass,
                 tooltip: f.options?.tooltip,
                 reference: f.options?.reference
             }))
@@ -212,6 +213,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isCheckbox: true,
             options,
             totalMax: opts?.totalMax ?? 99,
+            showCounter: opts?.totalMax != null,
             currentNum: options.filter(i => i.isChecked).length
         };
     }
@@ -297,7 +299,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 options: (f.options?.options ?? []).map(o => ({
                     value: o.value,
                     label: o.label,
-                    image: o.image ?? ''
+                    image: o.image ?? '',
+                    tag: o.tag ?? ''
                 }))
             }))
         };
@@ -315,7 +318,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 options: (f.options?.options ?? []).map(o => ({
                     value: o.value,
                     label: o.label,
-                    image: o.image ?? ''
+                    image: o.image ?? '',
+                    tag: o.tag ?? '',
+                    weight: o.weight ?? 1,
+                    max: o.max ?? null
                 }))
             }))
         };
@@ -375,6 +381,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         for (const i of clone.options) {
             i.currentMaxAmount = Math.floor((max + (i.currentAmount * i.weight)) / i.weight);
         }
+        clone.currentSpent = (clone.totalMax ?? 0) - max;
+        clone.atMax = clone.totalMax != null && clone.currentSpent >= clone.totalMax;
         return clone;
     }
 

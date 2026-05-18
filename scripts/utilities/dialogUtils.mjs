@@ -71,9 +71,196 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
     result = await DialogApp.dialog(title, content, inputs, buttons);
     return result?.[input.name];
 }
+async function selectDocumentDialog(title, content, documents, {
+    max = 1,
+    displayTooltips = false,
+    sortAlphabetical = false,
+    sortCR = false,
+    userId = game.user.id,
+    addNoneDocument = false,
+    showCR = false,
+    showSpellLevel = false,
+    showUses = false,
+    displayReference = false,
+    combobox = false,
+    checkbox = false,
+    weights = {},
+    maxes = {}
+} = {}) {
+    if (sortAlphabetical) documents = [...documents].sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
+    if (sortCR) documents = [...documents].sort((a, b) => (a.system?.details?.cr > b.system?.details?.cr ? -1 : 1));
+    let isCompendiumDoc = !documents[0]?.id;
+    let docKey = d => isCompendiumDoc ? (d.uuid ?? d.actor?.uuid) : (d.id ?? d._id ?? d.actor?.id);
+    let resolveDoc = async key => isCompendiumDoc ? await fromUuid(key) : documents.find(d => docKey(d) === key);
+    let ordinal = n => {
+        if (n === 0) return game.i18n.localize('DND5E.SpellCantrip') || 'Cantrip';
+        let s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+    let buildEntry = doc => {
+        let tags = [];
+        if (showCR) tags.push(game.i18n.format('DND5E.CRLabel', {cr: doc.system?.details?.cr ?? '?'}));
+        if (showSpellLevel) tags.push(ordinal(doc.system?.level ?? 0));
+        let uses = doc.system?.uses ?? doc.uses;
+        if (showUses && uses?.max) tags.push(`${uses.value ?? '?'}/${uses.max}`);
+        let label = doc.name + (doc.system?.linkedActivity ? ' (' + doc.system.linkedActivity.item.name + ')' : '');
+        return {label, tag: tags.join(' · ')};
+    };
+    let buildLabel = doc => {
+        let {label, tag} = buildEntry(doc);
+        return tag ? `${label} [${tag}]` : label;
+    };
+    let hasTag = showCR || showSpellLevel || showUses;
+    let widthCfg = hasTag ? {width: 440} : undefined;
+    let inputs, result;
+    if (max === 1) {
+        if (combobox) {
+            let opts = documents.map(d => {
+                let {label, tag} = buildEntry(d);
+                return {value: docKey(d), label, tag, image: d.img};
+            });
+            if (addNoneDocument) opts.push({value: 'none', label: game.i18n.localize('DND5E.None'), image: 'icons/svg/cancel.svg'});
+            inputs = [['combobox', [{label: '', name: 'document', options: {placeholder: '', options: opts}}]]];
+            // TODO: uncomment when socket layer exists
+            // if (userId !== game.user.id) {
+            //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, 'okCancel', widthCfg);
+            // } else result = await DialogApp.dialog(title, content, inputs, 'okCancel', widthCfg);
+            result = await DialogApp.dialog(title, content, inputs, 'okCancel', widthCfg);
+            if (!result?.buttons || !result.document || result.document === 'none') return false;
+            return await resolveDoc(result.document);
+        }
+        let inputFields = documents.map(d => ({
+            label: buildLabel(d),
+            name: docKey(d),
+            options: {
+                image: d.img,
+                tooltip: displayTooltips ? d.system.description.value.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
+                reference: (displayReference && d.reference) ? d.reference : undefined
+            }
+        }));
+        if (addNoneDocument) inputFields.push({label: game.i18n.localize('DND5E.None'), name: 'none', options: {image: 'icons/svg/cancel.svg'}});
+        inputs = [['button', inputFields, {displayAsRows: true}]];
+        // TODO: uncomment when socket layer exists
+        // if (userId !== game.user.id) {
+        //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, undefined);
+        // } else result = await DialogApp.dialog(title, content, inputs, undefined);
+        result = await DialogApp.dialog(title, content, inputs, undefined);
+        if (!result?.buttons || result.buttons === 'none') return false;
+        return await resolveDoc(result.buttons);
+    }
+    let multiKey = d => d.id ?? d._id;
+    if (combobox) {
+        let opts = documents.map(d => {
+            let {label, tag} = buildEntry(d);
+            return {
+                value: multiKey(d),
+                label,
+                tag,
+                image: d.img,
+                weight: weights?.[multiKey(d)] ?? 1,
+                max: maxes?.[multiKey(d)] ?? max
+            };
+        });
+        inputs = [['comboboxMulti', [{label: '', name: 'documents', options: {options: opts, amounts: true, maxTotal: max ?? null}}]]];
+        let cfg = {height: 'auto', ...(widthCfg ?? {})};
+        // TODO: uncomment when socket layer exists
+        // if (userId !== game.user.id) {
+        //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, 'okCancel', cfg);
+        // } else result = await DialogApp.dialog(title, content, inputs, 'okCancel', cfg);
+        result = await DialogApp.dialog(title, content, inputs, 'okCancel', cfg);
+        if (!result?.buttons || !result.documents) return false;
+        let parsed = JSON.parse(result.documents);
+        if (!parsed.length) return false;
+        return parsed.map(({value, amount}) => ({
+            document: documents.find(d => multiKey(d) === value),
+            amount: Number(amount)
+        }));
+    }
+    let inputFields = documents.map(d => ({
+        label: buildLabel(d),
+        name: multiKey(d),
+        options: {
+            image: d.img,
+            tooltip: displayTooltips ? d.system.description.value.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
+            minAmount: 0,
+            maxAmount: maxes?.[multiKey(d)] ?? max,
+            weight: weights?.[multiKey(d)] ?? 1
+        }
+    }));
+    inputs = [[checkbox ? 'checkbox' : 'selectAmount', inputFields, {displayAsRows: true, totalMax: max}]];
+    // TODO: uncomment when socket layer exists
+    // if (userId !== game.user.id) {
+    //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, 'okCancel', {height: 'auto'});
+    // } else result = await DialogApp.dialog(title, content, inputs, 'okCancel', {height: 'auto'});
+    result = await DialogApp.dialog(title, content, inputs, 'okCancel', {height: 'auto'});
+    if (!result?.buttons) return false;
+    delete result.buttons;
+    return Object.entries(result).map(([key, value]) => ({
+        document: documents.find(d => multiKey(d) === key),
+        amount: Number(value)
+    }));
+}
+async function selectSpellSlot(actor, title, content, {maxLevel = 9, minLevel = 0, userId = game.user.id, no = false} = {}) {
+    let buttons = Object.entries(actor.system.spells).filter(([k, v]) => {
+        if (v.level > maxLevel || v.level < minLevel) return false;
+        if (k === 'spell0') return false;
+        return v.value > 0 && v.max > 0;
+    }).map(([k, v]) => {
+        if (k === 'pact') return [CONFIG.DND5E.spellPreparationModes.pact.label + ' (' + v.level + ')', 'pact'];
+        return [CONFIG.DND5E.spellLevels[v.level], v.level];
+    });
+    if (no) buttons.push(['No', false]);
+    return await buttonDialog(title, content, buttons, {displayAsRows: true, userId});
+}
+async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id} = {}) {
+    let buttons = damageTypes.map(t => [
+        CONFIG.DND5E.damageTypes[t]?.label ?? t,
+        t,
+        {image: CONFIG.DND5E.damageTypes[t]?.icon, imageClass: 'cat-dmg-icon'}
+    ]);
+    if (addNo) buttons.push(['No', false, {image: 'icons/svg/cancel.svg'}]);
+    return await buttonDialog(title, content, buttons, {userId});
+}
+// TODO: re-add sangromancy branch when CPR sangromancy lands.
+async function selectHitDie(actor, title, content, {max = 1, userId = game.user.id} = {}) {
+    let documents = actor.items.filter(i => i.type === 'class' && (i.system.levels - i.system.hd.spent) > 0);
+    if (!documents.length) return false;
+    documents = documents.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
+    let inputFields = documents.map(i => ({
+        label: game.i18n.format('CAT.Dialog.HitDieLabel', {
+            className: i.name,
+            remaining: i.system.levels - i.system.hd.spent,
+            max: i.system.levels,
+            denomination: i.system.hd.denomination
+        }),
+        name: i.id,
+        options: {
+            image: i.img,
+            minAmount: 0,
+            maxAmount: Math.min(i.system.levels - i.system.hd.spent, max)
+        }
+    }));
+    let inputs = [[max === 1 ? 'checkbox' : 'selectAmount', inputFields, {displayAsRows: true, totalMax: max}]];
+    let result;
+    // TODO: uncomment when socket layer exists
+    // if (userId !== game.user.id) {
+    //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, 'okCancel', {height: 'auto'});
+    // } else result = await DialogApp.dialog(title, content, inputs, 'okCancel', {height: 'auto'});
+    result = await DialogApp.dialog(title, content, inputs, 'okCancel', {height: 'auto'});
+    if (!result?.buttons) return false;
+    delete result.buttons;
+    return Object.entries(result).map(([key, value]) => ({
+        document: documents.find(d => d.id === key),
+        amount: Number(value)
+    }));
+}
 export default {
     confirm,
     buttonDialog,
     numberDialog,
-    selectDialog
+    selectDialog,
+    selectDocumentDialog,
+    selectSpellSlot,
+    selectDamageType,
+    selectHitDie
 };

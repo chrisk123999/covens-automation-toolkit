@@ -47,7 +47,8 @@
       "Combobox": {
         "Filter": "Type to filter…",
         "NoMatches": "No matches"
-      }
+      },
+      "HitDieLabel": "{className}: {remaining}/{max} d{denomination}"
     }
   }
 }

@@ -27,8 +27,12 @@ export default class CatMultiCombobox extends HTMLElement {
         this.#options = Array.from(this.querySelectorAll('option')).map(o => ({
             value: o.value,
             label: o.textContent ?? '',
-            image: o.dataset.image ?? ''
-        })).sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+            image: o.dataset.image ?? '',
+            tag: o.dataset.tag ?? '',
+            weight: Number(o.dataset.weight) || 1,
+            max: o.dataset.max != null ? Number(o.dataset.max) : null
+        })).filter(o => o.max == null || o.max > 0)
+            .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
         this.replaceChildren();
 
         this.#hidden = document.createElement('input');
@@ -100,13 +104,13 @@ export default class CatMultiCombobox extends HTMLElement {
             this.#highlighted = -1;
             return;
         }
-        const atMax = this.#maxTotal != null && this.#totalAmount() >= this.#maxTotal;
         matches.forEach((o, i) => {
             const li = document.createElement('li');
             li.dataset.value = o.value;
             const isSelected = this.#selected.has(o.value);
             if (isSelected) li.classList.add('selected');
-            if (!isSelected && atMax) li.classList.add('cat-combobox-disabled');
+            const wouldExceed = this.#maxTotal != null && (this.#totalAmount() + o.weight) > this.#maxTotal;
+            if (!isSelected && wouldExceed) li.classList.add('cat-combobox-disabled');
             if (o.image) {
                 const img = document.createElement('img');
                 img.src = o.image;
@@ -122,6 +126,12 @@ export default class CatMultiCombobox extends HTMLElement {
             const span = document.createElement('span');
             span.textContent = o.label;
             li.append(span);
+            if (o.tag) {
+                const tag = document.createElement('span');
+                tag.className = 'cat-combobox-tag';
+                tag.textContent = o.tag;
+                li.append(tag);
+            }
             if (this.#selected.has(o.value)) {
                 const check = document.createElement('i');
                 check.className = 'fas fa-check cat-combobox-check';
@@ -156,6 +166,12 @@ export default class CatMultiCombobox extends HTMLElement {
             const span = document.createElement('span');
             span.textContent = opt.label;
             chip.append(span);
+            if (opt.tag) {
+                const tag = document.createElement('span');
+                tag.className = 'cat-combobox-tag';
+                tag.textContent = opt.tag;
+                chip.append(tag);
+            }
             if (this.#amountsMode) {
                 const numWrap = document.createElement('div');
                 numWrap.className = 'cat-multi-combobox-num';
@@ -163,6 +179,7 @@ export default class CatMultiCombobox extends HTMLElement {
                 num.type = 'number';
                 num.className = 'cat-multi-combobox-amount';
                 num.min = '1';
+                if (opt.max != null) num.max = String(opt.max);
                 num.value = String(amount);
                 num.dataset.value = value;
                 const stepper = document.createElement('div');
@@ -173,7 +190,9 @@ export default class CatMultiCombobox extends HTMLElement {
                 up.dataset.value = value;
                 up.tabIndex = -1;
                 up.innerHTML = '<i class="fas fa-caret-up"></i>';
-                if (this.#maxTotal != null && this.#totalAmount() >= this.#maxTotal) up.disabled = true;
+                const totalCap = this.#maxTotal != null && (this.#totalAmount() + opt.weight) > this.#maxTotal;
+                const perCap = opt.max != null && amount >= opt.max;
+                if (totalCap || perCap) up.disabled = true;
                 const down = document.createElement('button');
                 down.type = 'button';
                 down.className = 'cat-multi-combobox-step-down';
@@ -235,7 +254,9 @@ export default class CatMultiCombobox extends HTMLElement {
         if (wasSelected) {
             this.#selected.delete(value);
         } else {
-            if (this.#maxTotal != null && this.#totalAmount() + 1 > this.#maxTotal) return;
+            const opt = this.#options.find(o => o.value === value);
+            const w = opt?.weight ?? 1;
+            if (this.#maxTotal != null && this.#totalAmount() + w > this.#maxTotal) return;
             this.#selected.set(value, 1);
         }
         this.#renderChips();
@@ -248,9 +269,12 @@ export default class CatMultiCombobox extends HTMLElement {
     }
 
     #totalAmount() {
-        if (!this.#amountsMode) return this.#selected.size;
         let total = 0;
-        for (const amount of this.#selected.values()) total += amount;
+        for (const [value, amount] of this.#selected) {
+            const opt = this.#options.find(o => o.value === value);
+            const w = opt?.weight ?? 1;
+            total += (this.#amountsMode ? amount : 1) * w;
+        }
         return total;
     }
 
@@ -278,12 +302,15 @@ export default class CatMultiCombobox extends HTMLElement {
     #step(value, delta) {
         if (!this.#selected.has(value)) return;
         const current = this.#selected.get(value);
+        const opt = this.#options.find(o => o.value === value);
+        const w = opt?.weight ?? 1;
         let next = Math.max(1, current + delta);
         if (delta > 0 && this.#maxTotal != null) {
-            const otherTotal = this.#totalAmount() - current;
-            const maxAllowed = Math.max(1, this.#maxTotal - otherTotal);
+            const otherTotal = this.#totalAmount() - (current * w);
+            const maxAllowed = Math.max(1, Math.floor((this.#maxTotal - otherTotal) / w));
             if (next > maxAllowed) next = maxAllowed;
         }
+        if (opt?.max != null && next > opt.max) next = opt.max;
         if (next === current) return;
         this.#selected.set(value, next);
         this.#renderChips();
@@ -296,15 +323,16 @@ export default class CatMultiCombobox extends HTMLElement {
         const num = event.target.closest('.cat-multi-combobox-amount');
         if (!num) return;
         const value = num.dataset.value;
+        const opt = this.#options.find(o => o.value === value);
+        const w = opt?.weight ?? 1;
         let amount = Math.max(1, Number(num.value) || 1);
         if (this.#maxTotal != null) {
-            const otherTotal = this.#totalAmount() - (this.#selected.get(value) ?? 0);
-            const maxAllowed = Math.max(1, this.#maxTotal - otherTotal);
-            if (amount > maxAllowed) {
-                amount = maxAllowed;
-                num.value = String(amount);
-            }
+            const otherTotal = this.#totalAmount() - ((this.#selected.get(value) ?? 0) * w);
+            const maxAllowed = Math.max(1, Math.floor((this.#maxTotal - otherTotal) / w));
+            if (amount > maxAllowed) amount = maxAllowed;
         }
+        if (opt?.max != null && amount > opt.max) amount = opt.max;
+        if (Number(num.value) !== amount) num.value = String(amount);
         this.#selected.set(value, amount);
         this.#syncHidden();
         this.#updateCounter();
