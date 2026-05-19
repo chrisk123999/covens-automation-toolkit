@@ -20,7 +20,7 @@ function convertDistance(scene, distanceFt) {
     }
 }
 function translate(key) {
-    return game.i18n.localize(key);
+    return _loc(key);
 }
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

@@ -22,7 +22,7 @@ export default class CatMultiCombobox extends HTMLElement {
         const max = this.getAttribute('max-total');
         if (max != null) this.#maxTotal = Number(max);
         const name = this.getAttribute('name') ?? '';
-        const placeholder = this.getAttribute('placeholder') || game.i18n.localize('CAT.Dialog.Combobox.Filter');
+        const placeholder = this.getAttribute('placeholder') || _loc('CAT.Dialog.Combobox.Filter');
 
         this.#options = Array.from(this.querySelectorAll('option')).map(o => ({
             value: o.value,
@@ -99,7 +99,7 @@ export default class CatMultiCombobox extends HTMLElement {
         if (!matches.length) {
             const empty = document.createElement('li');
             empty.classList.add('cat-combobox-empty');
-            empty.textContent = game.i18n.localize('CAT.Dialog.Combobox.NoMatches');
+            empty.textContent = _loc('CAT.Dialog.Combobox.NoMatches');
             this.#list.append(empty);
             this.#highlighted = -1;
             return;

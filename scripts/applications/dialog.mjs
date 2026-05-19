@@ -486,10 +486,17 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 export class DialogManager {
     #queue = Promise.resolve();
     async showDialog(dialogFunction, ...args) {
-        await this.#queue;
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const promise = dialogFunction(...args);
-        this.#queue = promise;
-        return promise;
+        const previous = this.#queue;
+        let releaseSlot;
+        this.#queue = new Promise(resolve => { releaseSlot = resolve; });
+        try {
+            await previous;
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return await dialogFunction(...args);
+        } finally {
+            releaseSlot();
+        }
     }
 }
+
+export const dialogQueue = new DialogManager();

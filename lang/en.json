@@ -48,7 +48,8 @@
         "Filter": "Type to filter…",
         "NoMatches": "No matches"
       },
-      "HitDieLabel": "{className}: {remaining}/{max} d{denomination}"
+      "HitDieLabel": "{className}: {remaining}/{max} {denomination}",
+      "Use": "Use {itemName}?"
     }
   }
 }

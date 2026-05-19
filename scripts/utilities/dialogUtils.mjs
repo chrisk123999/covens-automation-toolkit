@@ -1,9 +1,18 @@
-import DialogApp from '../applications/dialog.mjs';
+import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import queryUtils from './queryUtils.mjs';
 
 async function runDialog(userId, title, content, inputs, buttons, config) {
     if (userId === game.user.id) return await DialogApp.dialog(title, content, inputs, buttons, config);
     return await queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
+}
+async function runQueuedDialog(userId, title, content, inputs, buttons, config, reason) {
+    if (userId === game.user.id) {
+        return await dialogQueue.showDialog(async (...args) => {
+            if (reason) ui.notifications.info(reason);
+            return await DialogApp.dialog(...args);
+        }, title, content, inputs, buttons, config);
+    }
+    return await queryUtils.query('queuedDialog', game.users.get(userId), {title, content, inputs, buttons, config, reason}, 300000);
 }
 async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
     let selection = await runDialog(userId, title, content, [], buttons);
@@ -36,7 +45,7 @@ async function numberDialog(title, content, input = {label: 'Label', name: 'iden
 async function selectDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id, sortAlphabetical = false} = {}) {
     if (!input.options) input.options = {};
     let inputOptions = input.options.options ?? [];
-    if (!inputOptions.length) inputOptions = [game.i18n.localize('DND5E.None')];
+    if (!inputOptions.length) inputOptions = [_loc('DND5E.None')];
     if (inputOptions[0].label === undefined) {
         inputOptions = inputOptions.map(text => {return {value: text, label: text};});
     }
@@ -76,13 +85,13 @@ async function selectDocumentDialog(title, content, documents, {
     let docKey = d => isCompendiumDoc ? (d.uuid ?? d.actor?.uuid) : (d.id ?? d._id ?? d.actor?.id);
     let resolveDoc = async key => isCompendiumDoc ? await fromUuid(key) : documents.find(d => docKey(d) === key);
     let ordinal = n => {
-        if (n === 0) return game.i18n.localize('DND5E.SpellCantrip') || 'Cantrip';
+        if (n === 0) return _loc('DND5E.SpellCantrip') || 'Cantrip';
         let s = ['th', 'st', 'nd', 'rd'], v = n % 100;
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
     let buildEntry = doc => {
         let tags = [];
-        if (showCR) tags.push(game.i18n.format('DND5E.CRLabel', {cr: doc.system?.details?.cr ?? '?'}));
+        if (showCR) tags.push(_loc('DND5E.CRLabel', {cr: doc.system?.details?.cr ?? '?'}));
         if (showSpellLevel) tags.push(ordinal(doc.system?.level ?? 0));
         let uses = doc.system?.uses ?? doc.uses;
         if (showUses && uses?.max) tags.push(`${uses.value ?? '?'}/${uses.max}`);
@@ -102,7 +111,7 @@ async function selectDocumentDialog(title, content, documents, {
                 let {label, tag} = buildEntry(d);
                 return {value: docKey(d), label, tag, image: d.img};
             });
-            if (addNoneDocument) opts.push({value: 'none', label: game.i18n.localize('DND5E.None'), image: 'icons/svg/cancel.svg'});
+            if (addNoneDocument) opts.push({value: 'none', label: _loc('DND5E.None'), image: 'icons/svg/cancel.svg'});
             inputs = [['combobox', [{label: '', name: 'document', options: {placeholder: '', options: opts}}]]];
             result = await runDialog(userId, title, content, inputs, 'okCancel', widthCfg);
             if (!result?.buttons || !result.document || result.document === 'none') return false;
@@ -117,7 +126,7 @@ async function selectDocumentDialog(title, content, documents, {
                 reference: (displayReference && d.reference) ? d.reference : undefined
             }
         }));
-        if (addNoneDocument) inputFields.push({label: game.i18n.localize('DND5E.None'), name: 'none', options: {image: 'icons/svg/cancel.svg'}});
+        if (addNoneDocument) inputFields.push({label: _loc('DND5E.None'), name: 'none', options: {image: 'icons/svg/cancel.svg'}});
         inputs = [['button', inputFields, {displayAsRows: true}]];
         result = await runDialog(userId, title, content, inputs, undefined);
         if (!result?.buttons || result.buttons === 'none') return false;
@@ -194,7 +203,7 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
     if (!documents.length) return false;
     documents = documents.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     let inputFields = documents.map(i => ({
-        label: game.i18n.format('CAT.Dialog.HitDieLabel', {
+        label: _loc('CAT.Dialog.HitDieLabel', {
             className: i.name,
             remaining: i.system.levels - i.system.hd.spent,
             max: i.system.levels,
@@ -216,6 +225,18 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
         amount: Number(value)
     }));
 }
+async function confirmUseItem(item, {userId = game.user.id, buttons = 'yesNo'} = {}) {
+    let content = _loc('CAT.Dialog.Use', {itemName: item.name});
+    return await confirm('Confirm', content, {userId, buttons});
+}
+async function queuedConfirmDialog(title, content, {actor, reason, userId = game.user.id} = {}) {
+    let selection = await runQueuedDialog(userId, title, content, [], 'yesNo', undefined, reason);
+    return selection?.buttons;
+}
+// TODO: implement when tokenUtils.checkCover, tokenUtils.getDistance, and CPR-setting 'hideNames' are ported.
+async function selectTargetDialog() {
+    throw new Error('selectTargetDialog not yet implemented');
+}
 export default {
     confirm,
     buttonDialog,
@@ -224,5 +245,8 @@ export default {
     selectDocumentDialog,
     selectSpellSlot,
     selectDamageType,
-    selectHitDie
+    selectHitDie,
+    confirmUseItem,
+    queuedConfirmDialog,
+    selectTargetDialog
 };
