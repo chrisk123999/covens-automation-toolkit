@@ -1,4 +1,8 @@
 import {documentUtils, effectUtils} from '../utilities/_module.mjs';
+import DialogApp from '../applications/dialog.mjs';
+async function dialog({title, content, inputs, buttons, config}) {
+    return await DialogApp.dialog(title, content, inputs, buttons, config);
+}
 async function createEffects({uuid, effectDatas, effectOptions}) {
     const document = await fromUuid(uuid);
     if (!document) return;
@@ -24,17 +28,23 @@ async function createEmbeddedDocuments({uuid, type, updates, options}) {
     return documents.map(document => document.uuid);
 }
 function registerQueries() {
-    globalThis.CONFIG.queries.cat = {
+    const handlers = {
         createEffects,
         deleteEmbeddedDocuments,
         deleteDocument,
-        createEmbeddedDocuments
+        createEmbeddedDocuments,
+        dialog
     };
+    globalThis.CONFIG.queries.cat = handlers;
+    for (const [name, fn] of Object.entries(handlers)) {
+        globalThis.CONFIG.queries['cat.' + name] = fn;
+    }
 }
 export default {
     createEffects,
     deleteEmbeddedDocuments,
     deleteDocument,
     registerQueries,
-    createEmbeddedDocuments
+    createEmbeddedDocuments,
+    dialog
 };

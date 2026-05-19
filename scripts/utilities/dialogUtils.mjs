@@ -1,14 +1,12 @@
 import DialogApp from '../applications/dialog.mjs';
-// TODO: uncomment when socket layer exists
-// import {socket, sockets} from '../sockets.mjs';
+import queryUtils from './queryUtils.mjs';
 
+async function runDialog(userId, title, content, inputs, buttons, config) {
+    if (userId === game.user.id) return await DialogApp.dialog(title, content, inputs, buttons, config);
+    return await queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
+}
 async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
-    let selection;
-    // TODO: uncomment when socket layer exists
-    // if (userId !== game.user.id) {
-    //     selection = await socket.executeAsUser(sockets.dialog.name, userId, title, content, [], buttons);
-    // } else selection = await DialogApp.dialog(title, content, [], buttons);
-    selection = await DialogApp.dialog(title, content, [], buttons);
+    let selection = await runDialog(userId, title, content, [], buttons);
     return selection?.buttons;
 }
 async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sortAlphabetical = false} = {}) {
@@ -19,12 +17,7 @@ async function buttonDialog(title, content, buttons, {displayAsRows = true, user
     for (let [label, value, options] of buttons) {
         inputs[0][1].push({label: label, name: value, options: options ?? {}});
     }
-    let result;
-    // TODO: uncomment when socket layer exists
-    // if (userId != game.user.id) {
-    //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, undefined, {width: 400});
-    // } else result = await DialogApp.dialog(title, content, inputs, undefined, {width: 400});
-    result = await DialogApp.dialog(title, content, inputs, undefined, {width: 400});
+    let result = await runDialog(userId, title, content, inputs, undefined, {width: 400});
     return result?.buttons ?? false;
 }
 async function numberDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id} = {}) {
@@ -37,12 +30,7 @@ async function numberDialog(title, content, input = {label: 'Label', name: 'iden
             }]
         ]
     ];
-    let result;
-    // TODO: uncomment when socket layer exists
-    // if (userId && userId != game.user.id) {
-    //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, buttons);
-    // } else result = await DialogApp.dialog(title, content, inputs, buttons);
-    result = await DialogApp.dialog(title, content, inputs, buttons);
+    let result = await runDialog(userId, title, content, inputs, buttons);
     return result?.[input.name];
 }
 async function selectDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id, sortAlphabetical = false} = {}) {
@@ -63,12 +51,7 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
             }]
         ]
     ];
-    let result;
-    // TODO: uncomment when socket layer exists
-    // if (userId && userId != game.user.id) {
-    //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, buttons);
-    // } else result = await DialogApp.dialog(title, content, inputs, buttons);
-    result = await DialogApp.dialog(title, content, inputs, buttons);
+    let result = await runDialog(userId, title, content, inputs, buttons);
     return result?.[input.name];
 }
 async function selectDocumentDialog(title, content, documents, {
@@ -121,11 +104,7 @@ async function selectDocumentDialog(title, content, documents, {
             });
             if (addNoneDocument) opts.push({value: 'none', label: game.i18n.localize('DND5E.None'), image: 'icons/svg/cancel.svg'});
             inputs = [['combobox', [{label: '', name: 'document', options: {placeholder: '', options: opts}}]]];
-            // TODO: uncomment when socket layer exists
-            // if (userId !== game.user.id) {
-            //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, 'okCancel', widthCfg);
-            // } else result = await DialogApp.dialog(title, content, inputs, 'okCancel', widthCfg);
-            result = await DialogApp.dialog(title, content, inputs, 'okCancel', widthCfg);
+            result = await runDialog(userId, title, content, inputs, 'okCancel', widthCfg);
             if (!result?.buttons || !result.document || result.document === 'none') return false;
             return await resolveDoc(result.document);
         }
@@ -140,11 +119,7 @@ async function selectDocumentDialog(title, content, documents, {
         }));
         if (addNoneDocument) inputFields.push({label: game.i18n.localize('DND5E.None'), name: 'none', options: {image: 'icons/svg/cancel.svg'}});
         inputs = [['button', inputFields, {displayAsRows: true}]];
-        // TODO: uncomment when socket layer exists
-        // if (userId !== game.user.id) {
-        //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, undefined);
-        // } else result = await DialogApp.dialog(title, content, inputs, undefined);
-        result = await DialogApp.dialog(title, content, inputs, undefined);
+        result = await runDialog(userId, title, content, inputs, undefined);
         if (!result?.buttons || result.buttons === 'none') return false;
         return await resolveDoc(result.buttons);
     }
@@ -163,11 +138,7 @@ async function selectDocumentDialog(title, content, documents, {
         });
         inputs = [['comboboxMulti', [{label: '', name: 'documents', options: {options: opts, amounts: true, maxTotal: max ?? null}}]]];
         let cfg = {height: 'auto', ...(widthCfg ?? {})};
-        // TODO: uncomment when socket layer exists
-        // if (userId !== game.user.id) {
-        //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, 'okCancel', cfg);
-        // } else result = await DialogApp.dialog(title, content, inputs, 'okCancel', cfg);
-        result = await DialogApp.dialog(title, content, inputs, 'okCancel', cfg);
+        result = await runDialog(userId, title, content, inputs, 'okCancel', cfg);
         if (!result?.buttons || !result.documents) return false;
         let parsed = JSON.parse(result.documents);
         if (!parsed.length) return false;
@@ -188,11 +159,7 @@ async function selectDocumentDialog(title, content, documents, {
         }
     }));
     inputs = [[checkbox ? 'checkbox' : 'selectAmount', inputFields, {displayAsRows: true, totalMax: max}]];
-    // TODO: uncomment when socket layer exists
-    // if (userId !== game.user.id) {
-    //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, 'okCancel', {height: 'auto'});
-    // } else result = await DialogApp.dialog(title, content, inputs, 'okCancel', {height: 'auto'});
-    result = await DialogApp.dialog(title, content, inputs, 'okCancel', {height: 'auto'});
+    result = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!result?.buttons) return false;
     delete result.buttons;
     return Object.entries(result).map(([key, value]) => ({
@@ -241,12 +208,7 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
         }
     }));
     let inputs = [[max === 1 ? 'checkbox' : 'selectAmount', inputFields, {displayAsRows: true, totalMax: max}]];
-    let result;
-    // TODO: uncomment when socket layer exists
-    // if (userId !== game.user.id) {
-    //     result = await socket.executeAsUser(sockets.dialog.name, userId, title, content, inputs, 'okCancel', {height: 'auto'});
-    // } else result = await DialogApp.dialog(title, content, inputs, 'okCancel', {height: 'auto'});
-    result = await DialogApp.dialog(title, content, inputs, 'okCancel', {height: 'auto'});
+    let result = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!result?.buttons) return false;
     delete result.buttons;
     return Object.entries(result).map(([key, value]) => ({
