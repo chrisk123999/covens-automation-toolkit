@@ -58,9 +58,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {DialogApp} */
     static async #onCloseAction() {
-        this.element?.classList.add('closing');
-        await new Promise(resolve => setTimeout(resolve, 200));
-        await this.close({animate: false});
+        this.submit(null);
     }
 
     /** @this {DialogApp} */
@@ -94,7 +92,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             const windowId = ui.activeWindow?.window?.windowId;
             const renderOptions = windowId ? {force: true, window: {windowId}} : {force: true};
             dialog.render(renderOptions);
-            dialog.submit = async result => {
+            dialog.submit = result => {
                 resolve(result);
                 dialog.close();
             };

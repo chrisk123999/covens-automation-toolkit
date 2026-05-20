@@ -18,11 +18,11 @@ async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'
     let selection = await runDialog(userId, title, content, [], buttons);
     return selection?.buttons;
 }
-async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sortAlphabetical = false} = {}) {
+async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sort = null} = {}) {
     let inputs = [
         ['button', [], {displayAsRows: displayAsRows}]
     ];
-    if (sortAlphabetical) buttons = [...buttons].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'en', {sensitivity: 'base'}));
+    if (sort === 'alphabetical') buttons = [...buttons].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'en', {sensitivity: 'base'}));
     for (let [label, value, options] of buttons) {
         inputs[0][1].push({label: label, name: value, options: options ?? {}});
     }
@@ -42,14 +42,14 @@ async function numberDialog(title, content, input = {label: 'Label', name: 'iden
     let result = await runDialog(userId, title, content, inputs, buttons);
     return result?.[input.name];
 }
-async function selectDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id, sortAlphabetical = false} = {}) {
+async function selectDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id, sort = null} = {}) {
     if (!input.options) input.options = {};
     let inputOptions = input.options.options ?? [];
     if (!inputOptions.length) inputOptions = [_loc('DND5E.None')];
     if (inputOptions[0].label === undefined) {
         inputOptions = inputOptions.map(text => {return {value: text, label: text};});
     }
-    if (sortAlphabetical) inputOptions = inputOptions.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+    if (sort === 'alphabetical') inputOptions = inputOptions.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     input.options.options = inputOptions;
     let inputs = [
         ['selectOption',
@@ -66,8 +66,7 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
 async function selectDocumentDialog(title, content, documents, {
     max = 1,
     displayTooltips = false,
-    sortAlphabetical = false,
-    sortCR = false,
+    sort = null,
     userId = game.user.id,
     addNoneDocument = false,
     showCR = false,
@@ -79,8 +78,9 @@ async function selectDocumentDialog(title, content, documents, {
     weights = {},
     maxes = {}
 } = {}) {
-    if (sortAlphabetical) documents = [...documents].sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
-    if (sortCR) documents = [...documents].sort((a, b) => (a.system?.details?.cr > b.system?.details?.cr ? -1 : 1));
+    if (sort === 'alphabetical') documents = [...documents].sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
+    else if (sort === 'cr') documents = [...documents].sort((a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0));
+    else if (sort === 'level') documents = [...documents].sort((a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     let isCompendiumDoc = !documents[0]?.id;
     let docKey = d => isCompendiumDoc ? (d.uuid ?? d.actor?.uuid) : (d.id ?? d._id ?? d.actor?.id);
     let resolveDoc = async key => isCompendiumDoc ? await fromUuid(key) : documents.find(d => docKey(d) === key);
@@ -91,7 +91,7 @@ async function selectDocumentDialog(title, content, documents, {
     };
     let buildEntry = doc => {
         let tags = [];
-        if (showCR) tags.push(_loc('DND5E.CRLabel', {cr: doc.system?.details?.cr ?? '?'}));
+        if (showCR) tags.push(_loc('DND5E.CRLabel', {cr: dnd5e.utils.formatCR(doc.system?.details?.cr ?? 0, {narrow: false})}));
         if (showSpellLevel) tags.push(ordinal(doc.system?.level ?? 0));
         let uses = doc.system?.uses ?? doc.uses;
         if (showUses && uses?.max) tags.push(`${uses.value ?? '?'}/${uses.max}`);

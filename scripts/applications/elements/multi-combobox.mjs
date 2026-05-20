@@ -31,8 +31,7 @@ export default class CatMultiCombobox extends HTMLElement {
             tag: o.dataset.tag ?? '',
             weight: Number(o.dataset.weight) || 1,
             max: o.dataset.max != null ? Number(o.dataset.max) : null
-        })).filter(o => o.max == null || o.max > 0)
-            .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+        })).filter(o => o.max == null || o.max > 0);
         this.replaceChildren();
 
         this.#hidden = document.createElement('input');

@@ -40,7 +40,12 @@
     overflow: hidden;
     background: var(--cat-bg-surface);
     box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 55%);
-    transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.cat-dialog.minimizing {
+    opacity: 0;
+    max-height: none !important;
+    transition: opacity 0.1875s ease-out;
 }
 
 .cat-dialog-shell {
@@ -48,11 +53,6 @@
     flex-direction: column;
     height: 100%;
     max-height: inherit;
-}
-
-.cat-dialog.closing {
-    opacity: 0;
-    transform: scale(0.96);
 }
 
 .cat-dialog-header {

@@ -24,7 +24,7 @@ export default class CatCombobox extends HTMLElement {
             label: o.textContent ?? '',
             image: o.dataset.image ?? '',
             tag: o.dataset.tag ?? ''
-        })).sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+        }));
         this.replaceChildren();
 
         this.#hidden = document.createElement('input');
