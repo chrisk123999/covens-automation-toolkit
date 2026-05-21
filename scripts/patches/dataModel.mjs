@@ -19,14 +19,33 @@ function formula(wrapped) {
         identifier = grandParent.system.identifier;
         document = grandParent;
     }
-    const alternateFormulas = [wrapped(), ...actor.items.map(item => item.flags?.cat?.alternateFormula?.[identifier]).filter(Boolean)];
-    if (alternateFormulas.length === 1) return wrapped();
-    const highestIndex = alternateFormulas.reduce((accumulator, currentFormula, currentIndex) => {
-        const currentMax = rollUtils.rollDiceSync(currentFormula, {document, options: {maximize: true}}).total;
-        if (currentMax > accumulator.maxValue) return {index: currentIndex, maxValue: currentMax};
-        return accumulator;
-    }, {index: 0, maxValue: -Infinity}).index;
-    return alternateFormulas[highestIndex];
+    const originalFormula = wrapped();
+    const alternateFormulas = [
+        originalFormula, 
+        ...actor.items.map(item => item.flags.cat?.alternateFormula?.[identifier]).filter(Boolean)
+    ];
+    let bestFormula = originalFormula;
+    if (alternateFormulas.length > 1) {
+        const highestIndex = alternateFormulas.reduce((accumulator, currentFormula, currentIndex) => {
+            const currentMax = rollUtils.rollDiceSync(currentFormula, {document, options: {maximize: true}}).total;
+            if (currentMax > accumulator.maxValue) return {index: currentIndex, maxValue: currentMax};
+            return accumulator;
+        }, {index: 0, maxValue: -Infinity}).index;
+        bestFormula = alternateFormulas[highestIndex];
+    }
+    const rollModifiers = actor.items.contents.flatMap(item => item.flags.cat?.rollModifiers?.[identifier]).filter(Boolean);
+    if (rollModifiers.length > 0) {
+        const terms = Roll.parse(bestFormula);
+        terms.forEach(term => {
+            if (term.modifiers && Array.isArray(term.modifiers)) {
+                rollModifiers.forEach(mod => {
+                    if (!term.modifiers.includes(mod)) term.modifiers.push(mod);
+                });
+            }
+        });
+        bestFormula = Roll.getFormula(terms);
+    }
+    return bestFormula;
 }
 function patch(enabled) {
     if (enabled) {
