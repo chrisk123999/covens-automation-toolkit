@@ -170,7 +170,37 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'text': return this.#buildText(fields);
             case 'number': return this.#buildNumber(fields);
             case 'filePicker': return this.#buildFilePicker(fields);
+            case 'dice': return this.#buildDice(fields, opts);
         }
+    }
+
+    #buildDice(fields, opts) {
+        const standardFaces = new Set([4, 6, 8, 10, 12, 20]);
+        const groups = new Map();
+        for (const f of fields) {
+            const key = f.typeLabel ?? '';
+            if (!groups.has(key)) groups.set(key, {label: key, icon: f.typeIcon, total: 0, dice: []});
+            const g = groups.get(key);
+            g.total += f.result;
+            g.dice.push({
+                name: f.name,
+                faces: f.faces,
+                result: f.result,
+                isStandard: standardFaces.has(f.faces),
+                isMin: f.result === 1,
+                isMax: f.result === f.faces
+            });
+        }
+        const grandTotal = fields.reduce((acc, f) => acc + f.result, 0);
+        return {
+            isDice: true,
+            totalMax: opts?.totalMax ?? 99,
+            showCounter: opts?.totalMax != null,
+            currentNum: 0,
+            grandTotal,
+            groups: Array.from(groups.values()),
+            options: fields.map(f => ({name: f.name, isChecked: false}))
+        };
     }
 
     #buildButton(fields, opts) {
@@ -387,6 +417,22 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     async _onChangeForm(formConfig, event) {
         super._onChangeForm(formConfig, event);
         const targetInput = event.target;
+        const dicePicker = targetInput.closest?.('.cat-dice-picker');
+        if (dicePicker && targetInput.type === 'checkbox') {
+            const totalMax = Number(dicePicker.dataset.totalMax);
+            if (!totalMax) return;
+            const checked = dicePicker.querySelectorAll('input[type=checkbox]:checked').length;
+            if (checked > totalMax) {
+                targetInput.checked = false;
+                return;
+            }
+            const counter = this.element?.querySelector('.cat-budget-counter');
+            if (counter) {
+                counter.textContent = `${checked}/${totalMax}`;
+                counter.classList.toggle('at-max', checked >= totalMax);
+            }
+            return;
+        }
         const ctx = this.#context;
         const idMatch = targetInput.id?.match(/i(\d+)j(\d+)/);
         if (!idMatch) return;
@@ -447,6 +493,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     _onRender(context, options) {
         super._onRender(context, options);
         this.#enableDragging();
+        const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
+        const header = this.element?.querySelector('.cat-dialog-header');
+        if (counter && header) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));
         if (options.isFirstRender) {
             this.bringToFront();
             const win = this.element.ownerDocument.defaultView ?? window;

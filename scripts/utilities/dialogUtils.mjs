@@ -237,6 +237,33 @@ async function queuedConfirmDialog(title, content, {actor, reason, userId = game
 async function selectTargetDialog() {
     throw new Error('selectTargetDialog not yet implemented');
 }
+async function selectDie(rolls = [], title, content, {max = 1, userId = game.user.id, buttons = 'okCancel'} = {}) {
+    let dice = [];
+    for (let i = 0; i < rolls.length; i++) {
+        let roll = rolls[i];
+        for (let j = 0; j < roll.terms.length; j++) {
+            let term = roll.terms[j];
+            if (term.isDeterministic) continue;
+            let flavor = term.flavor || term.options?.flavor || roll.options?.flavor || '';
+            let cfg = CONFIG.DND5E.damageTypes[flavor];
+            for (let k = 0; k < term.results.length; k++) {
+                dice.push({
+                    name: i + '-' + j + '-' + k,
+                    faces: term.faces,
+                    result: term.results[k].result,
+                    typeLabel: cfg?.label ?? flavor,
+                    typeIcon: cfg?.icon
+                });
+            }
+        }
+    }
+    if (!dice.length) return false;
+    let inputs = [['dice', dice, {totalMax: max}]];
+    let result = await runDialog(userId, title, content, inputs, buttons, {height: 'auto'});
+    if (!result?.buttons) return false;
+    delete result.buttons;
+    return Object.entries(result).filter(([, v]) => v).map(([k]) => k);
+}
 export default {
     confirm,
     buttonDialog,
@@ -248,5 +275,6 @@ export default {
     selectHitDie,
     confirmUseItem,
     queuedConfirmDialog,
-    selectTargetDialog
+    selectTargetDialog,
+    selectDie
 };

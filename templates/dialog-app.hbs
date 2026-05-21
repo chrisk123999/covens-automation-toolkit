@@ -70,6 +70,32 @@
                     </div>
                 </div>
             {{/each}}
+        {{else if isDice}}
+            {{#if showCounter}}
+                <div class="cat-budget-counter">{{currentNum}}/{{totalMax}}</div>
+            {{/if}}
+            <div class="cat-dice-picker" data-total-max="{{totalMax}}">
+                {{#each groups}}
+                    <div class="cat-dice-group">
+                        <header class="cat-dice-group-header">
+                            {{#if icon}}<img class="cat-dmg-icon" src="{{icon}}">{{/if}}
+                            {{#if label}}<span class="cat-dice-type-label">{{label}}</span>{{/if}}
+                            <strong class="cat-dice-subtotal">{{total}}</strong>
+                        </header>
+                        <ol class="dice-rolls">
+                            {{#each dice}}
+                                <li class="cat-die-cell">
+                                    <input type="checkbox" hidden id="d-{{name}}" name="{{name}}">
+                                    <label for="d-{{name}}" class="roll d{{faces}}{{#unless isStandard}} cat-die-generic{{/unless}}{{#if isMin}} min{{/if}}{{#if isMax}} max{{/if}}" data-tooltip="d{{faces}}">{{result}}</label>
+                                </li>
+                            {{/each}}
+                        </ol>
+                    </div>
+                {{/each}}
+                {{#if grandTotal}}
+                    <div class="cat-dice-grand-total"><span>{{localize 'CAT.Dialog.Total'}}</span><strong>{{grandTotal}}</strong></div>
+                {{/if}}
+            </div>
         {{else if isCombobox}}
             {{#each options}}
                 <div class="form-group{{#unless label}} cat-no-label{{/unless}}">
