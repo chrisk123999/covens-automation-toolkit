@@ -2,28 +2,43 @@ import {Logging} from '../lib/_module.mjs';
 import rollUtils from '../utilities/rollUtils.mjs';
 function formula(wrapped) {
     const parent = this.parent;
-    if (!parent || typeof parent !== 'object') return wrapped();
+    if (!parent) return wrapped();
     let identifier;
     let actor;
     let document;
+    let targetItem; 
     if (parent.documentName === 'Activity') {
         actor = parent.actor;
         if (!actor) return wrapped();
-        identifier = parent.item.system.identifier + '|' + parent.identifier;
+        targetItem = parent.item;
+        identifier = targetItem.system.identifier + '|' + parent.identifier;
         document = parent;
     } else {
         const grandParent = parent.parent;
         if (grandParent?.documentName !== 'Item') return wrapped();
         actor = grandParent.actor;
         if (!actor) return wrapped();
+        targetItem = grandParent;
         identifier = grandParent.system.identifier;
         document = grandParent;
     }
+    const targetItemType = targetItem?.type;
     const originalFormula = wrapped();
-    const alternateFormulas = [
-        originalFormula, 
-        ...actor.items.map(item => item.flags.cat?.alternateFormula?.[identifier]).filter(Boolean)
-    ];
+    const alternateFormulas = [originalFormula];
+    const rollModifiers = [];
+    for (const item of actor.items) {
+        const altFormula = item.flags?.cat?.alternateFormula?.[identifier];
+        if (altFormula) alternateFormulas.push(altFormula);
+        const modGroup = item.flags?.cat?.rollModifiers;
+        if (modGroup) {
+            const modFlagId = modGroup.byIdentifier?.[identifier];
+            if (modFlagId) rollModifiers.push(...modFlagId);
+            if (targetItemType) {
+                const modFlagType = modGroup.byType?.[targetItemType];
+                if (modFlagType) rollModifiers.push(...modFlagType);
+            }
+        }
+    }
     let bestFormula = originalFormula;
     if (alternateFormulas.length > 1) {
         const highestIndex = alternateFormulas.reduce((accumulator, currentFormula, currentIndex) => {
@@ -33,7 +48,6 @@ function formula(wrapped) {
         }, {index: 0, maxValue: -Infinity}).index;
         bestFormula = alternateFormulas[highestIndex];
     }
-    const rollModifiers = actor.items.contents.flatMap(item => item.flags.cat?.rollModifiers?.[identifier]).filter(Boolean);
     if (rollModifiers.length > 0) {
         const terms = Roll.parse(bestFormula);
         terms.forEach(term => {
@@ -47,6 +61,7 @@ function formula(wrapped) {
     }
     return bestFormula;
 }
+// TODO: Fix cantrips, look into patching activities.
 function patch(enabled) {
     if (enabled) {
         Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.shared.DamageData.prototype.formula', {force: true});
