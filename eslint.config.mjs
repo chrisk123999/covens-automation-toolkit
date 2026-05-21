@@ -47,6 +47,7 @@ export default defineConfig([
                 _del: 'writable',
                 _replace: 'writable',
                 dnd5e: 'writable'
+                Roll: 'writable'
             },
 
             ecmaVersion: 'latest',
