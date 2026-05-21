@@ -46,7 +46,7 @@ export default defineConfig([
                 _loc: 'writable',
                 _del: 'writable',
                 _replace: 'writable',
-                dnd5e: 'writable'
+                dnd5e: 'writable',
                 Roll: 'writable'
             },
 
