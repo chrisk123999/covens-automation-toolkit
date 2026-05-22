@@ -1,0 +1,8 @@
+<footer class="form-footer standard-form">
+    {{#each buttons}}
+        <button type="{{type}}" data-action="{{action}}" name="{{name}}"{{#if tooltip}} data-tooltip="{{localize tooltip}}"{{/if}}>
+            {{#if icon}}<i class="{{icon}}"></i>{{/if}}
+            {{localize label}}
+        </button>
+    {{/each}}
+</footer>

@@ -4,29 +4,101 @@
       "Title": "Coven's Automation Toolkit Configuration: {name}",
       "HeaderLabel": "CAT Medkit",
       "TABS": {
-        "Automation": "Automation",
+        "Automation": "Info",
         "Configuration": "Configuration",
         "Generic": "Generic Automations",
         "Embedded": "Embedded Macros",
         "Macros": "Registered Macros"
       },
       "EditEmbedded": "Edit Embedded Macros",
-      "IdentifierTooltip": "Item & Activity identifiers must be modified on the respective document sheet.",
-      "Identifier": "Document Identifier",
-      "Source": "Automation Source",
-      "Version": "Automation Version",
-      "Notes": "Automation Notes",
-      "IgnoreItem": "Ignore Item",
-      "SOURCES": {
-        "chris-premades": "Cauldron of Plentiful Resources",
-        "automated-crafted-creations": "Automated Crafted Creations",
-        "gambits-premades": "Gambit's Premades",
-        "midi-item-showcase-community": "Midi Item Showcase: Community",
-        "dnd5e": "Dungeons & Dragons Fifth Edition",
-        "dnd-players-handbook": "Dungeons & Dragons Player's Handbook",
-        "midi-qol": "Midi Quality of Life Improvements",
-        "ddb-importer": "D&D Beyond Importer",
-        "dnd-dungeon-masters-guide": "Dungeons & Dragons Dungeon Master's Guide"
+      "Identifier": {
+        "Label": "Document Identifier",
+        "Hint": "Item & Activity identifiers must be modified on the respective document sheet."
+      },
+      "Source": {
+        "Label": "Automation Source",
+        "Hint": "Pick which module provides the automation for this document.",
+        "HintNone": "No automation sources have registered an automation for this document."
+      },
+      "Version": {
+        "Label": "Automation Version",
+        "Hint": "Reported by the selected automation source."
+      },
+      "Notes": {
+        "Label": "Automation Notes"
+      },
+      "IgnoreItem": {
+        "Label": "Ignore Item",
+        "Hint": "Skip this item during mass apply / update operations."
+      },
+      "Sections": {
+        "Rules": "Rules",
+        "Automation": "Automation",
+        "Embedded": "Embedded Macros"
+      },
+      "Embedded": {
+        "Count": "{count} embedded macro(s) on this document."
+      },
+      "EmbeddedMacros": {
+        "Title": "Embedded Macros: {name}",
+        "None": "No embedded macros on this document.",
+        "Cols": {
+          "Name": "Name",
+          "Event": "Event",
+          "Pass": "Pass",
+          "Source": "Source"
+        }
+      },
+      "Hero": {
+        "Unavailable": {
+          "Heading": "No automation registered",
+          "Copy": "No source provides automation for this item."
+        },
+        "Available": {
+          "Heading": "Automation available!",
+          "CTA": "Apply selected source"
+        },
+        "Outdated": {
+          "Heading": "Update available",
+          "Copy": "{source} has a newer automation.",
+          "CTA": "Update now"
+        },
+        "UpToDate": {
+          "Heading": "Up to date",
+          "Copy": "Running latest from {source}."
+        },
+        "Configurable": {
+          "CTA": "Configure >"
+        },
+        "Generic": {
+          "CTA": "Manage features >"
+        }
+      },
+      "Notif": {
+        "Updated": "Updated {identifier} from v{before} to v{after}.",
+        "Applied": "Applied {source} v{version}."
+      },
+      "Footer": {
+        "Cancel": "Cancel",
+        "CancelTooltip": "Discard pending changes and close.",
+        "Save": "Save",
+        "SaveTooltip": "Commit pending changes; keep the window open.",
+        "SaveClose": "Save & Close",
+        "SaveCloseTooltip": "Commit pending changes and close.",
+        "DiscardTitle": "Discard changes?",
+        "DiscardPrompt": "You have unsaved changes. Discard them and close?"
+      },
+      "Dirty": {
+        "Label": "Unsaved",
+        "Tooltip": "You have unsaved changes."
+      },
+      "RulesToggle": {
+        "Current": "Current Rules",
+        "Hint": "Switch between 2014 (Legacy) and 2024 (Modern) rule sets.",
+        "OtherRulesAvailable": "Automation available under {otherRulesLabel} rules.",
+        "NotApplicable": "Rules selection not applicable for this document.",
+        "2014": "2014",
+        "2024": "2024"
       },
       "STATUSES": {
         "HasUnregistered": "Unregistered Automation",
@@ -37,7 +109,64 @@
         "Generic": "Generic Feature Applied",
         "Unavailable": "No Automations Found"
       },
-      "NoSourcesTooltip": "There are no available sources of automation for this document."
+      "Configuration": {
+        "None": "No configurable options for this automation."
+      },
+      "Categories": {
+        "behavior": {
+          "Label": "Behavior",
+          "Tooltip": "How the automation triggers and what it applies."
+        },
+        "tuning": {
+          "Label": "Tuning",
+          "Tooltip": "Numeric and selection tuning for the automation."
+        },
+        "visuals": {
+          "Label": "Visuals",
+          "Tooltip": "Icons, images, and other visual hooks."
+        },
+        "linked": {
+          "Label": "Linked Items",
+          "Tooltip": "Documents this automation references."
+        },
+        "general": {
+          "Label": "General",
+          "Tooltip": "General settings."
+        }
+      },
+      "Documents": {
+        "Placeholder": "Paste UUID or drag a document here",
+        "Add": "Add document",
+        "InvalidUuid": "No document found for that UUID."
+      },
+      "Generic": {
+        "SelectLabel": "Generic Features",
+        "SelectField": "Apply features",
+        "NoMacros": "No generic features registered.",
+        "NoneSelected": "No generic features selected.",
+        "NoConfig": "No configuration for this feature."
+      },
+      "Macros": {
+        "Filters": "Filters",
+        "Filter": "Search macros...",
+        "SourceFilter": "Source",
+        "AllSources": "All sources",
+        "Registered": "Registered Macros",
+        "None": "No macros registered for this document.",
+        "ThirdParty": "Third-party reaction macro",
+        "Cols": {
+          "Name": "Name",
+          "Source": "Source",
+          "Event": "Event",
+          "Pass": "Pass",
+          "Rules": "Rules",
+          "ThirdParty": "3rd-Party"
+        },
+        "Rules": {
+          "legacy": "Legacy",
+          "modern": "Modern"
+        }
+      }
     },
     "Region": {
       "AttackerCantSeeTarget": "Attacker Can't See Target",
@@ -45,7 +174,7 @@
     },
     "Dialog": {
       "Combobox": {
-        "Filter": "Type to filter…",
+        "Filter": "Type to filter...",
         "NoMatches": "No matches"
       },
       "HitDieLabel": "{className}: {remaining}/{max} {denomination}",

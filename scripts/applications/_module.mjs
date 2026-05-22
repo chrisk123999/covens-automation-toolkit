@@ -1,3 +1,12 @@
-export {default as ItemMedkit} from './medkit-item.mjs';
+export {default as ActivityMedkit} from './medkit/activity.mjs';
+export {default as ActorMedkit} from './medkit/actor.mjs';
+export {default as CompendiumMedkit} from './medkit/compendium.mjs';
 export {default as DialogApp, DialogManager} from './dialog.mjs';
+export {default as EmbeddedMacrosApp} from './embedded-macros.mjs';
+export {default as ItemMedkit} from './medkit/item.mjs';
+export {default as LevelMedkit} from './medkit/level.mjs';
+export {default as MedkitApp} from './medkit/base.mjs';
+export {default as RegionMedkit} from './medkit/region.mjs';
+export {default as SceneMedkit} from './medkit/scene.mjs';
+export {default as TokenMedkit} from './medkit/token.mjs';
 export * as elements from './elements/_module.mjs';

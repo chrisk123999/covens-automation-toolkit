@@ -1,0 +1,56 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    {{#if hero}}
+        <div class="cat-medkit-hero" data-variant="{{hero.variant}}" data-medkit-status="{{hero.medkitStatus}}">
+            <i class="{{hero.icon}} cat-medkit-hero-icon"></i>
+            <div class="cat-medkit-hero-text">
+                <h2 class="cat-medkit-hero-heading">{{hero.heading}}</h2>
+                <p class="cat-medkit-hero-copy">{{hero.copy}}</p>
+            </div>
+            {{#if hero.isAvailable}}
+                <div class="cat-medkit-hero-controls">
+                    <select name="heroSourcePick">
+                        {{#each hero.sources}}
+                            <option value="{{value}}">{{label}}</option>
+                        {{/each}}
+                    </select>
+                    <button type="button" class="cat-medkit-hero-cta" data-action="applyAvailable" data-tooltip="{{localize 'CAT.MEDKIT.Hero.Available.CTA'}}" aria-label="{{localize 'CAT.MEDKIT.Hero.Available.CTA'}}">
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                </div>
+            {{else if hero.cta}}
+                <button type="button" class="cat-medkit-hero-cta" data-action="{{hero.cta.action}}"{{#if hero.cta.tab}} data-tab="{{hero.cta.tab}}"{{/if}}>
+                    {{hero.cta.label}}
+                </button>
+            {{/if}}
+        </div>
+    {{/if}}
+
+    <fieldset data-section="rules-toggle">
+        <legend>{{localize "CAT.MEDKIT.Sections.Rules"}}</legend>
+        {{#if canToggleRules}}
+            {{formGroup fields.rules name="system.source.rules" value=rules hint=(localize "CAT.MEDKIT.RulesToggle.Hint")}}
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.RulesToggle.NotApplicable"}}</p>
+        {{/if}}
+        {{#if otherRulesAutomationAvailable}}
+            <p class="hint">{{localize "CAT.MEDKIT.RulesToggle.OtherRulesAvailable" otherRulesLabel=otherRulesLabel}}</p>
+        {{/if}}
+    </fieldset>
+
+    <fieldset data-section="automation">
+        <legend>{{localize "CAT.MEDKIT.Sections.Automation"}}</legend>
+        {{formGroup fields.identifier disabled=true value=document.identifier hint=(localize "CAT.MEDKIT.Identifier.Hint")}}
+        {{formGroup fields.source name="selectedSource" disabled=disableSources choices=availableSources value=source hint=(localize (ifThen disableSources "CAT.MEDKIT.Source.HintNone" "CAT.MEDKIT.Source.Hint"))}}
+        {{#if version}}
+            {{formGroup fields.version disabled=true value=version hint=(localize "CAT.MEDKIT.Version.Hint")}}
+        {{/if}}
+        {{formGroup fields.ignore name="flags.cat.ignoreItem" value=ignoreItem hint=(localize "CAT.MEDKIT.IgnoreItem.Hint")}}
+    </fieldset>
+
+    {{#if notes}}
+        <fieldset data-section="notes">
+            <legend>{{localize "CAT.MEDKIT.Notes.Label"}}</legend>
+            <p class="cat-medkit-notes">{{notes}}</p>
+        </fieldset>
+    {{/if}}
+</section>

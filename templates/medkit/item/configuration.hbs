@@ -1,0 +1,61 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    {{#if configurationCategories.length}}
+        {{#each configurationCategories as |category|}}
+            <fieldset data-section="config-{{category.id}}" data-tooltip="{{localize category.tooltip}}">
+                <legend>{{category.label}}</legend>
+                {{#each category.options as |option|}}
+                    {{#if option.field}}
+                        {{formGroup option.field name=option.name value=option.value hint=option.i18nOption dataset=(ifThen option.tooltip (object tooltip=option.tooltip))}}
+                    {{else if option.isCombobox}}
+                        <div class="form-group">
+                            <label for="cat-medkit-cfg-{{option.key}}">{{localize option.label}}</label>
+                            <div class="form-fields">
+                                <cat-combobox input-id="cat-medkit-cfg-{{option.key}}" name="{{option.name}}" value="{{option.value}}">
+                                    {{#each option.choices}}
+                                        <option value="{{value}}" data-image="{{image}}">{{label}}</option>
+                                    {{/each}}
+                                </cat-combobox>
+                            </div>
+                        </div>
+                    {{else if option.isMultiCombobox}}
+                        <div class="form-group">
+                            <label for="cat-medkit-cfg-{{option.key}}">{{localize option.label}}</label>
+                            <div class="form-fields">
+                                <cat-multi-combobox input-id="cat-medkit-cfg-{{option.key}}" name="{{option.name}}">
+                                    {{#each option.choices}}
+                                        <option value="{{value}}" data-image="{{image}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                                    {{/each}}
+                                </cat-multi-combobox>
+                            </div>
+                        </div>
+                    {{else if option.isDocuments}}
+                        <div class="form-group cat-medkit-documents" data-config-key="{{option.key}}">
+                            <label for="cat-medkit-cfg-{{option.key}}">{{localize option.label}}</label>
+                            <div class="form-fields">
+                                <input id="cat-medkit-cfg-{{option.key}}" type="text" placeholder="{{localize 'CAT.MEDKIT.Documents.Placeholder'}}">
+                                <button type="button" data-action="addDocument" data-tooltip="{{localize 'CAT.MEDKIT.Documents.Add'}}">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {{#if option.documents.length}}
+                            <ul class="cat-medkit-document-list" data-config-key="{{option.key}}">
+                                {{#each option.documents}}
+                                    <li>
+                                        {{#if img}}<img src="{{img}}">{{/if}}
+                                        <span>{{name}}</span>
+                                        <button type="button" data-action="removeDocument" data-uuid="{{uuid}}" data-tooltip="{{localize 'Remove'}}">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </li>
+                                {{/each}}
+                            </ul>
+                        {{/if}}
+                    {{/if}}
+                {{/each}}
+            </fieldset>
+        {{/each}}
+    {{else}}
+        <p class="hint">{{localize "CAT.MEDKIT.Configuration.None"}}</p>
+    {{/if}}
+</section>

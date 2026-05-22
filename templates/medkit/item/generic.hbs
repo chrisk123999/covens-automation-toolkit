@@ -1,0 +1,35 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <fieldset data-section="generic-select">
+        <legend>{{localize "CAT.MEDKIT.Generic.SelectLabel"}}</legend>
+        {{#if genericChoices.length}}
+            <div class="form-group cat-multi-combobox-group">
+                <label for="cat-medkit-generic-select">{{localize "CAT.MEDKIT.Generic.SelectField"}}</label>
+                <cat-multi-combobox input-id="cat-medkit-generic-select" name="flags.cat.config.generic">
+                    {{#each genericChoices}}
+                        <option value="{{value}}" data-image="{{image}}">{{label}}</option>
+                    {{/each}}
+                </cat-multi-combobox>
+            </div>
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.Generic.NoMacros"}}</p>
+        {{/if}}
+    </fieldset>
+
+    {{#if genericFeatures.length}}
+        {{#each genericFeatures as |feature|}}
+            <fieldset data-section="generic-feature" data-feature-id="{{feature.id}}">
+                <legend>{{feature.label}}</legend>
+                {{#each feature.options as |option|}}
+                    {{formGroup option.field name=option.name value=option.value}}
+                {{/each}}
+                {{#unless feature.options.length}}
+                    <p class="hint">{{localize "CAT.MEDKIT.Generic.NoConfig"}}</p>
+                {{/unless}}
+            </fieldset>
+        {{/each}}
+    {{else}}
+        {{#if genericChoices.length}}
+            <p class="hint">{{localize "CAT.MEDKIT.Generic.NoneSelected"}}</p>
+        {{/if}}
+    {{/if}}
+</section>
