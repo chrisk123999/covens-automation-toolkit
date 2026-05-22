@@ -22,7 +22,6 @@ function formula(wrapped) {
         identifier = grandParent.system.identifier;
         document = grandParent;
     }
-    const targetItemType = targetItem.type;
     const originalFormula = wrapped();
     const alternateFormulas = [originalFormula];
     const rollModifiers = [];
@@ -33,10 +32,8 @@ function formula(wrapped) {
         if (modGroup) {
             const modFlagId = modGroup.byIdentifier?.[identifier];
             if (modFlagId) rollModifiers.push(...modFlagId);
-            if (targetItemType) {
-                const modFlagType = modGroup.byType?.[targetItemType];
-                if (modFlagType) rollModifiers.push(...modFlagType);
-            }
+            const modFlagType = modGroup.byType?.[targetItem.type];
+            if (modFlagType) rollModifiers.push(...modFlagType);
         }
     }
     let bestFormula = originalFormula;

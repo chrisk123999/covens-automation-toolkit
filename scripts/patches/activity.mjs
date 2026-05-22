@@ -17,14 +17,13 @@ function getDamageConfig(wrapped, config) {
     const actor = this.actor;
     if (!actor) return rollConfig;
     const identifier = targetItem.system.identifier + '|' + this.identifier;
-    const targetItemType = targetItem.type;
     const rollModifiers = [];
     for (const item of actor.items) {
         const modGroup = item.flags.cat?.rollModifiers;
         if (modGroup) {
             const modFlagId = modGroup.byIdentifier?.[identifier];
             if (modFlagId) rollModifiers.push(...modFlagId);
-            const modFlagType = modGroup.byType?.[targetItemType];
+            const modFlagType = modGroup.byType?.[targetItem.type];
             if (modFlagType) rollModifiers.push(...modFlagType);
         }
     }

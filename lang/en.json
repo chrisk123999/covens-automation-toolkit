@@ -54,6 +54,9 @@
     },
     "Common": {
       "Cover": "{amount} {cover}"
+    },
+    "Senses": {
+      "DevilsSight": "Devil's Sight"
     }
   }
 }
