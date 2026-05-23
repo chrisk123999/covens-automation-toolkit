@@ -1,23 +1,29 @@
 import {genericUtils} from './utilities/_module.mjs';
+import {SettingsMenuBase} from './applications/_module.mjs';
 
 /**
- * Array of settings to register.
+ * Settings to register.
+ * 
  * Required properties:
- *  key,
- *  type,
- *  default,
- *  menu
+ *  key: {
+ *    type,
+ *    default,
+ *    menu
+ *  }
  * 
  * Optional properties:
- *  onChange,
- *  choices,
- *  reloadRequired,
- *  select
+ *  {
+ *    onChange,
+ *    choices,
+ *    reloadRequired,
+ *    select
+ *  }
  */
 const settings = {
     displayDebugLogs: {
         type: Boolean,
-        default: true // Change this to false eventually.
+        default: true, // Change this to false eventually.
+        menu: 'devtools'
     },
     automationSources: {
         type: Object,
@@ -49,17 +55,43 @@ const settings = {
         default: false
     }
 };
+const menus = {
+    devtools: {
+        icon: 'fas fa-tools'
+    }
+};
 
 function addSetting(key, options) {
     const defaultOptions = {
         scope: 'world',
-        config: false
+        config: false,
+        name: 'CAT.Settings.' + key + '.Name',
+        hint: 'CAT.Settings.' + key + '.Hint'
     };
     game.settings.register('cat', key, genericUtils.mergeObject(defaultOptions, options));
 }
+function addMenu(key, options) {
+    const defaultOptions = {
+        name: 'CAT.Settings.' + key + '.Name',
+        label: 'CAT.Settings.' + key + '.Label',
+        hint: 'CAT.Settings.' + key + '.Hint',
+        type: createMenu(key),
+        restricted: true
+    };
+    game.settings.registerMenu('cat', key, genericUtils.mergeObject(defaultOptions, options));
+}
+function createMenu(key) {
+    return class SettingsMenu extends SettingsMenuBase {
+        constructor() {
+            super(key);
+        }
+    };
+}
 export function registerSettings() {
-    //settings.sort(genericUtils.keySort('key'));
     Object.entries(settings).sort().forEach(([key, options]) => {
         addSetting(key, options);
+    });
+    Object.entries(menus).forEach(([key, options]) => {
+        addMenu(key, options);
     });
 }
