@@ -1,11 +1,14 @@
 import {constants, Events} from '../lib/_module.mjs';
 import specialDuration from '../mechanics/specialDuration.mjs';
 import {queryUtils} from '../utilities/_module.mjs';
+import {items} from '../handlers/_module.mjs';
 async function bulkUpdated(items) {
     await new Events.ItemsEvent(items, constants.itemPasses.bulkUpdated).run({canOverlap: true});
 }
 async function createItem(item, options, userId) {
-    if (!queryUtils.isTheGM() || !item.actor) return;
+    if (!queryUtils.isTheGM()) return;
+    await items.updateHash(item);
+    if (!item.actor) return;
     await new Events.ItemEvent(item, constants.itemPasses.created, {options}).run();
 }
 async function deleteItem(item, options, userId) {
@@ -13,7 +16,9 @@ async function deleteItem(item, options, userId) {
     await new Events.ItemEvent(item, constants.itemPasses.deleted, {options}).run();
 }
 async function updateItem(item, updates, options, userId) {
-    if (!queryUtils.isTheGM() || !item.actor) return;
+    if (!queryUtils.isTheGM()) return;
+    await items.updateHash(item);
+    if (!item.actor) return;
     await new Events.ItemEvent(item, constants.itemPasses.updated, {options, updates}).run();
     if (!('equipped' in item.system)) return;
     const currentlyEquipped = updates.system?.equipped ?? item.system.equipped;

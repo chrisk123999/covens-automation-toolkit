@@ -61,10 +61,31 @@ async function createEmbeddedDocuments(document, type, updates, options) {
     }
 }
 async function update(document, updates, options) {
-
+    const hasPermission = queryUtils.hasPermission(document, game.user.id);
+    if (hasPermission) {
+        await document.update(updates, options);
+    } else {
+        const uuid = await queryUtils.query('update', queryUtils.gmID(), {uuid: document.uuid, updates, options});
+        return await fromUuid(uuid);
+    }
 }
 async function updateEmbeddedDocuments(document, type, updates, options) {
-
+    const hasPermission = queryUtils.hasPermission(document, game.user.id);
+    if (hasPermission) {
+        return await document.updateEmbeddedDocuments(type, updates, options);
+    } else {
+        const uuids = await queryUtils.query('updateEmbeddedDocuments', queryUtils.gmUser(), {uuid: document.uuid, type, updates, options});
+        return await Promise.all(uuids.map(async uuid => await fromUuid(uuid)));
+    }
+}
+async function setFlag(document, scope, key, value) {
+    const hasPermission = queryUtils.hasPermission(document, game.user.id);
+    if (hasPermission) {
+        return await document.setFlag(scope, key, value);
+    } else {
+        const uuid = await queryUtils.query('setFlag', queryUtils.gmID(), {uuid: document.uuid, scope, key, value});
+        return await fromUuid(uuid);
+    }
 }
 export default {
     getRules,
@@ -76,5 +97,6 @@ export default {
     deleteDocument,
     createEmbeddedDocuments,
     update,
-    updateEmbeddedDocuments
+    updateEmbeddedDocuments,
+    setFlag
 };

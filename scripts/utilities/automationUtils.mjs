@@ -22,15 +22,36 @@ function getAutomationStatus(item) {
     };
     if (item.flags.cat?.config?.generic) return STATUSES.GENERIC;
     else {
-        const currentAutomation = getCurrentAutomation(item);
-        if (currentAutomation) {
-            if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) return STATUSES.OUTDATED;
-            if (currentAutomation.config) return STATUSES.CONFIGURABLE;
+        const storedHash = getStoredHash(item);
+        if (storedHash) {
+            const hash = getDocumentHash(item);
+            if (hash != storedHash) return STATUSES.OUTDATED;
             return STATUSES.UP_TO_DATE;
+        } else {
+            const currentAutomation = getCurrentAutomation(item);
+            if (currentAutomation) {
+                if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) return STATUSES.OUTDATED;
+                if (currentAutomation.config) return STATUSES.CONFIGURABLE;
+                return STATUSES.UP_TO_DATE;
+            }
+            if (getAvailableAutomations(item).length) return STATUSES.AVAILABLE;
         }
-        if (getAvailableAutomations(item).length) return STATUSES.AVAILABLE;
     }
     return STATUSES.UNAVAILABLE;
+}
+function isUpToDate(item) {
+    const storedHash = getStoredHash(item);
+    if (storedHash) {
+        const hash = getDocumentHash(item);
+        if (hash != storedHash) return false;
+        return true;
+    }
+    const currentAutomation = getCurrentAutomation(item);
+    if (currentAutomation) {
+        if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) return false;
+        return true;
+    }
+    return true;
 }
 function getAvailableAutomations(item) {
     const identifier = documentUtils.getIdentifier(item);
@@ -166,6 +187,30 @@ async function updateScales(item, {automation} = {}) {
         await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
     }
 }
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0, len = str.length; i < len; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; 
+    }
+    return hash;
+}
+function getDocumentHash(document) {
+    const documentData = document.toObject();
+    const deleteFields = ['_stats', '_id', 'folder', 'sort', 'ownership'];
+    for (let field of deleteFields) delete documentData[field];
+    if (documentData.flags.cat?.automation?.hash) delete documentData.flags.cat.automation.hash;
+    if (foundry.utils.isEmpty(documentData.flags.cat)) delete documentData.flags.cat;
+    const jsonDocument = JSON.stringify(documentData);
+    return simpleHash(jsonDocument);
+}
+async function setDocumentHash(document, hash) {
+    return await documentUtils.setFlag(document, 'cat', 'automation.hash', hash);
+}
+function getStoredHash(document) {
+    return document.flags.cat?.automation?.hash;
+}
 export default {
     getCurrentAutomation,
     getAutomationStatus,
@@ -174,5 +219,9 @@ export default {
     getAutomationSources,
     getAppliedOrPreferedAutomation,
     updateItem,
-    updateScales
+    updateScales,
+    getDocumentHash,
+    setDocumentHash,
+    getStoredHash,
+    isUpToDate
 };
