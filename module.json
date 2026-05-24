@@ -1,6 +1,6 @@
 {
     "id":"cat",
-    "title":"The Coven's Automation Toolkit",
+    "title":"Coven's Automation Toolkit",
     "description":"A toolkit for high-automation Midi-Qol D&D games.",
     "version":"0.01",
     "socket":true,

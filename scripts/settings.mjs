@@ -30,23 +30,28 @@ const settings = {
         default: {
             dnd5e: {
                 enabled: true,
-                priority: 100
+                priority: 100,
+                pack: false
             },
             'dnd-players-handbook': {
                 enabled: true,
-                priority: 99
+                priority: 99,
+                pack: false
             },
             'dnd-dungeon-masters-guide': {
                 enabled: true,
-                priority: 98
+                priority: 98,
+                pack: false
             },
             'ddb-importer': {
                 enabled: true,
-                priority: 97
+                priority: 97,
+                pack: false
             },
             'midi-qol': {
                 enabled: true,
-                priority: 96
+                priority: 96,
+                pack: false
             }
         }
     },
@@ -65,16 +70,16 @@ function addSetting(key, options) {
     const defaultOptions = {
         scope: 'world',
         config: false,
-        name: 'CAT.Settings.' + key + '.Name',
-        hint: 'CAT.Settings.' + key + '.Hint'
+        name: 'CAT.Settings.' + key.titleCase() + '.Name',
+        hint: 'CAT.Settings.' + key.titleCase() + '.Hint'
     };
     game.settings.register('cat', key, genericUtils.mergeObject(defaultOptions, options));
 }
 function addMenu(key, options) {
     const defaultOptions = {
-        name: 'CAT.Settings.' + key + '.Name',
-        label: 'CAT.Settings.' + key + '.Label',
-        hint: 'CAT.Settings.' + key + '.Hint',
+        name: 'CAT.Settings.' + key.titleCase() + '.Name',
+        label: 'CAT.Settings.' + key.titleCase() + '.Label',
+        hint: 'CAT.Settings.' + key.titleCase() + '.Hint',
         type: createMenu(key),
         restricted: true
     };

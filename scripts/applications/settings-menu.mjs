@@ -7,10 +7,10 @@ export default class SettingsMenu extends MenuApp {
     #save = false;
 
     constructor(key) {
-        let title = 'CAT.Settings.' + key + '.Name';
+        let title = 'CAT.Settings.' + key.titleCase() + '.Name';
         let inputs = [];
         let buttons = 'okCancel';
-        let config = {id: `cat-settings-menu-${key}`};
+        let config = {id: 'cat-settings-menu-' + key};
         super([title, inputs, buttons, config]);
         game.settings.settings.forEach(s => s.namespace.includes('cat') ? this.#catSettings.push(s) : '');
         this.#menuSettings = this.#catSettings.filter(s => s.menu === key);
@@ -23,6 +23,7 @@ export default class SettingsMenu extends MenuApp {
             default: setting.default,
             value: game.settings.get('cat', setting.key)
         };
+        console.log(entry);
         if (this.key === 'compendium') entry.type = 'compendium'; // Differentiate by compendium type? (actor vs item etc)
         else if (setting.choices) {
             entry.type = 'selectOption';

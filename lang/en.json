@@ -57,6 +57,17 @@
     },
     "Senses": {
       "DevilsSight": "Devil's Sight"
+    },
+    "Settings": {
+      "Devtools": {
+        "Name": "Development Tools",
+        "Label": "Open",
+        "Hint": "Settings for developers."
+      },
+      "DisplayDebugLogs": {
+        "Name": "Display Debug Logs",
+        "Hint": "When enabled the console will show debug logs."
+      }
     }
   }
 }
