@@ -7,7 +7,7 @@ async function bulkUpdated(items) {
 }
 async function createItem(item, options, userId) {
     if (!queryUtils.isTheGM()) return;
-    await items.updateHash(item);
+    if (item.compendium) await items.updateHash(item);
     if (!item.actor) return;
     await new Events.ItemEvent(item, constants.itemPasses.created, {options}).run();
 }
@@ -17,7 +17,7 @@ async function deleteItem(item, options, userId) {
 }
 async function updateItem(item, updates, options, userId) {
     if (!queryUtils.isTheGM()) return;
-    await items.updateHash(item);
+    if (item.compendium) await items.updateHash(item);
     if (!item.actor) return;
     await new Events.ItemEvent(item, constants.itemPasses.updated, {options, updates}).run();
     if (!('equipped' in item.system)) return;
