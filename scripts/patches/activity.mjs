@@ -1,14 +1,35 @@
 import {Logging} from '../lib/_module.mjs';
 import {default as dataModel} from './dataModel.mjs';
+import {automationUtils} from '../utilities/_module.mjs';
+/*
+item.flags.cat.otherAbilities = {
+    value: ['wis', 'int']
+    configValue: 'example'
+}
+item.flags.cat.alternateAbilities = {
+    exampleIdentifier: {
+        value: ['str', 'con'],
+        configValue: 'example2'
+    }
+}
+*/
 function availableAbilities(wrapped) {
-    const otherAbilities = this.flags?.cat?.otherAbilities ?? [];
-    const allAbilities = [...wrapped(), ...otherAbilities];
+    const targetItem = this.item;
+    const allAbilities = [...wrapped()];
+    const otherFlag = this.flags?.cat?.otherAbilities;
+    if (otherFlag) {
+        const resolvedOther = otherFlag.configValue ? (automationUtils.getConfig(targetItem, otherFlag.configValue) ?? []) : otherFlag.value;
+        if (resolvedOther) allAbilities.push(...resolvedOther);
+    }
     if (!this.actor) return new Set(allAbilities); 
-    const identifier = this.item?.system?.identifier;
+    const identifier = targetItem?.system?.identifier;
     this.actor.items.forEach(item => {
         if (item.type != 'feat') return;
-        const abilities = item.flags?.cat?.alternateAbilities?.[identifier];
-        if (abilities) allAbilities.push(...abilities);
+        const altFlag = item.flags?.cat?.alternateAbilities?.[identifier];
+        if (altFlag) {
+            const resolvedAlt = altFlag.configValue ? (automationUtils.getConfig(targetItem, altFlag.configValue) ?? []) : altFlag.value;
+            if (resolvedAlt) allAbilities.push(...resolvedAlt);
+        }
     });
     return new Set(allAbilities);
 }

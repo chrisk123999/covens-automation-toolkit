@@ -123,7 +123,6 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     await documentUtils.deleteDocument(item);
     let document;
     if (actor) {
-
         document = (await documentUtils.createEmbeddedDocuments(actor, 'Item', [documentData], {keepId: true}))?.[0];
     } else {
         document = await Item.create(documentData, {keepId: true}); //May need to GM socket this.

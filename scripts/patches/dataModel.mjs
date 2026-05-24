@@ -38,12 +38,10 @@ item.flags.cat.rollModifiers = [
         }
     }
 ]
-
 item.flags.cat.alternateFormula = {
     value: '1d8 + @mod',
     configValue: 'formula'
 }
-
 */
 function checkReq(requirement, itemData, targetItem, defaultRequireAll = true) {
     if (!requirement) return true;
