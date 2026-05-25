@@ -136,13 +136,27 @@ function formula(wrapped) {
     }
     return bestFormula;
 }
+function defineSchema(wrapped, ...args) {
+    const schema = wrapped(...args);
+    schema.attributes.fields.senses.fields.ranges.initialKeys.devilsSight = 'CAT.Senses.DevilsSight';
+    return schema;
+}
 function patch(enabled) {
     if (enabled) {
         Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.shared.DamageData.prototype.formula', {force: true});
         libWrapper.register('cat', 'dnd5e.dataModels.shared.DamageData.prototype.formula', formula, 'MIXED');
+        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.actor.CharacterData.defineSchema', {force: true});
+        libWrapper.register('cat', 'dnd5e.dataModels.actor.CharacterData.defineSchema', defineSchema, 'WRAPPER');
+        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.actor.NPCData.defineSchema', {force: true});
+        libWrapper.register('cat', 'dnd5e.dataModels.actor.NPCData.defineSchema', defineSchema, 'WRAPPER');
+        
     } else {
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.shared.DamageData.prototype.formula');
         libWrapper.unregister('cat', 'dnd5e.dataModels.shared.DamageData.prototype.formula');
+        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.actor.CharacterData.defineSchema');
+        libWrapper.unregister('cat', 'dnd5e.dataModels.actor.CharacterData.defineSchema');
+        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.actor.NPCData.defineSchema');
+        libWrapper.unregister('cat', 'dnd5e.dataModels.actor.NPCData.defineSchema');
     }
 }
 export default {
