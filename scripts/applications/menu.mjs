@@ -113,7 +113,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
             useHelper: true,
             options: [{
-                field: new BooleanField({label: input.label, hint: input.hint}),
+                field: new BooleanField({label: _loc(input.label), hint: _loc(input.hint)}),
                 name: input.name,
                 value: input.value ?? false
             }]

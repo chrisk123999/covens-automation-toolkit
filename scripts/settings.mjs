@@ -70,16 +70,16 @@ function addSetting(key, options) {
     const defaultOptions = {
         scope: 'world',
         config: false,
-        name: 'CAT.Settings.' + key.titleCase() + '.Name',
-        hint: 'CAT.Settings.' + key.titleCase() + '.Hint'
+        name: 'CAT.Settings.' + key.capitalize() + '.Name',
+        hint: 'CAT.Settings.' + key.capitalize  () + '.Hint'
     };
     game.settings.register('cat', key, genericUtils.mergeObject(defaultOptions, options));
 }
 function addMenu(key, options) {
     const defaultOptions = {
-        name: 'CAT.Settings.' + key.titleCase() + '.Name',
-        label: 'CAT.Settings.' + key.titleCase() + '.Label',
-        hint: 'CAT.Settings.' + key.titleCase() + '.Hint',
+        name: 'CAT.Settings.' + key.capitalize() + '.Name',
+        label: 'CAT.Settings.' + key.capitalize() + '.Label',
+        hint: 'CAT.Settings.' + key.capitalize() + '.Hint',
         type: createMenu(key),
         restricted: true
     };
