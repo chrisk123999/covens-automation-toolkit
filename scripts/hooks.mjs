@@ -2,12 +2,13 @@ import {constants} from './lib/_module.mjs';
 import * as events from './events/_module.mjs';
 import {queryUtils} from './utilities/_module.mjs';
 import {titlebar, activities, effects} from './handlers/_module.mjs';
-import {dae} from './integration/_modules.mjs';
+import {dae, vae} from './integration/_modules.mjs';
 export function readyHooks() {
     // Handlers
     Hooks.on(constants.miscHookNames.itemUseActivitySelect, activities.hiddenActivities);
     // Integration
     Hooks.on(constants.miscHookNames.daeSetFieldData, dae.addFlags);
+    Hooks.on(constants.miscHookNames.vaeCreateEffectButtons, vae.createEffectButton);
     // Sheet Rendering
     Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsActorSheetV2, titlebar.appendHeaderControl);

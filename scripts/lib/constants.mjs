@@ -153,7 +153,8 @@ const miscHookNames = {
     itemUseActivitySelect: 'midi-qol.itemUseActivitySelect',
     applyActiveEffect: 'applyActiveEffect',
     daeSetFieldData: 'dae.setFieldData',
-    daeModifySpecials: 'dae.modifySpecials'
+    daeModifySpecials: 'dae.modifySpecials',
+    vaeCreateEffectButtons: 'visual-active-effects.createEffectButtons'
 };
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',

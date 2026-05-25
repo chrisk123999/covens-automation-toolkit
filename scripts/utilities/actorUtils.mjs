@@ -44,6 +44,9 @@ function checkTrait(actor, type, trait) {
 function getEffectByStatusID(actor, id) {
     return getEffects(actor).find(i => i.id === CONFIG.statusEffects.find(j => j.id === id)?._id);
 }
+function getItemByIdentifier(actor, identifier) {
+    return actor.items.find(item => documentUtils.getIdentifier(item) === identifier);
+}
 async function applyConditions(actor, conditions, {overlay = false} = {}) {
     const updates = [];
     await Promise.all(conditions.map(async id => {
@@ -73,5 +76,6 @@ export default {
     getBestAbility,
     checkTrait,
     getEffectByStatusID,
-    applyConditions
+    applyConditions,
+    getItemByIdentifier
 };
