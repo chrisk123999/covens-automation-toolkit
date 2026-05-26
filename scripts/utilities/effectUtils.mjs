@@ -8,7 +8,7 @@ async function createEffects(document, effectDatas, effectOptions, {forceGM = fa
     if (hasPermission && !forceGM) {
         effects = await document.createEmbeddedDocuments('ActiveEffect', effectDatas);
     } else {
-        const uuids = await queryUtils.query('cat.createEffects', queryUtils.gmUser(), {uuid: document.uuid, effectDatas, effectOptions});
+        const uuids = await queryUtils.query('createEffects', queryUtils.gmUser(), {uuid: document.uuid, effectDatas, effectOptions});
         if (!uuids) return;
         effects = (await Promise.all(uuids.map(async uuid => fromUuid(uuid)))).filter(i => i);
     }
@@ -44,9 +44,24 @@ async function getOriginActivity(effect) {
         );
     }
 }
+function getOriginActivitySync(effect) {
+    const activityUuid = effect.flags.dae?.activity ?? effect.flags.cat?.activityUuid;
+    if (activityUuid) return fromUuidSync(activityUuid, {strict: false});
+    if (!effect.origin) return;
+    const origin = fromUuidSync(effect.origin, {strict: false});
+    if (origin.documentName !== 'ActiveEffect') return;
+    const originActivityUuid = origin.flags.dnd5e?.activity?.uuid;
+    if (originActivityUuid) return fromUuidSync(originActivityUuid, {strict: false});
+    if (origin.parent?.documentName === 'Item') {
+        return origin.parent.system.activities?.find(activity => 
+            activity.effects.some(aEffect => aEffect.id === effect.id)
+        );
+    }
+}
 export default {
     getCastData,
     createEffects,
     getConditions,
-    getOriginActivity
+    getOriginActivity,
+    getOriginActivitySync
 };

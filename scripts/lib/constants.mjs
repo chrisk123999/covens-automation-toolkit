@@ -150,7 +150,11 @@ const actorHookNames = {
     updateActor: 'updateActor'
 };
 const miscHookNames = {
-    itemUseActivitySelect: 'midi-qol.itemUseActivitySelect'
+    itemUseActivitySelect: 'midi-qol.itemUseActivitySelect',
+    applyActiveEffect: 'applyActiveEffect',
+    daeSetFieldData: 'dae.setFieldData',
+    daeModifySpecials: 'dae.modifySpecials',
+    vaeCreateEffectButtons: 'visual-active-effects.createEffectButtons'
 };
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',

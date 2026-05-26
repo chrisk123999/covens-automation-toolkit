@@ -34,14 +34,18 @@ async function updateActiveEffect(effect, updates, options, userId) {
     await new Events.EffectEvent(effect, constants.effectPasses.updated, {options, updates}).run();
 }
 function preCreateActiveEffect(effect, updates, options, userId) {
+    effects.noAnimation(effect, options);
+    effects.effectDescription(effect, updates);
     if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
     new Events.EffectEvent(effect, constants.effectPasses.preCreated, {options, updates}).runSync();
 }
-function preDeleteActiveEffect(effect, updates, options, userId) {
+function preDeleteActiveEffect(effect, options, userId) {
+    effects.noAnimation(effect, options);
     if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
-    new Events.EffectEvent(effect, constants.effectPasses.preDeleted, {options, updates}).runSync();
+    new Events.EffectEvent(effect, constants.effectPasses.preDeleted, {options}).runSync();
 }
 function preUpdateActiveEffect(effect, updates, options, userId) {
+    effects.noAnimation(effect, options);
     if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
     new Events.EffectEvent(effect, constants.effectPasses.preUpdated, {options, updates}).runSync();
 }

@@ -40,8 +40,35 @@ async function removeConditions(effect) {
     });
     if (ids.length) return await documentUtils.deleteEmbeddedDocuments(parent, 'ActiveEffect', ids);
 }
+function applyActiveEffect(actor, change, current, delta, changes) {
+    if (change.key.startsWith('flags.cat.CR.') || change.key.startsWith('flags.cat.CV.')) {
+        const existing = genericUtils.getProperty(actor, change.key);
+        const newValue = existing ? String(existing) + ', ' + String(change.value) : String(change.value);
+        genericUtils.setProperty(actor, change.key, newValue);
+        changes[change.key] = newValue;
+        return true; 
+    }
+}
+function noAnimation(effect, options) {
+    if (!effect.flags.cat?.noAnimation) return;
+    options.animate = false;
+}
+function effectDescription(effect, updates) {
+    if (updates.description || !effect.parent) return;
+    if (effect.transfer && effect.parent.documentName !== 'Item') return;
+    const item = (!effect.transfer && effect.origin) ? effectUtils.getOriginActivitySync(effect)?.item : effect.parent;
+    if (!item) return;
+    const mode = game.settings.get('cat', 'effectDescriptionsNPC');
+    if (mode && item.actor?.type === 'npc') return;
+    const type = game.settings.get('cat', 'effectDescriptions') === 2 ? 'value' : 'chat';
+    const description = (item.system.identified ?? true) ? item.system.description[type] : item.system.unidentified.description;
+    if (description) effect.updateSource({description});
+}
 export default {
     disableSpecialEffects,
     addConditions,
-    removeConditions
+    removeConditions,
+    applyActiveEffect,
+    noAnimation,
+    effectDescription
 };

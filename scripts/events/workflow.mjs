@@ -1,11 +1,13 @@
 import {constants, Events} from '../lib/_module.mjs';
 import {regionVisibility} from '../mechanics/regionVisibility.mjs';
 import specialDuration from '../mechanics/specialDuration.mjs';
+import {diceSoNice} from '../integration/_modules.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
     let event = await new Events.PreTargetingWorkflowEvent(constants.workflowPasses.preTargeting, {activity, token, config, dialog, message}).run();
     if (event) return false;
 }
 async function preItemRoll(workflow) {
+    if (game.settings.get('cat', 'diceSoNice') && game.modules.get('dice-so-nice')?.active) diceSoNice.preItemRoll(workflow);
     let event = await new Events.WorkflowEvent(constants.workflowPasses.preItemRoll, workflow).run();
     if (event) return false;
 }
@@ -34,6 +36,7 @@ async function damageRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.damageRoll, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.damageRollBonuses, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.damageRollComplete, workflow).run();
+    if (game.settings.get('cat', 'diceSoNice') && game.modules.get('dice-so-nice')?.active) await diceSoNice.damageRollComplete(workflow);
 }
 async function utilityRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.utilityRoll, workflow).run();

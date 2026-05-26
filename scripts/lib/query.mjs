@@ -33,6 +33,24 @@ async function createEmbeddedDocuments({uuid, type, updates, options}) {
     const documents = await documentUtils.createEmbeddedDocuments(document, type, updates, options);
     return documents.map(document => document.uuid);
 }
+async function updateEmbeddedDocuments({uuid, type, updates, options}) {
+    const document = await fromUuid(uuid);
+    if (!document) return;
+    const documents = await documentUtils.updateEmbeddedDocuments(document, type, updates, options);
+    return documents.map(document => document.uuid);
+}
+async function update({uuid, updates, options}) {
+    const document = await fromUuid(uuid);
+    if (!document) return;
+    await document.update(updates, options);
+    return document.uuid;
+}
+async function setFlag({uuid, scope, key, value}) {
+    const document = await fromUuid(uuid);
+    if (!document) return;
+    await document.setFlag(scope, key, value);
+    return document.uuid;
+}
 function registerQueries() {
     const handlers = {
         createEffects,
@@ -40,7 +58,10 @@ function registerQueries() {
         deleteDocument,
         createEmbeddedDocuments,
         dialog,
-        queuedDialog
+        queuedDialog,
+        updateEmbeddedDocuments,
+        update,
+        setFlag
     };
     globalThis.CONFIG.queries.cat = handlers;
     for (const [name, fn] of Object.entries(handlers)) {

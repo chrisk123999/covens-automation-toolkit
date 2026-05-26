@@ -180,6 +180,68 @@
       "HitDieLabel": "{className}: {remaining}/{max} {denomination}",
       "Use": "Use {itemName}?",
       "Total": "Total"
+    },
+    "Common": {
+      "Cover": "{amount} {cover}"
+    },
+    "Senses": {
+      "DevilsSight": "Devil's Sight"
+    },
+    "Settings": {
+      "Devtools": {
+        "Name": "Development Tools",
+        "Label": "Open",
+        "Hint": "Settings for developers."
+      },
+      "DisplayDebugLogs": {
+        "Name": "Display Debug Logs",
+        "Hint": "When enabled, the console will show debug logs."
+      },
+      "HideNames": {
+        "Name": "Hide Token Names",
+        "Hint": "Whene enabled, various dialogs will not show enemy token names."
+      },
+      "DiceSoNice": {
+        "Name": "Dice So Nice Compatibility",
+        "Hint": "When enabled, Dice So Nice damage roll animations will be delayed until after all damage roll macros are complete."
+      },
+      "General": {
+        "Name": "General",
+        "Label": "Open",
+        "Hint": "General settings."
+      },
+      "Integration": {
+        "Name": "Integration",
+        "Label": "Open",
+        "Hint": "Settings for various module integrations."
+      },
+      "Interface": {
+        "Name": "Interface",
+        "Label": "Open",
+        "Hint": "Settings for the user interface."
+      },
+      "EffectDescriptions": {
+        "Name": "Automatic Effect Descriptions",
+        "Hint": "When enabled, effects without descriptions will automatically be filled in from the origin item."
+      },
+      "EffectDescriptionsNPC": {
+        "Name": "Hide NPC Effect Descriptions",
+        "Hint": "When enabled, the Automatic Effect Description setting will not apply for NPC created effects."
+      }
+    },
+    "DAE": {
+      "CV": {
+        "Name": "{condition} Condition Vulnerability",
+        "Description": "Condition Vulnerability to {condition}, roll at disadvantage to save. 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+      },
+      "CR": {
+        "Name": "{condition} Condition Resistance",
+        "Description": "Condition Resistance to {condition}, roll at advantage to save. 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+      }
+    },
+    "Generic": {
+      "Disabled": "Disabled",
+      "Chat": "Chat"
     }
   }
 }

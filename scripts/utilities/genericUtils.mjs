@@ -25,6 +25,11 @@ function translate(key) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+function decimalToFraction(decimal) {
+    if (!decimal) return 0;
+    if (Number(decimal) >= 1) return Number(decimal);
+    return '1/' + 1 / Number(decimal);
+}
 export default {
     setProperty,
     getProperty,
@@ -33,5 +38,6 @@ export default {
     mergeObject,
     convertDistance,
     translate,
-    sleep
+    sleep,
+    decimalToFraction
 };

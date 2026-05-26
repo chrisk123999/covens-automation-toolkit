@@ -1,4 +1,4 @@
-import {registerHooks} from './hooks.mjs';
+import {readyHooks, initHooks} from './hooks.mjs';
 import {registerSettings} from './settings.mjs';
 import * as lib from './lib/_module.mjs';
 import * as utils from './utilities/_module.mjs';
@@ -9,11 +9,13 @@ import CatMultiCombobox from './applications/elements/multi-combobox.mjs';
 import {test} from './test.mjs';
 import * as patches from './patches/_module.mjs';
 import * as integration from './integration/_modules.mjs';
-
 customElements.define(CatCombobox.tagName, CatCombobox);
 customElements.define(CatMultiCombobox.tagName, CatMultiCombobox);
-
+Hooks.once('i18nInit', () => {
+    integration.dae.initFlags();
+});
 Hooks.once('init', () => {
+    initHooks();
     registerSettings();
     lib.queries.registerQueries();
 });
@@ -25,10 +27,11 @@ Hooks.once('ready', () => {
     lib.constants.macros = new lib.Macros.RegisteredMacros();
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
     lib.constants.scales = new lib.Scales.RegisteredScales();
-    registerHooks();
+    readyHooks();
     patches.documentPatching.patch(true);
-    patches.effectPatching.patch(true);
     patches.actorPatching.patch(true);
+    patches.effectPatching.patch(true);
+    integration.dae.injectFlags();
     lib.constants.macros.registerFnMacro(test); // Testing
     lib.constants.scales.registerScale({ // More Testing
         source: 'cat',

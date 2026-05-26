@@ -63,21 +63,7 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
     let result = await runDialog(userId, title, content, inputs, buttons);
     return result?.[input.name];
 }
-async function selectDocumentDialog(title, content, documents, {
-    max = 1,
-    displayTooltips = false,
-    sort = null,
-    userId = game.user.id,
-    addNoneDocument = false,
-    showCR = false,
-    showSpellLevel = false,
-    showUses = false,
-    displayReference = false,
-    combobox = false,
-    checkbox = false,
-    weights = {},
-    maxes = {}
-} = {}) {
+async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}} = {}) {
     if (sort === 'alphabetical') documents = [...documents].sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     else if (sort === 'cr') documents = [...documents].sort((a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0));
     else if (sort === 'level') documents = [...documents].sort((a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
