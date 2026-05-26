@@ -1,0 +1,12 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <fieldset data-section="embedded">
+        <legend>{{localize "CAT.MEDKIT.Sections.Embedded"}}</legend>
+        <p class="hint">{{localize "CAT.MEDKIT.Embedded.Count" count=embeddedCount}}</p>
+        <div>
+            <button type="button" data-action="openEmbeddedMacros">
+                <i class="fa-solid fa-feather-pointed"></i>
+                {{localize "CAT.MEDKIT.EditEmbedded"}}
+            </button>
+        </div>
+    </fieldset>
+</section>

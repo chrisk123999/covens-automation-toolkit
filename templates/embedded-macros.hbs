@@ -1,0 +1,34 @@
+<div class="cat-embedded-macros-shell">
+    <header class="cat-embedded-macros-header">
+        <span class="cat-embedded-macros-title">{{title}}</span>
+        <button type="button" class="cat-medkit-close" data-action="close" data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
+            <i class="fas fa-xmark" aria-hidden="true"></i>
+        </button>
+    </header>
+    <div class="cat-embedded-macros-body">
+        {{#if rows.length}}
+            <table class="cat-embedded-macros-table">
+                <thead>
+                    <tr>
+                        <th>{{localize "CAT.MEDKIT.EmbeddedMacros.Cols.Name"}}</th>
+                        <th>{{localize "CAT.MEDKIT.EmbeddedMacros.Cols.Event"}}</th>
+                        <th>{{localize "CAT.MEDKIT.EmbeddedMacros.Cols.Pass"}}</th>
+                        <th>{{localize "CAT.MEDKIT.EmbeddedMacros.Cols.Source"}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each rows}}
+                        <tr>
+                            <td>{{name}}</td>
+                            <td>{{event}}</td>
+                            <td>{{pass}}</td>
+                            <td>{{source}}</td>
+                        </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.EmbeddedMacros.None"}}</p>
+        {{/if}}
+    </div>
+</div>

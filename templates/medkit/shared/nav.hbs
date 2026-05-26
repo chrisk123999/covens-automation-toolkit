@@ -1,0 +1,9 @@
+<nav class="cat-medkit-nav tabs" aria-roledescription="{{localize 'SHEETS.FormNavLabel'}}">
+    {{#each tabs}}
+        <a data-action="tab" data-group="{{group}}" data-tab="{{id}}" class="{{cssClass}}" data-tooltip aria-label="{{localize label}}">
+            {{#if icon}}<i class="{{icon}}" inert></i>{{/if}}
+            <span>{{localize label}}</span>
+            {{#if indicator}}<span class="cat-medkit-nav-pip" data-indicator="{{indicator}}"></span>{{/if}}
+        </a>
+    {{/each}}
+</nav>

@@ -24,15 +24,23 @@ export default class CatMultiCombobox extends HTMLElement {
         const name = this.getAttribute('name') ?? '';
         const placeholder = this.getAttribute('placeholder') || _loc('CAT.Dialog.Combobox.Filter');
 
-        this.#options = Array.from(this.querySelectorAll('option')).map(o => ({
-            value: o.value,
-            label: o.textContent ?? '',
-            image: o.dataset.image ?? '',
-            tag: o.dataset.tag ?? '',
-            weight: Number(o.dataset.weight) || 1,
-            max: o.dataset.max != null ? Number(o.dataset.max) : null
-        })).filter(o => o.max == null || o.max > 0);
+        const preselected = [];
+        this.#options = Array.from(this.querySelectorAll('option')).map(o => {
+            if (o.hasAttribute('selected')) {
+                const amount = Number(o.dataset.amount);
+                preselected.push([o.value, this.#amountsMode ? (amount > 0 ? amount : 1) : 1]);
+            }
+            return {
+                value: o.value,
+                label: o.textContent ?? '',
+                image: o.dataset.image ?? '',
+                tag: o.dataset.tag ?? '',
+                weight: Number(o.dataset.weight) || 1,
+                max: o.dataset.max != null ? Number(o.dataset.max) : null
+            };
+        }).filter(o => o.max == null || o.max > 0);
         this.replaceChildren();
+        for (const [value, amount] of preselected) this.#selected.set(value, amount);
 
         this.#hidden = document.createElement('input');
         this.#hidden.type = 'hidden';
@@ -67,6 +75,7 @@ export default class CatMultiCombobox extends HTMLElement {
 
         this.append(this.#hidden, field, this.#chipsWrap, this.#list);
         this.#renderOptions('');
+        this.#renderChips();
         this.#syncHidden();
         this.#updateCounter();
 

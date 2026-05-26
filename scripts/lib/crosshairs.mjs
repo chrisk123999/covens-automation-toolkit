@@ -262,7 +262,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
             this.handlers.mw = event => {
                 if (event.ctrlKey) event.preventDefault();
                 if (!event.altKey) event.stopPropagation();
-                // eslint-disable-next-line no-undef
+                 
                 const delta = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 30 : 15;
                 const snap = event.ctrlKey ? delta : 5;
                 if (event.shiftKey && !this.lockSize) {

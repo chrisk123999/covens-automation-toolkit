@@ -1,0 +1,528 @@
+import {constants} from '../../lib/_module.mjs';
+import {documentUtils, genericUtils, automationUtils, dialogUtils} from '../../utilities/_module.mjs';
+import EmbeddedMacrosApp from '../embedded-macros.mjs';
+const {fields} = foundry.data;
+
+const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+
+// Shared shell + in-memory state model + actions for every CAT medkit app.
+// Subclasses declare DEFAULT_OPTIONS (id), PARTS, TABS, KEEP_PATHS, and override
+// `static updateDocument` for doc-type-specific source-switch apply logic.
+export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2) {
+    #document;
+    /** In-memory mutable copy of document.flags.cat; flushed on Save. */
+    #flags;
+    /** In-memory mutable source selection; flushed on Save. */
+    #selectedSource;
+    /** In-memory mutable system.source.rules; flushed on Save. */
+    #rulesValue;
+
+    constructor({document, ...options}) {
+        super({...options});
+        this.#document = document;
+        this.#hydrateState();
+    }
+
+    #hydrateState() {
+        this.#flags = foundry.utils.deepClone(this.#document.flags.cat ?? {});
+        this.#selectedSource = documentUtils.getSource(this.#document) ?? 'none';
+        this.#rulesValue = this.#document.system?.source?.rules ?? null;
+    }
+
+    static DEFAULT_OPTIONS = {
+        id: 'cat-medkit-window',
+        classes: ['cat', 'cat-medkit'],
+        window: {frame: false, positioned: true},
+        position: {width: 700, height: 'auto'},
+        tag: 'form',
+        form: {submitOnChange: false, closeOnSubmit: false},
+        actions: {
+            update: MedkitApp.#update,
+            applyDefault: MedkitApp.#applyDefault,
+            applyAvailable: MedkitApp.#applyAvailable,
+            gotoTab: MedkitApp.#gotoTab,
+            save: MedkitApp.#save,
+            saveClose: MedkitApp.#saveClose,
+            cancel: MedkitApp.#cancel,
+            openEmbeddedMacros: MedkitApp.#openEmbeddedMacros,
+            addDocument: MedkitApp.#addDocument,
+            removeDocument: MedkitApp.#removeDocument
+        }
+    };
+
+    /** Header/nav/footer parts shared by every medkit. Subclass spreads into its own PARTS. */
+    static SHARED_PARTS = {
+        header: {template: 'modules/cat/templates/medkit/shared/header.hbs'},
+        nav: {template: 'modules/cat/templates/medkit/shared/nav.hbs'},
+        footer: {template: 'modules/cat/templates/medkit/shared/footer.hbs'}
+    };
+
+    static PARTS = {...MedkitApp.SHARED_PARTS};
+
+    static TABS = {sheet: {tabs: [], initial: undefined}};
+
+    static KEEP_PATHS = [];
+
+    get document() {
+        return this.#document;
+    }
+
+    get title() {
+        return _loc('CAT.MEDKIT.Title', {name: this.#document.name});
+    }
+
+    get isDirty() {
+        const committedFlags = this.#document.flags.cat ?? {};
+        const committedSource = documentUtils.getSource(this.#document) ?? 'none';
+        const committedRules = this.#document.system?.source?.rules ?? null;
+        return !foundry.utils.equals(this.#flags, committedFlags)
+            || this.#selectedSource !== committedSource
+            || this.#rulesValue !== committedRules;
+    }
+
+    _getFlags() { return this.#flags; }
+    _getSelectedSource() { return this.#selectedSource; }
+    _setSelectedSource(value) { this.#selectedSource = value; }
+    _getRulesValue() { return this.#rulesValue; }
+
+    async _preparePartContext(partId, context) {
+        const partContext = await super._preparePartContext(partId, context);
+        if (partId in partContext.tabs) partContext.tab = partContext.tabs[partId];
+        if (partId === 'nav') {
+            partContext.tabs = foundry.utils.deepClone(partContext.tabs);
+            if (partContext.tabs.configuration && context.configurationCategories?.length) {
+                partContext.tabs.configuration.indicator = 'configurable';
+            }
+            if (partContext.tabs.generic && context.genericSelected?.length) {
+                partContext.tabs.generic.indicator = 'generic';
+            }
+        }
+        return partContext;
+    }
+
+    async _prepareContext(options) {
+        const context = await super._prepareContext(options);
+        context.document = this.#document;
+        context.label = this.#document.name;
+        context.medkitStatus = constants.MEDKIT_STATUSES?.UNKNOWN;
+        context.statusLabel = 'CAT.MEDKIT.STATUSES.Unavailable';
+        context.isDirty = this.isDirty;
+        context.embeddedCount = (this.#flags.embeddedMacros ?? []).length;
+        context.buttons = [
+            {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Cancel', name: 'cancel', icon: 'fa-solid fa-xmark', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
+            {type: 'button', action: 'saveClose', label: 'CAT.MEDKIT.Footer.SaveClose', name: 'saveClose', icon: 'fa-solid fa-check', tooltip: 'CAT.MEDKIT.Footer.SaveCloseTooltip'},
+            {type: 'button', action: 'save', label: 'CAT.MEDKIT.Footer.Save', name: 'save', icon: 'fa-solid fa-download', tooltip: 'CAT.MEDKIT.Footer.SaveTooltip'}
+        ];
+        return context;
+    }
+
+    // Convert AutomationConfig[] into template-ready category groups.
+    _prepareConfigurationCategories(automation) {
+        const configs = automation?.config;
+        if (!configs?.length) return [];
+        const currentValues = this.#flags.config ?? {};
+        const COMBOBOX_THRESHOLD = 8;
+        const grouped = new Map();
+        for (const cfg of configs) {
+            const category = cfg.category ?? 'general';
+            if (!grouped.has(category)) {
+                grouped.set(category, {
+                    id: category,
+                    label: _loc(`CAT.MEDKIT.Categories.${category}.Label`),
+                    tooltip: `CAT.MEDKIT.Categories.${category}.Tooltip`,
+                    options: []
+                });
+            }
+            const value = currentValues[cfg.key] ?? cfg.default;
+            const option = {
+                key: cfg.key,
+                name: `flags.cat.config.${cfg.key}`,
+                label: cfg.label,
+                value,
+                tooltip: cfg.tooltip,
+                i18nOption: cfg.i18nOption ? _loc(cfg.i18nOption) : undefined
+            };
+            switch (cfg.type) {
+                case 'checkbox':
+                    option.field = new fields.BooleanField({label: cfg.label});
+                    break;
+                case 'number':
+                    option.field = new fields.NumberField({label: cfg.label});
+                    break;
+                case 'text':
+                    option.field = new fields.StringField({label: cfg.label});
+                    break;
+                case 'file':
+                    option.field = new fields.FilePathField({label: cfg.label, categories: cfg.fileType ? [cfg.fileType.toUpperCase()] : ['IMAGE']});
+                    break;
+                case 'select': {
+                    const opts = typeof cfg.options === 'function' ? cfg.options() : (cfg.options ?? []);
+                    const sorted = [...opts].sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+                    const choices = sorted.reduce((acc, o) => { acc[o.value] = o.label; return acc; }, {});
+                    if (sorted.length > COMBOBOX_THRESHOLD) {
+                        option.isCombobox = true;
+                        option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image}));
+                    } else {
+                        option.field = new fields.StringField({label: cfg.label, choices, required: true, blank: false});
+                    }
+                    break;
+                }
+                case 'select-many': {
+                    const opts = typeof cfg.options === 'function' ? cfg.options() : (cfg.options ?? []);
+                    const sorted = [...opts].sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+                    const selectedValues = Array.isArray(value) ? value : [];
+                    option.isMultiCombobox = true;
+                    option.choices = sorted.map(o => ({
+                        value: o.value,
+                        label: o.label,
+                        image: o.image,
+                        selected: selectedValues.includes(o.value)
+                    }));
+                    option.value = selectedValues;
+                    break;
+                }
+                case 'documents': {
+                    option.isDocuments = true;
+                    option.documents = (Array.isArray(value) ? value : []).map(uuid => {
+                        const doc = fromUuidSync(uuid);
+                        return {uuid, name: doc?.name ?? uuid, img: doc?.img};
+                    });
+                    break;
+                }
+                default:
+                    option.field = new fields.StringField({label: cfg.label});
+            }
+            grouped.get(category).options.push(option);
+        }
+        return Array.from(grouped.values());
+    }
+
+    // TODO: replace with constants.macros.getGenericMacros() once backend exposes the `generic` flag on FnMacro.
+    _getGenericMacros() {
+        return (constants.macros?.fnMacros ?? []).filter(m => m.generic);
+    }
+
+    _prepareGenericFeatures() {
+        const macros = this._getGenericMacros();
+        const currentGeneric = this.#flags.config?.generic ?? {};
+        const selectedKeys = Object.keys(currentGeneric);
+        const choices = macros.map(m => ({
+            value: m.identifier,
+            label: m.label ?? m.identifier,
+            image: m.img
+        }));
+        const features = selectedKeys.map(key => {
+            const macro = macros.find(m => m.identifier === key);
+            const cfg = macro?.genericConfig ?? [];
+            const stored = currentGeneric[key] ?? {};
+            const options = cfg.map(c => {
+                const value = stored[c.key] ?? c.default;
+                const option = {key: c.key, name: `flags.cat.config.generic.${key}.${c.key}`, label: c.label, value};
+                switch (c.type) {
+                    case 'checkbox': option.field = new fields.BooleanField({label: c.label}); break;
+                    case 'number': option.field = new fields.NumberField({label: c.label}); break;
+                    case 'text': option.field = new fields.StringField({label: c.label}); break;
+                    default: option.field = new fields.StringField({label: c.label});
+                }
+                return option;
+            });
+            return {id: key, label: macro?.label ?? key, options};
+        });
+        return {choices, selected: selectedKeys, features};
+    }
+
+    // TODO: source-filter populator deferred until CPR pattern / Chris confirms desired source list.
+    // TODO: 3rd-party badge gated by a not-yet-existing setting; column hidden via class.
+    _prepareRegisteredMacros() {
+        const identifier = documentUtils.getIdentifier(this.#document);
+        if (!identifier || !constants.macros) return {rows: [], sources: {all: _loc('CAT.MEDKIT.Macros.AllSources')}};
+        const all = [...(constants.macros.fnMacros ?? []), ...(constants.macros.overwriteMacros ?? [])];
+        const matches = all.filter(m => m.identifier === identifier);
+        const rows = [];
+        for (const m of matches) {
+            for (const [event, entries] of Object.entries(m.macros ?? {})) {
+                for (const entry of entries) {
+                    rows.push({
+                        name: entry.macroName ?? entry.name ?? m.identifier,
+                        source: m.source,
+                        sourceLabel: constants.automations?.getSourceName?.(m.source) ?? m.source,
+                        event,
+                        pass: entry.pass ?? '-',
+                        rules: m.rules,
+                        rulesBadge: m.rules === '2014' ? 'legacy' : m.rules === '2024' ? 'modern' : null,
+                        isThirdParty: !!entry.thirdParty
+                    });
+                }
+            }
+        }
+        const sources = {all: _loc('CAT.MEDKIT.Macros.AllSources')};
+        for (const row of rows) {
+            if (!(row.source in sources)) sources[row.source] = row.sourceLabel;
+        }
+        return {rows, sources};
+    }
+
+    // CONFIGURABLE + GENERIC overlay UP_TO_DATE; nav pips surface those.
+    _prepareHero({availableAutomations, sourceLabel, currentVersion, configCount, genericCount, statusLabel, medkitStatus}) {
+        const isOutdated = medkitStatus?.startsWith('outdated');
+        const isUpToDate = medkitStatus?.startsWith('up-to-date')
+            || statusLabel === 'CAT.MEDKIT.STATUSES.Configurable'
+            || statusLabel === 'CAT.MEDKIT.STATUSES.Generic';
+        if (isOutdated) {
+            const newest = availableAutomations.find(a => a.source === this.#selectedSource);
+            return {
+                variant: 'outdated',
+                medkitStatus,
+                icon: 'fa-solid fa-circle-exclamation',
+                heading: _loc('CAT.MEDKIT.Hero.Outdated.Heading', {current: currentVersion ?? '?', next: newest?.version ?? '?'}),
+                copy: _loc('CAT.MEDKIT.Hero.Outdated.Copy', {source: sourceLabel}),
+                cta: {action: 'update', label: _loc('CAT.MEDKIT.Hero.Outdated.CTA')}
+            };
+        }
+        if (isUpToDate) {
+            let cta;
+            if (configCount > 0) cta = {action: 'gotoTab', tab: 'configuration', label: _loc('CAT.MEDKIT.Hero.Configurable.CTA')};
+            else if (genericCount > 0) cta = {action: 'gotoTab', tab: 'generic', label: _loc('CAT.MEDKIT.Hero.Generic.CTA')};
+            return {
+                variant: 'uptodate',
+                medkitStatus,
+                icon: 'fa-solid fa-circle-check',
+                heading: _loc('CAT.MEDKIT.Hero.UpToDate.Heading'),
+                copy: _loc('CAT.MEDKIT.Hero.UpToDate.Copy', {source: sourceLabel}),
+                cta
+            };
+        }
+        if (medkitStatus === 'available') {
+            const labelFor = src => constants.automations.getSourceName?.(src) ?? src;
+            const sources = availableAutomations.map(a => ({value: a.source, label: labelFor(a.source)}));
+            return {
+                variant: 'available',
+                isAvailable: true,
+                medkitStatus,
+                icon: 'fa-solid fa-circle-plus',
+                heading: _loc('CAT.MEDKIT.Hero.Available.Heading'),
+                copy: sources.map(s => s.label).join(', '),
+                sources
+            };
+        }
+        return {
+            variant: 'unavailable',
+            medkitStatus,
+            icon: 'fa-solid fa-circle-question',
+            heading: _loc('CAT.MEDKIT.Hero.Unavailable.Heading'),
+            copy: _loc('CAT.MEDKIT.Hero.Unavailable.Copy')
+        };
+    }
+
+    async _commit() {
+        const committedSource = documentUtils.getSource(this.#document) ?? 'none';
+        if (this.#selectedSource !== committedSource) {
+            if (this.#selectedSource === 'none') {
+                const sourceData = this.#document._stats?.compendiumSource ? (await fromUuid(this.#document._stats.compendiumSource)) : null;
+                const updateData = sourceData?.toObject?.() ?? {};
+                genericUtils.setProperty(updateData, 'flags.cat', _del);
+                await this.#document.update(updateData, {diff: false});
+            } else {
+                const selectedAutomation = automationUtils.getAvailableAutomations(this.#document).find(a => a.source === this.#selectedSource);
+                if (selectedAutomation && this.constructor.updateDocument) {
+                    const selectedDocument = await fromUuid(selectedAutomation.uuid);
+                    if (selectedDocument) await this.constructor.updateDocument(this.#document, selectedDocument, selectedAutomation);
+                }
+            }
+        }
+        const updates = {flags: {cat: this.#flags}};
+        if (this.#rulesValue !== this.#document.system?.source?.rules) {
+            updates['system.source.rules'] = this.#rulesValue;
+        }
+        await this.#document.update(updates);
+        this.#hydrateState();
+    }
+
+    /** @this {MedkitApp} */
+    static async #save() {
+        await this._commit();
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static async #saveClose() {
+        await this._commit();
+        this.close();
+    }
+
+    /** @this {MedkitApp} */
+    static async #cancel() {
+        if (this.isDirty) {
+            const confirmed = await dialogUtils.confirm('CAT.MEDKIT.Footer.DiscardTitle', _loc('CAT.MEDKIT.Footer.DiscardPrompt'));
+            if (!confirmed) return;
+        }
+        this.#hydrateState();
+        this.close();
+    }
+
+    /** @this {MedkitApp} */
+    static async #update() {
+        const source = documentUtils.getSource(this.#document);
+        if (!source) return;
+        const before = documentUtils.getVersion(this.#document);
+        await automationUtils.updateItem(this.#document, {source});
+        const after = documentUtils.getVersion(this.#document);
+        const identifier = documentUtils.getIdentifier(this.#document) ?? this.#document.name;
+        ui.notifications.info(_loc('CAT.MEDKIT.Notif.Updated', {identifier, before: before ?? '?', after: after ?? '?'}));
+        this.#hydrateState();
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static async #applyAvailable() {
+        const select = this.element.querySelector('select[name="heroSourcePick"]');
+        const pickedSource = select?.value;
+        if (!pickedSource) return;
+        const available = automationUtils.getAvailableAutomations(this.#document);
+        const pick = available.find(a => a.source === pickedSource);
+        if (!pick) return;
+        this.#selectedSource = pick.source;
+        await this._commit();
+        ui.notifications.info(_loc('CAT.MEDKIT.Notif.Applied', {source: constants.automations.getSourceName?.(pick.source) ?? pick.source, version: pick.version ?? '?'}));
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static async #applyDefault() {
+        const available = automationUtils.getAvailableAutomations(this.#document);
+        const priority = automationUtils.getAutomationSources();
+        const pick = priority.map(s => available.find(a => a.source === s)).find(Boolean) ?? available[0];
+        if (!pick) return;
+        this.#selectedSource = pick.source;
+        await this._commit();
+        ui.notifications.info(_loc('CAT.MEDKIT.Notif.Applied', {source: constants.automations.getSourceName?.(pick.source) ?? pick.source, version: pick.version ?? '?'}));
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static #gotoTab(_event, target) {
+        const tab = target.dataset.tab;
+        if (tab) this.changeTab(tab, 'sheet');
+    }
+
+    /** @this {MedkitApp} */
+    static async #openEmbeddedMacros() {
+        new EmbeddedMacrosApp({document: this.#document}).render(true);
+    }
+
+    /** @this {MedkitApp} */
+    static async #addDocument(_event, target) {
+        const group = target.closest('[data-config-key]');
+        const key = group?.dataset.configKey;
+        const input = group?.querySelector('input[type="text"]');
+        const uuid = input?.value?.trim();
+        if (!key || !uuid) return;
+        const doc = fromUuidSync(uuid);
+        if (!doc) {
+            ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
+            return;
+        }
+        const path = `config.${key}`;
+        const current = foundry.utils.getProperty(this.#flags, path) ?? [];
+        if (current.includes(uuid)) return;
+        foundry.utils.setProperty(this.#flags, path, [...current, uuid]);
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static async #removeDocument(_event, target) {
+        const group = target.closest('[data-config-key]');
+        const key = group?.dataset.configKey;
+        const uuid = target.dataset.uuid;
+        if (!key || !uuid) return;
+        const path = `config.${key}`;
+        const current = foundry.utils.getProperty(this.#flags, path) ?? [];
+        const next = current.filter(u => u !== uuid);
+        foundry.utils.setProperty(this.#flags, path, next);
+        this.render();
+    }
+
+    // Frameless windows have no built-in drag handle; wire one on our custom header.
+    #enableDragging() {
+        const handle = this.element?.querySelector('.cat-medkit-header');
+        if (!handle || handle.dataset.dragWired === '1') return;
+        handle.dataset.dragWired = '1';
+        const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
+        const orig = drag._onDragMouseDown.bind(drag);
+        drag._onDragMouseDown = (event) => {
+            if (event.target.closest('button, a, input, select, [data-action]')) return;
+            orig(event);
+        };
+    }
+
+    bringToFront() {
+        if (!this.element) return;
+        this.position.zIndex = ++ApplicationV2._maxZ;
+        this.element.style.zIndex = String(this.position.zIndex);
+        ui.activeWindow = this;
+    }
+
+    // Mutates in-memory state; document.update is deferred until Save / Save & Close.
+    async _onChangeForm(formConfig, event) {
+        await super._onChangeForm(formConfig, event);
+        const target = event.target;
+        if (!target?.name) return;
+        const name = target.name;
+        const inMultiCombobox = !!target.closest?.('cat-multi-combobox');
+        let value;
+        if (inMultiCombobox) {
+            // Hidden input value is JSON.stringify(values[]) (or [{value,amount}] in amounts mode).
+            try { value = target.value ? JSON.parse(target.value) : []; }
+            catch { value = []; }
+        } else if (target.type === 'checkbox') value = target.checked;
+        else if (target.type === 'number') value = Number(target.value);
+        else value = target.value;
+        if (name === 'system.source.rules') {
+            this.#rulesValue = value;
+        } else if (name === 'selectedSource') {
+            this.#selectedSource = value;
+        } else if (name.startsWith('flags.cat.')) {
+            const path = name.slice('flags.cat.'.length);
+            // TODO: Generic feature picker (`flags.cat.config.generic`) expects {key: {config}} object,
+            // not the value-list shape multi-combobox produces. Special-case once backend wires `generic` flag.
+            foundry.utils.setProperty(this.#flags, path, value);
+        }
+        this.render();
+    }
+
+    #wireDocumentDrop() {
+        for (const el of this.element.querySelectorAll('.cat-medkit-documents')) {
+            if (el.dataset.dropWired === '1') continue;
+            el.dataset.dropWired = '1';
+            el.addEventListener('dragover', e => e.preventDefault());
+            el.addEventListener('drop', async event => {
+                event.preventDefault();
+                const key = el.dataset.configKey;
+                if (!key) return;
+                const payload = foundry.applications.ux.DragDrop.implementation.getPayload(event);
+                const uuid = payload?.uuid;
+                if (!uuid) return;
+                const doc = fromUuidSync(uuid);
+                if (!doc) return ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
+                const path = `config.${key}`;
+                const current = foundry.utils.getProperty(this.#flags, path) ?? [];
+                if (current.includes(uuid)) return;
+                foundry.utils.setProperty(this.#flags, path, [...current, uuid]);
+                this.render();
+            });
+        }
+    }
+
+    _onRender(context, options) {
+        super._onRender(context, options);
+        this.#enableDragging();
+        this.#wireDocumentDrop();
+        if (options.isFirstRender) {
+            this.bringToFront();
+            const win = this.element.ownerDocument.defaultView ?? window;
+            const w = this.element.offsetWidth || 700;
+            const h = this.element.offsetHeight || 500;
+            this.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
+        }
+    }
+}
