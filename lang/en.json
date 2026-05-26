@@ -85,6 +85,19 @@
         "Name": "Integration",
         "Label": "Open",
         "Hint": "Settings for various module integrations."
+      },
+      "Interface": {
+        "Name": "Interface",
+        "Label": "Open",
+        "Hint": "Settings for the user interface."
+      },
+      "EffectDescriptions": {
+        "Name": "Automatic Effect Descriptions",
+        "Hint": "When enabled, effects without descriptions will automatically be filled in from the origin item."
+      },
+      "EffectDescriptionsNPC": {
+        "Name": "Hide NPC Effect Descriptions",
+        "Hint": "When enabled, the Automatic Effect Description setting will not apply for NPC created effects."
       }
     },
     "DAE": {
@@ -96,6 +109,10 @@
         "Name": "{condition} Condition Resistance",
         "Description": "Condition Resistance to {condition}, roll at advantage to save. 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
       }
+    },
+    "Generic": {
+      "Disabled": "Disabled",
+      "Chat": "Chat"
     }
   }
 }

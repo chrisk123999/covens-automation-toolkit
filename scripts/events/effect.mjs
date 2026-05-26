@@ -35,6 +35,7 @@ async function updateActiveEffect(effect, updates, options, userId) {
 }
 function preCreateActiveEffect(effect, updates, options, userId) {
     effects.noAnimation(effect, options);
+    effects.effectDescription(effect, updates);
     if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
     new Events.EffectEvent(effect, constants.effectPasses.preCreated, {options, updates}).runSync();
 }

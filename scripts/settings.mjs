@@ -58,12 +58,27 @@ const settings = {
     hideNames: {
         type: Boolean,
         default: false,
-        menu: 'general'
+        menu: 'interface'
     },
     diceSoNice: {
         type: Boolean,
         default: true,
         menu: 'integration'
+    },
+    effectDescriptions: {
+        type: Number,
+        default: 2, // Change this to 0 once the setting menu is fixed.
+        choices: {
+            0: 'CAT.Generic.Disabled',
+            1: 'CAT.Generic.Chat',
+            2: 'DND5E.Description'
+        },
+        menu: 'interface'
+    },
+    effectDescriptionsNPC: {
+        type: Boolean,
+        default: false,
+        menu: 'interface'
     }
 };
 const menus = {
@@ -75,6 +90,9 @@ const menus = {
     },
     integration: {
         icon: 'fas fa-puzzle-piece'
+    },
+    interface: {
+        icon: 'fas fa-display'
     }
 };
 
