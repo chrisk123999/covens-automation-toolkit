@@ -39,6 +39,7 @@
 
     <fieldset data-section="automation">
         <legend>{{localize "CAT.MEDKIT.Sections.Automation"}}</legend>
+        {{formGroup fields.name name="flags.cat.nameOverride" value=nameOverride hint=(localize "CAT.MEDKIT.Name.Hint")}}
         {{formGroup fields.identifier disabled=true value=document.identifier hint=(localize "CAT.MEDKIT.Identifier.Hint")}}
         {{formGroup fields.source name="selectedSource" disabled=disableSources choices=availableSources value=source hint=(localize (ifThen disableSources "CAT.MEDKIT.Source.HintNone" "CAT.MEDKIT.Source.Hint"))}}
         {{#if version}}

@@ -1,6 +1,5 @@
 import MedkitApp from './base.mjs';
 
-// TODO per plan board: Embedded, Macros.
 export default class TokenMedkit extends MedkitApp {
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-token'
@@ -8,15 +7,25 @@ export default class TokenMedkit extends MedkitApp {
 
     static PARTS = {
         ...MedkitApp.SHARED_PARTS,
-        info: {template: 'modules/cat/templates/medkit/shared/stub.hbs'}
+        embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
+        macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'}
     };
 
     static TABS = {
         sheet: {
             tabs: [
-                {id: 'info', icon: 'fa-solid fa-circle-info', label: 'CAT.MEDKIT.TABS.Automation'}
+                {id: 'embedded', icon: 'fa-solid fa-feather-pointed', label: 'CAT.MEDKIT.TABS.Embedded'},
+                {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'}
             ],
-            initial: 'info'
+            initial: 'embedded'
         }
     };
+
+    async _prepareContext(options) {
+        const context = await super._prepareContext(options);
+        const macroData = this._prepareRegisteredMacros();
+        context.macroRows = macroData.rows;
+        context.macroSources = macroData.sources;
+        return context;
+    }
 }

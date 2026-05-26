@@ -24,8 +24,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #hydrateState() {
-        this.#flags = foundry.utils.deepClone(this.#document.flags.cat ?? {});
-        this.#selectedSource = documentUtils.getSource(this.#document) ?? 'none';
+        this.#flags = foundry.utils.deepClone(this.#document.flags?.cat ?? {});
+        this.#selectedSource = this.#document.flags ? (documentUtils.getSource(this.#document) ?? 'none') : 'none';
         this.#rulesValue = this.#document.system?.source?.rules ?? null;
     }
 
@@ -46,7 +46,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             cancel: MedkitApp.#cancel,
             openEmbeddedMacros: MedkitApp.#openEmbeddedMacros,
             addDocument: MedkitApp.#addDocument,
-            removeDocument: MedkitApp.#removeDocument
+            removeDocument: MedkitApp.#removeDocument,
+            massApply: MedkitApp.#massApply
         }
     };
 
@@ -68,12 +69,13 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     get title() {
-        return _loc('CAT.MEDKIT.Title', {name: this.#document.name});
+        const name = this.#document.metadata?.label ?? this.#document.name ?? '';
+        return _loc('CAT.MEDKIT.Title', {name});
     }
 
     get isDirty() {
-        const committedFlags = this.#document.flags.cat ?? {};
-        const committedSource = documentUtils.getSource(this.#document) ?? 'none';
+        const committedFlags = this.#document.flags?.cat ?? {};
+        const committedSource = this.#document.flags ? (documentUtils.getSource(this.#document) ?? 'none') : 'none';
         const committedRules = this.#document.system?.source?.rules ?? null;
         return !foundry.utils.equals(this.#flags, committedFlags)
             || this.#selectedSource !== committedSource
@@ -84,6 +86,9 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     _getSelectedSource() { return this.#selectedSource; }
     _setSelectedSource(value) { this.#selectedSource = value; }
     _getRulesValue() { return this.#rulesValue; }
+
+    // Override per subclass to return iterable of Items for mass apply.
+    _getMassApplyItems() { return []; }
 
     async _preparePartContext(partId, context) {
         const partContext = await super._preparePartContext(partId, context);
@@ -103,7 +108,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
         context.document = this.#document;
-        context.label = this.#document.name;
+        context.label = this.#document.metadata?.label ?? this.#document.name ?? '';
         context.medkitStatus = constants.MEDKIT_STATUSES?.UNKNOWN;
         context.statusLabel = 'CAT.MEDKIT.STATUSES.Unavailable';
         context.isDirty = this.isDirty;
@@ -323,11 +328,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 genericUtils.setProperty(updateData, 'flags.cat', _del);
                 await this.#document.update(updateData, {diff: false});
             } else {
-                const selectedAutomation = automationUtils.getAvailableAutomations(this.#document).find(a => a.source === this.#selectedSource);
-                if (selectedAutomation && this.constructor.updateDocument) {
-                    const selectedDocument = await fromUuid(selectedAutomation.uuid);
-                    if (selectedDocument) await this.constructor.updateDocument(this.#document, selectedDocument, selectedAutomation);
-                }
+                await automationUtils.updateItem(this.#document, {source: this.#selectedSource});
             }
         }
         const updates = {flags: {cat: this.#flags}};
@@ -403,6 +404,21 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     static #gotoTab(_event, target) {
         const tab = target.dataset.tab;
         if (tab) this.changeTab(tab, 'sheet');
+    }
+
+    /** @this {MedkitApp} */
+    static async #massApply() {
+        const items = Array.from(this._getMassApplyItems() ?? []);
+        if (!items.length) return;
+        const confirmed = await dialogUtils.confirm('CAT.MEDKIT.MassApply.ConfirmTitle', _loc('CAT.MEDKIT.MassApply.ConfirmPrompt'));
+        if (!confirmed) return;
+        for (const item of items) {
+            const source = documentUtils.getSource(item);
+            if (!source) continue;
+            await automationUtils.updateItem(item, {source});
+        }
+        ui.notifications.info(_loc('CAT.MEDKIT.MassApply.Done'));
+        this.render();
     }
 
     /** @this {MedkitApp} */

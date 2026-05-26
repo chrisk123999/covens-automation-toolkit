@@ -5,10 +5,24 @@
       "HeaderLabel": "CAT Medkit",
       "TABS": {
         "Automation": "Info",
+        "Automations": "Automations",
         "Configuration": "Configuration",
         "Generic": "Generic Automations",
         "Embedded": "Embedded Macros",
-        "Macros": "Registered Macros"
+        "Macros": "Registered Macros",
+        "DocProps": "Document Properties"
+      },
+      "MassApply": {
+        "Label": "Mass Apply / Update",
+        "Button": "Mass Apply / Update",
+        "Tooltip": "Apply / update automations for every item under this document.",
+        "ConfirmTitle": "Mass apply automations?",
+        "ConfirmPrompt": "Apply registered automations to every item under this document? This rewrites their data and cannot be undone.",
+        "Done": "Mass apply complete."
+      },
+      "Name": {
+        "Label": "Match Name",
+        "Hint": "Override the name used when matching this item against registered automations."
       },
       "EditEmbedded": "Edit Embedded Macros",
       "Identifier": {
