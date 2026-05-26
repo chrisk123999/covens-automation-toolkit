@@ -57,12 +57,24 @@ const settings = {
     },
     hideNames: {
         type: Boolean,
-        default: false
+        default: false,
+        menu: 'general'
+    },
+    diceSoNice: {
+        type: Boolean,
+        default: true,
+        menu: 'integration'
     }
 };
 const menus = {
     devtools: {
         icon: 'fas fa-tools'
+    },
+    general: {
+        icon: 'fas fa-gears'
+    },
+    integration: {
+        icon: 'fas fa-puzzle-piece'
     }
 };
 
