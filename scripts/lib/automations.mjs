@@ -25,7 +25,7 @@ const fields = foundry.data.fields;
  */
 
 class Automation {
-    constructor(source, rules, identifier, uuid, version, {config, notes, monsterIdentifier, scales} = {}) {
+    constructor(source, rules, identifier, uuid, version, {config, notes, monsterIdentifier, scales, type} = {}) {
         this.source = source;
         this.rules = rules;
         this.identifier = identifier;
@@ -35,6 +35,7 @@ class Automation {
         this.notes = notes;
         this.monsterIdentifier = monsterIdentifier;
         this.scales = scales;
+        this.type = type;
     }
 
     /**
@@ -81,6 +82,11 @@ class Automation {
      * @type {array}
      */
     scales;
+
+    /**
+     * @type {string}
+     */
+    type;
     
     async getDocument() {
         return await fromUuid(this.uuid);
@@ -99,7 +105,8 @@ export class RegisteredAutomations {
         config: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
         notes: new fields.StringField({required: false, nullable: false}),
         monsterIdentifier: new fields.StringField({required: false, nullable: false}),
-        scales: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
+        scales: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+        type: new fields.StringField({required: false, nullable: false})
     });
     #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 
@@ -128,8 +135,8 @@ export class RegisteredAutomations {
      * @param {string} monsterIdentifier                    Match using a monster identifier as well
      * @returns {Automation[]|Automation|undefined}
      */
-    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier} = {}) {
-        const predicate = automation => automation.identifier === identifier && (rules === 'all' || automation.rules === rules) && (source === 'all' || automation.source === source) && (!monsterIdentifier || monsterIdentifier === automation.monsterIdentifier);
+    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type} = {}) {
+        const predicate = automation => automation.identifier === identifier && (rules === 'all' || automation.rules === rules) && (source === 'all' || automation.source === source) && (!monsterIdentifier || monsterIdentifier === automation.monsterIdentifier || (!type || type === automation.type));
         return multiple ? this.automations.filter(predicate) : this.automations.find(predicate);
     }
 
@@ -147,7 +154,8 @@ export class RegisteredAutomations {
             config: data.config,
             notes: data.notes,
             monsterIdentifier: data.monsterIdentifier,
-            scales: data.scales
+            scales: data.scales,
+            type: data.type
         }));
         this.sources.add(data.source);
         Logging.addEntry('DEBUG', 'Automation Registered: ' + data.identifier + ' from ' + data.source + ' with version ' + data.version);
@@ -194,8 +202,8 @@ export class RegisteredAutomations {
      * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
      * @param {string} [options.source]                                     The source of the automations
      */
-    async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, source, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}} = {}) {
-        const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation.version']});
+    async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, source, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
+        const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation.version', 'type']});
         if (!source) source = pack.metadata.packageName;
         const documentType = pack.metadata.type;
         Logging.addEntry('DEBUG', 'Automation Compendium Registered: ' + pack.metadata.label + ' from ' + pack.metadata.packageName);
@@ -205,21 +213,25 @@ export class RegisteredAutomations {
             let config;
             let notes;
             let scales;
+            let type;
             switch (rule) {
                 case '2014':
                     config = configs2014[identifier];
                     notes = notes2014[identifier];
                     scales = scales2014[identifier];
+                    type = types2014[identifier];
                     break;
                 case '2024':
                     config = configs2024[identifier];
                     notes = notes2024[identifier];
                     scales = scales2024[identifier];
+                    type = types2024[identifier];
                     break;
                 default:
                     config = configsAll[identifier];
                     notes = notesAll[identifier];
                     scales = scalesAll[identifier];
+                    type = typesAll[identifier];
                     break;
             }
             const data = {
@@ -230,7 +242,8 @@ export class RegisteredAutomations {
                 uuid: document.uuid,
                 config,
                 notes,
-                scales
+                scales,
+                type: type ?? document.type
             };
             return this.registerAutomation(data);
         });
@@ -247,7 +260,7 @@ export class RegisteredAutomations {
      * @param {Record<string, string>} [options.versions={}]                An object with identifiers as keys and versions as values
      * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
      */
-    async registerAutomationModule(id, {ignoredPackIds = [], configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}} = {}) {
+    async registerAutomationModule(id, {ignoredPackIds = [], configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
         const module = game.modules.get(id);
         if (!module?.active) return false;
         Logging.addEntry('DEBUG', 'Automation Module Registered: ' + module.title);
@@ -256,7 +269,7 @@ export class RegisteredAutomations {
         return await Promise.all(itemPacks.map(async data => {
             const pack = game.packs.get(data.id);
             if (!pack) return false;
-            return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions, rules, source: id, notes2014, notes2024, notesAll, scales2014, scales2024, scalesAll});
+            return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions, rules, source: id, notes2014, notes2024, notesAll, scales2014, scales2024, scalesAll, types2014, types2024, typesAll});
         }));
     }
 
