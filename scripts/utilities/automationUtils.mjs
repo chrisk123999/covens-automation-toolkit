@@ -5,10 +5,11 @@ function getCurrentAutomation(item) {
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item);
     const source = documentUtils.getSource(item);
-    const type = item.type === 'spell' ? 'character' : item.actor?.type ?? 'character';
-    const monsterIdentifier = type === 'npc' ? documentUtils.getIdentifier(item.actor) : undefined;
+    const type = item.type;
+    const actorType = type === 'spell' ? 'character' : item.actor?.type ?? 'character';
+    const monsterIdentifier = actorType === 'npc' ? documentUtils.getIdentifier(item.actor) : undefined;
     if (!identifier || !rules || !source) return;
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier});
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type});
 }
 // TODO: May need to improve this, went with something simple
 function getAutomationStatus(item) {
@@ -56,7 +57,8 @@ function isUpToDate(item) {
 function getAvailableAutomations(item) {
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item) ?? 'all';
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true});
+    const type = item.type;
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true}, type);
 }
 function getConfigValue(item, key) {
     return constants.automations.getConfigValue(item, key);

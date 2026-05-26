@@ -17,7 +17,7 @@ async function registerAutomations() {
         const pack = game.packs.get(id);
         if (!pack) return;
         Logging.addEntry('DEBUG', 'Automation Compendium Registered: ' + pack.metadata.label + ' from ' + pack.metadata.packageName);
-        const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.ddbimporter.version']});
+        const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.ddbimporter.version', 'type']});
         index.contents.forEach(entry => {
             const version = entry.flags.ddbimporter?.version;
             if (!version) return;
@@ -26,7 +26,8 @@ async function registerAutomations() {
                 rules: entry.system.source.rules,
                 identifier: entry.system.identifier,
                 version: version,
-                uuid: entry.uuid
+                uuid: entry.uuid,
+                type: entry.type
             });
         });
     }));
