@@ -3,17 +3,21 @@ import {regions} from '../handlers/_module.mjs';
 async function createRegion(region, options, userId) {
     if (userId != game.user.id) return;
     if (region.flags.dnd5e?.spellLevel) return;
+    await regions.regionEffects(region);
     await new Events.RegionEvent([region], constants.regionPasses.created, {options}).run();
 }
 async function updateRegion(region, updates, options, userId) {
     if (userId != game.user.id) return;
+    await regions.regionEffects(region);
     await new Events.RegionEvent([region], constants.regionPasses.updated, {options, updates}).run();
 }
 async function deleteRegion(region, options, userId) {
     if (userId != game.user.id) return;
+    await regions.regionEffects(region, true);
     await new Events.RegionEvent([region], constants.regionPasses.deleted, {options}).run();
 }
 async function createWorkflowRegion(workflow) {
+    await regions.regionEffects(workflow.template);
     await new Events.RegionEvent([workflow.template], constants.regionPasses.created, {workflow}).run();
 }
 async function preCreateRegion(region, updates, options, userId) {
