@@ -26,10 +26,10 @@ function placed(region) {
     if (effects) sourceUpdates.flags.cat.effects = effects;
     region.updateSource(sourceUpdates);
 }
-async function updateRegionEffects(token, currentRegions) {
-    const groupedRegions = (currentRegions || []).reduce((acc, region) => {
+async function updateRegionEffects(token, currentRegions = []) {
+    const groupedRegions = currentRegions.reduce((acc, region) => {
         const identifier = documentUtils.getIdentifier(region);
-        const castData = documentUtils.getSavedCastData(region) || {castLevel: 0, baseLevel: 0, saveDC: 0};
+        const castData = documentUtils.getSavedCastData(region);
         if (!acc[identifier]) acc[identifier] = [];
         acc[identifier].push({region, castData});
         return acc;
@@ -58,6 +58,7 @@ async function updateRegionEffects(token, currentRegions) {
                     const effectData = sourceEffect.toObject();
                     delete effectData._id;
                     effectData.origin = uuid;
+                    effectData.showIcon = 2;
                     genericUtils.setProperty(effectData, 'flags.cat.regionIdentifier', identifier);
                     genericUtils.setProperty(effectData, 'flags.cat.castData', castData);
                     return effectData;
@@ -118,8 +119,69 @@ async function regionEffects(region, isDelete = false) {
         return await updateRegionEffects(token, Array.from(currentRegions));
     }));
 }
+async function processRegionActivities(token, currentRegions, triggerType) {
+    if (!currentRegions.length) return;
+    const groupedRegions = currentRegions.reduce((acc, region) => {
+        const activities = region.flags.cat?.activities;
+        if (!activities?.length) return acc;
+        const identifier = documentUtils.getIdentifier(region);
+        const castData = documentUtils.getSavedCastData(region);
+        if (!acc[identifier]) acc[identifier] = [];
+        acc[identifier].push({region, castData});
+        return acc;
+    }, {});
+    if (!Object.keys(groupedRegions).length) return;
+    const winningRegions = Object.values(groupedRegions).map(group => {
+        if (group.length === 1) return group[0].region;
+        const maxLevel = Math.max(...group.map(i => i.castData.castLevel));
+        const maxDC = Math.max(...group.map(i => i.castData.saveDC));
+        const maxDCGroup = group.find(i => i.castData.saveDC === maxDC);
+        if (maxDCGroup.castData.castLevel === maxLevel) {
+            return maxDCGroup.region;
+        } else {
+            return group.find(g => g.castData.castLevel === maxLevel).region;
+        }
+    });
+    const combat = token.combatant?.combat;
+    const inCombat = !!combat;
+    const currentRound = inCombat ? combat.round : null;
+    const currentTurn = inCombat ? combat.turn : null;
+    const regionsToUpdate = [];
+    await Promise.all(winningRegions.map(async region => {
+        const activitiesConfig = region.flags.cat.activities;
+        const matchedActivities = activitiesConfig.filter(act => act.triggers?.includes(triggerType));
+        if (!matchedActivities.length) return;
+        const processedTokens = region.flags?.cat?.processedTokens || [];
+        let requiresStampUpdate = false;
+        for (const actConfig of matchedActivities) {
+            const isOncePerTurn = actConfig.oncePerTurn !== false; 
+            if (isOncePerTurn && inCombat) {
+                const existingRecord = processedTokens.find(pt => pt.id === token.id);
+                if (existingRecord && existingRecord.round === currentRound && existingRecord.turn === currentTurn) continue; 
+                requiresStampUpdate = true;
+            }
+            const sourceActivity = await fromUuid(actConfig.uuid);
+            if (!sourceActivity) continue;
+            //await myRollUtils.executeActivity(sourceActivity, token);
+        }
+        if (requiresStampUpdate && inCombat) {
+            const newProcessedArray = processedTokens.filter(pt => pt.id !== token.id);
+            newProcessedArray.push({
+                id: token.id,
+                round: currentRound,
+                turn: currentTurn
+            });
+            regionsToUpdate.push({
+                _id: region.id,
+                'flags.cat.processedTokens': newProcessedArray
+            });
+        }
+    }));
+    if (regionsToUpdate.length) await documentUtils.updateEmbeddedDocuments(token.parent, 'Region', regionsToUpdate);
+}
 export default {
     placed,
     updateRegionEffects,
-    regionEffects
+    regionEffects,
+    processRegionActivities
 };
