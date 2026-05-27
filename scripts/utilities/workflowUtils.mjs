@@ -46,7 +46,11 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
         const spellLabel = actorUtils.getEquivalentSpellSlotName(activity.actor, atLevel);
         if (spellLabel) defaultConfig.spell = {slot: spellLabel};
     }
-    if (userId) options.asUser ||= userId;
+    if (userId) {
+        options.asUser ||= userId;
+    } else {
+        options.asUser ||= queryUtils.firstOwner(activity.actor, true);
+    }
     options = genericUtils.mergeObject(defaultOptions, options);
     config = genericUtils.mergeObject(defaultConfig, config);
     config.midiOptions = options;
