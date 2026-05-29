@@ -38,10 +38,10 @@ item.flags.cat.rollModifiers = [
         }
     }
 ]
-item.flags.cat.alternateFormula = {
+item.flags.cat.alternateFormula = [
     value: '1d8 + @mod',
     identifiers: ['example']
-}
+]
 */
 function checkReq(requirement, itemData, defaultRequireAll = true) {
     if (!requirement) return true;
@@ -102,11 +102,8 @@ function formula(wrapped) {
     const rollModifiers = new Set();
     actor.items.forEach(item => {
         if (item.type != 'feat') return;
-        const altFormula = item.flags.cat?.alternateFormula?.[identifier];
-        if (altFormula) {
-            const resolvedFormula = altFormula.value;
-            if (resolvedFormula) alternateFormulas.push(formula);
-        }
+        const altFormula = item.flags.cat?.alternateFormula?.find(i => i.identifiers?.includes(identifier))?.value;
+        if (altFormula) alternateFormulas.push(altFormula);
         const modifiersList = item.flags.cat?.rollModifiers;
         if (modifiersList) {
             modifiersList.forEach(modDef => {
