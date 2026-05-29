@@ -1,4 +1,4 @@
-import {activityUtils, actorUtils, documentUtils, genericUtils, regionUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, actorUtils, documentUtils, genericUtils, regionUtils, tokenUtils, workflowUtils, combatUtils} from '../utilities/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 function placed(region) {
     const originUuid = region.flags.dnd5e?.origin;
@@ -137,26 +137,14 @@ function isValidDispositionTarget(sourceActivity, token, targetDisposition) {
     if (targetDisposition === 'enemy' && !isEnemy) return false;
     return true;
 }
-function getCombatData(token) {
-    const combat = token.combatant?.combat;
-    return {
-        inCombat: !!combat,
-        currentRound: combat ? combat.round : null,
-        currentTurn: combat ? combat.turn : null
-    };
-}
-function isStampedThisTurn(stamps, tokenId, combatData) {
-    if (!combatData.inCombat || !stamps?.length) return false;
-    const record = stamps.find(pt => pt.id === tokenId);
-    return record && record.round === combatData.currentRound && record.turn === combatData.currentTurn;
-}
 async function processRegionActivities(token, currentRegions, triggerType, {combatData} = {}) {
+    console.log(combatData);
     Logging.addEntry('DEBUG', 'Processing region activities for pass ' + triggerType + ' for ' + token.name);
     if (!currentRegions.length) return;
     const groupedRegions = getGroupedRegions(currentRegions);
     if (!Object.keys(groupedRegions).length) return;
     const winningRegions = Object.values(groupedRegions).map(group => getWinningRegionData(group).region);
-    combatData ??= getCombatData(token);
+    combatData ??= tokenUtils.getCombatData(token);
     const regionsToUpdate = [];
     for (const region of winningRegions) {
         const activitiesConfig = region.flags.cat?.activities;
@@ -170,18 +158,13 @@ async function processRegionActivities(token, currentRegions, triggerType, {comb
             if (!isValidDispositionTarget(sourceActivity, token, actConfig.disposition)) continue;
             const isOncePerTurn = actConfig.oncePerTurn; 
             if (isOncePerTurn && combatData.inCombat) {
-                if (isStampedThisTurn(processedTokens, token.id, combatData)) continue;
+                if (combatUtils.isStampedThisTurn(processedTokens, token.id, combatData)) continue;
                 requiresStampUpdate = true;
             }
             await workflowUtils.completeActivityUse(sourceActivity, [token], {atLevel: regionUtils.getCastData(region).castLevel});
         }
         if (requiresStampUpdate && combatData.inCombat) {
-            const newProcessedArray = processedTokens.filter(pt => pt.id !== token.id);
-            newProcessedArray.push({
-                id: token.id,
-                round: combatData.currentRound,
-                turn: combatData.currentTurn
-            });
+            const newProcessedArray = combatUtils.addTurnStamp(processedTokens, token.id, combatData);
             regionsToUpdate.push({
                 _id: region.id,
                 'flags.cat.processedTokens': newProcessedArray
@@ -199,10 +182,10 @@ async function processMovedRegionActivities(region, tokens, triggerType) {
     if (!matchedActivities.length) return;
     const identifier = documentUtils.getIdentifier(region);
     const movingCastData = documentUtils.getSavedCastData(region);
-    let processedTokens = region.flags.cat?.processedTokens || [];
+    let processedTokens = region.flags.cat?.processedTokens ?? [];
     let requiresStampUpdate = false;
     for (const token of tokens) {
-        const combatData = getCombatData(token);
+        const combatData = tokenUtils.getCombatData(token);
         const overlappingRegions = new Set(token.regions);
         overlappingRegions.add(region);
         const groupedOverlap = getGroupedRegions(overlappingRegions);
@@ -214,7 +197,7 @@ async function processMovedRegionActivities(region, tokens, triggerType) {
             identicalGroup.forEach(info => {
                 const identicalRegion = info.region;
                 const stamps = identicalRegion.id === region.id ? processedTokens : (identicalRegion.flags.cat?.processedTokens || []);
-                if (isStampedThisTurn(stamps, token.id, combatData)) alreadyProcessed = true;
+                if (combatUtils.isStampedThisTurn(stamps, token.id, combatData)) alreadyProcessed = true;
             });
         }
         if (alreadyProcessed) continue;
@@ -227,12 +210,7 @@ async function processMovedRegionActivities(region, tokens, triggerType) {
             await workflowUtils.completeActivityUse(sourceActivity, [token], {atLevel: movingCastData.castLevel});
         }
         if (tokenGotStamped) {
-            processedTokens = processedTokens.filter(pt => pt.id !== token.id);
-            processedTokens.push({
-                id: token.id,
-                round: combatData.currentRound,
-                turn: combatData.currentTurn
-            });
+            processedTokens = combatUtils.addTurnStamp(processedTokens, token.id, combatData);
             requiresStampUpdate = true;
         }
     }

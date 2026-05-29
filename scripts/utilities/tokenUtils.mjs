@@ -25,9 +25,19 @@ function isEnemy(source, target, {dispositionA, dispositionB} = {}) {
     dispositionB ??= target.disposition;
     return (dispositionA >= 0 && dispositionB < 0) || (dispositionA < 0 && dispositionB >= 0);
 }
+function getCombatData(token) {
+    const combat = token.combatant?.combat;
+    return {
+        inCombat: !!combat,
+        combatId: combat ? combat.id : null,
+        currentRound: combat ? combat.round : null,
+        currentTurn: combat ? combat.turn : null
+    };
+}
 export default {
     getSavedCastData,
     getDistance,
     checkCover,
-    isEnemy
+    isEnemy,
+    getCombatData
 };

@@ -4,7 +4,6 @@ import {auraEvents, regionEvents} from '../events/_module.mjs';
 import specialDuration from '../mechanics/specialDuration.mjs';
 import {regions} from '../handlers/_module.mjs';
 async function moveToken(token, movement, options, user) {
-    console.log(movement);
     if (user.id != game.user.id) return;
     const movementPromise = movement.animation.ended;
     const attachedRegions = token.attachments.regions;
