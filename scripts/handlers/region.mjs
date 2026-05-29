@@ -38,21 +38,24 @@ async function updateRegionEffects(token, currentRegions = []) {
         winningRegionsInfo.map(async info => {
             const {region, castData} = info;
             const identifier = documentUtils.getIdentifier(region);
-            const effectUuids = region.flags.cat?.effects;
-            if (!Array.isArray(effectUuids)) return [];
-            const resolvedEffects = await Promise.all(
-                effectUuids.map(async uuid => {
-                    const sourceEffect = await fromUuid(uuid);
-                    if (!sourceEffect) return;
-                    const effectData = sourceEffect.toObject();
-                    delete effectData._id;
-                    effectData.origin = uuid;
-                    effectData.showIcon = 2;
-                    genericUtils.setProperty(effectData, 'flags.cat.regionIdentifier', identifier);
-                    genericUtils.setProperty(effectData, 'flags.cat.castData', castData);
-                    return effectData;
-                })
-            );
+            const effectIds = region.flags.cat?.effects;
+            if (effectIds?.length) return [];
+            const originUuid = region.flags.dnd5e?.origin;
+            if (!originUuid) return [];
+            const activity = await fromUuid(originUuid);
+            if (!activity) return [];
+            const item = activity.item;
+            const resolvedEffects = effectIds.map(id => {
+                const sourceEffect = item.effects.get(id);
+                if (!sourceEffect) return;
+                const effectData = sourceEffect.toObject();
+                delete effectData._id;
+                effectData.origin = originUuid; 
+                effectData.showIcon = 2;
+                genericUtils.setProperty(effectData, 'flags.cat.regionIdentifier', identifier);
+                genericUtils.setProperty(effectData, 'flags.cat.castData', castData);
+                return effectData;
+            });
             return resolvedEffects.filter(Boolean);
         })
     )).flat();
