@@ -68,9 +68,6 @@
                         <button type="button" class="cat-medkit-ability-btn{{#if disp.active}} active{{/if}}" data-action="setRegionDisposition" data-activity-id="{{row.id}}" data-disposition="{{disp.key}}">{{disp.label}}</button>
                     {{/each}}
                     <button type="button" class="cat-medkit-ability-btn{{#if row.oncePerTurn}} active{{/if}}" data-action="toggleRegionOncePerTurn" data-activity-id="{{row.id}}">{{localize "CAT.MEDKIT.Activity.Activities.OncePerTurn"}}</button>
-                    <button type="button" class="cat-medkit-condition-remove" data-action="removeRegionActivity" data-activity-id="{{row.id}}" data-tooltip="{{localize 'Remove'}}">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
                 </div>
             {{/each}}
         {{else}}
