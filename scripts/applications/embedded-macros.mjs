@@ -127,7 +127,6 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
         position: {width: 820, height: 'auto'},
         form: {submitOnChange: false, closeOnSubmit: false},
         actions: {
-            close: EmbeddedMacroEditorApp.#close,
             confirm: EmbeddedMacroEditorApp.#confirm
         }
     };
@@ -199,11 +198,6 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
         const cleaned = {...macro, name: macro.name.trim()};
         for (const key of CONFIG_KEYS) if (!allowed.has(key)) delete cleaned[key];
         if (this.#onSubmit?.(cleaned) !== false) this.close();
-    }
-
-    /** @this {EmbeddedMacroEditorApp} */
-    static #close() {
-        this.close();
     }
 
     // Frameless windows have no built-in drag handle; wire one on the custom header.

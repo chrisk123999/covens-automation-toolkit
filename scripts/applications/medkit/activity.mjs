@@ -71,6 +71,11 @@ export default class ActivityMedkit extends MedkitApp {
         const siblings = Array.from(this.document.item?.system?.activities ?? []).filter(a => a.id !== this.document.id);
         context.activityChoices = siblings.map(a => ({value: a.id, label: a.name ?? a.id, selected: configuredIds.has(a.id)}));
         context.activityRows = this.#prepareActivityRows(configured);
+        if ((this.document.type ?? this.document.metadata?.type) === 'attack') {
+            const picked = new Set(flags.otherAbilities?.value ?? []);
+            context.showOtherAbilities = true;
+            context.otherAbilityChoices = Object.entries(CONFIG.DND5E?.abilities ?? {}).map(([value, cfg]) => ({value, label: cfg?.label ?? value, selected: picked.has(value)}));
+        }
         return context;
     }
 
@@ -95,13 +100,18 @@ export default class ActivityMedkit extends MedkitApp {
         const target = event.target;
         const name = target?.name ?? target?.getAttribute?.('name');
         const multi = target?.closest?.('cat-multi-combobox');
-        if (multi && (name === 'flags.cat.placed.region.macros' || name === 'flags.cat.placed.region.activities')) {
+        if (multi && (name === 'flags.cat.placed.region.macros' || name === 'flags.cat.placed.region.activities' || name === 'flags.cat.otherAbilities')) {
             const raw = multi.querySelector('input[type="hidden"]')?.value ?? '';
             let arr;
             try { arr = raw ? JSON.parse(raw) : []; }
             catch { arr = []; }
             if (name === 'flags.cat.placed.region.macros') this._writeMacroSelection(arr, 'placed.region.macros');
-            else this.#syncRegionActivities(arr);
+            else if (name === 'flags.cat.placed.region.activities') this.#syncRegionActivities(arr);
+            else {
+                const flags = this._getFlags();
+                if (arr.length) foundry.utils.setProperty(flags, 'otherAbilities', {value: arr});
+                else delete flags.otherAbilities;
+            }
             this.render();
             return;
         }

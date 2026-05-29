@@ -2,6 +2,7 @@ export {default as ActivityMedkit} from './medkit/activity.mjs';
 export {default as ActorMedkit} from './medkit/actor.mjs';
 export {default as CompendiumMedkit} from './medkit/compendium.mjs';
 export {default as DialogApp, DialogManager} from './dialog.mjs';
+export {default as DocPropertyEditorApp} from './doc-property-editor.mjs';
 export {default as EffectMedkit} from './medkit/effect.mjs';
 export {default as EmbeddedMacroEditorApp} from './embedded-macros.mjs';
 export {default as ItemMedkit} from './medkit/item.mjs';

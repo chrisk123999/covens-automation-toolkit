@@ -78,6 +78,54 @@
           "Enemy": "Enemy"
         }
       },
+      "DocProps": {
+        "Hint": "Document properties feed the dnd5e patches (alternate formulas, abilities, and roll modifiers).",
+        "Empty": "None defined.",
+        "Add": "Add",
+        "Duplicate": "An entry for identifier \"{name}\" already exists.",
+        "Identifier": "Target Identifier",
+        "IdentifierHint": "The identifier of the item this entry applies to.",
+        "InvalidIdentifier": "An identifier is required.",
+        "InvalidValue": "A value is required.",
+        "alternateFormula": {
+          "Title": "Alternate Formula: {name}",
+          "Label": "Alternate Formula",
+          "Field": "Formula",
+          "Hint": "Roll formula offered as an alternative; the highest-rolling option is used.",
+          "Identifiers": "Target Identifiers",
+          "IdentifiersHint": "Comma-separated target identifiers this formula applies to (item|activity)."
+        },
+        "alternateAbilities": {
+          "Title": "Alternate Abilities: {name}",
+          "Label": "Alternate Abilities",
+          "Field": "Abilities"
+        },
+        "otherAbilities": {
+          "Label": "Other Abilities",
+          "Field": "Abilities",
+          "Hint": "Extra abilities this attack may use."
+        },
+        "rollModifiers": {
+          "Title": "Roll Modifier: {name}",
+          "Label": "Roll Modifiers",
+          "Modifiers": "Modifiers",
+          "ModifiersHint": "Comma-separated dice modifiers (e.g. x, min1, kh1).",
+          "Invalid": "At least one modifier is required."
+        },
+        "Restrictions": {
+          "Legend": "Restrictions",
+          "Hint": "Leave a restriction empty to skip it. Comma-separate free-form values.",
+          "RequireAll": "Require all",
+          "identifier": "Item Identifiers",
+          "type": "Item Types",
+          "property": "Properties",
+          "school": "Spell Schools",
+          "level": "Spell Levels",
+          "ability": "Abilities",
+          "method": "Spell Methods",
+          "damageTypes": "Damage Types"
+        }
+      },
       "Hero": {
         "Unavailable": {
           "Heading": "No automation registered",

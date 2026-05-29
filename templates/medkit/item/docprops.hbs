@@ -1,0 +1,81 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <p class="hint">{{localize "CAT.MEDKIT.DocProps.Hint"}}</p>
+
+    <fieldset data-section="alternate-formula">
+        <legend>{{localize "CAT.MEDKIT.DocProps.alternateFormula.Label"}}</legend>
+        {{#if alternateFormula.length}}
+            <ul class="cat-medkit-embedded-list">
+                {{#each alternateFormula}}
+                    <li>
+                        <span class="cat-medkit-embedded-name">{{value}}</span>
+                        <span class="cat-medkit-embedded-meta">{{identifiers}}</span>
+                        <button type="button" data-action="editDocProp" data-prop="alternateFormula" data-index="{{index}}" data-tooltip="{{localize 'CAT.MEDKIT.Embedded.Edit'}}">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" data-action="removeDocProp" data-prop="alternateFormula" data-index="{{index}}" data-tooltip="{{localize 'Remove'}}">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </li>
+                {{/each}}
+            </ul>
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.DocProps.Empty"}}</p>
+        {{/if}}
+        <button type="button" data-action="addDocProp" data-prop="alternateFormula">
+            <i class="fa-solid fa-plus"></i>
+            {{localize "CAT.MEDKIT.DocProps.Add"}}
+        </button>
+    </fieldset>
+
+    <fieldset data-section="alternate-abilities">
+        <legend>{{localize "CAT.MEDKIT.DocProps.alternateAbilities.Label"}}</legend>
+        {{#if alternateAbilities.length}}
+            <ul class="cat-medkit-embedded-list">
+                {{#each alternateAbilities}}
+                    <li>
+                        <span class="cat-medkit-embedded-name">{{identifier}}</span>
+                        <span class="cat-medkit-embedded-meta">{{summary}}</span>
+                        <button type="button" data-action="editDocProp" data-prop="alternateAbilities" data-key="{{identifier}}" data-tooltip="{{localize 'CAT.MEDKIT.Embedded.Edit'}}">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" data-action="removeDocProp" data-prop="alternateAbilities" data-key="{{identifier}}" data-tooltip="{{localize 'Remove'}}">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </li>
+                {{/each}}
+            </ul>
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.DocProps.Empty"}}</p>
+        {{/if}}
+        <button type="button" data-action="addDocProp" data-prop="alternateAbilities">
+            <i class="fa-solid fa-plus"></i>
+            {{localize "CAT.MEDKIT.DocProps.Add"}}
+        </button>
+    </fieldset>
+
+    <fieldset data-section="roll-modifiers">
+        <legend>{{localize "CAT.MEDKIT.DocProps.rollModifiers.Label"}}</legend>
+        {{#if rollModifiers.length}}
+            <ul class="cat-medkit-embedded-list">
+                {{#each rollModifiers}}
+                    <li>
+                        <span class="cat-medkit-embedded-name">{{modifiers}}</span>
+                        <span class="cat-medkit-embedded-meta">{{summary}}</span>
+                        <button type="button" data-action="editDocProp" data-prop="rollModifiers" data-index="{{index}}" data-tooltip="{{localize 'CAT.MEDKIT.Embedded.Edit'}}">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" data-action="removeDocProp" data-prop="rollModifiers" data-index="{{index}}" data-tooltip="{{localize 'Remove'}}">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </li>
+                {{/each}}
+            </ul>
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.DocProps.Empty"}}</p>
+        {{/if}}
+        <button type="button" data-action="addDocProp" data-prop="rollModifiers">
+            <i class="fa-solid fa-plus"></i>
+            {{localize "CAT.MEDKIT.DocProps.Add"}}
+        </button>
+    </fieldset>
+</section>
