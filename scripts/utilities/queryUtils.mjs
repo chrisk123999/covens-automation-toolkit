@@ -17,7 +17,8 @@ function gmUser() {
 function hasPermission(document, userId) {
     const user = game.users.get(userId);
     if (!user) return false;
-    return document.testUserPermission(user, 'OWNER');
+    const doc = document.documentName === 'Activity' ? document.item : document;
+    return (doc.actor ?? doc).testUserPermission(user, 'OWNER');
 }
 function firstOwner(document, useId) {
     if (!document) return;
