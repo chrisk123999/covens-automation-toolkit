@@ -13,7 +13,7 @@ async function doDeleteActiveEffect(effect, options) {
 }
 async function createActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
-    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     if (effect.parent instanceof Actor) effects.addConditions(effect);
     await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
     await auraEvents.effect(effect, options);
@@ -22,7 +22,7 @@ async function createActiveEffect(effect, options, userId) {
 }
 async function deleteActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
-    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     if (effect.parent instanceof Actor) await effects.removeConditions(effect);
     if (effect.statuses.size) await specialDuration.specialDurationRemovedConditions(effect);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
@@ -30,23 +30,23 @@ async function deleteActiveEffect(effect, options, userId) {
 }
 async function updateActiveEffect(effect, updates, options, userId) {
     if (!queryUtils.isTheGM()) return;
-    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     await new Events.EffectEvent(effect, constants.effectPasses.updated, {options, updates}).run();
 }
 function preCreateActiveEffect(effect, updates, options, userId) {
     effects.noAnimation(effect, options);
     effects.effectDescription(effect, updates);
-    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     new Events.EffectEvent(effect, constants.effectPasses.preCreated, {options, updates}).runSync();
 }
 function preDeleteActiveEffect(effect, options, userId) {
     effects.noAnimation(effect, options);
-    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     new Events.EffectEvent(effect, constants.effectPasses.preDeleted, {options}).runSync();
 }
 function preUpdateActiveEffect(effect, updates, options, userId) {
     effects.noAnimation(effect, options);
-    if (!(effect.parent instanceof Actor) || (effect.parent instanceof Item && effect.parent.actor)) return;
+    if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     new Events.EffectEvent(effect, constants.effectPasses.preUpdated, {options, updates}).runSync();
 }
 function getConditions(effect) {

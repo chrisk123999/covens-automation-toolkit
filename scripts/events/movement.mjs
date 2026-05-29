@@ -51,6 +51,7 @@ async function moveToken(token, movement, options, user) {
         if (!skipMove) {
             if (isFinalMovement) await auraEvents.updateAuras(token.parent.tokens, {options, targetToken: token});
             await new Events.MovementEvent(token, constants.movementPasses.moved, {options}).run();
+            await new Events.MovementEvent(token, constants.movementPasses.movedNear, {options}).run();
         }
         const moveRay = new foundry.canvas.geometry.Ray(previousCoords, coords);
         const currentRegions = Array.from(token.regions);
@@ -67,19 +68,19 @@ async function moveToken(token, movement, options, user) {
         if (!teleport) enteredAndLeftRegions = throughRegions.filter(i => !leavingRegions.includes(i) && !enteringRegions.includes(i) && !stayingRegions.includes(i));
         await regions.updateRegionEffects(token, currentRegions);
         if (leavingRegions.length) {
-            await regions.processRegionActivities(token, Array.from(token.regions), constants.regionPasses.left);
+            await regions.processRegionActivities(token, leavingRegions, constants.regionPasses.left);
             await new Events.RegionEvent(leavingRegions, constants.regionPasses.left, {tokens: [token]}).run();
         }
         if (enteringRegions.length) {
+            await regions.processRegionActivities(token, enteringRegions, constants.regionPasses.enter);
             await new Events.RegionEvent(enteringRegions, constants.regionPasses.enter, {tokens: [token]}).run();
-            await regions.processRegionActivities(token, Array.from(token.regions), constants.regionPasses.enter);
         }
         if (stayingRegions.length) {
-            await regions.processRegionActivities(token, Array.from(token.regions), constants.regionPasses.stay);
+            await regions.processRegionActivities(token, stayingRegions, constants.regionPasses.stay);
             await new Events.RegionEvent(stayingRegions, constants.regionPasses.stay, {tokens: [token]}).run();
         }
         if (enteredAndLeftRegions.length) {
-            await regions.processRegionActivities(token, Array.from(token.regions), constants.regionPasses.passedThrough);
+            await regions.processRegionActivities(token, enteredAndLeftRegions, constants.regionPasses.passedThrough);
             await new Events.RegionEvent(enteredAndLeftRegions, constants.regionPasses.passedThrough, {tokens: [token]}).run();
         }
     }

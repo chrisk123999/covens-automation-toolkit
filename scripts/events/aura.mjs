@@ -10,7 +10,7 @@ async function createToken(token, options, userId) {
     if (!token.actor) return;
     await updateAuras(token.parent.tokens, {options, targetToken: token});
 }
-async function deleteToken(token, options, useId) {
+async function deleteToken(token, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!token.actor) return;
     await updateAuras(token.parent.tokens.filter(t => t.id != token.id), {options, targetToken: token});

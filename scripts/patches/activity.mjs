@@ -2,14 +2,12 @@ import {Logging} from '../lib/_module.mjs';
 import {default as dataModel} from './dataModel.mjs';
 import {automationUtils} from '../utilities/_module.mjs';
 /*
-item.flags.cat.otherAbilities = {
+activity.flags.cat.otherAbilities = {
     value: ['wis', 'int']
-    configValue: 'example'
 }
 item.flags.cat.alternateAbilities = {
     exampleIdentifier: {
-        value: ['str', 'con'],
-        configValue: 'example2'
+        value: ['str', 'con']
     }
 }
 */
@@ -18,7 +16,7 @@ function availableAbilities(wrapped) {
     const allAbilities = [...wrapped()];
     const otherFlag = this.flags?.cat?.otherAbilities;
     if (otherFlag) {
-        const resolvedOther = otherFlag.configValue ? (automationUtils.getConfig(targetItem, otherFlag.configValue) ?? []) : otherFlag.value;
+        const resolvedOther = otherFlag.value;
         if (resolvedOther) allAbilities.push(...resolvedOther);
     }
     if (!this.actor) return new Set(allAbilities); 
@@ -27,7 +25,7 @@ function availableAbilities(wrapped) {
         if (item.type != 'feat') return;
         const altFlag = item.flags?.cat?.alternateAbilities?.[identifier];
         if (altFlag) {
-            const resolvedAlt = altFlag.configValue ? (automationUtils.getConfig(targetItem, altFlag.configValue) ?? []) : altFlag.value;
+            const resolvedAlt = altFlag.value;
             if (resolvedAlt) allAbilities.push(...resolvedAlt);
         }
     });

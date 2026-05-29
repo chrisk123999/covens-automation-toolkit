@@ -330,10 +330,10 @@ class BaseWorkflowEvent extends CatEvent {
         if (this.targets?.size) {
             this.targets.forEach(token => {
                 if (!this.actor) return;
-                if (CatEvent.hasCatFlag(token.document)) triggers.push(new this.trigger(token.document, 'target' + passName, {sourceToken: token.document}, this.distances));
-                triggers.push(...this.getActorTriggers(token.actor, 'target' + passName, {sourceToken: token.document}, this.distances));
+                if (CatEvent.hasCatFlag(token.document)) triggers.push(new this.trigger(token.document, 'target' + passName, {sourceToken: token.document, distances: this.distances}));
+                triggers.push(...this.getActorTriggers(token.actor, 'target' + passName, {sourceToken: token.document, distances: this.distances}));
                 token.document.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-                    triggers.push(new this.trigger(region, 'target' + passName, {sourceToken: token.document}, this.distances));
+                    triggers.push(new this.trigger(region, 'target' + passName, {sourceToken: token.document, distances: this.distances}));
                 });
             });
         }

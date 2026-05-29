@@ -9,7 +9,7 @@ async function updateCombat(combat, updates, context) {
     const previousTurn = combat.previous.turn ?? -1;
     const currentRound = combat.current.round;
     const previousRound = combat.previous.round ?? -1;
-    if (currentRound < previousRound || (currentTurn < previousTurn && currentTurn === previousRound)) return;
+    if (currentRound < previousRound || (currentTurn < previousTurn && currentRound === previousRound)) return;
     const currentCombatant = combat.combatants.get(combat.current.combatantId);
     const previousCombatant = combat.combatants.get(combat.previous.combatantId);
     const currentToken = currentCombatant.token;
@@ -20,10 +20,10 @@ async function updateCombat(combat, updates, context) {
     }
     if (currentToken) {
         for (let token of currentToken.parent.tokens.filter(i => i.actor && ['npc', 'character'].includes(i.actor.type))) {
-            await regions.processRegionActivities(currentToken, Array.from(currentToken.regions), constants.combatPasses.everyTurn, {inCombat: true, currentRound, currentTurn});
+            await regions.processRegionActivities(token, Array.from(token.regions), constants.combatPasses.everyTurn, {combatData: {inCombat: true, currentRound, currentTurn, combatId: combat.id}});
             await new Events.CombatEvent(combat, constants.combatPasses.everyTurn, token, {context, combatant: currentCombatant, round: currentRound, turn: currentTurn, previousCombatant, previousRound, previousTurn}).run();
         }
-        await regions.processRegionActivities(previousToken, Array.from(currentToken.regions), constants.combatPasses.turnStart, {inCombat: true, currentRound, currentTurn});
+        await regions.processRegionActivities(previousToken, Array.from(currentToken.regions), constants.combatPasses.turnStart, {combatData: {inCombat: true, currentRound, currentTurn, combatId: combat.id}});
         await new Events.CombatEvent(combat, constants.combatPasses.turnStart, currentToken, {context, combatant: currentCombatant, round: currentRound, turn: currentTurn, previousCombatant, previousRound, previousTurn}).run();
     }
 }
