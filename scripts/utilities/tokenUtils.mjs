@@ -20,8 +20,24 @@ function checkCover(sourceToken, targetToken, {activity, displayName}) {
     };
     return _loc('CAT.Common.Cover', {amount: _loc(names[cover]), cover: _loc('DND5E.Cover')});
 }
+function isEnemy(source, target, {dispositionA, dispositionB} = {}) {
+    dispositionA ??= source.disposition;
+    dispositionB ??= target.disposition;
+    return (dispositionA >= 0 && dispositionB < 0) || (dispositionA < 0 && dispositionB >= 0);
+}
+function getCombatData(token) {
+    const combat = token.combatant?.combat;
+    return {
+        inCombat: !!combat,
+        combatId: combat ? combat.id : null,
+        currentRound: combat ? combat.round : null,
+        currentTurn: combat ? combat.turn : null
+    };
+}
 export default {
     getSavedCastData,
     getDistance,
-    checkCover
+    checkCover,
+    isEnemy,
+    getCombatData
 };

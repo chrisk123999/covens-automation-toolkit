@@ -415,7 +415,7 @@ class MovementEvent extends CatEvent {
     }
 }
 class RegionEvent extends CatEvent {
-    constructor(regions, pass, {tokens, workflow, options, updates} = {}) {
+    constructor(regions, pass, {tokens, workflow, options, updates, locationData} = {}) {
         super(pass);
         this.name = 'Region';
         this.trigger = Triggers.RegionTrigger;

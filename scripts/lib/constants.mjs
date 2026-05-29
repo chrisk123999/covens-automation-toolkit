@@ -90,17 +90,21 @@ const regionHooksNames = {
     createRegion: 'createRegion',
     updateRegion: 'updateRegion',
     deleteRegion: 'deleteRegion',
-    preCreateRegion: 'preCreateRegion'
+    preCreateRegion: 'preCreateRegion',
+    preUpdateRegion: 'preUpdateRegion'
 };
 const regionPasses = {
     created: 'created',
     updated: 'updated',
     deleted: 'deleted',
-    moved: 'moved',
     left: 'left',
     enter: 'enter',
     stay: 'stay',
-    passedThrough: 'passedThrough'
+    passedThrough: 'passedThrough',
+    entered: 'entered',
+    exited: 'exited',
+    stayed: 'stayed',
+    passedOver: 'passedOver'
 };
 const itemPasses = {
     created: 'created',

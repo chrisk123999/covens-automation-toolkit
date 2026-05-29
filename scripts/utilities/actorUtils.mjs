@@ -62,6 +62,13 @@ async function applyConditions(actor, conditions, {overlay = false} = {}) {
     }));
     if (updates.length) return await documentUtils.createEmbeddedDocuments(actor, 'ActiveEffect', updates, {keepId: true});
 }
+function getEquivalentSpellSlotName(actor, level, {canCast = false} = {}) {
+    if (!canCast) {
+        return Object.entries(actor.system.spells)?.find(i => i[1].level == level)?.[0];
+    } else {
+        return Object.entries(actor.system.spells)?.find(i => i[1].level >= level && i[1].value)?.[0];
+    }
+}
 export default {
     getCastData,
     getEffects,
@@ -77,5 +84,6 @@ export default {
     checkTrait,
     getEffectByStatusID,
     applyConditions,
-    getItemByIdentifier
+    getItemByIdentifier,
+    getEquivalentSpellSlotName
 };

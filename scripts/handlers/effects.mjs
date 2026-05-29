@@ -57,7 +57,7 @@ function effectDescription(effect, updates) {
     if (updates.description || !effect.parent) return;
     if (effect.transfer && effect.parent.documentName !== 'Item') return;
     const item = (!effect.transfer && effect.origin) ? effectUtils.getOriginActivitySync(effect)?.item : effect.parent;
-    if (!item) return;
+    if (item?.documentName != 'Item') return;
     const mode = game.settings.get('cat', 'effectDescriptionsNPC');
     if (mode && item.actor?.type === 'npc') return;
     const type = game.settings.get('cat', 'effectDescriptions') === 2 ? 'value' : 'chat';

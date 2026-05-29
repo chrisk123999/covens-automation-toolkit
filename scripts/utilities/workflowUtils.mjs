@@ -1,4 +1,5 @@
-import constants from '../lib/constants.mjs';
+import {constants} from '../lib/_module.mjs';
+import {actorUtils, genericUtils, itemUtils, queryUtils} from './_module.mjs';
 function getActionType(workflow) {
     if (!workflow.activity) return;
     return workflow.activity.getActionType(workflow.attackMode);
@@ -20,7 +21,73 @@ function isAttackType(workflow, type = 'attack') {
     }
     return constants[field].includes(getActionType(workflow));
 }
+async function completeActivityUse(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = false, autoDamage} = {}) {
+    const defaultConfig = {
+        consumeUsage,
+        consume: {
+            resources: consumeResources,
+            spellSlot
+        }
+    };
+    const defaultOptions = {
+        targetUuids: targets.map(i => i.uuid),
+        configureDialog: false,
+        workflowOptions: {
+            autoFastDamage: fast,
+            autoRollAttack: fast
+        }
+    };
+    if (autoDamage) {
+        let autoRollDamage = MidiQOL.configSettings().autoRollDamage;
+        if (!['always', 'onHit'].includes(autoRollDamage)) autoRollDamage = 'onHit';
+        defaultOptions.workflowOptions.autoRollDamage = autoRollDamage;
+    }
+    if (atLevel) {
+        const spellLabel = actorUtils.getEquivalentSpellSlotName(activity.actor, atLevel);
+        if (spellLabel) defaultConfig.spell = {slot: spellLabel};
+    }
+    if (userId) {
+        options.asUser ||= userId;
+    } else {
+        options.asUser ||= queryUtils.firstOwner(activity.actor, true);
+    }
+    options = genericUtils.mergeObject(defaultOptions, options);
+    config = genericUtils.mergeObject(defaultConfig, config);
+    config.midiOptions = options;
+    let fixSets = false;
+    if (!config.midiOptions?.asUser && !queryUtils.hasPermission(activity.actor, game.userId)) {
+        if (!config.midiOptions) config.midiOptions = {};
+        config.midiOptions.asUser = queryUtils.firstOwner(activity.actor, true);
+        config.midiOptions.checkGMStatus = true;
+        config.midiOptions.workflowData = true;
+        fixSets = true;
+    } else if (config.midiOptions?.asUser && config.midiOptions?.asUser !== game.userId) {
+        config.midiOptions.workflowData = true;
+        fixSets = true;
+    } 
+    let workflow = await MidiQOL.completeActivityUse(activity, config, dialog, message);
+    workflow = workflow.workflow ?? workflow;
+    if (fixSets) {
+        if (workflow.failedSaves) workflow.failedSaves = new Set(workflow.failedSaves);
+        if (workflow.hitTargets) workflow.hitTargets = new Set(workflow.hitTargets);
+        if (workflow.targets) workflow.targets = new Set(workflow.targets);
+    }
+    return workflow;
+}
+async function syntheticActivityRoll(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
+    return await completeActivityUse(activity, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot, fast: true, autoDamage: true});
+}
+async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
+    const itemData = item.toObject();
+    itemData.system.activities[activityData._id] = activityData;
+    const newItem = itemUtils.syntheticItem(itemData, item.actor);
+    const activity = newItem.system.activities.get(activityData._id);
+    return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot});
+}
 export default {
     getActionType,
-    isAttackType
+    isAttackType,
+    completeActivityUse,
+    syntheticActivityRoll,
+    syntheticActivityDataRoll
 };

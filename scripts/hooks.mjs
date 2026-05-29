@@ -42,13 +42,14 @@ export function readyHooks() {
     Hooks.on(constants.effectHookNames.updateActiveEffect, events.effectEvents.updateActiveEffect);
     // Region Events
     Hooks.on(constants.regionHooksNames.preCreateRegion, events.regionEvents.preCreateRegion);
+    Hooks.on(constants.regionHooksNames.preUpdateRegion, events.regionEvents.preUpdateRegion);
     Hooks.on(constants.regionHooksNames.createRegion, events.regionEvents.createRegion);
     Hooks.on(constants.regionHooksNames.updateRegion, events.regionEvents.updateRegion);
     Hooks.on(constants.regionHooksNames.deleteRegion, events.regionEvents.deleteRegion);
     Hooks.on(constants.workflowHookNames.regionPlaced, events.regionEvents.createWorkflowRegion);
+    // Movement Events
+    Hooks.on(constants.movementHookNames.moveToken, events.movementEvents.moveToken);
     if (queryUtils.isTheGM()) {
-        // Movement Events
-        Hooks.on(constants.movementHookNames.moveToken, events.movementEvents.moveToken);
         // Combat Events
         Hooks.on(constants.combatHookNames.updateCombat, events.combatEvents.updateCombat);
         Hooks.on(constants.combatHookNames.combatStart, events.combatEvents.combatStart);
