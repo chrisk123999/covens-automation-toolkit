@@ -1,0 +1,6 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <fieldset data-section="activity-properties">
+        <legend>{{localize "CAT.MEDKIT.TABS.DocProps"}}</legend>
+        {{formGroup fields.hidden name="flags.cat.hidden" value=hidden hint=(localize "CAT.MEDKIT.Activity.Hidden.Hint")}}
+    </fieldset>
+</section>

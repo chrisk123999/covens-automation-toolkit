@@ -11,7 +11,9 @@ export function readyHooks() {
     Hooks.on(constants.miscHookNames.vaeCreateEffectButtons, vae.createEffectButton);
     // Sheet Rendering
     Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsActivitySheet, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsActorSheetV2, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsCompendium, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsItemSheet5e, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsLevelConfig, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsRegionConfig, titlebar.appendHeaderControl);

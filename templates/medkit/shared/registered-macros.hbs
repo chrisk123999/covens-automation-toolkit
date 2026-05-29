@@ -1,53 +1,16 @@
 <section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
-    <fieldset data-section="macro-filters">
-        <legend>{{localize "CAT.MEDKIT.Macros.Filters"}}</legend>
-        <div class="cat-medkit-macro-filters">
-            <input type="search" name="macroSearch" placeholder="{{localize 'CAT.MEDKIT.Macros.Filter'}}" aria-label="{{localize 'CAT.MEDKIT.Macros.Filter'}}">
-            <select name="macroSourceFilter" aria-label="{{localize 'CAT.MEDKIT.Macros.SourceFilter'}}">
-                {{#each macroSources as |label key|}}
-                    <option value="{{key}}">{{label}}</option>
-                {{/each}}
-            </select>
-        </div>
-    </fieldset>
-
-    <fieldset data-section="macro-list">
-        <legend>{{localize "CAT.MEDKIT.Macros.Registered"}}</legend>
-        {{#if macroRows.length}}
-            <table class="cat-medkit-macro-table">
-                <thead>
-                    <tr>
-                        <th>{{localize "CAT.MEDKIT.Macros.Cols.Name"}}</th>
-                        <th>{{localize "CAT.MEDKIT.Macros.Cols.Source"}}</th>
-                        <th>{{localize "CAT.MEDKIT.Macros.Cols.Event"}}</th>
-                        <th>{{localize "CAT.MEDKIT.Macros.Cols.Pass"}}</th>
-                        <th>{{localize "CAT.MEDKIT.Macros.Cols.Rules"}}</th>
-                        <th class="cat-medkit-third-party-col">{{localize "CAT.MEDKIT.Macros.Cols.ThirdParty"}}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{#each macroRows}}
-                        <tr data-source="{{source}}" data-name="{{name}}">
-                            <td>{{name}}</td>
-                            <td><span class="cat-medkit-badge">{{sourceLabel}}</span></td>
-                            <td>{{event}}</td>
-                            <td>{{pass}}</td>
-                            <td>
-                                {{#if (eq rulesBadge "legacy")}}
-                                    <span class="cat-medkit-badge cat-medkit-rules-legacy">{{localize "CAT.MEDKIT.Macros.Rules.legacy"}}</span>
-                                {{else if (eq rulesBadge "modern")}}
-                                    <span class="cat-medkit-badge cat-medkit-rules-modern">{{localize "CAT.MEDKIT.Macros.Rules.modern"}}</span>
-                                {{/if}}
-                            </td>
-                            <td class="cat-medkit-third-party-col">
-                                {{#if isThirdParty}}
-                                    <i class="fa-solid fa-circle" data-tooltip="{{localize 'CAT.MEDKIT.Macros.ThirdParty'}}"></i>
-                                {{/if}}
-                            </td>
-                        </tr>
+    <fieldset data-section="macro-picker">
+        <legend>{{localize "CAT.MEDKIT.Macros.Picker.Label"}}</legend>
+        {{#if macroChoices.length}}
+            <div class="form-group cat-multi-combobox-group">
+                <label for="cat-medkit-macros">{{localize "CAT.MEDKIT.Macros.Picker.Field"}}</label>
+                <cat-multi-combobox input-id="cat-medkit-macros" name="flags.cat.macros">
+                    {{#each macroChoices}}
+                        <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
                     {{/each}}
-                </tbody>
-            </table>
+                </cat-multi-combobox>
+            </div>
+            <p class="hint">{{localize "CAT.MEDKIT.Macros.Picker.Hint"}}</p>
         {{else}}
             <p class="hint">{{localize "CAT.MEDKIT.Macros.None"}}</p>
         {{/if}}

@@ -1,22 +1,34 @@
 import MedkitApp from './base.mjs';
 
-// TODO per plan board: Mass Apply / Mass Update only.
 export default class CompendiumMedkit extends MedkitApp {
     static DEFAULT_OPTIONS = {
-        id: 'medkit-window-compendium'
+        id: 'medkit-window-compendium',
+        actions: {
+            massApply: CompendiumMedkit.#massApply
+        }
     };
 
     static PARTS = {
         ...MedkitApp.SHARED_PARTS,
-        info: {template: 'modules/cat/templates/medkit/shared/stub.hbs'}
+        automations: {template: 'modules/cat/templates/medkit/shared/mass-apply-tab.hbs'}
     };
 
     static TABS = {
         sheet: {
-            tabs: [
-                {id: 'info', icon: 'fa-solid fa-circle-info', label: 'CAT.MEDKIT.TABS.Automation'}
-            ],
-            initial: 'info'
+            tabs: [ {id: 'automations', icon: 'fa-solid fa-download', label: 'CAT.MEDKIT.TABS.Automations'} ],
+            initial: 'automations'
         }
     };
+
+    async _prepareContext(options) {
+        const context = await super._prepareContext(options);
+        context.buttons = [ {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Close', name: 'close', icon: 'fa-solid fa-xmark'} ];
+        return context;
+    }
+
+    /** @this {CompendiumMedkit} */
+    static async #massApply() {
+        // TODO: needs a pack-aware updater.
+        ui.notifications.warn(_loc('CAT.MEDKIT.MassApply.CompendiumPending'));
+    }
 }

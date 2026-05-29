@@ -33,6 +33,7 @@ export default class ItemMedkit extends MedkitApp {
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
         context.fields = {
+            // TODO - is this field needed? Writes to flags.cat.nameOverride but Items match by system.identifier, not name.
             name: new fields.StringField({label: _loc('CAT.MEDKIT.Name.Label')}),
             identifier: new fields.StringField({label: _loc('CAT.MEDKIT.Identifier.Label')}),
             source: new fields.StringField({label: _loc('CAT.MEDKIT.Source.Label'), required: true, blank: false}),
@@ -110,10 +111,6 @@ export default class ItemMedkit extends MedkitApp {
         context.version = currAutomation?.version ?? documentUtils.getVersion(this.document);
         if (currAutomation?.notes?.length) context.notes = currAutomation.notes;
         context.ignoreItem = this._getFlags().ignoreItem ?? false;
-
-        const macroData = this._prepareRegisteredMacros();
-        context.macroRows = macroData.rows;
-        context.macroSources = macroData.sources;
 
         const otherRules = rulesValue === '2014' ? '2024' : '2014';
         context.rules = rulesValue;

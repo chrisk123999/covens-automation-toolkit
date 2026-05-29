@@ -126,7 +126,9 @@ const itemHookNames = {
 };
 const sheetHookNames = {
     getHeaderControlsActiveEffectConfig: 'getHeaderControlsActiveEffectConfig',
+    getHeaderControlsActivitySheet: 'getHeaderControlsActivitySheet',
     getHeaderControlsActorSheetV2: 'getHeaderControlsActorSheetV2',
+    getHeaderControlsCompendium: 'getHeaderControlsCompendium',
     getHeaderControlsItemSheet5e: 'getHeaderControlsItemSheet5e',
     getHeaderControlsLevelConfig: 'getHeaderControlsLevelConfig',
     getHeaderControlsRegionConfig: 'getHeaderControlsRegionConfig',

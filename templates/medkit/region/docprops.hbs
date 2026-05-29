@@ -1,0 +1,7 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <fieldset data-section="visibility">
+        <legend>{{localize "CAT.MEDKIT.Region.Visibility"}}</legend>
+        {{formGroup fields.magicalDarkness name="flags.cat.visibility.magicalDarkness" value=magicalDarkness hint=(localize "CAT.MEDKIT.Region.MagicalDarkness.Hint")}}
+        {{formGroup fields.obscured name="flags.cat.visibility.obscured" value=obscured hint=(localize "CAT.MEDKIT.Region.Obscured.Hint")}}
+    </fieldset>
+</section>

@@ -213,10 +213,22 @@ async function setDocumentHash(document, hash) {
 function getStoredHash(document) {
     return document.flags.cat?.automation?.hash;
 }
+/**
+ * Stub for Chris's planned API. Replaces flags.cat.macros wholesale with the per-event entries provided.
+ * @param {Document} document
+ * @param {Object<string, Array<{identifier:string, source:string, rules:string}>>} eventMap
+ *   e.g. {roll: [{identifier, source, rules}], save: [...]}
+ */
+async function setRegisteredMacros(document, eventMap) {
+    if (!document) return;
+    return documentUtils.update(document, {'flags.cat.macros': eventMap});
+}
+
 export default {
     getCurrentAutomation,
     getAutomationStatus,
     getAvailableAutomations,
+    setRegisteredMacros,
     getConfigValue,
     getAutomationSources,
     getAppliedOrPreferedAutomation,

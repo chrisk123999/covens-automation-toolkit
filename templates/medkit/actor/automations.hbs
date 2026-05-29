@@ -1,0 +1,11 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <fieldset data-section="actor-automations">
+        <legend>{{localize "CAT.MEDKIT.Actor.Automations"}}</legend>
+        {{formGroup fields.name name="flags.cat.identifier" value=identifierOverride hint=(localize "CAT.MEDKIT.Actor.Name.Hint")}}
+        {{formGroup fields.ignoreActor name="flags.cat.ignoreActor" value=ignoreActor hint=(localize "CAT.MEDKIT.Actor.IgnoreActor.Hint")}}
+        <button type="button" data-action="massApply" data-tooltip="{{localize 'CAT.MEDKIT.MassApply.Tooltip'}}">
+            <i class="fa-solid fa-download"></i>
+            {{localize "CAT.MEDKIT.MassApply.Button"}}
+        </button>
+    </fieldset>
+</section>

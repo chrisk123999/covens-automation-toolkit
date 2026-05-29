@@ -1,0 +1,87 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <p class="hint">{{localize "CAT.MEDKIT.Activity.PlacedRegion.Hint"}}</p>
+    <fieldset data-section="region-visibility">
+        <legend>{{localize "CAT.MEDKIT.Region.Visibility"}}</legend>
+        {{formGroup fields.magicalDarkness name="flags.cat.placed.region.visibility.magicalDarkness" value=magicalDarkness hint=(localize "CAT.MEDKIT.Region.MagicalDarkness.Hint")}}
+        {{formGroup fields.obscured name="flags.cat.placed.region.visibility.obscured" value=obscured hint=(localize "CAT.MEDKIT.Region.Obscured.Hint")}}
+    </fieldset>
+
+    <fieldset data-section="region-effects">
+        <legend>{{localize "CAT.MEDKIT.Activity.Effects.Label"}}</legend>
+        {{#if effectChoices.length}}
+            <div class="form-group">
+                <label for="cat-medkit-region-effects">{{localize "CAT.MEDKIT.Activity.Effects.Field"}}</label>
+                <div class="form-fields">
+                    <cat-multi-combobox input-id="cat-medkit-region-effects" name="flags.cat.placed.region.effects">
+                        {{#each effectChoices}}
+                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                        {{/each}}
+                    </cat-multi-combobox>
+                </div>
+                <p class="hint">{{localize "CAT.MEDKIT.Activity.Effects.Hint"}}</p>
+            </div>
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.Activity.Effects.None"}}</p>
+        {{/if}}
+    </fieldset>
+
+    <fieldset data-section="region-macros">
+        <legend>{{localize "CAT.MEDKIT.Activity.RegionMacros.Label"}}</legend>
+        {{#if regionMacroChoices.length}}
+            <div class="form-group cat-multi-combobox-group">
+                <label for="cat-medkit-region-macros">{{localize "CAT.MEDKIT.Macros.Picker.Field"}}</label>
+                <cat-multi-combobox input-id="cat-medkit-region-macros" name="flags.cat.placed.region.macros">
+                    {{#each regionMacroChoices}}
+                        <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                    {{/each}}
+                </cat-multi-combobox>
+            </div>
+            <p class="hint">{{localize "CAT.MEDKIT.Activity.RegionMacros.Hint"}}</p>
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.Macros.None"}}</p>
+        {{/if}}
+    </fieldset>
+
+    <fieldset data-section="region-activities">
+        <legend>{{localize "CAT.MEDKIT.Activity.Activities.Label"}}</legend>
+        {{#if activityChoices.length}}
+            <div class="form-group">
+                <label for="cat-medkit-region-activities">{{localize "CAT.MEDKIT.Activity.Activities.Field"}}</label>
+                <div class="form-fields">
+                    <cat-multi-combobox input-id="cat-medkit-region-activities" name="flags.cat.placed.region.activities">
+                        {{#each activityChoices}}
+                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                        {{/each}}
+                    </cat-multi-combobox>
+                </div>
+                <p class="hint">{{localize "CAT.MEDKIT.Activity.Activities.Hint"}}</p>
+            </div>
+            {{#each activityRows as |row|}}
+                <div class="cat-medkit-condition-row">
+                    <span class="cat-medkit-condition-name">{{row.label}}</span>
+                    <span class="cat-medkit-group-label">{{localize "CAT.MEDKIT.Activity.Activities.Triggers"}}</span>
+                    {{#each row.triggers as |trig|}}
+                        <button type="button" class="cat-medkit-ability-btn{{#if trig.active}} active{{/if}}" data-action="toggleRegionTrigger" data-activity-id="{{row.id}}" data-trigger="{{trig.key}}">{{trig.label}}</button>
+                    {{/each}}
+                    <span class="cat-medkit-group-label">{{localize "CAT.MEDKIT.Activity.Activities.Disposition"}}</span>
+                    {{#each row.dispositions as |disp|}}
+                        <button type="button" class="cat-medkit-ability-btn{{#if disp.active}} active{{/if}}" data-action="setRegionDisposition" data-activity-id="{{row.id}}" data-disposition="{{disp.key}}">{{disp.label}}</button>
+                    {{/each}}
+                    <button type="button" class="cat-medkit-ability-btn{{#if row.oncePerTurn}} active{{/if}}" data-action="toggleRegionOncePerTurn" data-activity-id="{{row.id}}">{{localize "CAT.MEDKIT.Activity.Activities.OncePerTurn"}}</button>
+                    <button type="button" class="cat-medkit-condition-remove" data-action="removeRegionActivity" data-activity-id="{{row.id}}" data-tooltip="{{localize 'Remove'}}">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            {{/each}}
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.Activity.Activities.NoneAvailable"}}</p>
+        {{/if}}
+    </fieldset>
+
+    {{#if regionEmbeddedCount}}
+        <fieldset data-section="region-embedded">
+            <legend>{{localize "CAT.MEDKIT.Sections.Embedded"}}</legend>
+            <p class="hint">{{localize "CAT.MEDKIT.Embedded.Count" count=regionEmbeddedCount}}</p>
+        </fieldset>
+    {{/if}}
+</section>

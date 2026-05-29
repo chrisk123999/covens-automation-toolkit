@@ -10,7 +10,8 @@
         "Generic": "Generic Automations",
         "Embedded": "Embedded Macros",
         "Macros": "Registered Macros",
-        "DocProps": "Document Properties"
+        "DocProps": "Document Properties",
+        "PlacedRegion": "Placed Region"
       },
       "MassApply": {
         "Label": "Mass Apply / Update",
@@ -18,7 +19,8 @@
         "Tooltip": "Apply / update automations for every item under this document.",
         "ConfirmTitle": "Mass apply automations?",
         "ConfirmPrompt": "Apply registered automations to every item under this document? This rewrites their data and cannot be undone.",
-        "Done": "Mass apply complete."
+        "Done": "Mass apply complete.",
+        "CompendiumPending": "Compendium mass apply isn't wired yet - waiting on a pack-aware updater."
       },
       "Name": {
         "Label": "Match Name",
@@ -94,6 +96,7 @@
       },
       "Footer": {
         "Cancel": "Cancel",
+        "Close": "Close",
         "CancelTooltip": "Discard pending changes and close.",
         "Save": "Save",
         "SaveTooltip": "Commit pending changes; keep the window open.",
@@ -153,6 +156,114 @@
         "Add": "Add document",
         "InvalidUuid": "No document found for that UUID."
       },
+      "Region": {
+        "Visibility": "Visibility",
+        "MagicalDarkness": {
+          "Label": "Magical Darkness",
+          "Hint": "Tokens inside this region are blocked from non-magical light sources."
+        },
+        "Obscured": {
+          "Label": "Obscured",
+          "Hint": "Tokens inside this region are heavily obscured."
+        }
+      },
+      "Actor": {
+        "Automations": "Automations",
+        "Name": {
+          "Label": "Match Name",
+          "Hint": "Override the name used when matching this actor (typically NPCs) against registered automations."
+        },
+        "IgnoreActor": {
+          "Label": "Ignore Actor",
+          "Hint": "Skip this actor during mass compendium / scene updates."
+        },
+        "ConditionResistance": {
+          "Label": "Condition Resistance",
+          "Hint": "Conditions this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
+        },
+        "ConditionVulnerability": {
+          "Label": "Condition Vulnerability",
+          "Hint": "Conditions this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
+        },
+        "Ability": {
+          "All": "All"
+        }
+      },
+      "Activity": {
+        "Hidden": {
+          "Label": "Hidden Activity",
+          "Hint": "Hide this activity from the activity-use selection dialog."
+        },
+        "PlacedRegion": {
+          "Hint": "Configuration applied to any region this activity creates."
+        },
+        "Effects": {
+          "Label": "Region Effects",
+          "Field": "Apply effects",
+          "Hint": "Effects from this item applied to tokens inside a region this activity creates.",
+          "None": "This item has no effects to apply."
+        },
+        "RegionMacros": {
+          "Label": "Region Registered Macros",
+          "Hint": "Registered macros copied onto a region this activity creates."
+        },
+        "Activities": {
+          "Label": "Region Activities",
+          "Field": "Trigger activities",
+          "Hint": "Activities from this item that fire when tokens interact with a region this activity creates.",
+          "NoneAvailable": "This item has no other activities to trigger.",
+          "Triggers": "Triggers",
+          "Disposition": "Targets",
+          "OncePerTurn": "Once per turn"
+        },
+        "Triggers": {
+          "enter": "Token enters",
+          "left": "Token leaves",
+          "stay": "Token stays",
+          "passedThrough": "Token passes through",
+          "entered": "Region onto token",
+          "exited": "Region off token",
+          "stayed": "Region stays on",
+          "passedOver": "Region passes over",
+          "turnStart": "Turn start",
+          "turnEnd": "Turn end",
+          "everyTurn": "Every turn"
+        },
+        "Disposition": {
+          "all": "All",
+          "ally": "Allies",
+          "enemy": "Enemies"
+        }
+      },
+      "Effect": {
+        "Conditions": {
+          "Label": "Conditions",
+          "Hint": "Conditions applied to the actor while this effect is active."
+        },
+        "SpecialDuration": {
+          "Label": "Special Durations",
+          "Hint": "Triggers that automatically remove this effect."
+        },
+        "SpecialDurations": {
+          "endOfWorkflow": "End of workflow",
+          "forceSave": "Forced a save",
+          "damagedByAlly": "Damaged by ally",
+          "damagedByEnemy": "Damaged by enemy",
+          "hitByAnotherCreature": "Hit by another creature",
+          "attackedByAnotherCreature": "Attacked by another creature",
+          "hitBySource": "Hit by effect source",
+          "attackedBySource": "Attacked by effect source",
+          "moveFinished": "Movement finished",
+          "zeroSpeed": "Speed reduced to zero",
+          "tempHP": "Temporary HP lost",
+          "tempMaxHP": "Temporary max HP lost"
+        },
+        "Animation": "Animation",
+        "NoAnimation": {
+          "Label": "Disable Animation",
+          "Hint": "Suppress effect apply/remove animations for this effect."
+        }
+      },
       "Generic": {
         "SelectLabel": "Generic Features",
         "SelectField": "Apply features",
@@ -161,25 +272,12 @@
         "NoConfig": "No configuration for this feature."
       },
       "Macros": {
-        "Filters": "Filters",
-        "Filter": "Search macros...",
-        "SourceFilter": "Source",
-        "AllSources": "All sources",
-        "Registered": "Registered Macros",
-        "None": "No macros registered for this document.",
-        "ThirdParty": "Third-party reaction macro",
-        "Cols": {
-          "Name": "Name",
-          "Source": "Source",
-          "Event": "Event",
-          "Pass": "Pass",
-          "Rules": "Rules",
-          "ThirdParty": "3rd-Party"
+        "Picker": {
+          "Label": "Registered Macros",
+          "Field": "Apply registered macros",
+          "Hint": "Select which registered macros run on this document. Each picked macro fires for every event it declares."
         },
-        "Rules": {
-          "legacy": "Legacy",
-          "modern": "Modern"
-        }
+        "None": "No macros are registered in the global registry."
       }
     },
     "Region": {

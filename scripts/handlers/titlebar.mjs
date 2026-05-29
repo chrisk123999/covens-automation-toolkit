@@ -15,15 +15,17 @@ function appendHeaderControl(app, controls) {
         Scene: applications.SceneMedkit,
         // v14 scene-level docs.
         Level: applications.LevelMedkit,
-        Region: applications.RegionMedkit
-        // TODO: Actor, Activity, Compendium routing.
+        Region: applications.RegionMedkit,
+        Actor: applications.ActorMedkit,
+        ActiveEffect: applications.EffectMedkit,
+        Activity: applications.ActivityMedkit
     };
     controls.push({
         label: headerLabel,
         icon: 'fa-solid fa-shield-cat',
         onClick: () => {
             if (app instanceof foundry.applications.sidebar.apps.Compendium) {
-                // TODO: Compendium Medkit
+                new applications.CompendiumMedkit({document: app.collection}).render({force: true});
                 return;
             }
             const App = medkitForType[documentType];

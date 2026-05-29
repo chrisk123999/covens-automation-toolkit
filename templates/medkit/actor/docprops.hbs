@@ -1,0 +1,54 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <fieldset data-section="condition-resistance">
+        <legend>{{localize "CAT.MEDKIT.Actor.ConditionResistance.Label"}}</legend>
+        <div class="form-group">
+            <label for="cat-medkit-actor-cr">{{localize "CAT.MEDKIT.Actor.ConditionResistance.Label"}}</label>
+            <div class="form-fields">
+                <cat-multi-combobox input-id="cat-medkit-actor-cr" name="flags.cat.CR">
+                    {{#each conditionChoicesCR}}
+                        <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                    {{/each}}
+                </cat-multi-combobox>
+            </div>
+            <p class="hint">{{localize "CAT.MEDKIT.Actor.ConditionResistance.Hint"}}</p>
+        </div>
+        {{#each crConditionRows as |row|}}
+            <div class="cat-medkit-condition-row">
+                <span class="cat-medkit-condition-name">{{row.label}}</span>
+                <button type="button" class="cat-medkit-ability-btn{{#if row.all}} active{{/if}}" data-action="toggleCR" data-condition="{{row.key}}" data-ability="all" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+                {{#each row.abilities as |ab|}}
+                    <button type="button" class="cat-medkit-ability-btn{{#if ab.active}} active{{/if}}" data-action="toggleCR" data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                {{/each}}
+                <button type="button" class="cat-medkit-condition-remove" data-action="removeCondition" data-flag-key="CR" data-condition="{{row.key}}" data-tooltip="{{localize 'Remove'}}">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        {{/each}}
+    </fieldset>
+    <fieldset data-section="condition-vulnerability">
+        <legend>{{localize "CAT.MEDKIT.Actor.ConditionVulnerability.Label"}}</legend>
+        <div class="form-group">
+            <label for="cat-medkit-actor-cv">{{localize "CAT.MEDKIT.Actor.ConditionVulnerability.Label"}}</label>
+            <div class="form-fields">
+                <cat-multi-combobox input-id="cat-medkit-actor-cv" name="flags.cat.CV">
+                    {{#each conditionChoicesCV}}
+                        <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                    {{/each}}
+                </cat-multi-combobox>
+            </div>
+            <p class="hint">{{localize "CAT.MEDKIT.Actor.ConditionVulnerability.Hint"}}</p>
+        </div>
+        {{#each cvConditionRows as |row|}}
+            <div class="cat-medkit-condition-row">
+                <span class="cat-medkit-condition-name">{{row.label}}</span>
+                <button type="button" class="cat-medkit-ability-btn{{#if row.all}} active{{/if}}" data-action="toggleCV" data-condition="{{row.key}}" data-ability="all" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+                {{#each row.abilities as |ab|}}
+                    <button type="button" class="cat-medkit-ability-btn{{#if ab.active}} active{{/if}}" data-action="toggleCV" data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                {{/each}}
+                <button type="button" class="cat-medkit-condition-remove" data-action="removeCondition" data-flag-key="CV" data-condition="{{row.key}}" data-tooltip="{{localize 'Remove'}}">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        {{/each}}
+    </fieldset>
+</section>

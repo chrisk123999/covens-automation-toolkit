@@ -1,0 +1,32 @@
+<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <fieldset data-section="conditions">
+        <legend>{{localize "CAT.MEDKIT.Effect.Conditions.Label"}}</legend>
+        <div class="form-group cat-multi-combobox-group">
+            <label for="cat-medkit-effect-conditions">{{localize "CAT.MEDKIT.Effect.Conditions.Label"}}</label>
+            <cat-multi-combobox input-id="cat-medkit-effect-conditions" name="flags.cat.conditions">
+                {{#each conditionChoices}}
+                    <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                {{/each}}
+            </cat-multi-combobox>
+        </div>
+        <p class="hint">{{localize "CAT.MEDKIT.Effect.Conditions.Hint"}}</p>
+    </fieldset>
+
+    <fieldset data-section="special-durations">
+        <legend>{{localize "CAT.MEDKIT.Effect.SpecialDuration.Label"}}</legend>
+        <div class="form-group cat-multi-combobox-group">
+            <label for="cat-medkit-effect-durations">{{localize "CAT.MEDKIT.Effect.SpecialDuration.Label"}}</label>
+            <cat-multi-combobox input-id="cat-medkit-effect-durations" name="flags.cat.specialDuration">
+                {{#each specialDurationChoices}}
+                    <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                {{/each}}
+            </cat-multi-combobox>
+        </div>
+        <p class="hint">{{localize "CAT.MEDKIT.Effect.SpecialDuration.Hint"}}</p>
+    </fieldset>
+
+    <fieldset data-section="animation">
+        <legend>{{localize "CAT.MEDKIT.Effect.Animation"}}</legend>
+        {{formGroup fields.noAnimation name="flags.cat.noAnimation" value=noAnimation hint=(localize "CAT.MEDKIT.Effect.NoAnimation.Hint")}}
+    </fieldset>
+</section>

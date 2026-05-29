@@ -20,12 +20,4 @@ export default class TokenMedkit extends MedkitApp {
             initial: 'embedded'
         }
     };
-
-    async _prepareContext(options) {
-        const context = await super._prepareContext(options);
-        const macroData = this._prepareRegisteredMacros();
-        context.macroRows = macroData.rows;
-        context.macroSources = macroData.sources;
-        return context;
-    }
 }
