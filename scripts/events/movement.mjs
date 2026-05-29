@@ -43,8 +43,12 @@ async function moveToken(token, movement, options, user) {
         }, []);
         let enteredAndLeftRegions = [];
         if (!teleport) enteredAndLeftRegions = throughRegions.filter(i => !leavingRegions.includes(i) && !enteringRegions.includes(i) && !stayingRegions.includes(i));
-        if (leavingRegions.length) await new Events.RegionEvent(leavingRegions, constants.regionPasses.left, {tokens: [token]}).run();
-        if (enteringRegions.length) await new Events.RegionEvent(enteringRegions, constants.regionPasses.enter, {tokens: [token]}).run();
+        if (leavingRegions.length) {
+            await new Events.RegionEvent(leavingRegions, constants.regionPasses.left, {tokens: [token]}).run();
+        }
+        if (enteringRegions.length) {
+            await new Events.RegionEvent(enteringRegions, constants.regionPasses.enter, {tokens: [token]}).run();
+        }
         if (stayingRegions.length) await new Events.RegionEvent(stayingRegions, constants.regionPasses.stay, {tokens: [token]}).run();
         if (enteredAndLeftRegions.length) await new Events.RegionEvent(enteredAndLeftRegions, constants.regionPasses.passedThrough, {tokens: [token]}).run();
     }
