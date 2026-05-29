@@ -106,6 +106,15 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     _setSelectedSource(value) { this.#selectedSource = value; }
     _getRulesValue() { return this.#rulesValue; }
 
+    _configureRenderParts(options) {
+        const parts = super._configureRenderParts(options);
+        for (const [id, part] of Object.entries(parts)) {
+            if (id === 'header' || id === 'nav' || id === 'footer') continue;
+            if (!part.scrollable) part.scrollable = [''];
+        }
+        return parts;
+    }
+
     // Override per subclass to return iterable of Items for mass apply.
     _getMassApplyItems() { return []; }
 

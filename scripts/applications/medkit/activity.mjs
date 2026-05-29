@@ -14,8 +14,7 @@ export default class ActivityMedkit extends MedkitApp {
         actions: {
             toggleRegionTrigger: ActivityMedkit.#toggleRegionTrigger,
             setRegionDisposition: ActivityMedkit.#setRegionDisposition,
-            toggleRegionOncePerTurn: ActivityMedkit.#toggleRegionOncePerTurn,
-            removeRegionActivity: ActivityMedkit.#removeRegionActivity
+            toggleRegionOncePerTurn: ActivityMedkit.#toggleRegionOncePerTurn
         }
     };
 
@@ -145,13 +144,5 @@ export default class ActivityMedkit extends MedkitApp {
     /** @this {ActivityMedkit} */
     static #toggleRegionOncePerTurn(_event, target) {
         this.#mutateRegionActivity(target.dataset.activityId, entry => entry.oncePerTurn = !entry.oncePerTurn);
-    }
-
-    /** @this {ActivityMedkit} */
-    static #removeRegionActivity(_event, target) {
-        const flags = this._getFlags();
-        const next = (foundry.utils.getProperty(flags, 'placed.region.activities') ?? []).filter(e => e.id !== target.dataset.activityId);
-        foundry.utils.setProperty(flags, 'placed.region.activities', next);
-        this.render();
     }
 }
