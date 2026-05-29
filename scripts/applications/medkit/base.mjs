@@ -1,9 +1,22 @@
 import {constants} from '../../lib/_module.mjs';
 import {documentUtils, genericUtils, automationUtils, dialogUtils} from '../../utilities/_module.mjs';
-import EmbeddedMacrosApp from '../embedded-macros.mjs';
+import EmbeddedMacroEditorApp from '../embedded-macros.mjs';
 const {fields} = foundry.data;
 
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+
+function embeddedToFlat(entry) {
+    const macro = entry.macros?.[0] ?? {};
+    return {name: entry.name ?? '', event: entry.event, pass: entry.pass, priority: macro.priority ?? 0, code: macro.macro ?? '', distance: macro.distance, disposition: macro.disposition, conscious: macro.conscious, identifier: macro.identifier};
+}
+function flatToEmbedded(flat) {
+    const macro = {macro: flat.code ?? '', priority: flat.priority ?? 0};
+    if (flat.distance != null && flat.distance !== '') macro.distance = Number(flat.distance);
+    if (flat.disposition) macro.disposition = flat.disposition;
+    if (flat.conscious) macro.conscious = true;
+    if (flat.identifier) macro.identifier = flat.identifier;
+    return {name: flat.name, event: flat.event, pass: flat.pass, macros: [macro]};
+}
 
 // Shared shell + in-memory state model + actions for every CAT medkit app.
 // Subclasses declare DEFAULT_OPTIONS (id), PARTS, TABS, KEEP_PATHS, and override
@@ -44,7 +57,9 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             save: MedkitApp.#save,
             saveClose: MedkitApp.#saveClose,
             cancel: MedkitApp.#cancel,
-            openEmbeddedMacros: MedkitApp.#openEmbeddedMacros,
+            addEmbeddedMacro: MedkitApp.#addEmbeddedMacro,
+            editEmbeddedMacro: MedkitApp.#editEmbeddedMacro,
+            removeEmbeddedMacro: MedkitApp.#removeEmbeddedMacro,
             addDocument: MedkitApp.#addDocument,
             removeDocument: MedkitApp.#removeDocument,
             massApply: MedkitApp.#massApply
@@ -151,6 +166,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         context.statusLabel = 'CAT.MEDKIT.STATUSES.Unavailable';
         context.isDirty = this.isDirty;
         context.embeddedCount = (this.#flags.embeddedMacros ?? []).length;
+        context.embeddedMacros = (this.#flags.embeddedMacros ?? []).map((entry, index) => ({index, name: entry.name ?? '', event: entry.event ?? '', pass: entry.pass ?? ''}));
         context.buttons = [
             {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Cancel', name: 'cancel', icon: 'fa-solid fa-xmark', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
             {type: 'button', action: 'saveClose', label: 'CAT.MEDKIT.Footer.SaveClose', name: 'saveClose', icon: 'fa-solid fa-check', tooltip: 'CAT.MEDKIT.Footer.SaveCloseTooltip'},
@@ -477,9 +493,42 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.render();
     }
 
+    #openEmbeddedEditor(macro, onSubmit) {
+        new EmbeddedMacroEditorApp({macro, onSubmit, titleName: this.#document.name, documentType: this.constructor.DOCUMENT_TYPE}).render(true);
+    }
+
     /** @this {MedkitApp} */
-    static async #openEmbeddedMacros() {
-        new EmbeddedMacrosApp({document: this.#document}).render(true);
+    static #addEmbeddedMacro() {
+        this.#openEmbeddedEditor(undefined, flat => {
+            const list = (this.#flags.embeddedMacros ??= []);
+            if (list.some(entry => entry.name === flat.name)) {
+                ui.notifications.error(_loc('CAT.MEDKIT.EmbeddedMacros.Duplicate', {name: flat.name}));
+                return false;
+            }
+            list.push(flatToEmbedded(flat));
+            this.render();
+        });
+    }
+
+    /** @this {MedkitApp} */
+    static #editEmbeddedMacro(_event, target) {
+        const index = Number(target.dataset.index);
+        const list = this.#flags.embeddedMacros ?? [];
+        if (!list[index]) return;
+        this.#openEmbeddedEditor(embeddedToFlat(list[index]), flat => {
+            if (list.some((entry, i) => i !== index && entry.name === flat.name)) {
+                ui.notifications.error(_loc('CAT.MEDKIT.EmbeddedMacros.Duplicate', {name: flat.name}));
+                return false;
+            }
+            list[index] = flatToEmbedded(flat);
+            this.render();
+        });
+    }
+
+    /** @this {MedkitApp} */
+    static #removeEmbeddedMacro(_event, target) {
+        (this.#flags.embeddedMacros ?? []).splice(Number(target.dataset.index), 1);
+        this.render();
     }
 
     /** @this {MedkitApp} */

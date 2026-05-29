@@ -3,6 +3,7 @@ const {fields} = foundry.data;
 
 // TODO: replace hardcoded fields when a region doc-props registry/setter util lands.
 export default class RegionMedkit extends MedkitApp {
+    static DOCUMENT_TYPE = 'region';
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-region'
     };

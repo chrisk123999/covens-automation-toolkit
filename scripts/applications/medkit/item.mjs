@@ -4,6 +4,7 @@ import {documentUtils, automationUtils} from '../../utilities/_module.mjs';
 const {fields} = foundry.data;
 
 export default class ItemMedkit extends MedkitApp {
+    static DOCUMENT_TYPE = 'item';
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-item'
     };

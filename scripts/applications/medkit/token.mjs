@@ -1,6 +1,7 @@
 import MedkitApp from './base.mjs';
 
 export default class TokenMedkit extends MedkitApp {
+    static DOCUMENT_TYPE = 'token';
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-token'
     };

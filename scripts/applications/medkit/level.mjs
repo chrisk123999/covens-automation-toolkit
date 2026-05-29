@@ -2,6 +2,7 @@ import MedkitApp from './base.mjs';
 
 // v14 scene-level documents.
 export default class LevelMedkit extends MedkitApp {
+    static DOCUMENT_TYPE = 'level';
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-level'
     };

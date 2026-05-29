@@ -1,63 +1,212 @@
+import {constants} from '../lib/_module.mjs';
+
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+const {fields} = foundry.data;
 
-// Read-only list view of a document's embedded macros. Stub until full editor lands.
-export default class EmbeddedMacrosApp extends HandlebarsApplicationMixin(ApplicationV2) {
-    #document;
+const CREATURE_SCOPES = ['actor', 'scene', 'nearby', 'region', 'level', 'group', 'vehicle', 'encounter'];
+const WORKFLOW_SCOPES = ['actor', 'token', 'scene', 'nearby', 'region', 'level', 'target', 'group', 'encounter', 'vehicle'];
 
-    constructor({document, ...options}) {
+// Which scope prefixes land on each document type at runtime (intersected with an event's scope set).
+const DOCUMENT_SCOPES = {
+    item: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
+    activeeffect: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
+    activity: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
+    actor: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
+    token: ['token', 'actor', 'scene', 'nearby', 'level', 'target'],
+    region: ['region', 'target'],
+    scene: ['scene'],
+    level: ['level']
+};
+const EVENT_EXTRAS = {
+    aura: {required: ['distance'], optional: ['disposition', 'identifier', 'conscious']}
+};
+const SCOPE_EXTRAS = {
+    nearby: {optional: ['distance', 'disposition']},
+    target: {optional: ['distance', 'disposition']}
+};
+const CONFIG_KEYS = ['distance', 'disposition', 'conscious', 'identifier'];
+
+let _eventStructure;
+function getEventStructure() {
+    if (_eventStructure) return _eventStructure;
+    const c = constants;
+    const rollChecks = ['situational', 'context', 'bonus', 'post'];
+    const itemBare = ['bulkUpdated', 'munched'];
+    const itemScoped = Object.values(c.itemPasses).filter(pass => !itemBare.includes(pass));
+    const mk = (list, self, scoped) => list.map(pass => ({pass, self, scoped}));
+    return _eventStructure = {
+        roll: {scopes: WORKFLOW_SCOPES, passes: mk(Object.values(c.workflowPasses), ['item', 'activeeffect', 'activity'], true)},
+        combat: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.combatPasses), [], true)},
+        move: {scopes: CREATURE_SCOPES, passes: mk(['moved'], [], true)},
+        effect: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.effectPasses), ['activeeffect'], true)},
+        item: {scopes: CREATURE_SCOPES, passes: [...mk(itemScoped, ['item'], true), ...mk(itemBare, ['item'], false)]},
+        region: {scopes: [], passes: mk(Object.values(c.regionPasses), ['region'], false)},
+        aura: {scopes: [], passes: mk(Object.values(c.auraPasses), ['item', 'activeeffect'], false)},
+        rest: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.restPasses), [], true)},
+        time: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.timePasses), [], true)},
+        check: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
+        skill: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
+        save: {scopes: CREATURE_SCOPES, passes: mk([...rollChecks, 'targetSituational'], [], true)},
+        tool: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)}
+    };
+}
+
+// Yields {pass, scope} for every pass a document type can fire on an event (bare scope is null).
+function* documentPassEntries(documentType, type) {
+    const entry = getEventStructure()[type];
+    if (!entry) return;
+    const reach = DOCUMENT_SCOPES[documentType] ?? [];
+    const scopes = entry.scopes.filter(scope => reach.includes(scope));
+    for (const {pass, self, scoped} of entry.passes) {
+        if (self.includes(documentType)) yield {pass, scope: null};
+        if (scoped) for (const scope of scopes) yield {pass: scope + pass.capitalize(), scope};
+    }
+}
+
+// The pass strings a given document type can fire for one event type (bare + reachable scope variants).
+function getDocumentPasses(documentType, type) {
+    return [...documentPassEntries(documentType, type)].map(entry => entry.pass);
+}
+
+// Map of event type -> pass list for a document, omitting events with no applicable passes.
+function getAllDocumentPasses(documentType) {
+    const out = {};
+    for (const type of Object.keys(getEventStructure())) {
+        const passes = getDocumentPasses(documentType, type);
+        if (passes.length) out[type] = passes;
+    }
+    return out;
+}
+
+// The extra config fields {required, optional} for one concrete pass (event extras + its scope extras).
+function getPassFields(documentType, type, pass) {
+    const entry = [...documentPassEntries(documentType, type)].find(i => i.pass === pass);
+    if (!entry) return {required: [], optional: []};
+    const event = EVENT_EXTRAS[type] ?? {};
+    const scope = (entry.scope && SCOPE_EXTRAS[entry.scope]) || {};
+    const required = [...(event.required ?? []), ...(scope.required ?? [])];
+    const optional = [...(event.optional ?? []), ...(scope.optional ?? [])].filter(key => !required.includes(key));
+    return {required, optional};
+}
+
+// Builds the SchemaField input descriptor for one extra config field.
+function extraFieldInput(key, macro) {
+    switch (key) {
+        case 'distance':
+            return {field: new fields.NumberField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Distance'), integer: true, min: 0}), value: macro.distance};
+        case 'disposition':
+            return {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Disposition'), blank: true, choices: {all: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.All'), ally: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally'), enemy: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Enemy')}}), value: macro.disposition};
+        case 'conscious':
+            return {field: new fields.BooleanField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Conscious')}), value: macro.conscious};
+        case 'identifier':
+            return {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Identifier')}), value: macro.identifier};
+        default:
+            return null;
+    }
+}
+
+export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(ApplicationV2) {
+    #macro;
+    #onSubmit;
+    #titleName;
+    #documentType;
+
+    constructor({macro, onSubmit, titleName, documentType, ...options}) {
         super({...options});
-        this.#document = document;
+        this.#macro = {name: '', event: undefined, pass: undefined, priority: 0, code: '', ...(macro ?? {})};
+        this.#onSubmit = onSubmit;
+        this.#titleName = titleName ?? '';
+        this.#documentType = documentType;
     }
 
     static DEFAULT_OPTIONS = {
-        id: 'cat-embedded-macros',
+        id: 'cat-embedded-macro-editor',
         classes: ['cat', 'cat-embedded-macros'],
-        window: {
-            frame: false,
-            positioned: true
-        },
-        position: {
-            width: 520,
-            height: 'auto'
-        },
+        tag: 'form',
+        window: {frame: false, positioned: true},
+        position: {width: 820, height: 'auto'},
+        form: {submitOnChange: false, closeOnSubmit: false},
         actions: {
-            close: EmbeddedMacrosApp.#close
+            close: EmbeddedMacroEditorApp.#close,
+            confirm: EmbeddedMacroEditorApp.#confirm
         }
     };
 
     static PARTS = {
-        body: {
-            template: 'modules/cat/templates/embedded-macros.hbs',
-            scrollable: ['']
-        }
+        body: {template: 'modules/cat/templates/embedded-macros.hbs', scrollable: ['.cat-embedded-macros-body']}
     };
 
     get title() {
-        return _loc('CAT.MEDKIT.EmbeddedMacros.Title', {name: this.#document.name});
-    }
-
-    get document() {
-        return this.#document;
+        return _loc('CAT.MEDKIT.EmbeddedMacros.Title', {name: this.#titleName});
     }
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
-        const entries = this.#document.flags.cat?.embeddedMacros ?? [];
         context.title = this.title;
-        context.rows = entries.map(e => ({
-            name: e.name,
-            event: e.event,
-            pass: e.pass,
-            source: e.source ?? '-'
-        }));
+        const map = getAllDocumentPasses(this.#documentType);
+        const eventChoices = Object.keys(map).sort((a, b) => a.localeCompare(b)).reduce((acc, key) => { acc[key] = key.titleCase(); return acc; }, {});
+        const inputs = {
+            name: {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Name')}), value: this.#macro.name},
+            event: {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Event'), choices: eventChoices, blank: true}), value: this.#macro.event}
+        };
+        if (this.#macro.event) {
+            const passChoices = (map[this.#macro.event] ?? []).reduce((acc, pass) => { acc[pass] = pass; return acc; }, {});
+            inputs.pass = {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Pass'), choices: passChoices, blank: true}), value: this.#macro.pass};
+            if (this.#macro.pass) {
+                const {required, optional} = getPassFields(this.#documentType, this.#macro.event, this.#macro.pass);
+                for (const key of [...required, ...optional]) inputs[key] = extraFieldInput(key, this.#macro);
+            }
+        }
+        inputs.priority = {field: new fields.NumberField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Priority'), integer: true, min: 0}), value: this.#macro.priority};
+        inputs.macro = {field: new fields.JavaScriptField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Macro'), async: true}), value: this.#macro.code};
+        context.inputs = inputs;
         return context;
     }
 
-    /** @this {EmbeddedMacrosApp} */
-    static async #close() {
+    async _onChangeForm(_formConfig, event) {
+        const target = event.target;
+        const name = target?.name;
+        if (!name) return;
+        if (name === 'macro') {
+            this.#macro.code = target.value;
+        } else if (name === 'priority') {
+            this.#macro.priority = Number(target.value) || 0;
+        } else if (name === 'distance') {
+            this.#macro.distance = target.value === '' ? undefined : Number(target.value);
+        } else if (name === 'conscious') {
+            this.#macro.conscious = target.checked;
+        } else if (name === 'event') {
+            this.#macro.event = target.value;
+            if (!getDocumentPasses(this.#documentType, target.value).includes(this.#macro.pass)) this.#macro.pass = undefined;
+            this.render();
+        } else if (name === 'pass') {
+            this.#macro.pass = target.value;
+            this.render();
+        } else {
+            this.#macro[name] = target.value;
+        }
+    }
+
+    /** @this {EmbeddedMacroEditorApp} */
+    static #confirm() {
+        const macro = this.#macro;
+        if (!macro.name?.trim() || !macro.event || !macro.pass) {
+            ui.notifications.error(_loc('CAT.MEDKIT.EmbeddedMacros.Invalid', {name: macro.name?.trim() || '?'}));
+            return;
+        }
+        const {required, optional} = getPassFields(this.#documentType, macro.event, macro.pass);
+        const allowed = new Set([...required, ...optional]);
+        const cleaned = {...macro, name: macro.name.trim()};
+        for (const key of CONFIG_KEYS) if (!allowed.has(key)) delete cleaned[key];
+        if (this.#onSubmit?.(cleaned) !== false) this.close();
+    }
+
+    /** @this {EmbeddedMacroEditorApp} */
+    static #close() {
         this.close();
     }
 
+    // Frameless windows have no built-in drag handle; wire one on the custom header.
     #enableDragging() {
         const handle = this.element?.querySelector('.cat-embedded-macros-header');
         if (!handle || handle.dataset.dragWired === '1') return;
@@ -65,7 +214,7 @@ export default class EmbeddedMacrosApp extends HandlebarsApplicationMixin(Applic
         const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
         const orig = drag._onDragMouseDown.bind(drag);
         drag._onDragMouseDown = (event) => {
-            if (event.target.closest('button, a, input, select, [data-action]')) return;
+            if (event.target.closest('button, a, input, select, textarea, [data-action]')) return;
             orig(event);
         };
     }
@@ -83,8 +232,8 @@ export default class EmbeddedMacrosApp extends HandlebarsApplicationMixin(Applic
         if (options.isFirstRender) {
             this.bringToFront();
             const win = this.element.ownerDocument.defaultView ?? window;
-            const w = this.element.offsetWidth || 520;
-            const h = this.element.offsetHeight || 400;
+            const w = this.element.offsetWidth || 820;
+            const h = this.element.offsetHeight || 480;
             this.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
         }
     }

@@ -3,7 +3,7 @@ export {default as ActorMedkit} from './medkit/actor.mjs';
 export {default as CompendiumMedkit} from './medkit/compendium.mjs';
 export {default as DialogApp, DialogManager} from './dialog.mjs';
 export {default as EffectMedkit} from './medkit/effect.mjs';
-export {default as EmbeddedMacrosApp} from './embedded-macros.mjs';
+export {default as EmbeddedMacroEditorApp} from './embedded-macros.mjs';
 export {default as ItemMedkit} from './medkit/item.mjs';
 export {default as LevelMedkit} from './medkit/level.mjs';
 export {default as MedkitApp} from './medkit/base.mjs';

@@ -26,7 +26,6 @@
         "Label": "Match Name",
         "Hint": "Override the name used when matching this item against registered automations."
       },
-      "EditEmbedded": "Edit Embedded Macros",
       "Identifier": {
         "Label": "Document Identifier",
         "Hint": "Item & Activity identifiers must be modified on the respective document sheet."
@@ -53,16 +52,30 @@
         "Embedded": "Embedded Macros"
       },
       "Embedded": {
-        "Count": "{count} embedded macro(s) on this document."
+        "Count": "{count} embedded macro(s) on this document.",
+        "Empty": "No embedded macros on this document.",
+        "Add": "Add macro",
+        "Edit": "Edit macro"
       },
       "EmbeddedMacros": {
         "Title": "Embedded Macros: {name}",
-        "None": "No embedded macros on this document.",
-        "Cols": {
+        "Invalid": "Macro \"{name}\" needs a name, event, and pass before saving.",
+        "Duplicate": "A macro named \"{name}\" already exists on this document.",
+        "Fields": {
           "Name": "Name",
           "Event": "Event",
           "Pass": "Pass",
-          "Source": "Source"
+          "Priority": "Priority",
+          "Macro": "Macro",
+          "Distance": "Distance",
+          "Disposition": "Disposition",
+          "Conscious": "Requires Conscious",
+          "Identifier": "Aura Identifier"
+        },
+        "Disposition": {
+          "All": "All",
+          "Ally": "Ally",
+          "Enemy": "Enemy"
         }
       },
       "Hero": {

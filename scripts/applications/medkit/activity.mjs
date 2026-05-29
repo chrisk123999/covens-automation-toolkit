@@ -5,10 +5,8 @@ const {fields} = foundry.data;
 const REGION_TRIGGERS = ['enter', 'left', 'stay', 'passedThrough', 'entered', 'exited', 'stayed', 'passedOver', 'turnStart', 'turnEnd', 'everyTurn'];
 const DISPOSITIONS = ['all', 'ally', 'enemy'];
 
-// Activity medkit: Doc Props (Hidden), the activity's own Embedded / Registered macros, and the
-// Placed Region config (flags.cat.placed.region.*) that handlers/region.mjs applies to any region
-// this activity creates.
 export default class ActivityMedkit extends MedkitApp {
+    static DOCUMENT_TYPE = 'activity';
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-activity',
         actions: {

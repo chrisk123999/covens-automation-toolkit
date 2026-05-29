@@ -788,8 +788,6 @@ cat-combobox {
     background: transparent;
 }
 
-/* ===== Medkit (Item Application) ===== */
-
 .cat-medkit {
     backdrop-filter: blur(6px);
     grid-template:
@@ -1078,7 +1076,6 @@ cat-combobox {
     cursor: auto;
 }
 
-/* Header + close pills + dirty chip are not regular buttons; restore their compact treatment. */
 .cat-medkit-header .cat-medkit-close,
 .cat-medkit-header [data-action="detach"] {
     width: 1.75rem;
@@ -1095,7 +1092,6 @@ cat-combobox {
     background: var(--cat-bg-hover);
 }
 
-/* Inline chip controls aren't standalone buttons; strip the generic CAT button chrome. */
 .cat-medkit .cat-multi-combobox-remove,
 .cat-medkit .cat-multi-combobox-stepper button {
     padding: 0;
@@ -1352,14 +1348,10 @@ cat-combobox {
     background: transparent;
 }
 
-/* CR/CV pickers manage chips via the row UI below; suppress the multi-combobox's own chip list. */
 .cat-medkit cat-multi-combobox[name="flags.cat.CR"] > .cat-multi-combobox-chips,
 .cat-medkit cat-multi-combobox[name="flags.cat.CV"] > .cat-multi-combobox-chips {
     display: none;
 }
-
-
-/* ===== Embedded Macros (stub editor) ===== */
 
 .cat-embedded-macros {
     backdrop-filter: blur(6px);
@@ -1379,6 +1371,7 @@ cat-combobox {
 
 .cat-embedded-macros-shell {
     display: flex;
+    flex: 1;
     flex-direction: column;
     min-height: 0;
 }
@@ -1406,28 +1399,88 @@ cat-combobox {
     white-space: nowrap;
 }
 
+.cat-medkit-embedded-list {
+    margin: var(--cat-space-sm) 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cat-medkit-embedded-list li {
+    gap: var(--cat-space-sm);
+    display: flex;
+    align-items: center;
+    padding: var(--cat-space-xs) var(--cat-space-sm);
+    border-bottom: 1px solid var(--cat-border-light);
+}
+
+.cat-medkit-embedded-name {
+    flex: 1 1 auto;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.cat-medkit-embedded-meta {
+    flex: 0 0 auto;
+    color: var(--cat-text-muted);
+    font-size: 0.75em;
+}
+
+.cat-medkit-embedded-list li > button {
+    flex: 0 0 auto;
+    width: 1.5rem;
+    padding: 0;
+    border: 0;
+    color: var(--cat-text-muted);
+    background: transparent;
+}
+
+.cat-medkit-embedded-list li > button:hover {
+    border: 0;
+    color: var(--cat-text-primary);
+    background: transparent;
+}
+
 .cat-embedded-macros-body {
+    flex: 1;
+    min-height: 0;
     padding: var(--cat-space-md);
     overflow-y: auto;
 }
 
-.cat-embedded-macros-table {
+.cat-embedded-macros-footer {
+    gap: var(--cat-space-sm);
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--cat-space-sm) var(--cat-space-md);
+    border-top: 1px solid var(--cat-border-light);
+}
+
+.cat .cat-embedded-macros-body code-mirror {
+    height: 20rem;
+}
+
+.cat .form-fields:has(.mac-editor-toolbar) {
+    flex-wrap: wrap;
+}
+
+.cat .form-group.stacked:has(.mac-editor-toolbar) {
+    position: relative;
+}
+
+.cat .form-group.stacked:has(.mac-editor-toolbar) > .form-fields > .mac-editor-toolbar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: auto;
+}
+
+.cat .form-fields:has(.mac-editor-toolbar) > code-mirror {
+    flex: none;
     width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
+    height: 20rem;
 }
 
-.cat-embedded-macros-table th,
-.cat-embedded-macros-table td {
-    padding: var(--cat-space-xs) var(--cat-space-sm);
-    border-bottom: 1px solid var(--cat-border-light);
-    text-align: left;
+.cat .form-fields:has(.mac-editor-toolbar) > .mac-blockly-container {
+    flex: none;
+    height: 25rem !important;
 }
-
-.cat-embedded-macros-table th {
-    color: var(--cat-text-accent);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
