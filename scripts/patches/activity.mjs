@@ -2,7 +2,7 @@ import {Logging} from '../lib/_module.mjs';
 import {default as dataModel} from './dataModel.mjs';
 import {automationUtils} from '../utilities/_module.mjs';
 /*
-item.flags.cat.otherAbilities = {
+activity.flags.cat.otherAbilities = {
     value: ['wis', 'int']
     configValue: 'example'
 }
