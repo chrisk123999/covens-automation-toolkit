@@ -11,7 +11,6 @@ function getCurrentAutomation(item) {
     if (!identifier || !rules || !source) return;
     return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type});
 }
-// TODO: May need to improve this, went with something simple
 function getAutomationStatus(item) {
     const STATUSES = {
         UNAVAILABLE: -2,
@@ -219,9 +218,9 @@ function getStoredHash(document) {
  * @param {Object<string, Array<{identifier:string, source:string, rules:string}>>} eventMap
  *   e.g. {roll: [{identifier, source, rules}], save: [...]}
  */
-async function setRegisteredMacros(document, eventMap) {
+async function setRegisteredMacros(document, macros) {
     if (!document) return;
-    return documentUtils.update(document, {'flags.cat.macros': eventMap});
+    return documentUtils.update(document, {'flags.cat.macros': macros});
 }
 
 export default {
