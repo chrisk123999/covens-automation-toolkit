@@ -1,4 +1,5 @@
-import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils, itemUtils, regionUtils, tokenUtils} from '../utilities/_module.mjs';
+import {actorUtils, documentUtils, effectUtils, genericUtils, tokenUtils} from '../utilities/_module.mjs';
+import * as utils from '../utilities/_module.mjs';
 import {Triggers, Logging, constants} from '../lib/_module.mjs';
 class CatEvent {
     constructor(pass) {
@@ -25,12 +26,7 @@ class CatEvent {
     }
     buildScriptFunction(script, scope) {
         const defaultScope = {
-            activityUtils,
-            actorUtils,
-            effectUtils,
-            itemUtils, 
-            regionUtils,
-            tokenUtils,
+            ...utils,
             constants
         };
         scope = {...defaultScope, ...scope};
