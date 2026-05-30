@@ -29,12 +29,10 @@
 }
 
 [data-medkit-status="unknown"]          { color: var(--cat-status-pink); }
-[data-medkit-status="outdated-cpr"]     { color: var(--cat-status-red); }
-[data-medkit-status="outdated-other"]   { color: var(--cat-status-orange); }
+[data-medkit-status="outdated"]     { color: var(--cat-status-red); }
 [data-medkit-status="available"]        { color: var(--cat-status-yellow); }
-[data-medkit-status="up-to-date-cpr"]   { color: var(--cat-status-green); }
+[data-medkit-status="up-to-date"]   { color: var(--cat-status-green); }
 [data-medkit-status="configurable"]     { color: var(--cat-status-blue); }
-[data-medkit-status="up-to-date-other"] { color: var(--cat-status-purple); }
 
 .cat-dialog {
     backdrop-filter: blur(6px);
@@ -1134,14 +1132,9 @@ cat-combobox {
     background: rgb(255 192 203 / var(--cat-bg-hero-tint-opacity));
 }
 
-.cat-medkit-hero[data-medkit-status="outdated-cpr"] {
+.cat-medkit-hero[data-medkit-status="outdated"] {
     border-color: var(--cat-status-red);
     background: rgb(220 38 38 / var(--cat-bg-hero-tint-opacity));
-}
-
-.cat-medkit-hero[data-medkit-status="outdated-other"] {
-    border-color: var(--cat-status-orange);
-    background: rgb(255 165 0 / var(--cat-bg-hero-tint-opacity));
 }
 
 .cat-medkit-hero[data-medkit-status="available"] {
@@ -1149,7 +1142,7 @@ cat-combobox {
     background: rgb(255 215 0 / var(--cat-bg-hero-tint-opacity));
 }
 
-.cat-medkit-hero[data-medkit-status="up-to-date-cpr"] {
+.cat-medkit-hero[data-medkit-status="up-to-date"] {
     border-color: var(--cat-status-green);
     background: rgb(0 128 0 / var(--cat-bg-hero-tint-opacity));
 }
@@ -1159,11 +1152,6 @@ cat-combobox {
     background: rgb(30 144 255 / var(--cat-bg-hero-tint-opacity));
 }
 
-.cat-medkit-hero[data-medkit-status="up-to-date-other"] {
-    border-color: var(--cat-status-purple);
-    background: rgb(218 112 214 / var(--cat-bg-hero-tint-opacity));
-}
-
 .cat-medkit-hero-icon {
     flex: 0 0 auto;
     color: currentcolor;
@@ -1171,12 +1159,10 @@ cat-combobox {
 }
 
 .cat-medkit-hero[data-medkit-status="unknown"]          .cat-medkit-hero-icon { color: var(--cat-status-pink); }
-.cat-medkit-hero[data-medkit-status="outdated-cpr"]     .cat-medkit-hero-icon { color: var(--cat-status-red); }
-.cat-medkit-hero[data-medkit-status="outdated-other"]   .cat-medkit-hero-icon { color: var(--cat-status-orange); }
+.cat-medkit-hero[data-medkit-status="outdated"]     .cat-medkit-hero-icon { color: var(--cat-status-red); }
 .cat-medkit-hero[data-medkit-status="available"]        .cat-medkit-hero-icon { color: var(--cat-status-yellow); }
-.cat-medkit-hero[data-medkit-status="up-to-date-cpr"]   .cat-medkit-hero-icon { color: var(--cat-status-green); }
+.cat-medkit-hero[data-medkit-status="up-to-date"]   .cat-medkit-hero-icon { color: var(--cat-status-green); }
 .cat-medkit-hero[data-medkit-status="configurable"]     .cat-medkit-hero-icon { color: var(--cat-status-blue); }
-.cat-medkit-hero[data-medkit-status="up-to-date-other"] .cat-medkit-hero-icon { color: var(--cat-status-purple); }
 
 .cat-medkit-hero-text {
     min-width: 0;
