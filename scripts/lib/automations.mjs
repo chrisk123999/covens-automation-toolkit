@@ -102,7 +102,7 @@ export class RegisteredAutomations {
         identifier: new fields.StringField({required: true, nullable: false}),
         version: new fields.StringField({required: true, nullable: false}),
         uuid: new fields.StringField({required: true, nullable: false}),
-        config: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+        config: new fields.ObjectField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
         notes: new fields.StringField({required: false, nullable: false}),
         monsterIdentifier: new fields.StringField({required: false, nullable: false}),
         scales: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),

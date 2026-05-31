@@ -66,6 +66,44 @@ function getAvailableAutomations(item) {
 function getConfigValue(item, key) {
     return constants.automations.getConfigValue(item, key);
 }
+function getGenericConfigValue(item, source, identifier, key) {
+    return constants.macros.getGenericConfigValue(item, source, identifier, key);
+}
+async function setConfigValue(item, key, value) {
+    return await documentUtils.setFlag(item, 'cat', 'config.' + key, value);
+}
+async function setGenericConfigValue(item, source, identifier, key, value) {
+    return await documentUtils.setFlag(item, 'cat', 'genericConfig.' + source + '.' + identifier + '.' + key, value);
+}
+function getConfigValues(item, keys = []) {
+    const results = {};
+    keys.forEach(key => {
+        results[key] = getConfigValue(item, key);
+    });
+    return results;
+}
+function getGenericConfigValues(item, source, identifier, keys = []) {
+    const results = {};
+    keys.forEach(key => {
+        results[key] = getGenericConfigValue(item, source, identifier, key);
+    });
+    return results;
+}
+async function setConfigValues(item, values = {}) {
+    const updates = {};
+    for (const [key, value] of Object.entries(values)) {
+        updates['flags.cat.config.' + key] = value;
+    }
+    return await documentUtils.update(item, updates);
+}
+async function setGenericConfigValues(item, source, identifier, values = {}) {
+    const updates = {};
+    const prefix = 'flags.cat.genericConfig.' + source + '.' + identifier + '.';
+    for (const [key, value] of Object.entries(values)) {
+        updates[prefix + key] = value;
+    }
+    return await documentUtils.update(item, updates);
+}
 function getAutomationSources() {
     const settings = game.settings.get('cat', 'automationSources');
     return Object.entries(settings).filter(([key, value]) => value.enabled).sort((a, b) => a[1].priority - b[1].priority).map(([key, value]) => key);
@@ -188,9 +226,7 @@ async function updateScales(item, {automation} = {}) {
             updates.push(change);
         }
     });
-    if (updates.length) {
-        await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
-    }
+    if (updates.length) await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
 }
 function simpleHash(str) {
     let hash = 0;
@@ -233,6 +269,13 @@ export default {
     getAvailableAutomations,
     setRegisteredMacros,
     getConfigValue,
+    getGenericConfigValue,
+    setConfigValue,
+    setGenericConfigValue,
+    getConfigValues,
+    getGenericConfigValues,
+    setConfigValues,
+    setGenericConfigValues,
     getAutomationSources,
     getAppliedOrPreferedAutomation,
     updateItem,

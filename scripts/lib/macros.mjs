@@ -1,4 +1,5 @@
 import {Logging} from '../lib/_module.mjs';
+import {documentUtils} from '../utilities/_module.mjs';
 const fields = foundry.data.fields;
 export class RegisteredMacros {
     #macrosSchema;
@@ -22,7 +23,8 @@ export class RegisteredMacros {
             skill: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             time: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             tool: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            roll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false})
+            roll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            genericConfig: new fields.ObjectField(new fields.ObjectField({required: true, nullable: false}), {required: false})
         });
         this.#multiMacrosSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
     }
@@ -68,6 +70,14 @@ export class RegisteredMacros {
             return false;
         }
         return data.map(i => this.registerFnMacro(i), overwrite);
+    }
+    getGenericConfigValue(document, source, identifier, key) {
+        const value = document.flags.cat?.genericConfig?.[source]?.[identifier]?.[key];
+        if (value) return value;
+        const rules = documentUtils.getRules(document);
+        const predicate = macro => macro.source === source && macro.rules === rules && macro.identifier === identifier;
+        const macro = this.overwriteMacros.find(predicate) ?? this.fnMacros.find(predicate);
+        return macro?.genericConfig?.[source]?.[identifier]?.[key]?.default;
     }
 }
 class FnMacro {
