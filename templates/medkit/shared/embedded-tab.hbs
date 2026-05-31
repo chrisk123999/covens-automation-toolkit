@@ -1,12 +1,27 @@
 <section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
     <fieldset data-section="embedded">
         <legend>{{localize "CAT.MEDKIT.Sections.Embedded"}}</legend>
-        <p class="hint">{{localize "CAT.MEDKIT.Embedded.Count" count=embeddedCount}}</p>
-        <div>
-            <button type="button" data-action="openEmbeddedMacros">
-                <i class="fa-solid fa-feather-pointed"></i>
-                {{localize "CAT.MEDKIT.EditEmbedded"}}
-            </button>
-        </div>
+        {{#if embeddedMacros.length}}
+            <ul class="cat-medkit-embedded-list">
+                {{#each embeddedMacros}}
+                    <li>
+                        <span class="cat-medkit-embedded-name">{{name}}</span>
+                        <span class="cat-medkit-embedded-meta">{{event}}{{#if pass}} / {{pass}}{{/if}}</span>
+                        <button type="button" data-action="editEmbeddedMacro" data-index="{{index}}" data-tooltip="{{localize 'CAT.MEDKIT.Embedded.Edit'}}">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" data-action="removeEmbeddedMacro" data-index="{{index}}" data-tooltip="{{localize 'Remove'}}">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </li>
+                {{/each}}
+            </ul>
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.Embedded.Empty"}}</p>
+        {{/if}}
+        <button type="button" data-action="addEmbeddedMacro">
+            <i class="fa-solid fa-plus"></i>
+            {{localize "CAT.MEDKIT.Embedded.Add"}}
+        </button>
     </fieldset>
 </section>

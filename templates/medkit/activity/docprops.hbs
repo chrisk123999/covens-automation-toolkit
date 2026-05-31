@@ -3,4 +3,21 @@
         <legend>{{localize "CAT.MEDKIT.TABS.DocProps"}}</legend>
         {{formGroup fields.hidden name="flags.cat.hidden" value=hidden hint=(localize "CAT.MEDKIT.Activity.Hidden.Hint")}}
     </fieldset>
+
+    {{#if showOtherAbilities}}
+        <fieldset data-section="other-abilities">
+            <legend>{{localize "CAT.MEDKIT.DocProps.otherAbilities.Label"}}</legend>
+            <div class="form-group">
+                <label for="cat-medkit-other-abilities">{{localize "CAT.MEDKIT.DocProps.otherAbilities.Field"}}</label>
+                <div class="form-fields">
+                    <cat-multi-combobox input-id="cat-medkit-other-abilities" name="flags.cat.otherAbilities">
+                        {{#each otherAbilityChoices}}
+                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                        {{/each}}
+                    </cat-multi-combobox>
+                </div>
+                <p class="hint">{{localize "CAT.MEDKIT.DocProps.otherAbilities.Hint"}}</p>
+            </div>
+        </fieldset>
+    {{/if}}
 </section>

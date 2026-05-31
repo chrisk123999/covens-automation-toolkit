@@ -26,7 +26,6 @@
         "Label": "Match Name",
         "Hint": "Override the name used when matching this item against registered automations."
       },
-      "EditEmbedded": "Edit Embedded Macros",
       "Identifier": {
         "Label": "Document Identifier",
         "Hint": "Item & Activity identifiers must be modified on the respective document sheet."
@@ -53,16 +52,85 @@
         "Embedded": "Embedded Macros"
       },
       "Embedded": {
-        "Count": "{count} embedded macro(s) on this document."
+        "Count": "{count} embedded macro(s) on this document.",
+        "Empty": "No embedded macros on this document.",
+        "Add": "Add macro",
+        "Edit": "Edit macro"
       },
       "EmbeddedMacros": {
         "Title": "Embedded Macros: {name}",
-        "None": "No embedded macros on this document.",
-        "Cols": {
+        "Invalid": "Macro \"{name}\" needs a name, event, and pass before saving.",
+        "Duplicate": "A macro named \"{name}\" already exists on this document.",
+        "Fields": {
           "Name": "Name",
           "Event": "Event",
           "Pass": "Pass",
-          "Source": "Source"
+          "Priority": "Priority",
+          "Macro": "Macro",
+          "Distance": "Distance",
+          "ConfigDistance": "Distance Config Key",
+          "Dispositions": "Dispositions",
+          "ConfigDispositions": "Dispositions Config Key",
+          "Disabled": "Skip If Target Is",
+          "ConfigDisabled": "Skip If Target Is Config Key"
+        },
+        "Disposition": {
+          "All": "All",
+          "Ally": "Ally",
+          "Enemy": "Enemy"
+        },
+        "Disabled": {
+          "Incapacitated": "Incapacitated",
+          "Dead": "Dead",
+          "Unconscious": "Unconscious"
+        }
+      },
+      "DocProps": {
+        "Hint": "Document properties feed the dnd5e patches (alternate formulas, abilities, and roll modifiers).",
+        "Empty": "None defined.",
+        "Add": "Add",
+        "Duplicate": "An entry for identifier \"{name}\" already exists.",
+        "Identifier": "Target Identifier",
+        "IdentifierHint": "The identifier of the item this entry applies to.",
+        "InvalidIdentifier": "An identifier is required.",
+        "InvalidValue": "A value is required.",
+        "alternateFormula": {
+          "Title": "Alternate Formula: {name}",
+          "Label": "Alternate Formula",
+          "Field": "Formula",
+          "Hint": "Roll formula offered as an alternative; the highest-rolling option is used.",
+          "Identifiers": "Target Identifiers",
+          "IdentifiersHint": "Comma-separated target identifiers this formula applies to (item|activity)."
+        },
+        "alternateAbilities": {
+          "Title": "Alternate Abilities: {name}",
+          "Label": "Alternate Abilities",
+          "Field": "Abilities"
+        },
+        "otherAbilities": {
+          "Label": "Other Abilities",
+          "Field": "Abilities",
+          "Hint": "Extra abilities this attack may use."
+        },
+        "rollModifiers": {
+          "Title": "Roll Modifier: {name}",
+          "Label": "Roll Modifiers",
+          "Modifiers": "Modifiers",
+          "ModifiersHint": "Comma-separated dice modifiers (e.g. x, min1, kh1).",
+          "Invalid": "At least one modifier is required."
+        },
+        "Restrictions": {
+          "Legend": "Restrictions",
+          "Hint": "Leave a restriction empty to skip it. Comma-separate free-form values.",
+          "RequireAll": "Require all",
+          "identifier": "Item Identifiers",
+          "type": "Item Types",
+          "property": "Properties",
+          "school": "Spell Schools",
+          "level": "Spell Levels",
+          "ability": "Abilities",
+          "method": "Spell Methods",
+          "damageTypes": "Damage Types"
         }
       },
       "Hero": {

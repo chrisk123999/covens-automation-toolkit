@@ -5,30 +5,36 @@
             <i class="fas fa-xmark" aria-hidden="true"></i>
         </button>
     </header>
+
     <div class="cat-embedded-macros-body">
-        {{#if rows.length}}
-            <table class="cat-embedded-macros-table">
-                <thead>
-                    <tr>
-                        <th>{{localize "CAT.MEDKIT.EmbeddedMacros.Cols.Name"}}</th>
-                        <th>{{localize "CAT.MEDKIT.EmbeddedMacros.Cols.Event"}}</th>
-                        <th>{{localize "CAT.MEDKIT.EmbeddedMacros.Cols.Pass"}}</th>
-                        <th>{{localize "CAT.MEDKIT.EmbeddedMacros.Cols.Source"}}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{#each rows}}
-                        <tr>
-                            <td>{{name}}</td>
-                            <td>{{event}}</td>
-                            <td>{{pass}}</td>
-                            <td>{{source}}</td>
-                        </tr>
-                    {{/each}}
-                </tbody>
-            </table>
-        {{else}}
-            <p class="hint">{{localize "CAT.MEDKIT.EmbeddedMacros.None"}}</p>
-        {{/if}}
+        <div class="standard-form">
+            {{#each inputs as |input key|}}
+                {{#if input.combobox}}
+                    <div class="form-group">
+                        <label>{{input.label}}</label>
+                        <div class="form-fields">
+                            <cat-multi-combobox name="{{key}}">
+                                {{#each input.options}}
+                                    <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                                {{/each}}
+                            </cat-multi-combobox>
+                        </div>
+                    </div>
+                {{else}}
+                    {{formGroup input.field value=input.value name=key}}
+                {{/if}}
+            {{/each}}
+        </div>
     </div>
+
+    <footer class="cat-embedded-macros-footer">
+        <button type="button" data-action="close" data-tooltip="{{localize 'CAT.MEDKIT.Footer.CancelTooltip'}}">
+            <i class="fa-solid fa-xmark"></i>
+            {{localize "CAT.MEDKIT.Footer.Cancel"}}
+        </button>
+        <button type="button" data-action="confirm">
+            <i class="fa-solid fa-check"></i>
+            {{localize "DND5E.Confirm"}}
+        </button>
+    </footer>
 </div>

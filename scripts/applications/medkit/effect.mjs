@@ -19,6 +19,7 @@ const SPECIAL_DURATIONS = [
 ];
 
 export default class EffectMedkit extends MedkitApp {
+    static DOCUMENT_TYPE = 'activeeffect';
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-effect'
     };
