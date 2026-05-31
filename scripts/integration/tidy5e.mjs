@@ -34,7 +34,6 @@ async function renderTidySheet(app, elem, options) {
         if (!document) return;
         const selector = document.documentName === 'Item' ? '.cat-medkit-item' : '.cat-medkit-actor';
         const headerIcon = elem.querySelector(selector);
-        console.log(headerIcon);
         if (!headerIcon) return;
         let medkitStatus;
         switch (automationUtils.getAutomationStatus(document)) {
