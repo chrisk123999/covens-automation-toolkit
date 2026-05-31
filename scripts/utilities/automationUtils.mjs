@@ -104,6 +104,12 @@ async function setGenericConfigValues(item, source, identifier, values = {}) {
     }
     return await documentUtils.update(item, updates);
 }
+function getAllGenericConfigs(item) {
+    return item.flags.cat?.genericConfig || {};
+}
+async function setAllGenericConfigs(item, configData) {
+    return await documentUtils.update(item, {'flags.cat.genericConfig': configData});
+}
 function getAutomationSources() {
     const settings = game.settings.get('cat', 'automationSources');
     return Object.entries(settings).filter(([key, value]) => value.enabled).sort((a, b) => a[1].priority - b[1].priority).map(([key, value]) => key);
@@ -284,5 +290,7 @@ export default {
     setDocumentHash,
     getStoredHash,
     isUpToDate,
-    getActorAutomationStatus
+    getActorAutomationStatus,
+    getAllGenericConfigs,
+    setAllGenericConfigs
 };
