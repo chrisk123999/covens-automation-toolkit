@@ -1043,7 +1043,9 @@ cat-combobox {
 }
 
 .cat-medkit select option,
-.cat-medkit select optgroup {
+.cat-medkit select optgroup,
+.cat-embedded-macros select option,
+.cat-embedded-macros select optgroup {
     color: var(--cat-text-primary);
     background: var(--cat-bg-surface);
 }
