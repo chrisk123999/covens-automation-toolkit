@@ -29,7 +29,8 @@ export class RegisteredMacros {
         this.#multiMacrosSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
     }
     getFnMacros(source, rules, identifier, type, pass) {
-        let fnMacro = this.overwriteMacros.find(oMacro => oMacro.source === source && oMacro.identifier === identifier && (oMacro.rules === rules || oMacro.rules === 'all')) ?? this.fnMacros.find(fnMacro => fnMacro.source === source && fnMacro.identifier === identifier && (fnMacro.rules === rules || fnMacro.rules === 'all'));
+        const predicate = macro => macro.source === source && macro.identifier === identifier && (macro.rules === rules || macro.rules === 'all');
+        let fnMacro = this.overwriteMacros.find(predicate) ?? this.fnMacros.find(predicate);
         if (!fnMacro) return;
         if (!fnMacro.macros[type].length) return;
         let macros = fnMacro.macros[type].filter(i => i.pass === pass);
@@ -40,6 +41,17 @@ export class RegisteredMacros {
             identifier,
             macros
         };
+    }
+    getAllGenericMacros() {
+        const allMacros = [...this.fnMacros, ...this.overwriteMacros];
+        const uniqueMacros = new Map();
+        allMacros.forEach(macro => {
+            if (macro.generic === true) {
+                const key = macro.source + '|' + macro.identifier + '|' + macro.rules;
+                uniqueMacros.set(key, macro);
+            }
+        });
+        return Array.from(uniqueMacros.values());
     }
     registerFnMacro(data, overwrite = false) {
         const validationError = this.#macrosSchema.validate(data);
@@ -60,7 +72,9 @@ export class RegisteredMacros {
             skill: data.skill ?? [],
             time: data.time ?? [],
             tool: data.tool ?? [],
-            roll: data.roll ?? []
+            roll: data.roll ?? [],
+            generic: data.generic,
+            genericConfig: data.genericConfig
         }));
     }
     registerFnMacros(data = [], overwrite = false) {
@@ -81,10 +95,12 @@ export class RegisteredMacros {
     }
 }
 class FnMacro {
-    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], aura = [], check = [], region = [], rest = [], save = [], skill = [], time = [], tool = []} = {}) {
+    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], aura = [], check = [], region = [], rest = [], save = [], skill = [], time = [], tool = [], generic, genericConfig} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
+        this.generic = generic;
+        this.genericConfig = genericConfig;
         this.macros = {
             aura,
             check,
