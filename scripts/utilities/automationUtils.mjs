@@ -11,33 +11,37 @@ function getCurrentAutomation(item) {
     if (!identifier || !rules || !source) return;
     return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type});
 }
-function getAutomationStatus(item) {
-    const STATUSES = {
-        UNAVAILABLE: -2,
-        AVAILABLE: -1,
-        OUTDATED: 0,
-        UP_TO_DATE: 1,
-        CONFIGURABLE: 2,
-        GENERIC: 3
-    };
-    if (item.flags.cat?.config?.generic) return STATUSES.GENERIC;
+function getAutomationStatus(document) {
+    if (document.documentName === 'Item') return getItemAutomationStatus(document);
+    if (document.documentName === 'Actor') return getActorAutomationStatus(document);
+    return -2;
+}
+function getActorAutomationStatus(actor) {
+    return actor.items.reduce((lowest, item) => {
+        const status = getItemAutomationStatus(item);
+        if (status === -2) return lowest;
+        return lowest === -2 ? status : Math.min(lowest, status);
+    }, -2);
+}
+function getItemAutomationStatus(item) {
+    if (item.flags.cat?.config?.generic) return constants.automationStatus.GENERIC;
     else {
         const storedHash = getStoredHash(item);
         if (storedHash) {
             const hash = getDocumentHash(item);
-            if (hash != storedHash) return STATUSES.OUTDATED;
-            return STATUSES.UP_TO_DATE;
+            if (hash != storedHash) return constants.automationStatus.OUTDATED;
+            return constants.automationStatus.UP_TO_DATE;
         } else {
             const currentAutomation = getCurrentAutomation(item);
             if (currentAutomation) {
-                if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) return STATUSES.OUTDATED;
-                if (currentAutomation.config) return STATUSES.CONFIGURABLE;
-                return STATUSES.UP_TO_DATE;
+                if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) return constants.automationStatus.OUTDATED;
+                if (currentAutomation.config) return constants.automationStatus.CONFIGURABLE;
+                return constants.automationStatus.UP_TO_DATE;
             }
-            if (getAvailableAutomations(item).length) return STATUSES.AVAILABLE;
+            if (getAvailableAutomations(item).length) return constants.automationStatus.AVAILABLE;
         }
     }
-    return STATUSES.UNAVAILABLE;
+    return constants.automationStatus.UNAVAILABLE;
 }
 function isUpToDate(item) {
     const storedHash = getStoredHash(item);
@@ -236,5 +240,6 @@ export default {
     getDocumentHash,
     setDocumentHash,
     getStoredHash,
-    isUpToDate
+    isUpToDate,
+    getActorAutomationStatus
 };

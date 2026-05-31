@@ -18,7 +18,7 @@ function headerControls(api) {
     api.registerActorHeaderControls({
         controls: [
             {
-                icon: 'fa-solid fa-shield-cat',
+                icon: 'fa-solid fa-shield-cat cat-medkit-actor',
                 label: headerLabel,
                 position: 'header',
                 onClickAction() {
@@ -28,14 +28,16 @@ function headerControls(api) {
         ]
     });
 }
-async function renderTidyItemSheet(app, elem, options) {
+async function renderTidySheet(app, elem, options) {
     setTimeout(() => {
-        const headerIcon = elem.querySelector('.cat-medkit-item');
+        const document = app.document;
+        if (!document) return;
+        const selector = document.documentName === 'Item' ? '.cat-medkit-item' : '.cat-medkit-actor';
+        const headerIcon = elem.querySelector(selector);
+        console.log(headerIcon);
         if (!headerIcon) return;
-        const item = app.document;
-        if (!item) return;
         let medkitStatus;
-        switch (automationUtils.getAutomationStatus(item)) {
+        switch (automationUtils.getAutomationStatus(document)) {
             case -2:
                 medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
                 break;
@@ -56,8 +58,7 @@ async function renderTidyItemSheet(app, elem, options) {
         if (medkitStatus) headerIcon.dataset.medkitStatus = medkitStatus;
     }, 100);
 }
-
 export default {
     headerControls,
-    renderTidyItemSheet
+    renderTidySheet
 };

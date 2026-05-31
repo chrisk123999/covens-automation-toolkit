@@ -1,5 +1,5 @@
 import * as applications from '../applications/_module.mjs';
-import {documentUtils, automationUtils} from '../utilities/_module.mjs';
+import {automationUtils} from '../utilities/_module.mjs';
 import {constants} from '../lib/_module.mjs'; 
 function appendHeaderControl(app, controls) {
     if (app.classList.contains('tidy5e-sheet')) return;

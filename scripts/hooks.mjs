@@ -76,6 +76,7 @@ export function initHooks() {
     // Integration
     Hooks.on(constants.miscHookNames.daeModifySpecials, dae.modifySpecials);
     Hooks.once(constants.miscHookNames.tidyReady, tidy5e.headerControls);
-    Hooks.on(constants.miscHookNames.renderTidy5eItemSheetClassic, tidy5e.renderTidyItemSheet);
-    Hooks.on(constants.miscHookNames.renderTidy5eItemSheetQuadrone, tidy5e.renderTidyItemSheet);
+    Hooks.on(constants.miscHookNames.renderTidy5eItemSheetClassic, tidy5e.renderTidySheet);
+    Hooks.on(constants.miscHookNames.renderTidy5eItemSheetQuadrone, tidy5e.renderTidySheet);
+    Hooks.on(constants.miscHookNames.renderTidy5eCharacterSheetQuadrone, tidy5e.renderTidySheet);
 }
