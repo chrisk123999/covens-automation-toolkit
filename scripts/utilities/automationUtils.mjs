@@ -24,7 +24,7 @@ function getActorAutomationStatus(actor) {
     }, -2);
 }
 function getItemAutomationStatus(item) {
-    if (item.flags.cat?.config?.generic) return constants.automationStatus.GENERIC;
+    if (item.flags.cat?.genericConfig) return constants.automationStatus.GENERIC;
     const isApplied = getStoredHash(item) || getCurrentAutomation(item);
     if (isApplied) {
         if (!isUpToDate(item)) return constants.automationStatus.OUTDATED;
