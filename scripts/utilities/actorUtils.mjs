@@ -53,7 +53,6 @@ async function applyConditions(actor, conditions, {overlay = false} = {}) {
         if (checkTrait(actor, 'ci', id)) return;
         const cEffect = getEffectByStatusID(actor, id);
         if (cEffect) return;
-        // eslint-disable-next-line no-undef
         const effectImplementation = await ActiveEffect.implementation.fromStatusEffect(id);
         if (!effectImplementation) return;
         const effectData = effectImplementation.toObject();
