@@ -17,14 +17,17 @@ const DOCUMENT_SCOPES = {
     scene: ['scene'],
     level: ['level']
 };
+const PROXIMITY_FIELDS = ['distance', 'configDistance', 'dispositions', 'configDispositions', 'disabled', 'configDisabled'];
 const EVENT_EXTRAS = {
-    aura: {required: ['distance'], optional: ['disposition', 'identifier', 'conscious']}
+    aura: {optional: PROXIMITY_FIELDS}
 };
 const SCOPE_EXTRAS = {
-    nearby: {optional: ['distance', 'disposition']},
-    target: {optional: ['distance', 'disposition']}
+    nearby: {optional: PROXIMITY_FIELDS},
+    target: {optional: PROXIMITY_FIELDS}
 };
-const CONFIG_KEYS = ['distance', 'disposition', 'conscious', 'identifier'];
+const CONFIG_KEYS = PROXIMITY_FIELDS;
+// Statuses that suppress a proximity/aura macro when the target has them (trigger.mjs processDistanceMacros).
+const DISABLED_STATUSES = ['incapacitated', 'dead', 'unconscious'];
 
 let _eventStructure;
 function getEventStructure() {
@@ -89,17 +92,23 @@ function getPassFields(documentType, type, pass) {
     return {required, optional};
 }
 
-// Builds the SchemaField input descriptor for one extra config field.
+// Builds the input descriptor for one extra config field (a SchemaField formGroup, or a multi-combobox).
 function extraFieldInput(key, macro) {
     switch (key) {
         case 'distance':
             return {field: new fields.NumberField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Distance'), integer: true, min: 0}), value: macro.distance};
-        case 'disposition':
-            return {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Disposition'), blank: true, choices: {all: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.All'), ally: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally'), enemy: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Enemy')}}), value: macro.disposition};
-        case 'conscious':
-            return {field: new fields.BooleanField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Conscious')}), value: macro.conscious};
-        case 'identifier':
-            return {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Identifier')}), value: macro.identifier};
+        case 'configDistance':
+            return {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.ConfigDistance')}), value: macro.configDistance};
+        case 'dispositions':
+            return {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Dispositions'), blank: true, choices: {all: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.All'), ally: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally'), enemy: _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Enemy')}}), value: macro.dispositions};
+        case 'configDispositions':
+            return {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.ConfigDispositions')}), value: macro.configDispositions};
+        case 'disabled': {
+            const picked = new Set(macro.disabled ?? []);
+            return {combobox: true, label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Disabled'), options: DISABLED_STATUSES.map(value => ({value, label: _loc(`CAT.MEDKIT.EmbeddedMacros.Disabled.${value.capitalize()}`), selected: picked.has(value)}))};
+        }
+        case 'configDisabled':
+            return {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.ConfigDisabled')}), value: macro.configDisabled};
         default:
             return null;
     }
@@ -164,7 +173,8 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
 
     async _onChangeForm(_formConfig, event) {
         const target = event.target;
-        const name = target?.name;
+        // cat-multi-combobox fires change from the element itself, which has no `.name` property.
+        const name = target?.name ?? target?.getAttribute?.('name');
         if (!name) return;
         if (name === 'macro') {
             this.#macro.code = target.value;
@@ -172,8 +182,10 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
             this.#macro.priority = Number(target.value) || 0;
         } else if (name === 'distance') {
             this.#macro.distance = target.value === '' ? undefined : Number(target.value);
-        } else if (name === 'conscious') {
-            this.#macro.conscious = target.checked;
+        } else if (name === 'disabled') {
+            const raw = target.closest('cat-multi-combobox')?.querySelector('input[type="hidden"]')?.value ?? '';
+            try { this.#macro.disabled = raw ? JSON.parse(raw) : []; }
+            catch { this.#macro.disabled = []; }
         } else if (name === 'event') {
             this.#macro.event = target.value;
             if (!getDocumentPasses(this.#documentType, target.value).includes(this.#macro.pass)) this.#macro.pass = undefined;

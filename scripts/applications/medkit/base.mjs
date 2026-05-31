@@ -7,14 +7,16 @@ const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 
 function embeddedToFlat(entry) {
     const macro = entry.macros?.[0] ?? {};
-    return {name: entry.name ?? '', event: entry.event, pass: entry.pass, priority: macro.priority ?? 0, code: macro.macro ?? '', distance: macro.distance, disposition: macro.disposition, conscious: macro.conscious, identifier: macro.identifier};
+    return {name: entry.name ?? '', event: entry.event, pass: entry.pass, priority: macro.priority ?? 0, code: macro.macro ?? '', distance: macro.distance, configDistance: macro.configDistance, dispositions: macro.dispositions, configDispositions: macro.configDispositions, disabled: macro.disabled, configDisabled: macro.configDisabled};
 }
 function flatToEmbedded(flat) {
     const macro = {macro: flat.code ?? '', priority: flat.priority ?? 0};
     if (flat.distance != null && flat.distance !== '') macro.distance = Number(flat.distance);
-    if (flat.disposition) macro.disposition = flat.disposition;
-    if (flat.conscious) macro.conscious = true;
-    if (flat.identifier) macro.identifier = flat.identifier;
+    if (flat.configDistance) macro.configDistance = flat.configDistance;
+    if (flat.dispositions) macro.dispositions = flat.dispositions;
+    if (flat.configDispositions) macro.configDispositions = flat.configDispositions;
+    if (Array.isArray(flat.disabled) && flat.disabled.length) macro.disabled = flat.disabled;
+    if (flat.configDisabled) macro.configDisabled = flat.configDisabled;
     return {name: flat.name, event: flat.event, pass: flat.pass, macros: [macro]};
 }
 

@@ -68,14 +68,21 @@
           "Priority": "Priority",
           "Macro": "Macro",
           "Distance": "Distance",
-          "Disposition": "Disposition",
-          "Conscious": "Requires Conscious",
-          "Identifier": "Aura Identifier"
+          "ConfigDistance": "Distance Config Key",
+          "Dispositions": "Dispositions",
+          "ConfigDispositions": "Dispositions Config Key",
+          "Disabled": "Skip If Target Is",
+          "ConfigDisabled": "Skip If Target Is Config Key"
         },
         "Disposition": {
           "All": "All",
           "Ally": "Ally",
           "Enemy": "Enemy"
+        },
+        "Disabled": {
+          "Incapacitated": "Incapacitated",
+          "Dead": "Dead",
+          "Unconscious": "Unconscious"
         }
       },
       "DocProps": {
