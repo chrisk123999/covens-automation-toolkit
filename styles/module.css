@@ -34,6 +34,18 @@
 [data-medkit-status="up-to-date"]       { color: var(--cat-status-green) !important; }
 [data-medkit-status="configurable"]     { color: var(--cat-status-blue) !important; }
 
+.cat-medkit,
+.cat-embedded-macros,
+.cat-dialog {
+    transition: opacity 200ms ease;
+}
+
+.cat-medkit.is-closing,
+.cat-embedded-macros.is-closing,
+.cat-dialog.is-closing {
+    opacity: 0;
+}
+
 .cat-dialog {
     backdrop-filter: blur(6px);
     z-index: var(--z-index-window, 100);

@@ -1,3 +1,4 @@
+import {uiUtils} from '../utilities/_module.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundry.data.fields;
 
@@ -35,7 +36,6 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         },
         actions: {
             confirm: DialogApp.#confirm,
-            close: DialogApp.#onCloseAction,
             toggleDetach: DialogApp.#onToggleDetach
         },
         window: {
@@ -57,8 +57,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     };
 
     /** @this {DialogApp} */
-    static async #onCloseAction() {
-        this.submit(null);
+    async _preClose(options) {
+        options.animate = false;
+        await uiUtils.fadeOut(this.element);
     }
 
     /** @this {DialogApp} */

@@ -1,4 +1,5 @@
 import {constants} from '../lib/_module.mjs';
+import {uiUtils} from '../utilities/_module.mjs';
 
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {fields} = foundry.data;
@@ -223,6 +224,11 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
             if (event.target.closest('button, a, input, select, textarea, [data-action]')) return;
             orig(event);
         };
+    }
+
+    async _preClose(options) {
+        options.animate = false;
+        await uiUtils.fadeOut(this.element);
     }
 
     bringToFront() {

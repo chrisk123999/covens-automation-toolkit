@@ -1,3 +1,4 @@
+import {uiUtils} from '../utilities/_module.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {StringField, BooleanField} = foundry.data.fields;
 
@@ -30,10 +31,6 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
             submitOnChange: false,
             closeOnSubmit: true
         },
-        actions: {
-            confirm: MenuApp.#confirm,
-            close: MenuApp.#onCloseAction
-        },
         window: {
             frame: false,
             positioned: true,
@@ -52,21 +49,15 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     };
 
-    /** @this {MenuApp} */
-    static async #onCloseAction() {
-        this.element?.classList.add('closing');
-        await new Promise(resolve => setTimeout(resolve, 200));
-        await this.close({animate: false});
+    async _preClose(options) {
+        options.animate = false;
+        await uiUtils.fadeOut(this.element);
     }
 
     /** @this {MenuApp} */
     static async #formHandler(event, form, formData) {
         this.data = foundry.utils.expandObject(formData.object);
-    }
-
-    /** @this {MenuApp} */
-    static async #confirm(event, target) {
-        this.submit(target.name);
+        this.submit(event.submitter?.name);
     }
 
     get title() {
@@ -74,7 +65,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     static #makeButton(label, name) {
-        return {type: 'submit', action: 'confirm', label, name};
+        return {type: 'submit', label, name};
     }
 
     // Convert each declarative input tuple into template-ready entry.
@@ -121,20 +112,17 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     #buildSelectOption(input) {
+        const choices = Object.entries(input.options ?? {}).reduce((acc, [value, label]) => {
+            acc[value] = _loc(label);
+            return acc;
+        }, {});
         return {
             useHelper: true,
-            options: input.fields.map(f => {
-                const choices = (f.options?.options ?? []).reduce((acc, i) => {
-                    if (typeof i === 'string') acc[i] = i;
-                    else acc[i.value] = i.label;
-                    return acc;
-                }, {});
-                return {
-                    field: new StringField({label: f.label, choices, required: true, blank: false}),
-                    name: f.name,
-                    value: f.options?.currentValue ?? ''
-                };
-            })
+            options: [{
+                field: new StringField({label: _loc(input.label), hint: _loc(input.hint), choices, required: true, blank: false}),
+                name: input.name,
+                value: input.value ?? ''
+            }]
         };
     }
 

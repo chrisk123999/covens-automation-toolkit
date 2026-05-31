@@ -1,5 +1,5 @@
 import {constants} from '../../lib/_module.mjs';
-import {documentUtils, genericUtils, automationUtils, dialogUtils} from '../../utilities/_module.mjs';
+import {documentUtils, genericUtils, automationUtils, dialogUtils, uiUtils} from '../../utilities/_module.mjs';
 import EmbeddedMacroEditorApp from '../embedded-macros.mjs';
 const {fields} = foundry.data;
 
@@ -637,6 +637,11 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 this.render();
             });
         }
+    }
+
+    async _preClose(options) {
+        options.animate = false;
+        await uiUtils.fadeOut(this.element);
     }
 
     _onRender(context, options) {
