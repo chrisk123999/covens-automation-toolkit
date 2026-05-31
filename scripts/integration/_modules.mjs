@@ -6,3 +6,4 @@ export {default as dmg} from './dmg.mjs';
 export {default as dae} from './dae.mjs';
 export {default as vae} from './vae.mjs';
 export {default as diceSoNice} from './diceSoNice.mjs';
+export {default as tidy5e} from './tidy5e.mjs';

@@ -2,7 +2,7 @@ import {constants} from './lib/_module.mjs';
 import * as events from './events/_module.mjs';
 import {queryUtils} from './utilities/_module.mjs';
 import {titlebar, activities, effects} from './handlers/_module.mjs';
-import {dae, vae} from './integration/_modules.mjs';
+import {dae, vae, tidy5e} from './integration/_modules.mjs';
 export function readyHooks() {
     // Handlers
     Hooks.on(constants.miscHookNames.itemUseActivitySelect, activities.hiddenActivities);
@@ -75,4 +75,8 @@ export function initHooks() {
     Hooks.on(constants.miscHookNames.applyActiveEffect, effects.applyActiveEffect);
     // Integration
     Hooks.on(constants.miscHookNames.daeModifySpecials, dae.modifySpecials);
+    Hooks.once(constants.miscHookNames.tidyReady, tidy5e.headerControls);
+    Hooks.on(constants.miscHookNames.renderTidy5eItemSheetClassic, tidy5e.renderTidySheet);
+    Hooks.on(constants.miscHookNames.renderTidy5eItemSheetQuadrone, tidy5e.renderTidySheet);
+    Hooks.on(constants.miscHookNames.renderTidy5eCharacterSheetQuadrone, tidy5e.renderTidySheet);
 }

@@ -341,8 +341,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     // CONFIGURABLE + GENERIC overlay UP_TO_DATE; nav pips surface those.
     _prepareHero({availableAutomations, sourceLabel, currentVersion, configCount, genericCount, statusLabel, medkitStatus}) {
-        const isOutdated = medkitStatus?.startsWith('outdated');
-        const isUpToDate = medkitStatus?.startsWith('up-to-date')
+        const isOutdated = medkitStatus === constants.MEDKIT_STATUSES.OUTDATED;
+        const isUpToDate = medkitStatus === constants.MEDKIT_STATUSES.UP_TO_DATE
             || statusLabel === 'CAT.MEDKIT.STATUSES.Configurable'
             || statusLabel === 'CAT.MEDKIT.STATUSES.Generic';
         if (isOutdated) {

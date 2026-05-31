@@ -1,5 +1,5 @@
 import {Logging} from '../lib/_module.mjs';
-import {rollUtils, automationUtils} from '../utilities/_module.mjs';
+import {rollUtils} from '../utilities/_module.mjs';
 /*
 item.flags.cat.rollModifiers = [
     {

@@ -1,4 +1,4 @@
-import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
+import {activityUtils, actorUtils, documentUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
 function getRules(document, {documentType = document.documentName} = {}) {
     return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
@@ -87,6 +87,17 @@ async function setFlag(document, scope, key, value) {
         return await fromUuid(uuid);
     }
 }
+function getEffectByIdentifier(document, identifier, {multiple, includeItemEffects} = {}) {
+    const predicate = effect => documentUtils.getIdentifier(effect) === identifier;
+    let effects;
+    if (document.documentName === 'Actor') {
+        effects = actorUtils.getEffects(document, {includeItemEffects});
+    } else if (document.documentName === 'Item') {
+        effects = document.effects;
+    } else return;
+    if (!multiple) return effects.find(predicate);
+    return effects.filter(predicate);
+}
 export default {
     getRules,
     getSource,
@@ -98,5 +109,6 @@ export default {
     createEmbeddedDocuments,
     update,
     updateEmbeddedDocuments,
-    setFlag
+    setFlag,
+    getEffectByIdentifier
 };

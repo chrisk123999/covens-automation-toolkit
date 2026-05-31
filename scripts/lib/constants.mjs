@@ -163,16 +163,26 @@ const miscHookNames = {
     applyActiveEffect: 'applyActiveEffect',
     daeSetFieldData: 'dae.setFieldData',
     daeModifySpecials: 'dae.modifySpecials',
-    vaeCreateEffectButtons: 'visual-active-effects.createEffectButtons'
+    vaeCreateEffectButtons: 'visual-active-effects.createEffectButtons',
+    tidyReady: 'tidy5e-sheet.ready',
+    renderTidy5eItemSheetClassic: 'renderTidy5eItemSheetClassic',
+    renderTidy5eItemSheetQuadrone: 'renderTidy5eItemSheetQuadrone',
+    renderTidy5eCharacterSheetQuadrone: 'renderTidy5eCharacterSheetQuadrone'
 };
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',
-    OUTDATED_CPR: 'outdated-cpr',
-    OUTDATED_OTHER: 'outdated-other',
+    OUTDATED_CPR: 'outdated',
     AVAILABLE: 'available',
-    UP_TO_DATE_CPR: 'up-to-date-cpr',
-    CONFIGURABLE: 'configurable',
-    UP_TO_DATE_OTHER: 'up-to-date-other'
+    UP_TO_DATE: 'up-to-date',
+    CONFIGURABLE: 'configurable'
+};
+const automationStatus = {
+    UNAVAILABLE: -2,
+    AVAILABLE: -1,
+    OUTDATED: 0,
+    UP_TO_DATE: 1,
+    CONFIGURABLE: 2,
+    GENERIC: 3
 };
 const attacks = [
     'msak',
@@ -254,5 +264,6 @@ export default {
     rangedSpellAttacks,
     meleeSpellAttacks,
     miscHookNames,
-    statusEffectKeys
+    statusEffectKeys,
+    automationStatus
 };

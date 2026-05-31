@@ -106,9 +106,6 @@ export default class ItemMedkit extends MedkitApp {
             : undefined;
         context.source = selectedSource;
         const availableAutomations = automationUtils.getAvailableAutomations(this.document);
-
-        const isKnown = constants.automations.sources.has(context.source);
-        const statusSuffix = context.source === 'chris-premades' ? 'CPR' : 'OTHER';
         switch (automationUtils.getAutomationStatus(this.document)) {
             case -2:
                 if (context.source !== 'none') {
@@ -123,11 +120,11 @@ export default class ItemMedkit extends MedkitApp {
                 context.statusLabel = 'CAT.MEDKIT.STATUSES.Available';
                 break;
             case 0:
-                context.medkitStatus = constants.MEDKIT_STATUSES[`OUTDATED_${statusSuffix}`];
+                context.medkitStatus = constants.MEDKIT_STATUSES.OUTDATED;
                 context.statusLabel = 'CAT.MEDKIT.STATUSES.Outdated';
                 break;
             case 1:
-                context.medkitStatus = constants.MEDKIT_STATUSES[isKnown ? `UP_TO_DATE_${statusSuffix}` : 'UNKNOWN'];
+                context.medkitStatus = constants.MEDKIT_STATUSES.UP_TO_DATE;
                 context.statusLabel = 'CAT.MEDKIT.STATUSES.UpToDate';
                 break;
             case 2:

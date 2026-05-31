@@ -1,4 +1,5 @@
-import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils, itemUtils, regionUtils, tokenUtils} from '../utilities/_module.mjs';
+import {actorUtils, documentUtils, effectUtils, genericUtils, tokenUtils} from '../utilities/_module.mjs';
+import * as utils from '../utilities/_module.mjs';
 import {Triggers, Logging, constants} from '../lib/_module.mjs';
 class CatEvent {
     constructor(pass) {
@@ -25,12 +26,7 @@ class CatEvent {
     }
     buildScriptFunction(script, scope) {
         const defaultScope = {
-            activityUtils,
-            actorUtils,
-            effectUtils,
-            itemUtils, 
-            regionUtils,
-            tokenUtils,
+            ...utils,
             constants
         };
         scope = {...defaultScope, ...scope};
@@ -546,7 +542,7 @@ class AuraEvent extends CatEvent {
         const effects = actorUtils.getEffects(this.actor).filter(effect => effect.flags.cat?.auraEffect);
         await Promise.all(effects.map(async effect => {
             let identifier = documentUtils.getIdentifier(effect);
-            if (!identifier) {
+            if (!identifier || !effect.origin) {
                 removedEffects.push(effect);
                 return;
             }
@@ -597,7 +593,8 @@ class AuraEvent extends CatEvent {
         return results;
     }
     get unsortedTriggers() {
-        let triggers = this.getNearbyTriggers(this.scene, this.pass);
+        if (!this.scene) return [];
+        let triggers = this.getNearbyTriggers(this.scene, this.pass, {targetToken: this.targetToken, options: this.options});
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }

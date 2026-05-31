@@ -1,5 +1,5 @@
 import * as applications from '../applications/_module.mjs';
-import {documentUtils, automationUtils} from '../utilities/_module.mjs';
+import {automationUtils} from '../utilities/_module.mjs';
 import {constants} from '../lib/_module.mjs'; 
 function appendHeaderControl(app, controls) {
     if (app.classList.contains('tidy5e-sheet')) return;
@@ -32,7 +32,6 @@ function appendHeaderControl(app, controls) {
             if (App) new App({document: app.document}).render({force: true});
         }
     });
-    // TODO: See whether we can color-code some other way
     if (documentType === 'Item') {
         setTimeout(async () => {
             const parentWindow = foundry.applications.detached.windows.get(app.window.windowId)?.window?.document ?? document;
@@ -41,32 +40,24 @@ function appendHeaderControl(app, controls) {
             if (!headerButton) return;
             const item = app.document;
             if (!item) return;
-            const source = documentUtils.getSource(item);
-            const sources = [
-                'chris-premades',
-                'gambits-premades',
-                'midi-item-showcase-community',
-                'automated-crafted-creations'
-            ];
-            if (!sources.includes(source) && source) {
-                headerButton.dataset.medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
-                return;
-            }
-            const statusSuffix = source === 'chris-premades' ? 'CPR' : 'OTHER';
             let medkitStatus;
             switch (automationUtils.getAutomationStatus(item)) {
+                case -2:
+                    medkitStatus = constants.MEDKIT_STATUSES.UNKNOWN;
+                    break;
                 case -1:
                     medkitStatus = constants.MEDKIT_STATUSES.AVAILABLE;
                     break;
                 case 0:
-                    medkitStatus = constants.MEDKIT_STATUSES[`OUTDATED_${statusSuffix}`];
+                    medkitStatus = constants.MEDKIT_STATUSES.OUTDATED;
                     break;
                 case 1:
-                    medkitStatus = constants.MEDKIT_STATUSES[`UP_TO_DATE_${statusSuffix}`];
+                    medkitStatus = constants.MEDKIT_STATUSES.UP_TO_DATE;
                     break;
                 case 2:
                 case 3:
                     medkitStatus = constants.MEDKIT_STATUSES.CONFIGURABLE;
+                    break;
             }
             if (medkitStatus) headerButton.dataset.medkitStatus = medkitStatus;
         }, 100);
