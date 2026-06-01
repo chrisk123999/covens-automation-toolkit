@@ -14,13 +14,30 @@
             {{#each options}}
                 {{formGroup field name=name value=value}}
             {{/each}}
+        {{else if isPriority}}
+            <div class="cat-settings-priority">
+                {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+                <ul class="cat-priority-list" data-priority-setting="{{name}}">
+                    {{#each rows}}
+                        <li class="cat-priority-row" draggable="true" data-source-id="{{id}}">
+                            <i class="fas fa-grip-vertical cat-priority-grip" aria-hidden="true"></i>
+                            <span class="cat-priority-name">{{name}}</span>
+                            <input type="number" class="cat-priority-rank" value="{{priority}}" hidden>
+                            <label class="cat-priority-toggle">
+                                <input type="checkbox" class="cat-priority-enabled" {{#if enabled}}checked{{/if}}>
+                                {{localize "CAT.Settings.AutomationSources.Enabled"}}
+                            </label>
+                        </li>
+                    {{/each}}
+                </ul>
+            </div>
         {{/if}}
     {{/each}}
 </div>
 {{#if buttons.length}}
 <footer class="cat-dialog-footer">
     {{#each buttons}}
-        <button type="submit" data-action="confirm" name="{{name}}">{{localize label}}</button>
+        <button type="submit" name="{{name}}">{{localize label}}</button>
     {{/each}}
 </footer>
 {{/if}}

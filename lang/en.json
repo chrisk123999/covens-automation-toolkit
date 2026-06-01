@@ -368,6 +368,17 @@
       "DevilsSight": "Devil's Sight"
     },
     "Settings": {
+      "Automation": {
+        "Name": "Automation Source Priority",
+        "Label": "Open",
+        "Hint": "Choose which automation sources are enabled and their priority order (lowest number wins)."
+      },
+      "AutomationSources": {
+        "Name": "Automation Sources",
+        "Hint": "Enabled automation sources and their priority order (lowest number wins).",
+        "Priority": "Priority",
+        "Enabled": "Enabled"
+      },
       "Devtools": {
         "Name": "Development Tools",
         "Label": "Open",

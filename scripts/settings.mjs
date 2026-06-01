@@ -27,6 +27,7 @@ const settings = {
     },
     automationSources: {
         type: Object,
+        menu: 'automation',
         default: {
             dnd5e: {
                 enabled: true,
@@ -87,6 +88,9 @@ const settings = {
     }
 };
 const menus = {
+    automation: {
+        icon: 'fas fa-layer-group'
+    },
     devtools: {
         icon: 'fas fa-tools'
     },

@@ -1,4 +1,5 @@
 import {uiUtils} from '../utilities/_module.mjs';
+import {constants} from '../lib/_module.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {StringField, BooleanField} = foundry.data.fields;
 
@@ -56,7 +57,20 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     /** @this {MenuApp} */
     static async #formHandler(event, form, formData) {
-        this.data = foundry.utils.expandObject(formData.object);
+        const data = foundry.utils.expandObject(formData.object);
+        form.querySelectorAll('.cat-priority-list').forEach(list => {
+            const setting = list.dataset.prioritySetting;
+            if (!setting) return;
+            const sources = {};
+            list.querySelectorAll('.cat-priority-row').forEach(row => {
+                sources[row.dataset.sourceId] = {
+                    enabled: row.querySelector('.cat-priority-enabled').checked,
+                    priority: Number(row.querySelector('.cat-priority-rank').value)
+                };
+            });
+            data[setting] = sources;
+        });
+        this.data = data;
         this.submit(event.submitter?.name);
     }
 
@@ -97,7 +111,27 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
             case 'checkbox': return this.#buildCheckbox(input);
             case 'selectOption': return this.#buildSelectOption(input);
             case 'compendium': return this.#buildCompendium(input);
+            case 'priority': return this.#buildPriority(input);
         }
+    }
+
+    #buildPriority(input) {
+        const stored = input.value ?? {};
+        const ids = new Set([...Object.keys(stored), ...(constants.automations?.sources ?? [])]);
+        const rows = [...ids].map(id => {
+            const cfg = stored[id] ?? {};
+            const name = constants.automations?.sourceNames?.[id]
+                ?? game.modules.get(id)?.title
+                ?? (game.system?.id === id ? game.system.title : null)
+                ?? id;
+            return {
+                id,
+                name,
+                enabled: cfg.enabled ?? true,
+                priority: cfg.priority ?? 50 // CPR defaults non-curated sources to 50.
+            };
+        }).sort((a, b) => a.priority - b.priority);
+        return {isPriority: true, name: input.name, hint: _loc(input.hint), rows};
     }
 
     #buildCheckbox(input) {
@@ -157,9 +191,42 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         ui.activeWindow = this;
     }
 
+    #wirePriorityDrag() {
+        const list = this.element?.querySelector('.cat-priority-list');
+        if (!list || list.dataset.dragWired === '1') return;
+        list.dataset.dragWired = '1';
+        let dragRow = null;
+        list.addEventListener('dragstart', event => {
+            dragRow = event.target.closest('.cat-priority-row');
+            dragRow?.classList.add('cat-priority-dragging');
+        });
+        list.addEventListener('dragend', () => {
+            dragRow?.classList.remove('cat-priority-dragging');
+            dragRow = null;
+            list.querySelectorAll('.cat-priority-rank').forEach((input, i) => { input.value = String(i); });
+        });
+        list.addEventListener('dragover', event => {
+            event.preventDefault();
+            if (!dragRow) return;
+            const after = MenuApp.#dragAfterElement(list, event.clientY);
+            if (after) list.insertBefore(dragRow, after);
+            else list.appendChild(dragRow);
+        });
+    }
+
+    static #dragAfterElement(list, y) {
+        const rows = [...list.querySelectorAll('.cat-priority-row:not(.cat-priority-dragging)')];
+        return rows.reduce((closest, row) => {
+            const box = row.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            return (offset < 0 && offset > closest.offset) ? {offset, element: row} : closest;
+        }, {offset: Number.NEGATIVE_INFINITY, element: null}).element;
+    }
+
     _onRender(context, options) {
         super._onRender(context, options);
         this.#enableDragging();
+        this.#wirePriorityDrag();
         const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
         const header = this.element?.querySelector('.cat-dialog-header');
         if (counter && header) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));

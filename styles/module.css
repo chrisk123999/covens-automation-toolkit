@@ -183,6 +183,44 @@
     flex: 1;
 }
 
+.cat-settings-priority .cat-priority-list {
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    list-style: none;
+    flex-direction: column;
+}
+
+.cat-settings-priority .cat-priority-row {
+    gap: var(--cat-space-sm);
+    display: flex;
+    align-items: center;
+    padding: 0.2rem 0.35rem;
+    border-radius: 4px;
+}
+
+.cat-settings-priority .cat-priority-row.cat-priority-dragging {
+    opacity: 0.5;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.cat-settings-priority .cat-priority-grip {
+    cursor: grab;
+    opacity: 0.6;
+}
+
+.cat-settings-priority .cat-priority-name {
+    flex: 1;
+}
+
+.cat-settings-priority .cat-priority-toggle {
+    gap: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
 .cat-dialog input,
 .cat-dialog select,
 .cat-dialog textarea,

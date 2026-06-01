@@ -9,7 +9,6 @@ const DOC_PROP_TYPES = ['feat'];
 // Doc-prop flags
 const ARRAY_DOC_PROPS = ['alternateFormula', 'rollModifiers'];
 
-// Builds {ability, type, property, school, damageTypes} label maps from CONFIG.DND5E for the editor.
 function docPropChoices() {
     const D = CONFIG.DND5E ?? {};
     const label = v => (typeof v === 'string' ? v : (v?.label ?? v?.name ?? ''));
@@ -22,7 +21,7 @@ function docPropChoices() {
         acc[key] = (typeof val === 'string' && val.includes('.')) ? _loc(val) : (val ?? key);
         return acc;
     }, {});
-    return {ability: mapOf(D.abilities), type: itemTypes, property: mapOf(D.itemProperties), school: mapOf(D.spellSchools), damageTypes: mapOf(D.damageTypes)};
+    return {ability: mapOf(D.abilities), type: itemTypes, property: mapOf(D.itemProperties), school: mapOf(D.spellSchools), damageTypes: mapOf(D.damageTypes), level: mapOf(D.spellLevels), method: mapOf(D.spellcasting)};
 }
 
 export default class ItemMedkit extends MedkitApp {

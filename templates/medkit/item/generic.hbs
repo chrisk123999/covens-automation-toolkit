@@ -4,9 +4,9 @@
         {{#if genericChoices.length}}
             <div class="form-group cat-multi-combobox-group">
                 <label for="cat-medkit-generic-select">{{localize "CAT.MEDKIT.Generic.SelectField"}}</label>
-                <cat-multi-combobox input-id="cat-medkit-generic-select" name="flags.cat.config.generic">
+                <cat-multi-combobox input-id="cat-medkit-generic-select" name="flags.cat.genericConfig">
                     {{#each genericChoices}}
-                        <option value="{{value}}" data-image="{{image}}">{{label}}</option>
+                        <option value="{{value}}" data-image="{{image}}"{{#if selected}} selected{{/if}}>{{label}}</option>
                     {{/each}}
                 </cat-multi-combobox>
             </div>

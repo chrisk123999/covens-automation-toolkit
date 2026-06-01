@@ -44,6 +44,11 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.#rulesValue = this.#document.system?.source?.rules ?? null;
     }
 
+    #reacquireDocument() {
+        const actor = this.#document.actor;
+        if (actor) this.#document = actor.items.get(this.#document.id) ?? this.#document;
+    }
+
     static DEFAULT_OPTIONS = {
         id: 'cat-medkit-window',
         classes: ['cat', 'cat-medkit'],
@@ -259,27 +264,36 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return Array.from(grouped.values());
     }
 
-    // TODO: replace with constants.macros.getGenericMacros() once backend exposes the `generic` flag on FnMacro.
     _getGenericMacros() {
-        return (constants.macros?.fnMacros ?? []).filter(m => m.generic);
+        return constants.macros?.getAllMacros?.({genericOnly: true}) ?? [];
+    }
+
+    #genericDescriptors(macro, source, identifier) {
+        const raw = macro?.genericConfig;
+        if (Array.isArray(raw)) return raw;
+        const nested = raw?.[source]?.[identifier];
+        if (nested) return Object.entries(nested).map(([key, d]) => ({key, label: d?.label ?? key, type: d?.type, default: d?.default}));
+        return [];
     }
 
     _prepareGenericFeatures() {
         const macros = this._getGenericMacros();
-        const currentGeneric = this.#flags.config?.generic ?? {};
-        const selectedKeys = Object.keys(currentGeneric);
-        const choices = macros.map(m => ({
-            value: m.identifier,
-            label: m.label ?? m.identifier,
-            image: m.img
-        }));
-        const features = selectedKeys.map(key => {
-            const macro = macros.find(m => m.identifier === key);
-            const cfg = macro?.genericConfig ?? [];
-            const stored = currentGeneric[key] ?? {};
-            const options = cfg.map(c => {
-                const value = stored[c.key] ?? c.default;
-                const option = {key: c.key, name: `flags.cat.config.generic.${key}.${c.key}`, label: c.label, value};
+        const stored = this.#flags.genericConfig ?? {};
+        const selected = [];
+        for (const [source, ids] of Object.entries(stored)) {
+            for (const identifier of Object.keys(ids ?? {})) selected.push(`${source}|${identifier}`);
+        }
+        const choices = macros.map(m => {
+            const composite = `${m.source}|${m.identifier}`;
+            return {value: composite, label: m.label ?? m.identifier, image: m.img, selected: selected.includes(composite)};
+        });
+        const features = selected.map(composite => {
+            const [source, identifier] = composite.split('|');
+            const macro = macros.find(m => m.source === source && m.identifier === identifier);
+            const storedCfg = stored[source]?.[identifier] ?? {};
+            const options = this.#genericDescriptors(macro, source, identifier).map(c => {
+                const value = storedCfg[c.key] ?? c.default;
+                const option = {key: c.key, name: `flags.cat.genericConfig.${source}.${identifier}.${c.key}`, label: c.label, value};
                 switch (c.type) {
                     case 'checkbox': option.field = new fields.BooleanField({label: c.label}); break;
                     case 'number': option.field = new fields.NumberField({label: c.label}); break;
@@ -288,9 +302,28 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 }
                 return option;
             });
-            return {id: key, label: macro?.label ?? key, options};
+            return {id: composite, label: macro?.label ?? identifier, options};
         });
-        return {choices, selected: selectedKeys, features};
+        return {choices, selected, features};
+    }
+
+    _writeGenericSelection(compositeKeys) {
+        const macros = this._getGenericMacros();
+        const existing = this.#flags.genericConfig ?? {};
+        const next = {};
+        for (const composite of compositeKeys) {
+            const [source, identifier] = composite.split('|');
+            const prior = existing[source]?.[identifier];
+            if (prior) {
+                (next[source] ??= {})[identifier] = prior;
+            } else {
+                const macro = macros.find(m => m.source === source && m.identifier === identifier);
+                const defaults = {};
+                for (const c of this.#genericDescriptors(macro, source, identifier)) if (c.default !== undefined) defaults[c.key] = c.default;
+                (next[source] ??= {})[identifier] = defaults;
+            }
+        }
+        this.#flags.genericConfig = next;
     }
 
     // Every globally registered FnMacro (deduped by source|identifier|rules) is a choice.
@@ -403,7 +436,9 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 await documentUtils.update(this.#document, updateData, {diff: false});
             } else {
                 await automationUtils.updateItem(this.#document, {source: this.#selectedSource});
+                this.#reacquireDocument();
             }
+            this.#hydrateState();
         }
         const updates = {flags: {cat: this.#flags}};
         if (this.#rulesValue !== (this.#document.system?.source?.rules ?? null)) {
@@ -441,6 +476,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (!source) return;
         const before = documentUtils.getVersion(this.#document);
         await automationUtils.updateItem(this.#document, {source});
+        this.#reacquireDocument();
         const after = documentUtils.getVersion(this.#document);
         const identifier = documentUtils.getIdentifier(this.#document) ?? this.#document.name;
         ui.notifications.info(_loc('CAT.MEDKIT.Notif.Updated', {identifier, before: before ?? '?', after: after ?? '?'}));
@@ -607,10 +643,10 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             this.#selectedSource = value;
         } else if (inMultiCombobox && name === 'flags.cat.macros') {
             this._writeMacroSelection(Array.isArray(value) ? value : []);
+        } else if (inMultiCombobox && name === 'flags.cat.genericConfig') {
+            this._writeGenericSelection(Array.isArray(value) ? value : []);
         } else if (name.startsWith('flags.cat.')) {
             const path = name.slice('flags.cat.'.length);
-            // TODO: Generic feature picker (`flags.cat.config.generic`) expects {key: {config}} object,
-            // not the value-list shape multi-combobox produces. Special-case once backend wires `generic` flag.
             foundry.utils.setProperty(this.#flags, path, value);
         }
         this.render();

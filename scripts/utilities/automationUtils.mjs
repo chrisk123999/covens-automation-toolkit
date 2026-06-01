@@ -55,7 +55,7 @@ function getAvailableAutomations(item) {
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item) ?? 'all';
     const type = item.type;
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true}, type);
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type});
 }
 function getConfigValue(item, key) {
     return constants.automations.getConfigValue(item, key);
@@ -222,7 +222,7 @@ function getDocumentHash(document) {
         parts[parts.length - 1] = '-=' + parts[parts.length - 1];
         deletions[parts.join('.')] = null;
     }
-    deletions['flags.cat.automation.-=hash'] = null;
+    deletions['flags.cat.-=automation'] = null;
     genericUtils.mergeObject(documentData, genericUtils.expandObject(deletions), {applyOperators: true});
     if (genericUtils.isEmpty(documentData.flags?.cat)) delete documentData.flags.cat;
     const jsonDocument = JSON.stringify(documentData);
