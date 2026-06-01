@@ -37,10 +37,8 @@ function getItemAutomationStatus(item) {
 }
 function isUpToDate(item) {
     const storedHash = getStoredHash(item);
-    console.log(storedHash);
     if (storedHash) {
         const hash = getDocumentHash(item);
-        console.log(hash);
         if (hash != storedHash) return false;
         return true;
     }

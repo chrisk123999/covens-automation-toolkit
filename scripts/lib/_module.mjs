@@ -8,3 +8,4 @@ export {default as queries} from './query.mjs';
 export {default as Triggers} from './trigger.mjs';
 export {default as Scales} from './scales.mjs';
 export {Crosshairs} from './crosshairs.mjs';
+export {default as Animations} from './animation.mjs';

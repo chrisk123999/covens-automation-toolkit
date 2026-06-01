@@ -26,8 +26,8 @@ async function updateHash(item, {create = false, remove = false} = {}) {
 async function hashCompendium(compendium, {register = false} = {}) {
     const index = await compendium.getIndex({ 
         fields: [
-            'flags.cat.automation.hash', 
-            'system.source.rules', 
+            'flags.cat.automation.hash',
+            'system.source.rules',
             'system.identifier'
         ] 
     });

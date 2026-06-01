@@ -15,3 +15,4 @@ export {default as tokenUtils} from './tokenUtils.mjs';
 export {default as uiUtils} from './uiUtils.mjs';
 export {default as workflowUtils} from './workflowUtils.mjs';
 export {default as combatUtils} from './combatUtils.mjs';
+export {default as animationUtils} from './animationUtils.mjs';

@@ -19,20 +19,28 @@ Hooks.once('init', () => {
     initHooks();
     registerSettings();
     lib.queries.registerQueries();
+    lib.constants.macros = new lib.Macros.RegisteredMacros();
+    lib.constants.automations = new lib.Automations.RegisteredAutomations();
+    lib.constants.scales = new lib.Scales.RegisteredScales();
+    lib.constants.animations = new lib.Animations.RegisteredAnimations();
+    globalThis.cat = {
+        api: buildApi(),
+        applications,
+        lib,
+        utils
+    };
+    Hooks.callAll('catInit');
 });
 Hooks.once('libWrapper.Ready', () => {
     patches.activityPatching.patch(true); //Early so initial sheet render is correct.
     patches.dataModelPatching.patch(true);
 });
 Hooks.once('ready', () => {
-    lib.constants.macros = new lib.Macros.RegisteredMacros();
-    lib.constants.automations = new lib.Automations.RegisteredAutomations();
-    lib.constants.scales = new lib.Scales.RegisteredScales();
     readyHooks();
+    integration.dae.injectFlags();
     patches.documentPatching.patch(true);
     patches.actorPatching.patch(true);
     patches.effectPatching.patch(true);
-    integration.dae.injectFlags();
     lib.constants.macros.registerFnMacro(test); // Testing
     lib.constants.scales.registerScale({ // More Testing
         source: 'cat',
@@ -63,12 +71,6 @@ Hooks.once('ready', () => {
             icon: null
         }
     });
-    globalThis.cat = {
-        api: buildApi(),
-        applications,
-        lib,
-        utils
-    };
     integration.dnd5e.registerAutomations();
     integration.dnd5e.registerScales();
     integration.midiQol.registerAutomations();
@@ -78,6 +80,7 @@ Hooks.once('ready', () => {
     }
     if (game.modules.get('dnd-dungeon-masters-guide')?.active) integration.dmg.registerAutomations();
     handlers.items.registerCompendiums();
+    Hooks.callAll('catReady');
 });
 Hooks.once('ddb-importer.compendiumCreationComplete', () => {
     integration.ddbi.registerAutomations();

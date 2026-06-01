@@ -59,7 +59,7 @@ export class RegisteredMacros {
             Logging.addRegistrationError(data, validationError.asError());
             return false;
         }
-        let fnArray = !overwrite ? this.fnMacros : this.overwriteMacros;
+        const fnArray = !overwrite ? this.fnMacros : this.overwriteMacros;
         fnArray.push(new FnMacro(data.source, data.identifier, data.rules, {
             aura: data.aura ?? [],
             check: data.check ?? [],

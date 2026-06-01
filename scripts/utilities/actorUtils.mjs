@@ -44,8 +44,9 @@ function checkTrait(actor, type, trait) {
 function getEffectByStatusID(actor, id) {
     return getEffects(actor).find(i => i.id === CONFIG.statusEffects.find(j => j.id === id)?._id);
 }
-function getItemByIdentifier(actor, identifier) {
-    return actor.items.find(item => documentUtils.getIdentifier(item) === identifier);
+function getItemByIdentifier(actor, identifier, {multiple = false} = {}) {
+    const predicate = item => documentUtils.getIdentifier(item) === identifier;
+    return multiple ? actor.items.filter(predicate) : actor.items.find(predicate);
 }
 async function applyConditions(actor, conditions, {overlay = false} = {}) {
     const updates = [];
