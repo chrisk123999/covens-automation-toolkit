@@ -1,18 +1,22 @@
 import {constants} from '../lib/_module.mjs';
 import {documentUtils} from '../utilities/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
+const COMPENDIUM_SETTINGS = [
+    'entity-background-compendium',
+    'entity-class-compendium',
+    'entity-feat-compendium',
+    'entity-item-compendium',
+    'entity-species-compendium',
+    'entity-spell-compendium'
+];
+function getCompendiumIds() {
+    if (!game.modules.get('ddb-importer')?.active) return [];
+    return COMPENDIUM_SETTINGS.map(setting => game.settings.get('ddb-importer', setting)).filter(Boolean);
+}
 async function registerAutomations() {
     const moduleId = 'ddb-importer';
     constants.automations.registerSourceName(moduleId, game.modules.get(moduleId).title);
-    const settings = [
-        'entity-background-compendium',
-        'entity-class-compendium',
-        'entity-feat-compendium',
-        'entity-item-compendium',
-        'entity-species-compendium',
-        'entity-spell-compendium'
-    ];
-    const packs = settings.map(setting => game.settings.get(moduleId, setting));
+    const packs = getCompendiumIds();
     await Promise.all(packs.map(async id => {
         const pack = game.packs.get(id);
         if (!pack) return;
@@ -59,5 +63,6 @@ async function registerScales() {
 }
 export default {
     registerAutomations,
-    registerScales
+    registerScales,
+    getCompendiumIds
 };

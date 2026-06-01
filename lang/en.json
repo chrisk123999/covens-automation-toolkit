@@ -377,7 +377,19 @@
         "Name": "Automation Sources",
         "Hint": "Enabled automation sources and their priority order (lowest number wins).",
         "Priority": "Priority",
-        "Enabled": "Enabled"
+        "Enabled": "Enabled",
+        "Disabled": "Disabled sources",
+        "Disable": "Disable",
+        "Enable": "Enable"
+      },
+      "Compendiums": {
+        "Name": "Additional Compendiums",
+        "Label": "Open",
+        "Hint": "Choose extra Item compendiums to use as automation sources."
+      },
+      "AdditionalCompendiums": {
+        "Name": "Additional Compendiums",
+        "Hint": "Item compendiums (excluding registered automation modules) used as automation sources, with their priority."
       },
       "Devtools": {
         "Name": "Development Tools",

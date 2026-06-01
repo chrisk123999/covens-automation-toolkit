@@ -183,13 +183,42 @@
     flex: 1;
 }
 
+.cat-dialog-footer button,
+.cat-settings-priority .cat-priority-toggle {
+    gap: var(--cat-space-xs);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--cat-space-xs) var(--cat-space-md);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    color: var(--cat-text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--cat-bg-input);
+    box-shadow: none;
+    transition: var(--cat-transition-fast);
+}
+
+.cat-dialog-footer button:hover,
+.cat-settings-priority .cat-priority-toggle:hover {
+    border-color: var(--cat-border-focus);
+    background: var(--cat-bg-hover);
+}
+
+.cat-settings-priority > .hint {
+    margin: 0 0 var(--cat-space-sm) 0;
+    padding-bottom: var(--cat-space-sm);
+    border-bottom: 1px solid var(--cat-border-light);
+}
+
 .cat-settings-priority .cat-priority-list {
     gap: 0.2rem;
+    display: flex;
+    flex-direction: column;
     margin: 0;
     padding: 0;
-    display: flex;
     list-style: none;
-    flex-direction: column;
 }
 
 .cat-settings-priority .cat-priority-row {
@@ -197,28 +226,83 @@
     display: flex;
     align-items: center;
     padding: 0.2rem 0.35rem;
+    border: 1px solid var(--cat-border-light);
     border-radius: 4px;
+}
+
+.cat-settings-priority .cat-priority-row[draggable="true"] {
+    cursor: grab;
 }
 
 .cat-settings-priority .cat-priority-row.cat-priority-dragging {
     opacity: 0.5;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgb(255 255 255 / 8%);
 }
 
-.cat-settings-priority .cat-priority-grip {
-    cursor: grab;
-    opacity: 0.6;
+.cat-settings-priority .cat-priority-row.cat-priority-drop-before {
+    box-shadow: 0 -2px 0 0 var(--cat-border-focus);
+}
+
+.cat-settings-priority .cat-priority-list.cat-priority-drop-end > .cat-priority-row:last-child {
+    box-shadow: 0 2px 0 0 var(--cat-border-focus);
 }
 
 .cat-settings-priority .cat-priority-name {
     flex: 1;
 }
 
+.cat-settings-priority .cat-priority-rank {
+    width: 3.5rem;
+    text-align: center;
+    cursor: text;
+}
+
 .cat-settings-priority .cat-priority-toggle {
-    gap: 0.25rem;
     display: inline-flex;
+    flex: 0 0 auto;
+    justify-content: center;
     align-items: center;
-    white-space: nowrap;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+}
+
+.cat-settings-priority .cat-priority-disabled-section {
+    margin-top: var(--cat-space-sm);
+    padding-top: var(--cat-space-sm);
+    border-top: 1px solid var(--cat-border-light);
+}
+
+.cat-settings-priority .cat-priority-disabled-section > summary {
+    opacity: 0.7;
+    padding: 0.2rem 0.35rem;
+    cursor: pointer;
+}
+
+.cat-settings-priority .cat-priority-disabled .cat-priority-row {
+    opacity: 0.6;
+}
+
+.cat-settings-compendiums > .hint {
+    margin: 0 0 var(--cat-space-sm) 0;
+    padding-bottom: var(--cat-space-sm);
+    border-bottom: 1px solid var(--cat-border-light);
+}
+
+.cat-settings-compendiums .cat-compendium-row {
+    gap: var(--cat-space-sm);
+    display: flex;
+    align-items: center;
+    padding: 0.2rem 0.35rem;
+}
+
+.cat-settings-compendiums .cat-compendium-label {
+    flex: 1;
+}
+
+.cat-settings-compendiums .cat-compendium-priority {
+    width: 3.5rem;
+    text-align: center;
 }
 
 .cat-dialog input,

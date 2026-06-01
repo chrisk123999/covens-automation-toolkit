@@ -15,21 +15,44 @@
                 {{formGroup field name=name value=value}}
             {{/each}}
         {{else if isPriority}}
-            <div class="cat-settings-priority">
+            <div class="cat-settings-priority" data-priority-setting="{{name}}">
                 {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
-                <ul class="cat-priority-list" data-priority-setting="{{name}}">
-                    {{#each rows}}
-                        <li class="cat-priority-row" draggable="true" data-source-id="{{id}}">
-                            <i class="fas fa-grip-vertical cat-priority-grip" aria-hidden="true"></i>
+                <ul class="cat-priority-list" data-list="enabled">
+                    {{#each enabledRows}}
+                        <li class="cat-priority-row" draggable="true" data-source-id="{{id}}" data-pack="{{pack}}">
                             <span class="cat-priority-name">{{name}}</span>
-                            <input type="number" class="cat-priority-rank" value="{{priority}}" hidden>
-                            <label class="cat-priority-toggle">
-                                <input type="checkbox" class="cat-priority-enabled" {{#if enabled}}checked{{/if}}>
-                                {{localize "CAT.Settings.AutomationSources.Enabled"}}
-                            </label>
+                            <input type="number" class="cat-priority-rank" value="{{priority}}" draggable="false">
+                            <button type="button" class="cat-priority-toggle" draggable="false" data-priority-action="disable" data-tooltip="{{localize 'CAT.Settings.AutomationSources.Disable'}}" aria-label="{{localize 'CAT.Settings.AutomationSources.Disable'}}">
+                                <i class="fas fa-xmark" aria-hidden="true"></i>
+                            </button>
                         </li>
                     {{/each}}
                 </ul>
+                <details class="cat-priority-disabled-section">
+                    <summary>{{localize "CAT.Settings.AutomationSources.Disabled"}} (<span class="cat-priority-disabled-count">{{disabledRows.length}}</span>)</summary>
+                    <ul class="cat-priority-list cat-priority-disabled" data-list="disabled">
+                        {{#each disabledRows}}
+                            <li class="cat-priority-row" data-source-id="{{id}}" data-pack="{{pack}}">
+                                <span class="cat-priority-name">{{name}}</span>
+                                <input type="number" class="cat-priority-rank" value="{{priority}}" draggable="false" hidden>
+                                <button type="button" class="cat-priority-toggle" draggable="false" data-priority-action="enable" data-tooltip="{{localize 'CAT.Settings.AutomationSources.Enable'}}" aria-label="{{localize 'CAT.Settings.AutomationSources.Enable'}}">
+                                    <i class="fas fa-plus" aria-hidden="true"></i>
+                                </button>
+                            </li>
+                        {{/each}}
+                    </ul>
+                </details>
+            </div>
+        {{else if isCompendium}}
+            <div class="cat-settings-compendiums" data-compendium-setting="{{name}}">
+                {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+                {{#each rows}}
+                    <div class="cat-compendium-row" data-pack-id="{{id}}">
+                        <input type="checkbox" class="cat-compendium-checked" {{#if checked}}checked{{/if}}>
+                        <span class="cat-compendium-label">{{label}}</span>
+                        <input type="number" class="cat-compendium-priority" value="{{priority}}" {{#unless checked}}disabled{{/unless}}>
+                    </div>
+                {{/each}}
             </div>
         {{/if}}
     {{/each}}

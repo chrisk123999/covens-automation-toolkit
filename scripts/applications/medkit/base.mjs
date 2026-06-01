@@ -601,24 +601,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.render();
     }
 
-    // Frameless windows have no built-in drag handle; wire one on our custom header.
-    #enableDragging() {
-        const handle = this.element?.querySelector('.cat-medkit-header');
-        if (!handle || handle.dataset.dragWired === '1') return;
-        handle.dataset.dragWired = '1';
-        const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
-        const orig = drag._onDragMouseDown.bind(drag);
-        drag._onDragMouseDown = (event) => {
-            if (event.target.closest('button, a, input, select, [data-action]')) return;
-            orig(event);
-        };
-    }
-
     bringToFront() {
-        if (!this.element) return;
-        this.position.zIndex = ++ApplicationV2._maxZ;
-        this.element.style.zIndex = String(this.position.zIndex);
-        ui.activeWindow = this;
+        uiUtils.bringToFront(this);
     }
 
     // Mutates in-memory state; document.update is deferred until Save / Save & Close.
@@ -682,14 +666,11 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     _onRender(context, options) {
         super._onRender(context, options);
-        this.#enableDragging();
+        uiUtils.enableWindowDrag(this, '.cat-medkit-header');
         this.#wireDocumentDrop();
         if (options.isFirstRender) {
             this.bringToFront();
-            const win = this.element.ownerDocument.defaultView ?? window;
-            const w = this.element.offsetWidth || 700;
-            const h = this.element.offsetHeight || 500;
-            this.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
+            uiUtils.centerWindow(this, {width: 700, height: 500});
         }
     }
 }

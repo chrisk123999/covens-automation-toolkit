@@ -106,7 +106,10 @@ async function setAllGenericConfigs(item, configData) {
 }
 function getAutomationSources({packsOnly = false} = {}) {
     const settings = game.settings.get('cat', 'automationSources');
-    return Object.entries(settings).filter(([key, value]) => value.enabled && (!packsOnly || value.pack)).sort((a, b) => a[1].priority - b[1].priority).map(([key, value]) => key);
+    const compendiums = game.settings.get('cat', 'additionalCompendiums') ?? {};
+    const entries = Object.entries(settings).filter(([key, value]) => value.enabled && (!packsOnly || value.pack)).map(([key, value]) => [key, value.priority]);
+    for (const [key, priority] of Object.entries(compendiums)) entries.push([key, priority]);
+    return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
 }
 function getAppliedOrPreferedAutomation(item) {
     const currentAutomation = getCurrentAutomation(item);

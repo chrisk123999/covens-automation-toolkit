@@ -1,4 +1,4 @@
-import {uiUtils} from '../utilities/_module.mjs';
+import {uiUtils, genericUtils} from '../utilities/_module.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {fields} = foundry.data;
 
@@ -92,7 +92,7 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
 
     /** @this {DocPropertyEditorApp} */
     static #onFormSubmit(_event, _form, formData) {
-        const data = foundry.utils.expandObject(formData.object);
+        const data = genericUtils.expandObject(formData.object);
         const parseMulti = raw => { try { return raw ? JSON.parse(raw) : []; } catch { return []; } };
         let entry;
         if (this.#type === 'rollModifiers') {
@@ -127,39 +127,21 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
         if (this.#onSubmit?.(entry) !== false) this.close();
     }
 
-    #enableDragging() {
-        const handle = this.element?.querySelector('.cat-embedded-macros-header');
-        if (!handle || handle.dataset.dragWired === '1') return;
-        handle.dataset.dragWired = '1';
-        const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
-        const orig = drag._onDragMouseDown.bind(drag);
-        drag._onDragMouseDown = (event) => {
-            if (event.target.closest('button, a, input, select, textarea, [data-action], cat-multi-combobox')) return;
-            orig(event);
-        };
-    }
-
     async _preClose(options) {
         options.animate = false;
         await uiUtils.fadeOut(this.element);
     }
 
     bringToFront() {
-        if (!this.element) return;
-        this.position.zIndex = ++ApplicationV2._maxZ;
-        this.element.style.zIndex = String(this.position.zIndex);
-        ui.activeWindow = this;
+        uiUtils.bringToFront(this);
     }
 
     _onRender(context, options) {
         super._onRender(context, options);
-        this.#enableDragging();
+        uiUtils.enableWindowDrag(this, '.cat-embedded-macros-header', {ignore: 'button, a, input, select, textarea, [data-action], cat-multi-combobox'});
         if (options.isFirstRender) {
             this.bringToFront();
-            const win = this.element.ownerDocument.defaultView ?? window;
-            const w = this.element.offsetWidth || 560;
-            const h = this.element.offsetHeight || 480;
-            this.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
+            uiUtils.centerWindow(this, {width: 560, height: 480});
         }
     }
 }

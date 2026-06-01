@@ -213,40 +213,21 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
         if (this.#onSubmit?.(cleaned) !== false) this.close();
     }
 
-    // Frameless windows have no built-in drag handle; wire one on the custom header.
-    #enableDragging() {
-        const handle = this.element?.querySelector('.cat-embedded-macros-header');
-        if (!handle || handle.dataset.dragWired === '1') return;
-        handle.dataset.dragWired = '1';
-        const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
-        const orig = drag._onDragMouseDown.bind(drag);
-        drag._onDragMouseDown = (event) => {
-            if (event.target.closest('button, a, input, select, textarea, [data-action]')) return;
-            orig(event);
-        };
-    }
-
     async _preClose(options) {
         options.animate = false;
         await uiUtils.fadeOut(this.element);
     }
 
     bringToFront() {
-        if (!this.element) return;
-        this.position.zIndex = ++ApplicationV2._maxZ;
-        this.element.style.zIndex = String(this.position.zIndex);
-        ui.activeWindow = this;
+        uiUtils.bringToFront(this);
     }
 
     _onRender(context, options) {
         super._onRender(context, options);
-        this.#enableDragging();
+        uiUtils.enableWindowDrag(this, '.cat-embedded-macros-header');
         if (options.isFirstRender) {
             this.bringToFront();
-            const win = this.element.ownerDocument.defaultView ?? window;
-            const w = this.element.offsetWidth || 820;
-            const h = this.element.offsetHeight || 480;
-            this.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
+            uiUtils.centerWindow(this, {width: 820, height: 480});
         }
     }
 }

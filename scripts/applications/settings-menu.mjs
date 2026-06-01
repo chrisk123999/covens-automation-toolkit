@@ -39,11 +39,7 @@ export default class SettingsMenu extends MenuApp {
     close(options) {
         if (this.#save) {
             this.#menuSettings.forEach(s => {
-                let value = this.data[s.key];
-                if (s.type === Object && value && typeof value === 'object') {
-                    value = foundry.utils.mergeObject(game.settings.get('cat', s.key), value, {inplace: false});
-                }
-                game.settings.set('cat', s.key, value);
+                if (s.key in this.data) game.settings.set('cat', s.key, this.data[s.key]);
             });
         }
         super.close(options);

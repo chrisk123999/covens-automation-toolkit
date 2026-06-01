@@ -470,39 +470,19 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (element.dataset.attribution) element.dataset.tooltipClass = 'property-attribution';
     }
 
-    // Frameless = no built-in titlebar, so wire drag on our header.
-    #enableDragging() {
-        const handle = this.element?.querySelector('.cat-dialog-header');
-        if (!handle || handle.dataset.dragWired === '1') return;
-        handle.dataset.dragWired = '1';
-        const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
-        const orig = drag._onDragMouseDown.bind(drag);
-        drag._onDragMouseDown = (event) => {
-            if (event.target.closest('button, a, input, select, [data-action]')) return;
-            orig(event);
-        };
-    }
-
-    // Frameless apps don't get default z-ordering; replicate the framed bring-to-front behaviour.
     bringToFront() {
-        if (!this.element) return;
-        this.position.zIndex = ++ApplicationV2._maxZ;
-        this.element.style.zIndex = String(this.position.zIndex);
-        ui.activeWindow = this;
+        uiUtils.bringToFront(this);
     }
 
     _onRender(context, options) {
         super._onRender(context, options);
-        this.#enableDragging();
+        uiUtils.enableWindowDrag(this, '.cat-dialog-header');
         const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
         const header = this.element?.querySelector('.cat-dialog-header');
         if (counter && header) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));
         if (options.isFirstRender) {
             this.bringToFront();
-            const win = this.element.ownerDocument.defaultView ?? window;
-            const w = this.element.offsetWidth || 400;
-            const h = this.element.offsetHeight || 300;
-            this.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
+            uiUtils.centerWindow(this, {width: 400, height: 300});
             this.element.addEventListener('cat-resize', () => {
                 this.setPosition({width: 'auto', height: 'auto'});
             });
