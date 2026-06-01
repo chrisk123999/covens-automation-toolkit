@@ -14,6 +14,7 @@ export default class SettingsMenu extends MenuApp {
         this.#menuSettings = this.#catSettings.filter(s => s.menu === key);
     }
     #formatSetting(setting) {
+        if (setting.key === 'additionalCompendiums') return null;
         let entry = {
             name: setting.key,
             label: setting.name,
@@ -21,8 +22,7 @@ export default class SettingsMenu extends MenuApp {
             default: setting.default,
             value: game.settings.get('cat', setting.key)
         };
-        if (this.key === 'compendiums') entry.type = 'compendium';
-        else if (this.key === 'automation') entry.type = 'priority';
+        if (setting.key === 'automationSources') entry.type = 'priority';
         else if (setting.choices) {
             entry.type = 'selectOption';
             entry.options = setting.choices;
@@ -30,7 +30,7 @@ export default class SettingsMenu extends MenuApp {
         return entry;
     }
     async _prepareContext(options) {
-        this.inputs = this.#menuSettings.map(s => this.#formatSetting(s));
+        this.inputs = this.#menuSettings.map(s => this.#formatSetting(s)).filter(Boolean);
         return await super._prepareContext(options);
     }
     submit(target) {

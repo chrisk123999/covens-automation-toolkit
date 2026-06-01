@@ -78,8 +78,6 @@ export default class ItemMedkit extends MedkitApp {
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
         context.fields = {
-            // TODO - is this field needed? Writes to flags.cat.nameOverride but Items match by system.identifier, not name.
-            name: new fields.StringField({label: _loc('CAT.MEDKIT.Name.Label')}),
             identifier: new fields.StringField({label: _loc('CAT.MEDKIT.Identifier.Label')}),
             source: new fields.StringField({label: _loc('CAT.MEDKIT.Source.Label'), required: true, blank: false}),
             version: new fields.StringField({label: _loc('CAT.MEDKIT.Version.Label')}),
@@ -91,8 +89,6 @@ export default class ItemMedkit extends MedkitApp {
                 blank: false
             })
         };
-        context.nameOverride = this._getFlags().nameOverride ?? '';
-
         const identifier = documentUtils.getIdentifier(this.document);
         const actorType = this.document.type === 'spell' ? 'character' : this.document.actor?.type ?? 'character';
         const monsterIdentifier = actorType === 'npc' ? documentUtils.getIdentifier(this.document.actor) : undefined;

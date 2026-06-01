@@ -58,25 +58,21 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static async #formHandler(event, form, formData) {
         const data = genericUtils.expandObject(formData.object);
         form.querySelectorAll('.cat-settings-priority').forEach(widget => {
-            const setting = widget.dataset.prioritySetting;
-            if (!setting) return;
+            const sourceSetting = widget.dataset.sourceSetting;
+            const packSetting = widget.dataset.packSetting;
+            if (!sourceSetting) return;
             const sources = {};
+            const packs = {};
             widget.querySelectorAll('.cat-priority-list').forEach(list => {
                 const enabled = list.dataset.list === 'enabled';
                 list.querySelectorAll('.cat-priority-row').forEach(row => {
-                    sources[row.dataset.sourceId] = {enabled, priority: Number(row.querySelector('.cat-priority-rank').value), pack: row.dataset.pack === 'true'};
+                    const priority = Number(row.querySelector('.cat-priority-rank').value);
+                    if (row.dataset.kind === 'source') sources[row.dataset.sourceId] = {enabled, priority, pack: false};
+                    else if (enabled) packs[row.dataset.sourceId] = priority;
                 });
             });
-            data[setting] = sources;
-        });
-        form.querySelectorAll('.cat-settings-compendiums').forEach(widget => {
-            const setting = widget.dataset.compendiumSetting;
-            if (!setting) return;
-            const packs = {};
-            widget.querySelectorAll('.cat-compendium-row').forEach(row => {
-                if (row.querySelector('.cat-compendium-checked').checked) packs[row.dataset.packId] = Number(row.querySelector('.cat-compendium-priority').value);
-            });
-            data[setting] = packs;
+            data[sourceSetting] = sources;
+            if (packSetting) data[packSetting] = packs;
         });
         this.data = data;
         this.submit(event.submitter?.name);
@@ -118,25 +114,43 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         switch (input.type) {
             case 'checkbox': return this.#buildCheckbox(input);
             case 'selectOption': return this.#buildSelectOption(input);
-            case 'compendium': return this.#buildCompendium(input);
             case 'priority': return this.#buildPriority(input);
         }
     }
 
+    #sourceName(id) {
+        return constants.automations?.sourceNames?.[id]
+            ?? game.modules.get(id)?.title
+            ?? (game.system?.id === id ? game.system.title : null)
+            ?? id;
+    }
+
     #buildPriority(input) {
-        const stored = input.value ?? {};
-        const ids = new Set([...Object.keys(stored), ...(constants.automations?.sources ?? [])]);
-        const rows = [...ids].map(id => {
-            const cfg = stored[id] ?? {};
-            const name = constants.automations?.sourceNames?.[id]
-                ?? game.modules.get(id)?.title
-                ?? (game.system?.id === id ? game.system.title : null)
-                ?? id;
-            return {id, name, enabled: cfg.enabled ?? true, priority: cfg.priority ?? 50, pack: cfg.pack ?? false};
-        }).sort((a, b) => a.priority - b.priority);
+        const sources = input.value ?? {};
+        const compendiums = game.settings.get('cat', 'additionalCompendiums') ?? {};
+        const registered = new Set(constants.automations?.sources ?? []);
+        const owned = new Set(ddbi.getCompendiumIds());
+        const sourceTag = _loc('CAT.Settings.AutomationSources.SourceTag');
+        const packTag = _loc('CAT.Settings.AutomationSources.PackTag');
+        const rows = [];
+        const sourceIds = new Set([...Object.keys(sources), ...registered]);
+        for (const id of sourceIds) {
+            const cfg = sources[id] ?? {};
+            rows.push({id, kind: 'source', kindLabel: sourceTag, name: this.#sourceName(id), enabled: cfg.enabled ?? true, priority: cfg.priority ?? 50});
+        }
+        for (const [id, priority] of Object.entries(compendiums)) {
+            rows.push({id, kind: 'pack', kindLabel: packTag, name: game.packs.get(id)?.metadata.label ?? id, enabled: true, priority});
+        }
+        for (const pack of game.packs) {
+            const id = pack.metadata.id;
+            if (pack.metadata.type !== 'Item' || registered.has(pack.metadata.packageName) || owned.has(id) || sourceIds.has(id) || id in compendiums) continue;
+            rows.push({id, kind: 'pack', kindLabel: packTag, name: pack.metadata.label, enabled: false, priority: 50});
+        }
+        rows.sort((a, b) => a.priority - b.priority);
         return {
             isPriority: true,
             name: input.name,
+            packSetting: 'additionalCompendiums',
             hint: _loc(input.hint),
             enabledRows: rows.filter(r => r.enabled),
             disabledRows: rows.filter(r => !r.enabled)
@@ -167,29 +181,6 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 value: input.value ?? ''
             }]
         };
-    }
-
-    #buildCompendium(input) {
-        const stored = input.value ?? {};
-        const registered = new Set(constants.automations?.sources ?? []);
-        const configured = new Set(Object.keys(game.settings.get('cat', 'automationSources') ?? {}));
-        const owned = new Set(ddbi.getCompendiumIds());
-        const rows = game.packs
-            .filter(pack => pack.metadata.type === 'Item'
-                && !registered.has(pack.metadata.packageName)
-                && !configured.has(pack.metadata.id)
-                && !owned.has(pack.metadata.id))
-            .map(pack => ({
-                id: pack.metadata.id,
-                label: pack.metadata.label,
-                checked: pack.metadata.id in stored,
-                priority: stored[pack.metadata.id] ?? 50
-            }))
-            .sort((a, b) => {
-                if (a.checked !== b.checked) return a.checked ? -1 : 1;
-                return (a.priority - b.priority) || a.label.localeCompare(b.label);
-            });
-        return {isCompendium: true, name: input.name, hint: _loc(input.hint), rows};
     }
 
     async _prepareContext(options) {
@@ -294,15 +285,6 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (counter) counter.textContent = String(count);
     }
 
-    #wireCompendium() {
-        const widget = this.element?.querySelector('.cat-settings-compendiums');
-        if (!widget || widget.dataset.wired === '1') return;
-        widget.dataset.wired = '1';
-        widget.addEventListener('change', event => {
-            if (!event.target.classList.contains('cat-compendium-checked')) return;
-            event.target.closest('.cat-compendium-row').querySelector('.cat-compendium-priority').disabled = !event.target.checked;
-        });
-    }
 
     static #reposition(row) {
         const rankOf = el => Number(el.querySelector('.cat-priority-rank').value);
@@ -345,7 +327,6 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         super._onRender(context, options);
         uiUtils.enableWindowDrag(this, '.cat-dialog-header');
         this.#wirePriority();
-        this.#wireCompendium();
         const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
         const header = this.element?.querySelector('.cat-dialog-header');
         if (counter && header) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));

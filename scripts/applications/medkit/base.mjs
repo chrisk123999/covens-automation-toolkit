@@ -406,14 +406,20 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         }
         if (medkitStatus === 'available') {
             const labelFor = src => constants.automations.getSourceName?.(src) ?? src;
-            const sources = availableAutomations.map(a => ({value: a.source, label: labelFor(a.source)}));
+            const priority = automationUtils.getAutomationSources();
+            const rank = src => { const i = priority.indexOf(src); return i === -1 ? Infinity : i; };
+            const seen = new Set();
+            const sources = [...availableAutomations]
+                .sort((a, b) => rank(a.source) - rank(b.source))
+                .filter(a => !seen.has(a.source) && seen.add(a.source))
+                .map(a => ({value: a.source, label: labelFor(a.source)}));
             return {
                 variant: 'available',
                 isAvailable: true,
                 medkitStatus,
                 icon: 'fa-solid fa-circle-plus',
                 heading: _loc('CAT.MEDKIT.Hero.Available.Heading'),
-                copy: sources.map(s => s.label).join(', '),
+                copy: sources.map(s => s.label).join('\n'),
                 sources
             };
         }
@@ -630,8 +636,10 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         } else if (inMultiCombobox && name === 'flags.cat.genericConfig') {
             this._writeGenericSelection(Array.isArray(value) ? value : []);
         } else if (name.startsWith('flags.cat.')) {
-            const path = name.slice('flags.cat.'.length);
-            foundry.utils.setProperty(this.#flags, path, value);
+            foundry.utils.setProperty(this.#flags, name.slice('flags.cat.'.length), value);
+            return;
+        } else {
+            return;
         }
         this.render();
     }

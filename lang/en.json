@@ -22,10 +22,6 @@
         "Done": "Mass apply complete.",
         "CompendiumPending": "Compendium mass apply isn't wired yet - waiting on a pack-aware updater."
       },
-      "Name": {
-        "Label": "Match Name",
-        "Hint": "Override the name used when matching this item against registered automations."
-      },
       "Identifier": {
         "Label": "Document Identifier",
         "Hint": "Item & Activity identifiers must be modified on the respective document sheet."
@@ -369,27 +365,20 @@
     },
     "Settings": {
       "Automation": {
-        "Name": "Automation Source Priority",
+        "Name": "Automation Sources",
         "Label": "Open",
-        "Hint": "Choose which automation sources are enabled and their priority order (lowest number wins)."
+        "Hint": "Enable automation sources, set their priority, and pick extra compendiums to use."
       },
       "AutomationSources": {
         "Name": "Automation Sources",
-        "Hint": "Enabled automation sources and their priority order (lowest number wins).",
+        "Hint": "Sources and compendiums used for automation. Drag to set priority, the lowest number takes priority.",
         "Priority": "Priority",
         "Enabled": "Enabled",
-        "Disabled": "Disabled sources",
+        "Disabled": "Inactive",
         "Disable": "Disable",
-        "Enable": "Enable"
-      },
-      "Compendiums": {
-        "Name": "Additional Compendiums",
-        "Label": "Open",
-        "Hint": "Choose extra Item compendiums to use as automation sources."
-      },
-      "AdditionalCompendiums": {
-        "Name": "Additional Compendiums",
-        "Hint": "Item compendiums (excluding registered automation modules) used as automation sources, with their priority."
+        "Enable": "Enable",
+        "SourceTag": "Source",
+        "PackTag": "Pack"
       },
       "Devtools": {
         "Name": "Development Tools",

@@ -53,17 +53,12 @@ const settings = {
                 enabled: true,
                 priority: 20,
                 pack: false
-            },
-            'world.test': {
-                enabled: true,
-                priority: 10,
-                pack: true
             }
         }
     },
     additionalCompendiums: {
         type: Object,
-        menu: 'compendiums',
+        menu: 'automation',
         default: {}
     },
     hideNames: {
@@ -95,9 +90,6 @@ const settings = {
 const menus = {
     automation: {
         icon: 'fas fa-layer-group'
-    },
-    compendiums: {
-        icon: 'fas fa-book-atlas'
     },
     devtools: {
         icon: 'fas fa-tools'
