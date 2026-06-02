@@ -116,6 +116,20 @@ class FnMacro {
             roll
         };
     }
+    get flagData() {
+        const entry = {
+            source: this.source,
+            identifier: this.identifier,
+            rules: this.rules
+        };
+        const flags = {};
+        for (const [event, triggers] of Object.entries(this.macros)) {
+            if (triggers && triggers.length > 0) {
+                flags[event] = [entry];
+            }
+        }
+        return flags;
+    }
 }
 export default {
     RegisteredMacros
