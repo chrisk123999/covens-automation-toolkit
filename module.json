@@ -45,13 +45,6 @@
                 }
             },
             {
-                "id":"socketlib",
-                "type":"module",
-                "compatibility":{
-                    "minimum":"1.1.2"
-                }
-            },
-            {
                 "id":"dae",
                 "type":"module",
                 "compatibility":{

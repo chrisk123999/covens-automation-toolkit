@@ -16,8 +16,9 @@ export class RegisteredAnimations {
             source: new fields.StringField({required: true, nullable: false}),
             identifier: new fields.StringField({required: true, nullable: false}),
             name: new fields.StringField({required: true, nullable: false}),
-            macro: new FunctionField({required: true, nullable: false}), 
-            requirements:new fields.ArrayField(new fields.StringField({required: false, nullable: false}), {required: false}),
+            macro: new FunctionField({required: true, nullable: false}),
+            inputs: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: true, nullable: false}),
+            requirements: new fields.ArrayField(new fields.StringField({required: false, nullable: false}), {required: false}),
             type: new fields.StringField({required: false, nullable: false}),
             config: new fields.ObjectField({required: false, nullable: false}),
             category: new fields.StringField({required: false, nullable: false})
@@ -30,7 +31,7 @@ export class RegisteredAnimations {
             Logging.addRegistrationError(data, validationError.asError());
             return false;
         }
-        this.animations.push(new Animation(data.source, data.identifier, data.name, data.macro, {requirements: data.requirements, type: data.type, config: data.config, category: data.category}));
+        this.animations.push(new Animation(data.source, data.identifier, data.name, data.macro, data.inputs, {requirements: data.requirements, type: data.type, config: data.config, category: data.category}));
     }
     registerAnimations(data = []) {
         const validationError = this.#multiAnimationScheme.validate(data);
@@ -58,11 +59,12 @@ export class RegisteredAnimations {
     }
 }
 class Animation {
-    constructor(source, identifier, name, macro, {requirements, type, config, category} = {}) {
+    constructor(source, identifier, name, macro, inputs, {requirements, type, config, category} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.name = name;
         this.macro = macro;
+        this.inputs = inputs;
         this.requirements = requirements;
         this.type = type;
         this.config = config;
