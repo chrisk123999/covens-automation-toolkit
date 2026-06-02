@@ -270,10 +270,13 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     #genericDescriptors(macro, source, identifier) {
         const raw = macro?.genericConfig;
-        if (Array.isArray(raw)) return raw;
-        const nested = raw?.[source]?.[identifier];
-        if (nested) return Object.entries(nested).map(([key, d]) => ({key, label: d?.label ?? key, type: d?.type, default: d?.default}));
-        return [];
+        if (!raw) return [];
+        return Object.entries(raw).map(([key, d]) => ({
+            key: key, 
+            label: d?.label ?? key, 
+            type: d?.type, 
+            default: d?.default
+        }));
     }
 
     _prepareGenericFeatures() {

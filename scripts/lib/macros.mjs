@@ -87,11 +87,11 @@ export class RegisteredMacros {
     }
     getGenericConfigValue(document, source, identifier, key) {
         const value = document.flags.cat?.genericConfig?.[source]?.[identifier]?.[key];
-        if (value) return value;
+        if (value != undefined) return value;
         const rules = documentUtils.getRules(document);
         const predicate = macro => macro.source === source && macro.rules === rules && macro.identifier === identifier;
         const macro = this.overwriteMacros.find(predicate) ?? this.fnMacros.find(predicate);
-        return macro?.genericConfig?.[source]?.[identifier]?.[key]?.default;
+        return macro?.genericConfig?.[key]?.default;
     }
 }
 class FnMacro {
