@@ -1,29 +1,23 @@
 import {Logging} from '../lib/_module.mjs';
 import {automationUtils} from '../utilities/_module.mjs';
 const fields = foundry.data.fields;
-class FunctionField extends fields.DataField {
-    _validateType(value) {
-        if (typeof value !== 'function') throw new Error('The provided macro must be a function.');
-        return value;
-    }
-}
 export class RegisteredAnimations {
     #animationSchema;
-    #multiAnimationScheme;
+    #multiAnimationSchema;
     constructor() {
         this.animations = [];
         this.#animationSchema = new fields.SchemaField({
             source: new fields.StringField({required: true, nullable: false}),
             identifier: new fields.StringField({required: true, nullable: false}),
             name: new fields.StringField({required: true, nullable: false}),
-            macro: new FunctionField({required: true, nullable: false}),
+            macros: new fields.ObjectField({required: true, nullable: false}),
             inputs: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: true, nullable: false}),
             requirements: new fields.ArrayField(new fields.StringField({required: false, nullable: false}), {required: false}),
             type: new fields.StringField({required: false, nullable: false}),
             config: new fields.ObjectField({required: false, nullable: false}),
             category: new fields.StringField({required: false, nullable: false})
         });
-        this.#multiAnimationScheme = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
+        this.#multiAnimationSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
     }
     registerAnimation(data) {
         const validationError = this.#animationSchema.validate(data);
@@ -31,10 +25,11 @@ export class RegisteredAnimations {
             Logging.addRegistrationError(data, validationError.asError());
             return false;
         }
-        this.animations.push(new Animation(data.source, data.identifier, data.name, data.macro, data.inputs, {requirements: data.requirements, type: data.type, config: data.config, category: data.category}));
+        this.animations.push(new Animation(data.source, data.identifier, data.name, data.macros, data.inputs, {requirements: data.requirements, type: data.type, config: data.config, category: data.category}));
+        return true;
     }
     registerAnimations(data = []) {
-        const validationError = this.#multiAnimationScheme.validate(data);
+        const validationError = this.#multiAnimationSchema.validate(data);
         if (validationError) {
             Logging.addRegistrationError(data, validationError.asError());
             return false;
@@ -59,11 +54,11 @@ export class RegisteredAnimations {
     }
 }
 class Animation {
-    constructor(source, identifier, name, macro, inputs, {requirements, type, config, category} = {}) {
+    constructor(source, identifier, name, macros, inputs, {requirements, type, config, category} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.name = name;
-        this.macro = macro;
+        this.macros = macros;
         this.inputs = inputs;
         this.requirements = requirements;
         this.type = type;

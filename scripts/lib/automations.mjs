@@ -159,6 +159,7 @@ export class RegisteredAutomations {
         }));
         this.sources.add(data.source);
         Logging.addEntry('DEBUG', 'Automation Registered: ' + data.identifier + ' from ' + data.source + ' with version ' + data.version);
+        return true;
     }
 
     /**
