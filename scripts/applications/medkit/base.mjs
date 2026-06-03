@@ -358,7 +358,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 return inputs.length === required.length && inputs.every((v, i) => v === required[i]);
             });
         }
-        return animations.map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ?? a.identifier}));
+        return animations.map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ? _loc(a.name) : a.identifier}));
     }
 
     // Sub-option fields from the selected animation's own config; persisted under flags.cat.animationGenericConfig.
