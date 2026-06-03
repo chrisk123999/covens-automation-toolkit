@@ -144,6 +144,15 @@ async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}
     const newItem = itemUtils.syntheticItem(itemData, actor);
     return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot});
 }
+function negateDamageItemDamage(ditem) {
+    ditem.totalDamage = 0;
+    ditem.newHP = ditem.oldHP;
+    ditem.newTempHP = ditem.oldTempHP;
+    ditem.hpDamage = 0;
+    ditem.tempDamage = 0;
+    ditem.damageDetail.forEach(i => i.value = 0);
+    ditem.rawDamageDetail.forEach(i => i.value = 0);
+}
 export default {
     getActionType,
     isAttackType,
@@ -152,5 +161,6 @@ export default {
     syntheticActivityDataRoll,
     completeItemUse,
     syntheticItemRoll,
-    syntheticItemDataRoll
+    syntheticItemDataRoll,
+    negateDamageItemDamage
 };

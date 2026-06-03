@@ -291,10 +291,11 @@ class CatEvent {
     }
 }
 class BaseWorkflowEvent extends CatEvent {
-    constructor(pass) {
+    constructor(pass, workflow) {
         super(pass);
         this.name = 'Workflow';
         this.trigger = Triggers.RollTrigger;
+        if (workflow?.targets) this.targets = workflow.targets.map(token => token.document);
     }
     get unsortedTriggers() {
         let triggers = [];
@@ -326,10 +327,10 @@ class BaseWorkflowEvent extends CatEvent {
         if (this.targets?.size) {
             this.targets.forEach(token => {
                 if (!this.actor) return;
-                if (CatEvent.hasCatFlag(token.document)) triggers.push(new this.trigger(token.document, 'target' + passName, {sourceToken: token.document, distances: this.distances}));
-                triggers.push(...this.getActorTriggers(token.actor, 'target' + passName, {sourceToken: token.document, distances: this.distances}));
-                token.document.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-                    triggers.push(new this.trigger(region, 'target' + passName, {sourceToken: token.document, distances: this.distances}));
+                if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, 'target' + passName, {sourceToken: token, distances: this.distances}));
+                triggers.push(...this.getActorTriggers(token.actor, 'target' + passName, {sourceToken: token, distances: this.distances}));
+                token.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
+                    triggers.push(new this.trigger(region, 'target' + passName, {sourceToken: token, distances: this.distances}));
                 });
             });
         }
@@ -392,6 +393,7 @@ class TokenDamageWorkflowEvent extends WorkflowEvent {
         super(pass, workflow);
         this.ditem = ditem;
         this.targetToken = token?.document;
+        this.targets = new Set([token.document]);
     }
     appendData(data) {
         return {

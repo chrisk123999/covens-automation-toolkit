@@ -44,11 +44,11 @@ async function utilityRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.utilityRollComplete, workflow).run();
 }
 async function preTargetDamageApplication(token, {workflow, ditem}) {
-    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.targetDamage, workflow, token, ditem).run();
-    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.targetDamageBonuses, workflow, token, ditem).run();
-    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.targetDamageFlatReductions, workflow, token, ditem).run();
-    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.targetDamagePercentReductions, workflow, token, ditem).run();
-    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.targetDamageComplete, workflow, token, ditem).run();
+    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damage, workflow, token, ditem).run();
+    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageBonuses, workflow, token, ditem).run();
+    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageFlatReductions, workflow, token, ditem).run();
+    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damagePercentReductions, workflow, token, ditem).run();
+    await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageComplete, workflow, token, ditem).run();
 }
 async function rollFinished(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.rollFinished, workflow).run();

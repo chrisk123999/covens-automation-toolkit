@@ -19,11 +19,11 @@ const workflowPasses = {
     utilityRoll: 'utilityRoll', // Regular adjusments to utility rolls, such as re-rolling them or editing the formula. Do not re-roll an attack after this pass.
     utilityRollBonuses: 'utilityRollBonuses', // Add bonuses to utility rolls.
     utilityRollComplete: 'utilityRollComplete', // Finalized utility rolls, not adjustments should be made here.
-    targetDamage: 'targetDamage', // Regular adjustments to target damage item.
-    targetDamageBonuses: 'targetDamageBonuses', // Bonus damage to specific targets.
-    targetDamageFlatReductions: 'targetDamageFlatReductions', // Flat reductions of damage to specific targets.
-    targetDamagePercentReductions: 'targetDamagePercentReductions', // Percent reductions of damage to specific targets.
-    targetDamageComplete: 'targetDamageComplete', // Other edits to damage such as preventing death.
+    damage: 'damage', // Regular adjustments to target damage item.
+    damageBonuses: 'damageBonuses', // Bonus damage to specific targets.
+    damageFlatReductions: 'damageFlatReductions', // Flat reductions of damage to specific targets.
+    damagePercentReductions: 'damagePercentReductions', // Percent reductions of damage to specific targets.
+    damageComplete: 'damageComplete', // Other edits to damage such as preventing death.
     rollFinished: 'rollFinished', // All other things that don't required workflow edits or adjustments.
     onHit: 'onHit', // For retaliation-like macros.
     cleanup: 'cleanup' // For extra late clean-up stuff.
