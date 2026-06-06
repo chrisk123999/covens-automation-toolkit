@@ -34,6 +34,7 @@ Hooks.once('init', () => {
 Hooks.once('libWrapper.Ready', () => {
     patches.activityPatching.patch(true); //Early so initial sheet render is correct.
     patches.dataModelPatching.patch(true);
+    patches.itemPatching.patch(true);
 });
 Hooks.once('ready', () => {
     readyHooks();

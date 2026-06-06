@@ -1,6 +1,6 @@
 import {Logging} from '../lib/_module.mjs';
 import {default as dataModel} from './dataModel.mjs';
-import {automationUtils} from '../utilities/_module.mjs';
+import {automationUtils, itemUtils} from '../utilities/_module.mjs';
 /*
 activity.flags.cat.otherAbilities = {
     value: ['wis', 'int']
@@ -9,6 +9,16 @@ item.flags.cat.alternateAbilities = {
     exampleIdentifier: {
         value: ['str', 'con']
     }
+}
+item.flags.cat.classDifficultyClass = {
+    wizard: {
+        value: 1
+    }
+}
+item.flags.cat.classAttackBonus = {
+    wizard: {
+        value: 1
+    }    
 }
 */
 function availableAbilities(wrapped) {
@@ -68,6 +78,32 @@ function getDamageConfig(wrapped, config) {
     });
     return rollConfig;
 }
+function prepareFinalDataSave(wrapped, ...args) {
+    wrapped.apply(this, args);
+    if (!this.actor || !this.save?.dc?.value) return;
+    const sourceClassIdentifier = itemUtils.getSourceClassIdentifier(this.item);
+    if (!sourceClassIdentifier) return;
+    const totalBonus = this.actor.items.reduce((acc, item) => {
+        if (!itemUtils.getEquipmentState(item)) return acc;
+        const bonus = item.flags.cat?.classDifficultyClass?.[sourceClassIdentifier]?.value;
+        if (bonus) return acc + bonus;
+        return acc;
+    }, 0);
+    this.save.dc.value += totalBonus;
+}
+function prepareFinalDataAttack(wrapped, ...args) {
+    wrapped.apply(this, args);
+    if (!this.actor) return;
+    const sourceClassIdentifier = itemUtils.getSourceClassIdentifier(this.item);
+    if (!sourceClassIdentifier) return;
+    const totalBonus = this.actor.items.reduce((acc, item) => {
+        if (!itemUtils.getEquipmentState(item)) return acc;
+        const bonus = item.flags.cat?.classAttackBonus?.[sourceClassIdentifier]?.value;
+        if (bonus) return acc + bonus;
+        return acc;
+    }, 0);
+    if (totalBonus) this.attack.bonus += ' + ' + totalBonus;
+}
 const activityTypes = [
     'AttackActivity',
     'DamageActivity',
@@ -82,6 +118,10 @@ function patch(enabled) {
             Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.' + type + '.prototype.getDamageConfig', {force: true});
             libWrapper.register('cat', 'dnd5e.documents.activity.' + type + '.prototype.getDamageConfig', getDamageConfig, 'WRAPPER');
         });
+        Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData', {force: true});
+        libWrapper.register('cat', 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData', prepareFinalDataSave, 'WRAPPER');
+        Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.AttackActivity.prototype.prepareFinalData', {force: true});
+        libWrapper.register('cat', 'dnd5e.documents.activity.AttackActivity.prototype.prepareFinalData', prepareFinalDataAttack, 'WRAPPER');
     } else {
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.AttackActivity.prototype.availableAbilities');
         libWrapper.unregister('cat', 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities');
@@ -89,6 +129,10 @@ function patch(enabled) {
             Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.' + type + '.prototype.getDamageConfig');
             libWrapper.unregister('cat', 'dnd5e.documents.activity.' + type + '.prototype.getDamageConfig');
         });
+        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData');
+        libWrapper.unregister('cat', 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData');
+        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.AttackActivity.prototype.prepareFinalData');
+        libWrapper.unregister('cat', 'dnd5e.documents.activity.AttackActivity.prototype.prepareFinalData');
     }
 }
 export default {

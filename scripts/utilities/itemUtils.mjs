@@ -108,6 +108,21 @@ async function rehideActivities(item, identifiers = [], {all = false} = {}) {
     await documentUtils.update(effect, {changes: remainingChanges});
     return effect;
 }
+function getSourceClassIdentifier(item) {
+    if (!item?.actor?.classes) return;
+    if (item.system.sourceItem && item.system.sourceItem.indexOf('class:') === 0) return item.system.sourceItem.split(':')[1];
+    if (item.system.advancementRootItem) {
+        let rootItem = item.system.advancementRootItem;
+        if (rootItem.type === 'subclass' && rootItem.class) rootItem = rootItem.class;
+        if (rootItem.type === 'class') return rootItem.identifier;
+    }
+}
+function getEquipmentState(item) {
+    if (item.system.equipped === undefined) return true;
+    if (!item.system.equipped) return false;
+    if (item.system.attunement && item.system.attunement === 1) return false;
+    return true;
+}
 export default {
     getSaveDC,
     getSavedCastData,
@@ -115,5 +130,7 @@ export default {
     syntheticItem,
     enchantItem,
     unhideActivities,
-    rehideActivities
+    rehideActivities,
+    getSourceClassIdentifier,
+    getEquipmentState
 };
