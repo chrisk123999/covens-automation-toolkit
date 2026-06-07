@@ -9,3 +9,4 @@ export {default as Triggers} from './trigger.mjs';
 export {default as Scales} from './scales.mjs';
 export {Crosshairs} from './crosshairs.mjs';
 export {default as Animations} from './animation.mjs';
+export {Summon, SummonsManager} from './summons.mjs';

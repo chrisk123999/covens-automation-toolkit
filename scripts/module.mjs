@@ -37,6 +37,7 @@ Hooks.once('libWrapper.Ready', () => {
     patches.itemPatching.patch(true);
 });
 Hooks.once('ready', () => {
+    lib.constants.summons = lib.SummonsManager.create();
     readyHooks();
     integration.dae.injectFlags();
     patches.documentPatching.patch(true);

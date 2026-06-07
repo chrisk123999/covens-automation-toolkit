@@ -76,6 +76,7 @@ async function unhideActivities(item, identifiers) {
     } else {
         const effectData = {
             name: 'Unhidden Activities',
+            img: item.img,
             origin: item.uuid, 
             changes
         };

@@ -2,6 +2,7 @@ import {RegisteredMacros} from './macros.mjs';
 import {RegisteredAutomations} from './automations.mjs';
 import {RegisteredScales} from './scales.mjs';
 import {RegisteredAnimations} from './animation.mjs';
+import {SummonsManager} from './summons.mjs';
 const workflowPasses = {
     preTargeting: 'preTargeting',
     preItemRoll: 'preItemRoll',
@@ -159,6 +160,13 @@ const timePasses = {
 const actorHookNames = {
     updateActor: 'updateActor'
 };
+const summonPasses = {
+    preCreate: 'preCreate',
+    create: 'create',
+    preDelete: 'preDelete',
+    placed: 'placed',
+    removed: 'removed'
+};
 const miscHookNames = {
     itemUseActivitySelect: 'midi-qol.itemUseActivitySelect',
     applyActiveEffect: 'applyActiveEffect',
@@ -267,6 +275,8 @@ export default {
     scales: undefined,
     /** @type {RegisteredAnimations} */
     animations: undefined,
+    /** @type {SummonsManager} */
+    summons: undefined,
     gameReady: false,
     workflowPasses,
     workflowHookNames,
@@ -302,5 +312,6 @@ export default {
     miscHookNames,
     statusEffectKeys,
     automationStatus,
-    getItemKeepPaths
+    getItemKeepPaths,
+    summonPasses
 };

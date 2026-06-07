@@ -9,12 +9,9 @@ async function updateWorldTime(worldTime, diff, options, userId) {
             actors.add(token.actor);
         });
     }
-    game.actors.filter(actor => actor.type === 'character').forEach(actor => {
-        actors.add(actor);
-    });
-    for (let actor of actors) {
-        await new Events.TimeEvent(actor, constants.timePasses.timeUpdated, {worldTime, diff, options}).run();
-    }
+    game.actors.filter(actor => actor.type === 'character').forEach(actor => actors.add(actor));
+    for (let actor of actors) await new Events.TimeEvent(actor, constants.timePasses.timeUpdated, {worldTime, diff, options}).run();
+    await constants.summons.checkDurations(worldTime);
 }
 export default {
     updateWorldTime

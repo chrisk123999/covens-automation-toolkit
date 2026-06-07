@@ -738,19 +738,19 @@ class TimeEvent extends CatEvent {
     }
 }
 class SummonEvent extends CatEvent {
-    constructor(actor, pass, {sourceActor, updates} = {}) {
+    constructor(summon, pass, {updates} = {}) {
         super(pass);
         this.name = 'Summon';
         this.trigger = Triggers.SummonTrigger;
-        this.sourceActor = sourceActor;
         this.updates = updates;
-        this.setContext(actor);
+        this.setContext(summon.owner);
+        this.summon = summon;
     }
     appendData(data) {
         return {
             ...super.appendData(data),
-            sourceActor: this.sourceActor,
-            updates: this.updates
+            updates: this.updates,
+            summon: this.summon
         };
     }
 }

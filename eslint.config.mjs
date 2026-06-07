@@ -48,7 +48,8 @@ export default defineConfig([
                 _replace: 'writable',
                 dnd5e: 'writable',
                 Roll: 'writable',
-                ActiveEffect: 'writable'
+                ActiveEffect: 'writable',
+                Folder: 'writable'
             },
             ecmaVersion: 'latest',
             sourceType: 'module'

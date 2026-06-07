@@ -1,4 +1,4 @@
-import {documentUtils, genericUtils} from '../utilities/_module.mjs';
+import {documentUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
 function getCastData(actor) {
     return actor.flags.cat?.castData;
 }
@@ -104,6 +104,15 @@ function hasUsedReaction(actor) {
 function getEquippedWeapons(actor) {
     return actor.items.filter(item => item.type === 'weapon' && item.system.equipped);
 }
+async function createActor(actorData) {
+    const canCreate = game.user.hasPermission('ACTOR_CREATE');
+    if (canCreate) {
+        return Actor.create(actorData);
+    } else {
+        const uuid = await queryUtils.query('createActor', queryUtils.gmUser(), {actorData});
+        return await fromUuid(uuid);
+    }
+}
 export default {
     getCastData,
     getEffects,
@@ -123,5 +132,6 @@ export default {
     getEquivalentSpellSlotName,
     getCastableSpells,
     hasUsedReaction,
-    getEquippedWeapons
+    getEquippedWeapons,
+    createActor
 };

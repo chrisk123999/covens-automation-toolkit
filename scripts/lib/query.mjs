@@ -51,6 +51,14 @@ async function setFlag({uuid, scope, key, value}) {
     await document.setFlag(scope, key, value);
     return document.uuid;
 }
+async function createActor({actorData}) {
+    const actor = await Actor.create(actorData);
+    return actor.uuid;
+}
+async function createFolder({folderData}) {
+    const folder = await Folder.create(folderData);
+    return folder.id;
+}
 function registerQueries() {
     const handlers = {
         createEffects,
@@ -61,7 +69,9 @@ function registerQueries() {
         queuedDialog,
         updateEmbeddedDocuments,
         update,
-        setFlag
+        setFlag,
+        createActor,
+        createFolder
     };
     globalThis.CONFIG.queries.cat = handlers;
     for (const [name, fn] of Object.entries(handlers)) {
@@ -75,5 +85,10 @@ export default {
     registerQueries,
     createEmbeddedDocuments,
     dialog,
-    queuedDialog
+    queuedDialog,
+    updateEmbeddedDocuments,
+    update,
+    setFlag,
+    createActor,
+    createFolder
 };
