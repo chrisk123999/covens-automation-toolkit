@@ -212,10 +212,21 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     // Build one render-ready option from a descriptor {key,type,label,default,options,fileType,tooltip,i18nOption}.
     #buildOption(descriptor, {name, value, configPath, source, identifier} = {}) {
-        const {key, type} = descriptor;
+        const {key} = descriptor;
         const label = descriptor.label ? _loc(descriptor.label) : this.#humanize(key);
         const hint = descriptor.hint || descriptor.tooltip;
         const option = {key, name, label, value, configPath, tooltip: hint ? _loc(hint) : undefined, i18nOption: descriptor.i18nOption ? _loc(descriptor.i18nOption) : undefined};
+        try {
+            this.#applyOptionField(option, descriptor, {label, value, source, identifier});
+        } catch (err) {
+            console.warn(`CAT | Skipping malformed medkit option "${key}".`, err);
+        }
+        return option;
+    }
+
+    // Build the field/widget from a (possibly macro-authored) descriptor; guarded by #buildOption.
+    #applyOptionField(option, descriptor, {label, value, source, identifier}) {
+        const {type} = descriptor;
         const COMBOBOX_THRESHOLD = 8;
         const sortedOptions = () => {
             const opts = typeof descriptor.options === 'function' ? descriptor.options() : (descriptor.options ?? []);
@@ -225,7 +236,12 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'checkbox': option.field = new fields.BooleanField({label}); break;
             case 'number': option.field = new fields.NumberField({label}); break;
             case 'text': option.field = new fields.StringField({label}); break;
-            case 'file': option.field = new fields.FilePathField({label, categories: descriptor.fileType ? [descriptor.fileType.toUpperCase()] : ['IMAGE']}); break;
+            case 'file': {
+                const category = descriptor.fileType?.toUpperCase();
+                const categories = category && category in CONST.FILE_CATEGORIES ? [category] : ['IMAGE'];
+                option.field = new fields.FilePathField({label, categories});
+                break;
+            }
             case 'select': {
                 const sorted = sortedOptions();
                 if (sorted.length > COMBOBOX_THRESHOLD) {
@@ -277,7 +293,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 break;
             default: option.field = new fields.StringField({label});
         }
-        return option;
     }
 
     _getGenericMacros() {
