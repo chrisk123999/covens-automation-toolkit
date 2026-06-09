@@ -31,7 +31,9 @@ export default class ItemMedkit extends MedkitApp {
         actions: {
             addDocProp: ItemMedkit.#addDocProp,
             editDocProp: ItemMedkit.#editDocProp,
-            removeDocProp: ItemMedkit.#removeDocProp
+            removeDocProp: ItemMedkit.#removeDocProp,
+            addClassBonus: ItemMedkit.#addClassBonus,
+            removeClassBonus: ItemMedkit.#removeClassBonus
         }
     };
 
@@ -158,6 +160,7 @@ export default class ItemMedkit extends MedkitApp {
         context.otherRulesAutomationAvailable = !availableAutomations.length && otherRulesAutomations.length > 0;
 
         context.configurationCategories = this._prepareConfigurationCategories(currAutomation);
+        context.classBonuses = this.#prepareClassBonuses();
 
         const genericData = this._prepareGenericFeatures();
         context.genericChoices = genericData.choices;
@@ -191,6 +194,48 @@ export default class ItemMedkit extends MedkitApp {
             modifiers: (entry.modifiers ?? []).join(', '),
             summary: Object.keys(entry.restrictions ?? {}).join(', ')
         }));
+    }
+
+    // Configuration-tab class-bonus table: union of classDifficultyClass / classAttackBonus keys.
+    #prepareClassBonuses() {
+        const flags = this._getFlags();
+        const dcMap = flags.classDifficultyClass ?? {};
+        const attackMap = flags.classAttackBonus ?? {};
+        const ids = new Set([...Object.keys(dcMap), ...Object.keys(attackMap)]);
+        const rows = [...ids].map(id => ({
+            identifier: id,
+            dc: dcMap[id]?.value ?? 0,
+            attack: attackMap[id]?.value ?? 0
+        })).sort((a, b) => a.identifier.localeCompare(b.identifier, 'en', {sensitivity: 'base'}));
+        return {rows};
+    }
+
+    /** @this {ItemMedkit} */
+    static #addClassBonus(_event, target) {
+        const input = target.closest('[data-class-bonus-add]')?.querySelector('input');
+        const id = input?.value?.trim();
+        if (!id) return;
+        const flags = this._getFlags();
+        const dcMap = (flags.classDifficultyClass ??= {});
+        const attackMap = (flags.classAttackBonus ??= {});
+        if (dcMap[id] || attackMap[id]) {
+            ui.notifications.error(_loc('CAT.MEDKIT.ClassBonus.Duplicate', {identifier: id}));
+            return;
+        }
+        dcMap[id] = {value: 0};
+        attackMap[id] = {value: 0};
+        this.render();
+    }
+
+    /** @this {ItemMedkit} */
+    static #removeClassBonus(_event, target) {
+        const id = target.dataset.key;
+        const flags = this._getFlags();
+        delete flags.classDifficultyClass?.[id];
+        delete flags.classAttackBonus?.[id];
+        if (flags.classDifficultyClass && !Object.keys(flags.classDifficultyClass).length) delete flags.classDifficultyClass;
+        if (flags.classAttackBonus && !Object.keys(flags.classAttackBonus).length) delete flags.classAttackBonus;
+        this.render();
     }
 
     #openDocPropEditor(type, entry, onSubmit) {

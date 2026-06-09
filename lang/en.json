@@ -194,6 +194,17 @@
       "Configuration": {
         "None": "No configurable options for this automation."
       },
+      "ClassBonus": {
+        "Label": "Class Spellcasting Bonuses",
+        "Hint": "Flat spell save DC and attack bonuses granted per class while this item is equipped (e.g. Bloodwell Vial).",
+        "Empty": "No class bonuses defined.",
+        "Class": "Class",
+        "DC": "Save DC",
+        "Attack": "Attack",
+        "Add": "Add class bonus",
+        "AddPlaceholder": "Class identifier",
+        "Duplicate": "A bonus for class \"{identifier}\" already exists."
+      },
       "Categories": {
         "behavior": {
           "Label": "Behavior",

@@ -1624,6 +1624,83 @@ cat-combobox {
     background: transparent;
 }
 
+/* Shared table styling for CAT dialogs/apps. */
+.cat-table {
+    width: 100%;
+    margin: var(--cat-space-sm) 0;
+    border-collapse: collapse;
+}
+
+/* Strip Foundry's default brown/black table fill so CAT theming shows through. */
+.cat-table,
+.cat-table thead,
+.cat-table tbody,
+.cat-table tfoot,
+.cat-table tr,
+.cat-table th,
+.cat-table td {
+    border: none;
+    background: none;
+    box-shadow: none;
+}
+
+.cat-table th {
+    color: var(--cat-text-muted);
+    font-size: 0.75em;
+    font-weight: 600;
+    text-align: left;
+}
+
+.cat-table td,
+.cat-table th {
+    padding: var(--cat-space-xs) var(--cat-space-sm);
+    border-bottom: 1px solid var(--cat-border-light);
+}
+
+.cat-table td:first-child,
+.cat-table th:first-child {
+    width: 100%;
+    font-weight: 600;
+}
+
+.cat-table input[type="number"] {
+    width: 4rem;
+}
+
+.cat-table td:last-child:has(> button) {
+    width: 1.5rem;
+}
+
+.cat-table td > button {
+    width: 1.5rem;
+    padding: 0;
+    border: 0;
+    color: var(--cat-text-muted);
+    background: transparent;
+}
+
+.cat-table td > button:hover {
+    color: var(--cat-text-primary);
+}
+
+.cat-class-bonus-add {
+    gap: var(--cat-space-xs);
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    margin: var(--cat-space-sm) 0;
+}
+
+.cat-class-bonus-add > input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cat-class-bonus-add > button {
+    flex: 0 0 auto;
+    width: auto;
+}
+
 .cat-embedded-macros-body {
     flex: 1;
     min-height: 0;
