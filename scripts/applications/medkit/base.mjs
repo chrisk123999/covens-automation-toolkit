@@ -296,12 +296,21 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'selectSummons': {
                 const stored = (value && typeof value === 'object') ? value : {};
                 const base = option.name;
+                const summonAnimations = this.#summonAnimationChoices();
+                const animField = (key, label) => {
+                    const sel = stored[key];
+                    return {key, name: `${base}.${key}`, label: _loc(label), value: sel?.source ? `${sel.source}|${sel.identifier}` : '', isAnimationSelect: true, choices: summonAnimations};
+                };
                 option.isSummonSelect = true;
                 option.summonFields = [
                     {key: 'uuid', name: `${base}.uuid`, label: _loc('CAT.MEDKIT.Summons.Actor'), value: stored.uuid ?? '', isCombobox: true, allowBlank: true, choices: this.#actorChoices()},
                     this.#buildOption({key: 'name', type: 'text', label: 'CAT.MEDKIT.Summons.Name'}, {name: `${base}.name`, value: stored.name}),
                     this.#buildOption({key: 'avatarImg', type: 'file', label: 'CAT.MEDKIT.Summons.AvatarImg'}, {name: `${base}.avatarImg`, value: stored.avatarImg}),
-                    this.#buildOption({key: 'tokenImg', type: 'file', label: 'CAT.MEDKIT.Summons.TokenImg'}, {name: `${base}.tokenImg`, value: stored.tokenImg})
+                    this.#buildOption({key: 'tokenImg', type: 'file', label: 'CAT.MEDKIT.Summons.TokenImg'}, {name: `${base}.tokenImg`, value: stored.tokenImg}),
+                    animField('prePlaceAnimation', 'CAT.MEDKIT.Summons.PrePlace'),
+                    animField('postPlaceAnimation', 'CAT.MEDKIT.Summons.PostPlace'),
+                    animField('preRemoveAnimation', 'CAT.MEDKIT.Summons.PreRemove'),
+                    animField('postRemoveAnimation', 'CAT.MEDKIT.Summons.PostRemove')
                 ];
                 break;
             }
@@ -391,6 +400,13 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return game.actors
             .map(a => ({value: a.uuid, label: a.name, image: a.img}))
             .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+    }
+
+    // Registered animations exposing a summon macro, for selectSummons animation slots.
+    #summonAnimationChoices() {
+        return (constants.animations?.animations ?? [])
+            .filter(a => typeof a.macros?.summon === 'function')
+            .map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ? _loc(a.name) : a.identifier}));
     }
 
     // Sidebar folders + compendium packs of a document type, for packOrFolderMultiSelect.

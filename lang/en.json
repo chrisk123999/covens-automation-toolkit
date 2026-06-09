@@ -225,7 +225,11 @@
         "Actor": "Summon Actor",
         "Name": "Name Override",
         "AvatarImg": "Actor Image Override",
-        "TokenImg": "Token Image Override"
+        "TokenImg": "Token Image Override",
+        "PrePlace": "Pre-Place Animation",
+        "PostPlace": "Post-Place Animation",
+        "PreRemove": "Pre-Remove Animation",
+        "PostRemove": "Post-Remove Animation"
       },
       "PackFolder": {
         "Folder": "Folder",
