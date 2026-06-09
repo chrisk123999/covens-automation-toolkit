@@ -22,12 +22,13 @@ export class SummonsManager {
             const sourceActor = await fromUuid(summonData.sourceActor);
             const created = summonData.created;
             const duration = summonData.duration;
-            const placeAnimation = summonData.placeAnimation;
-            const removeAnimation = summonData.removeAnimation;
+            const prePlaceAnimation = summonData.prePlaceAnimation;
+            const postPlaceAnimation = summonData.postPlaceAnimation;
+            const preRemoveAnimation = summonData.preRemoveAnimation;
+            const postRemoveAnimation = summonData.postRemoveAnimation;
             const placeAlpha = summonData.placeAlpha;
             if (!owner || !sourceActor || created === undefined) return;
-
-            return new Summon(owner, sourceActor, created, {actor, duration, placeAnimation, removeAnimation, placeAlpha});
+            return new Summon(owner, sourceActor, created, {actor, duration, prePlaceAnimation, postPlaceAnimation, placeAlpha, preRemoveAnimation, postRemoveAnimation});
         }))).filter(Boolean);
         resolvedSummons.forEach(summon => this.#summons.set(summon.actor.id, summon));
     }
@@ -44,6 +45,7 @@ export class SummonsManager {
     }
     async #getOwnerFolder(actor) {
         const rootFolder = await this.#getRootFolder();
+        if (rootFolder.depth >= CONST.FOLDER_MAX_DEPTH) return rootFolder;
         let folder = game.folders.find(f => f.flags.cat?.summonOwner === actor.uuid && f.type === 'Actor');
         if (!folder) {
             folder = await folderUtils.createFolder({
@@ -55,7 +57,7 @@ export class SummonsManager {
         }
         return folder;
     }
-    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, removeAnimation, placeAnimation, placeAlpha, disposition} = {}) {
+    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, prePlaceAnimation, postPlaceAnimation, placeAlpha, disposition, preRemoveAnimation, postRemoveAnimation} = {}) {
         const actorData = summon.sourceActor.toObject();
         delete actorData._id;
         delete actorData.sort;
@@ -78,14 +80,16 @@ export class SummonsManager {
             sourceActor: summon.sourceActor.uuid,
             created,
             duration: summon.duration,
-            placeAnimation,
-            removeAnimation,
-            placeAlpha
+            prePlaceAnimation,
+            postPlaceAnimation,
+            placeAlpha,
+            preRemoveAnimation,
+            postRemoveAnimation
         });
         return await actorUtils.createActor(actorData);
     }
     async createSummon(ownerActor, sourceActor, created = game.time.worldTime, options = {}) {
-        const summon = new Summon(ownerActor, sourceActor, options);
+        const summon = new Summon(ownerActor, sourceActor, created, options);
         summon.actor = await this.#prepareSidebarActor(summon, created, options);
         this.#summons.set(summon.actor.id, summon);
         await summonEvents.create(summon);
@@ -105,7 +109,10 @@ export class SummonsManager {
                 return documentUtils.deleteEmbeddedDocuments(scene, 'Token', tokenIds, {options: {cat: {summonRemove: true}}});
             }
         }));
-        await documentUtils.deleteDocument(summon.actor);
+        await documentUtils.deleteDocument(summon.actor, {options: {cat: {summonDelete: true}}});
+        const ownerFolder = game.folders.find(folder => folder.flags?.cat?.summonOwner === summon.owner.uuid && folder.type === 'Actor');
+        if (ownerFolder && !ownerFolder.contents.length) await documentUtils.deleteDocument(ownerFolder, {forceGM: true});
+        await summonEvents.deleted(summon);
         this.#summons.delete(actorId);
     }
     async checkDurations(worldTime) {
@@ -123,6 +130,7 @@ export class SummonsManager {
         if (!token) return;
         const summonImg = summon.actor.prototypeToken.texture.src;
         const summonWidth = summon.actor.prototypeToken.width;
+        const summonHeight = summon.actor.prototypeToken.height;
         const crosshairConfig = {
             icon: summonImg,
             size: (summonWidth * token.scene.dimensions.distance) / 2
@@ -135,24 +143,25 @@ export class SummonsManager {
         });
         if (!result || result.cancelled) return;
         result.x -= (summonWidth * canvas.grid.size) / 2;
-        result.y -= (summonWidth * canvas.grid.size) / 2;
-        return await this.spawnSummon(summon, token.scene, result, {preAnimation, postAnimation, alpha});
+        result.y -= (summonHeight * canvas.grid.size) / 2;
+        return await this.spawnSummon(summon, token.scene, result, {preAnimation, postAnimation, alpha, elevation: token.elevation});
     }
-    async spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha} = {}) {
+    async spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha, elevation} = {}) {
         const preToken = await summon.actor.getTokenDocument({
             x: location.x,
             y: location.y,
-            alpha: alpha ?? summon.placeAlpha
+            alpha: alpha ?? summon.placeAlpha,
+            elevation: elevation ?? actorUtils.getFirstToken(summon.owner)?.elevation 
         });
         if (preAnimation) await preAnimation(summon, location, preToken);
-        if (summon.placeAnimation) {
-            const animation = animationUtils.getAnimation(summon.placeAnimation);
-            if (animation) await animation(location, preToken);
+        if (summon.prePlaceAnimation) {
+            const animation = animationUtils.getAnimation(summon.prePlaceAnimation);
+            if (animation) await animation(summon, location, preToken);
         }
-        const token = (await documentUtils.createEmbeddedDocuments(scene, 'Token', [preToken.toObject()]))?.[0];
-        if (summon.removeAnimation) {
-            const animation = animationUtils.getAnimation(summon.removeAnimation);
-            if (animation) await animation(location, token);
+        const token = (await documentUtils.createEmbeddedDocuments(scene, 'Token', [preToken.toObject()], {cat: {summonCreate: true}}))?.[0];
+        if (summon.postPlaceAnimation) {
+            const animation = animationUtils.getAnimation(summon.postPlaceAnimation);
+            if (animation) await animation(summon, location, token);
         }
         if (postAnimation) await postAnimation(summon, location, token);
         return token;
@@ -162,8 +171,17 @@ export class SummonsManager {
         if (!token) return;
         await summonEvents.remove(summon);
         if (preAnimation) await preAnimation(summon, token);
+        if (summon.preRemoveAnimation) {
+            const animation = animationUtils.getAnimation(summon.preRemoveAnimation);
+            if (animation) await animation(summon, token);
+        }
+        const location = {x: token.x, y: token.y, elevation: token.elevation};
         await documentUtils.deleteDocument(token, {options: {cat: {summonRemove: true}}});
-        if (postAnimation) await postAnimation(summon, token);
+        if (summon.postRemoveAnimation) {
+            const animation = animationUtils.getAnimation(summon.postRemoveAnimation);
+            if (animation) await animation(summon, location, token);
+        }
+        if (postAnimation) await postAnimation(summon, location, token);
     }
     getSummons(actor) {
         return this.summons.filter(summon => summon.owner.uuid === actor.uuid);
@@ -173,14 +191,16 @@ export class SummonsManager {
     }
 }
 export class Summon {
-    constructor(owner, sourceActor, created, {actor, duration, placeAnimation, removeAnimation, placeAlpha} = {}) {
+    constructor(owner, sourceActor, created, {actor, duration, prePlaceAnimation, postPlaceAnimation, placeAlpha, preRemoveAnimation, postRemoveAnimation} = {}) {
         this.sourceActor = sourceActor;
         this.owner = owner;
         this.actor = actor;
         this.created = created;
         this.duration = duration;
-        this.placeAnimation = placeAnimation;
-        this.removeAnimation = removeAnimation;
+        this.prePlaceAnimation = prePlaceAnimation;
+        this.postPlaceAnimation = postPlaceAnimation;
+        this.preRemoveAnimation = preRemoveAnimation;
+        this.postRemoveAnimation = postRemoveAnimation;
         this.placeAlpha = placeAlpha;
     }
     get token() {

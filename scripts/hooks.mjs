@@ -53,6 +53,8 @@ export function readyHooks() {
     Hooks.on(constants.movementHookNames.moveToken, events.movementEvents.moveToken);
     // Token Events
     Hooks.on(constants.tokenHookNames.preDeleteToken, events.tokenEvents.preDeleteToken);
+    // Actor Events
+    Hooks.on(constants.actorHookNames.preDeleteActor, events.actorEvents.preDeleteActor);
     if (queryUtils.isTheGM()) {
         // Combat Events
         Hooks.on(constants.combatHookNames.updateCombat, events.combatEvents.updateCombat);

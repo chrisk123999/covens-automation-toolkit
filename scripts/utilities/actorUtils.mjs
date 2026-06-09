@@ -24,10 +24,10 @@ function getVehicles(actor, {positions = ['crew', 'passenger', 'draft']} = {}) {
     return game.actors.filter(a => a.type === 'vehicle' && ((positions.includes('crew') && a.system.crew.value.includes(actor.uuid)) || ((positions.includes('passenger') && a.system.passengers.value.includes(actor.uuid)) || ((positions.includes('draft') && a.system.draft.value.includes(actor.uuid))))));
 }
 function getTokens(actor) {
-    return actor.getActiveTokens();
+    return actor.getActiveTokens().map(i => i.document);
 }
 function getFirstToken(actor) {
-    return getTokens(actor)?.[0]?.document;
+    return getTokens(actor)?.[0];
 }
 function getEffectByIdentifier(actor, identifier) {
     return getEffects(actor).find(i => documentUtils.getIdentifier(i) === identifier);

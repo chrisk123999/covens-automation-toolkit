@@ -8,6 +8,9 @@ async function placeSummon(summon, range, {preAnimation, postAnimation, alpha, t
 async function spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha} = {}) {
     return await constants.summons.spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha});
 }
+async function deleteSummon(summon, {preAnimation, postAnimation} = {}) {
+    return await constants.summons.deleteSummon(summon, {preAnimation, postAnimation});
+}
 function removeSummon(summon, {preanimation, postAnimation} = {}) {
     return constants.summons.removeSummon(summon, {preanimation, postAnimation});
 }
@@ -23,5 +26,6 @@ export default {
     spawnSummon,
     removeSummon,
     getSummons,
-    getSummonData
+    getSummonData,
+    deleteSummon
 };

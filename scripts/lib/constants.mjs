@@ -158,12 +158,14 @@ const timePasses = {
     timeUpdated: 'timeUpdated'
 };
 const actorHookNames = {
-    updateActor: 'updateActor'
+    updateActor: 'updateActor',
+    preDeleteActor: 'preDeleteActor'
 };
 const summonPasses = {
     preCreate: 'preCreate',
     create: 'create',
     preDelete: 'preDelete',
+    delete: 'delete',
     placed: 'placed',
     removed: 'removed'
 };

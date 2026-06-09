@@ -8,6 +8,9 @@ async function create(summon) {
 async function preDelete(summon) {
     return await new Events.SummonEvent(summon, constants.summonPasses.preDelete).run();
 }
+async function deleted(summon) {
+    return await new Events.SummonEvent(summon, constants.summonPasses.delete).run();
+}
 async function remove(summon) {
     return await new Events.SummonEvent(summon, constants.summonPasses.removed).run();
 }
@@ -15,5 +18,6 @@ export default {
     preCreate,
     create,
     preDelete,
+    deleted,
     remove
 };
