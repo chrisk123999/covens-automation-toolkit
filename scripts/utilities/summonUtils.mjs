@@ -11,8 +11,8 @@ async function spawnSummon(summon, scene, location, {preAnimation, postAnimation
 async function deleteSummon(summon, {preAnimation, postAnimation} = {}) {
     return await constants.summons.deleteSummon(summon, {preAnimation, postAnimation});
 }
-function removeSummon(summon, {preanimation, postAnimation} = {}) {
-    return constants.summons.removeSummon(summon, {preanimation, postAnimation});
+function removeSummon(summon, {preAnimation, postAnimation} = {}) {
+    return constants.summons.removeSummon(summon, {preAnimation, postAnimation});
 }
 function getSummons(actor) {
     return constants.summons.getSummons(actor);

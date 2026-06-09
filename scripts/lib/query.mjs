@@ -18,7 +18,7 @@ async function createEffects({uuid, effectDatas, effectOptions}) {
 async function deleteEmbeddedDocuments({uuid, type, ids, options}) {
     const document = await fromUuid(uuid);
     if (!document) return;
-    const documents = await documentUtils.deleteEmbeddedDocuments(document, type, ids, options);
+    const documents = await documentUtils.deleteEmbeddedDocuments(document, type, ids, {options});
     return documents.map(document => document.uuid);
 }
 async function deleteDocument({uuid, options}) {
