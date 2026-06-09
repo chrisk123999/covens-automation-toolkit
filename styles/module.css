@@ -841,6 +841,14 @@ cat-combobox {
     color: var(--cat-text-primary);
 }
 
+/* Outrank core .standard-form button styling so the clear glyph stays borderless in the medkit. */
+.cat-medkit .cat-combobox-clear,
+.cat-medkit .cat-combobox-clear:hover {
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
 .cat-combobox-options {
     z-index: 99999;
     position: fixed;
@@ -1122,6 +1130,11 @@ cat-combobox {
 .cat-medkit fieldset.cat-generic-summon-options {
     margin: 0 0 var(--cat-space-md) var(--cat-space-md);
     background: rgb(0 0 0 / 20%);
+}
+
+.cat-sequencer-db {
+    flex: 0 0 auto;
+    width: auto;
 }
 
 .cat-medkit-footer,

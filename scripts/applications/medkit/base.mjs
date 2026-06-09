@@ -73,6 +73,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             removeEmbeddedMacro: MedkitApp.#removeEmbeddedMacro,
             addListEntry: MedkitApp.#addListEntry,
             removeListEntry: MedkitApp.#removeListEntry,
+            openSequencerDb: MedkitApp.#openSequencerDb,
             massApply: MedkitApp.#massApply
         }
     };
@@ -282,6 +283,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 option.choices = this.#animationChoices(descriptor.inputs);
                 option.value = sel?.source ? `${sel.source}|${sel.identifier}` : '';
                 option.animationOptions = this.#animationSubOptions(source, identifier, sel);
+                option.sequencerDb = !!globalThis.Sequencer;
                 break;
             }
             case 'selectIdentifiers':
@@ -679,6 +681,10 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     static #gotoTab(_event, target) {
         const tab = target.dataset.tab;
         if (tab) this.changeTab(tab, 'sheet');
+    }
+
+    static #openSequencerDb() {
+        globalThis.Sequencer?.DatabaseViewer?.show?.();
     }
 
     /** @this {MedkitApp} */

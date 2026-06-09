@@ -3,25 +3,21 @@
 {{else if isCombobox}}
     <div class="form-group">
         <label for="cat-medkit-opt-{{key}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{label}}</label>
-        <div class="form-fields">
-            <cat-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
-                {{#if allowBlank}}<option value=""></option>{{/if}}
-                {{#each choices}}
-                    <option value="{{value}}" data-image="{{image}}">{{label}}</option>
-                {{/each}}
-            </cat-combobox>
-        </div>
+        <cat-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
+            {{#if allowBlank}}<option value=""></option>{{/if}}
+            {{#each choices}}
+                <option value="{{value}}" data-image="{{image}}">{{label}}</option>
+            {{/each}}
+        </cat-combobox>
     </div>
 {{else if isMultiCombobox}}
-    <div class="form-group">
+    <div class="form-group cat-multi-combobox-group">
         <label for="cat-medkit-opt-{{key}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{label}}</label>
-        <div class="form-fields">
-            <cat-multi-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}">
-                {{#each choices}}
-                    <option value="{{value}}" data-image="{{image}}" data-tag="{{tag}}"{{#if selected}} selected{{/if}}>{{label}}</option>
-                {{/each}}
-            </cat-multi-combobox>
-        </div>
+        <cat-multi-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}">
+            {{#each choices}}
+                <option value="{{value}}" data-image="{{image}}" data-tag="{{tag}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+            {{/each}}
+        </cat-multi-combobox>
     </div>
 {{else if isAnimationSelect}}
     <div class="form-group">
@@ -33,6 +29,11 @@
                     <option value="{{value}}" data-image="{{image}}">{{label}}</option>
                 {{/each}}
             </cat-combobox>
+            {{#if sequencerDb}}
+                <button type="button" class="cat-sequencer-db" data-action="openSequencerDb" data-tooltip="{{localize 'CAT.MEDKIT.Sequencer.Browse'}}">
+                    <i class="fa-solid fa-photo-film"></i>
+                </button>
+            {{/if}}
         </div>
     </div>
     {{#if animationOptions.length}}

@@ -231,6 +231,9 @@
         "Folder": "Folder",
         "Pack": "Pack"
       },
+      "Sequencer": {
+        "Browse": "Browse Sequencer Database"
+      },
       "Region": {
         "Visibility": "Visibility",
         "MagicalDarkness": {
