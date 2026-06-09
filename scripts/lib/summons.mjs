@@ -1,5 +1,6 @@
 import {summonEvents} from '../events/_module.mjs';
 import {actorUtils, folderUtils, genericUtils, documentUtils, crosshairUtils, animationUtils} from '../utilities/_module.mjs';
+import {constants} from './_module.mjs';
 export class SummonsManager {
     #summons = new Map();
     static #manager;
@@ -7,7 +8,7 @@ export class SummonsManager {
         if (this.#manager) return this.#manager;
         const newManager = new SummonsManager();
         newManager.#init().catch(err => console.error(err));
-        this.manager = newManager;
+        this.#manager = newManager;
         return this.#manager;
     }
     get summons() {
@@ -24,7 +25,8 @@ export class SummonsManager {
             const placeAnimation = summonData.placeAnimation;
             const removeAnimation = summonData.removeAnimation;
             const placeAlpha = summonData.placeAlpha;
-            if (!owner || !sourceActor || !created) return;
+            if (!owner || !sourceActor || created === undefined) return;
+
             return new Summon(owner, sourceActor, created, {actor, duration, placeAnimation, removeAnimation, placeAlpha});
         }))).filter(Boolean);
         resolvedSummons.forEach(summon => this.#summons.set(summon.actor.id, summon));
@@ -53,17 +55,19 @@ export class SummonsManager {
         }
         return folder;
     }
-    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatar, token, name, updates, removeAnimation, placeAnimation, placeAlpha} = {}) {
+    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, removeAnimation, placeAnimation, placeAlpha, disposition} = {}) {
         const actorData = summon.sourceActor.toObject();
         delete actorData._id;
         delete actorData.sort;
         updates ??= {};
-        if (avatar) actorData.img = avatar;
-        if (token) genericUtils.setProperty(actorData, 'prototypeToken.texture.src', token);
+        if (avatarImg) actorData.img = avatarImg;
+        if (tokenImg) genericUtils.setProperty(actorData, 'prototypeToken.texture.src', tokenImg);
         if (name) {
             actorData.name = name;
             genericUtils.setProperty(actorData, 'prototypeToken.name', name);
         }
+        disposition ??= actorUtils.getFirstToken(summon.owner)?.disposition ?? summon.owner.prototypeToken.disposition;
+        genericUtils.setProperty(actorData, 'prototypeToken.disposition', disposition);
         await summonEvents.preCreate(summon, updates);
         genericUtils.mergeObject(actorData, updates);
         genericUtils.setProperty(actorData, 'prototypeToken.actorLink', true);
@@ -98,7 +102,7 @@ export class SummonsManager {
                 const tokens = actorUtils.getTokens(summon.actor);
                 return Promise.all(tokens.map(token => this.removeSummon(summon, {preAnimation, postAnimation, token})));
             } else {
-                return documentUtils.deleteEmbeddedDocuments(scene, 'Token', tokenIds);
+                return documentUtils.deleteEmbeddedDocuments(scene, 'Token', tokenIds, {options: {cat: {summonRemove: true}}});
             }
         }));
         await documentUtils.deleteDocument(summon.actor);
@@ -114,23 +118,25 @@ export class SummonsManager {
         if (!expiredSummons.length) return;
         await Promise.all(expiredSummons.map(summon => this.deleteSummon(summon)));
     }
-    async placeSummon(summon, range, {preAnimation, postAnimation, alpha} = {}) {
-        const sourceToken = actorUtils.getFirstToken(summon.owner);
-        if (!sourceToken) return;
+    async placeSummon(summon, range, {preAnimation, postAnimation, alpha, token} = {}) {
+        token ??= actorUtils.getFirstToken(summon.owner);
+        if (!token) return;
         const summonImg = summon.actor.prototypeToken.texture.src;
         const summonWidth = summon.actor.prototypeToken.width;
         const crosshairConfig = {
             icon: summonImg,
-            size: (summonWidth * sourceToken.scene.dimensions.distance) / 2
+            size: (summonWidth * token.scene.dimensions.distance) / 2
         };
         const result = await crosshairUtils.aimCrosshair({
-            token: sourceToken,
+            token,
             maxRange: range,
-            centerpoint: sourceToken.center,
+            centerpoint: token.center,
             crosshairsConfig: crosshairConfig
         });
         if (!result || result.cancelled) return;
-        return await this.spawnSummon(summon, sourceToken.scene, result, {preAnimation, postAnimation, alpha});
+        result.x -= (summonWidth * canvas.grid.size) / 2;
+        result.y -= (summonWidth * canvas.grid.size) / 2;
+        return await this.spawnSummon(summon, token.scene, result, {preAnimation, postAnimation, alpha});
     }
     async spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha} = {}) {
         const preToken = await summon.actor.getTokenDocument({
@@ -156,7 +162,7 @@ export class SummonsManager {
         if (!token) return;
         await summonEvents.remove(summon);
         if (preAnimation) await preAnimation(summon, token);
-        await documentUtils.deleteDocument(token);
+        await documentUtils.deleteDocument(token, {options: {cat: {summonRemove: true}}});
         if (postAnimation) await postAnimation(summon, token);
     }
     getSummons(actor) {
@@ -186,5 +192,8 @@ export class Summon {
     getTimeRemaining(worldTime) {
         if (!this.duration) return Infinity;
         return this.created + this.duration - worldTime;
+    }
+    async place(range, {preAnimation, postAnimation, alpha, token} = {}) {
+        return constants.summons.placeSummon(this, range, {preAnimation, postAnimation, alpha, token});
     }
 }

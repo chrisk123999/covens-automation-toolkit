@@ -30,7 +30,7 @@ function getSavedCastData(document) {
         };
     }
 }
-async function deleteEmbeddedDocuments(document, type, ids, options, {forceGM = false} = {}) {
+async function deleteEmbeddedDocuments(document, type, ids, {forceGM = false, options} = {}) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let documents;
     if (hasPermission && !forceGM) {

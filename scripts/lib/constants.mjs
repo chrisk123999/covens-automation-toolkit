@@ -167,6 +167,9 @@ const summonPasses = {
     placed: 'placed',
     removed: 'removed'
 };
+const tokenHookNames = {
+    preDeleteToken: 'preDeleteToken'
+};
 const miscHookNames = {
     itemUseActivitySelect: 'midi-qol.itemUseActivitySelect',
     applyActiveEffect: 'applyActiveEffect',
@@ -313,5 +316,6 @@ export default {
     statusEffectKeys,
     automationStatus,
     getItemKeepPaths,
-    summonPasses
+    summonPasses,
+    tokenHookNames
 };

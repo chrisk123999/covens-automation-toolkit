@@ -79,11 +79,14 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
         return dataObj;
     }
     toObject() {
+        const shapeData = this.document.shapes?.[0];
         const data = foundry.utils.mergeObject(this.document.toObject(), {
             cancelled: this.cancelled,
             scene: this.scene,
             radius: this.radius,
-            size: this.distance
+            size: this.distance,
+            x: shapeData?.x,
+            y: shapeData?.y
         });
         delete data.width;
         return data;
