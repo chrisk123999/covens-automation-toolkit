@@ -1131,21 +1131,24 @@ cat-combobox {
     margin-bottom: 0;
 }
 
-.cat-medkit fieldset.cat-generic-animation-options,
-.cat-medkit fieldset.cat-generic-summon-options {
-    margin: 0 0 var(--cat-space-md) var(--cat-space-md);
-    background: rgb(0 0 0 / 20%);
-}
-
 .cat-generic-summon-options > legend {
     gap: var(--cat-space-sm);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    width: 100%;
 }
 
-.cat-generic-summon-options > legend > button,
+.cat-generic-summon-options > legend > button {
+    width: 1.5rem;
+    padding: 0;
+    border: 0;
+    color: var(--cat-text-muted);
+    background: transparent;
+}
+
+.cat-generic-summon-options > legend > button:hover {
+    color: var(--cat-text-primary);
+}
+
 .cat-summon-add {
     width: auto;
 }

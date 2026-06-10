@@ -308,7 +308,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 option.canAdd = entries.length < max;
                 option.summonEntries = entries.map((entry, i) => ({
                     index: i,
-                    legend: `${option.label} ${i + 1}`,
+                    legend: max > 1 ? `${option.label} ${i + 1}` : option.label,
                     fields: [
                         {key: `summon-uuid-${i}`, name: `${base}.${i}.sourceActorUuid`, label: _loc('CAT.MEDKIT.Summons.Actor'), value: entry.sourceActorUuid ?? '', isCombobox: true, allowBlank: true, choices: this.#actorChoices()},
                         this.#buildOption({key: `summon-name-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Name'}, {name: `${base}.${i}.name`, value: entry.name}),
