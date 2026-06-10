@@ -538,6 +538,11 @@
     padding: 0.1rem 0.25rem 0.1rem 0.5rem;
 }
 
+.cat-medkit cat-multi-combobox:not([amounts]) .cat-multi-combobox-chip:has(.cat-combobox-tag),
+.cat-embedded-macros cat-multi-combobox:not([amounts]) .cat-multi-combobox-chip:has(.cat-combobox-tag) {
+    grid-template-columns: 1fr auto 1.25rem;
+}
+
 .cat-medkit cat-multi-combobox:not([amounts]) .cat-multi-combobox-chip img,
 .cat-medkit cat-multi-combobox:not([amounts]) .cat-multi-combobox-chip .cat-combobox-fallback-icon,
 .cat-embedded-macros cat-multi-combobox:not([amounts]) .cat-multi-combobox-chip img,

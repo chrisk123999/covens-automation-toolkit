@@ -240,7 +240,12 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'file': {
                 const category = descriptor.fileType?.toUpperCase();
                 const categories = category && category in CONST.FILE_CATEGORIES ? [category] : ['IMAGE'];
-                option.field = new fields.FilePathField({label, categories});
+                if (descriptor.sequencer && globalThis.Sequencer) {
+                    option.isSequencerFile = true;
+                    option.fileType = descriptor.fileType ?? 'imagevideo';
+                } else {
+                    option.field = new fields.FilePathField({label, categories});
+                }
                 break;
             }
             case 'select': {
@@ -283,7 +288,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 option.choices = this.#animationChoices(descriptor.inputs);
                 option.value = sel?.source ? `${sel.source}|${sel.identifier}` : '';
                 option.animationOptions = this.#animationSubOptions(source, identifier, sel);
-                option.sequencerDb = !!globalThis.Sequencer;
                 break;
             }
             case 'selectIdentifiers':
@@ -317,7 +321,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'packOrFolderMultiSelect': {
                 const selectedValues = Array.isArray(value) ? value : [];
                 option.isMultiCombobox = true;
-                option.choices = this.#packFolderChoices(descriptor.documentType ?? 'Actor')
+                option.choices = this.#packFolderChoices(descriptor.documentType ?? 'Actor', descriptor.mode)
                     .map(o => ({value: o.value, label: o.label, tag: o.tag, selected: selectedValues.includes(o.value)}));
                 option.value = selectedValues;
                 break;
@@ -342,7 +346,9 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             options: d?.options,
             fileType: d?.fileType,
             inputs: d?.inputs,
-            documentType: d?.documentType
+            documentType: d?.documentType,
+            sequencer: d?.sequencer,
+            mode: d?.mode
         }));
     }
 
@@ -411,14 +417,20 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     // Sidebar folders + compendium packs of a document type, for packOrFolderMultiSelect.
     // Values are prefixed (folder:<id> / pack:<id>) so consumers can resolve either kind.
-    #packFolderChoices(documentType) {
-        const folders = game.folders
-            .filter(f => f.type === documentType)
-            .map(f => ({value: `folder:${f.id}`, label: f.name, tag: _loc('CAT.MEDKIT.PackFolder.Folder')}));
-        const packs = game.packs
-            .filter(p => p.metadata.type === documentType)
-            .map(p => ({value: `pack:${p.metadata.id}`, label: p.metadata.label, tag: _loc('CAT.MEDKIT.PackFolder.Pack')}));
-        return [...folders, ...packs].sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+    // mode 'folder'/'pack' restricts to one kind; omit for both.
+    #packFolderChoices(documentType, mode) {
+        const choices = [];
+        if (mode !== 'pack') {
+            choices.push(...game.folders
+                .filter(f => f.type === documentType)
+                .map(f => ({value: `folder:${f.id}`, label: f.name, tag: _loc('CAT.MEDKIT.PackFolder.Folder')})));
+        }
+        if (mode !== 'folder') {
+            choices.push(...game.packs
+                .filter(p => p.metadata.type === documentType)
+                .map(p => ({value: `pack:${p.metadata.id}`, label: p.metadata.label, tag: _loc('CAT.MEDKIT.PackFolder.Pack')})));
+        }
+        return choices.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     }
 
     // Every registered animation, for selectAnimation descriptors. Value encodes source|identifier.
@@ -441,7 +453,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (!animation?.config) return [];
         const stored = this.#flags.animationGenericConfig?.[source]?.[identifier]?.[selection.source]?.[selection.identifier] ?? {};
         return Object.entries(animation.config).map(([key, desc]) => {
-            const normalized = {key, type: desc.type, label: desc.label, default: desc.default, fileType: desc.fileType};
+            const normalized = {key, type: desc.type, label: desc.label, default: desc.default, fileType: desc.fileType, sequencer: desc.sequencer};
             if (desc.type === 'select') {
                 normalized.options = Object.entries(desc.options ?? {})
                     .filter(([, opt]) => !opt?.requirements?.length || opt.requirements.every(r => game.modules.get(r)?.active))
@@ -699,8 +711,25 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (tab) this.changeTab(tab, 'sheet');
     }
 
-    static #openSequencerDb() {
-        globalThis.Sequencer?.DatabaseViewer?.show?.();
+    // Open Sequencer's database viewer and route the next copied path into this field's file-picker.
+    static #openSequencerDb(_event, target) {
+        const viewer = globalThis.Sequencer?.DatabaseViewer;
+        if (!viewer?.show) return;
+        const picker = target.closest('.form-fields')?.querySelector('file-picker');
+        viewer.show();
+        if (!picker) return;
+        let timer;
+        const onCopy = () => {
+            clearTimeout(timer);
+            document.removeEventListener('copy', onCopy, true);
+            const el = document.activeElement;
+            const text = (el && 'value' in el ? el.value : '').replace(/^"|"$/g, '').trim();
+            if (!text) return;
+            picker.value = text;
+            picker.dispatchEvent(new Event('change', {bubbles: true}));
+        };
+        document.addEventListener('copy', onCopy, true);
+        timer = setTimeout(() => document.removeEventListener('copy', onCopy, true), 120000);
     }
 
     /** @this {MedkitApp} */
