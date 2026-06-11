@@ -162,6 +162,7 @@ export default class ItemMedkit extends MedkitApp {
         context.configurationCategories = this._prepareConfigurationCategories(currAutomation);
         context.classBonuses = this.#prepareClassBonuses();
 
+        await this._loadActorPackChoices();
         const genericData = this._prepareGenericFeatures();
         context.genericChoices = genericData.choices;
         context.genericSelected = genericData.selected;

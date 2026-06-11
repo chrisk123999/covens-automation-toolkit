@@ -176,7 +176,7 @@ export class SummonsManager {
     }
 }
 export class Summon {
-    constructor(owner, sourceActor, created, {actor, duration, animation, parent, sounds} = {}) {
+    constructor(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds} = {}) {
         this.sourceActor = sourceActor;
         this.owner = owner;
         this.actor = actor;
@@ -184,6 +184,7 @@ export class Summon {
         this.duration = duration;
         this.animation = animation;
         this.parent = parent;
+        this.sourceDocument = sourceDocument;
         this.sounds = sounds ?? {};
     }
     get token() {

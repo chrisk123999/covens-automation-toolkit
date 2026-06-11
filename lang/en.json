@@ -238,6 +238,9 @@
         "AvatarImg": "Actor Image Override",
         "TokenImg": "Token Image Override",
         "Animation": "Animation",
+        "SoundPlaced": "Placed Sound",
+        "SoundRemoved": "Removed Sound",
+        "SoundDeath": "Death Sound",
         "Add": "Add summon"
       },
       "PackFolder": {

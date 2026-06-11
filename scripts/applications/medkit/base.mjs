@@ -33,6 +33,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     #flags;
     /** In-memory mutable source selection; flushed on Save. */
     #selectedSource;
+    /** Cached compendium-actor choices for selectSummons; populated by _loadActorPackChoices. */
+    #actorPackChoices;
     /** In-memory mutable system.source.rules; flushed on Save. */
     #rulesValue;
 
@@ -314,7 +316,10 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                         this.#buildOption({key: `summon-name-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Name'}, {name: `${base}.${i}.name`, value: entry.name}),
                         this.#buildOption({key: `summon-avatar-${i}`, type: 'file', label: 'CAT.MEDKIT.Summons.AvatarImg'}, {name: `${base}.${i}.avatarImg`, value: entry.avatarImg}),
                         this.#buildOption({key: `summon-token-${i}`, type: 'file', label: 'CAT.MEDKIT.Summons.TokenImg'}, {name: `${base}.${i}.tokenImg`, value: entry.tokenImg}),
-                        {key: `summon-anim-${i}`, name: `${base}.${i}.animation`, label: _loc('CAT.MEDKIT.Summons.Animation'), value: entry.animation?.source ? `${entry.animation.source}|${entry.animation.identifier}` : '', isAnimationSelect: true, choices: this.#animationChoices(['summon', 'location', 'token'])}
+                        {key: `summon-anim-${i}`, name: `${base}.${i}.animation`, label: _loc('CAT.MEDKIT.Summons.Animation'), value: entry.animation?.source ? `${entry.animation.source}|${entry.animation.identifier}` : '', isAnimationSelect: true, choices: this.#animationChoices(['summon', 'location', 'token'])},
+                        this.#buildOption({key: `summon-sound-place-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundPlaced'}, {name: `${base}.${i}.sounds.place`, value: entry.sounds?.place}),
+                        this.#buildOption({key: `summon-sound-removed-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundRemoved'}, {name: `${base}.${i}.sounds.removed`, value: entry.sounds?.removed}),
+                        this.#buildOption({key: `summon-sound-death-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundDeath'}, {name: `${base}.${i}.sounds.death`, value: entry.sounds?.death})
                     ]
                 }));
                 break;
@@ -403,11 +408,20 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return [...activities].map(a => ({value: a.id, label: a.name ?? a.id, image: a.img}));
     }
 
-    // World actors, for selectSummons source-actor selection.
+    // World + compendium actors, for selectSummons source-actor selection.
+    // Compendium entries depend on #loadActorPackChoices having run during context prep.
     #actorChoices() {
-        return game.actors
-            .map(a => ({value: a.uuid, label: a.name, image: a.img}))
+        const world = game.actors.map(a => ({value: a.uuid, label: a.name, image: a.img}));
+        return [...world, ...(this.#actorPackChoices ?? [])]
             .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+    }
+
+    // Preload Actor compendium indices so #actorChoices can offer them synchronously.
+    async _loadActorPackChoices() {
+        if (this.#actorPackChoices) return;
+        const packs = game.packs.filter(p => p.metadata.type === 'Actor');
+        await Promise.all(packs.map(p => p.getIndex()));
+        this.#actorPackChoices = packs.flatMap(p => p.index.map(e => ({value: e.uuid, label: `${e.name} (${p.metadata.label})`, image: e.img})));
     }
 
     // Sidebar folders + compendium packs of a document type, for packOrFolderMultiSelect.
