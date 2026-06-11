@@ -54,7 +54,8 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
             rememberControlled: false,
             texture: null,
             direction: 0,
-            fillColor: game.user.color
+            fillColor: game.user.color,
+            anchorTopLeft: true
         };
     }
     static async showCrosshairs(config = {}, callbacks = {}) {
@@ -72,6 +73,10 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
         const template = new Crosshairs(config, callbacks);
         await template.drawPreview();
         let dataObj = template.toObject();
+        if (config.anchorTopLeft) {
+            dataObj.x -= dataObj.radius;
+            dataObj.y -= dataObj.radius;
+        }
         for (const token of controlled) {
             token.control({releaseOthers: false});
         }
