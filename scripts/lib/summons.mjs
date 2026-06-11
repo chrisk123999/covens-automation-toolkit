@@ -130,7 +130,6 @@ export class SummonsManager {
         if (!token) return;
         const summonImg = summon.actor.prototypeToken.texture.src;
         const summonWidth = summon.actor.prototypeToken.width;
-        const summonHeight = summon.actor.prototypeToken.height;
         const crosshairConfig = {
             icon: summonImg,
             size: (summonWidth * token.scene.dimensions.distance) / 2
@@ -142,8 +141,6 @@ export class SummonsManager {
             crosshairsConfig: crosshairConfig
         });
         if (!result || result.cancelled) return;
-        result.x -= (summonWidth * canvas.grid.size) / 2;
-        result.y -= (summonHeight * canvas.grid.size) / 2;
         return await this.spawnSummon(summon, token.scene, result, {elevation: token.elevation});
     }
     async spawnSummon(summon, scene, location, {elevation} = {}) {
