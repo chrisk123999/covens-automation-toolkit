@@ -3,6 +3,9 @@ import {actorUtils, folderUtils, genericUtils, documentUtils, crosshairUtils, an
 import {constants} from './_module.mjs';
 export class SummonsManager {
     #summons = new Map();
+    #deletingFolders = new Map();
+    #creatingRootFolder = null;
+    #creatingOwnerFolders = new Map();
     static #manager;
     static create() {
         if (this.#manager) return this.#manager;
@@ -33,31 +36,41 @@ export class SummonsManager {
     }
     async #getRootFolder() {
         let folder = game.folders.find(f => f.flags.cat?.summonFolder && f.type === 'Actor');
-        if (!folder) {
-            folder = await folderUtils.createFolder({
-                name: _loc('CAT.Summons.SummonFolder'),
-                type: 'Actor',
-                'flags.cat.summonFolder': true
-            });
+        if (folder) return folder;
+        if (this.#creatingRootFolder) return this.#creatingRootFolder;
+        const createPromise = folderUtils.createFolder({
+            name: _loc('CAT.Summons.SummonFolder'),
+            type: 'Actor',
+            'flags.cat.summonFolder': true
+        });
+        this.#creatingRootFolder = createPromise;
+        try {
+            return await createPromise;
+        } finally {
+            this.#creatingRootFolder = null;
         }
-        return folder;
     }
     async #getOwnerFolder(actor) {
         const rootFolder = await this.#getRootFolder();
         if (rootFolder.depth >= CONST.FOLDER_MAX_DEPTH) return rootFolder;
         let folder = game.folders.find(f => f.flags.cat?.summonOwner === actor.uuid && f.type === 'Actor');
-        if (!folder) {
-            folder = await folderUtils.createFolder({
-                name: actor.name,
-                type: 'Actor',
-                folder: rootFolder.id,
-                'flags.cat.summonOwner': actor.uuid
-            });
+        if (folder) return folder;
+        if (this.#creatingOwnerFolders.has(actor.uuid)) return this.#creatingOwnerFolders.get(actor.uuid);
+        const createPromise = folderUtils.createFolder({
+            name: actor.name,
+            type: 'Actor',
+            folder: rootFolder.id,
+            'flags.cat.summonOwner': actor.uuid
+        });
+        this.#creatingOwnerFolders.set(actor.uuid, createPromise);
+        try {
+            return await createPromise;
+        } finally {
+            this.#creatingOwnerFolders.delete(actor.uuid);
         }
-        return folder;
     }
     async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, animation, disposition, sourceDocument, sounds} = {}) {
-        const actorData = summon.sourceActor.toObject();
+        const actorData = (await summon.getSourceActor()).toObject();
         delete actorData._id;
         delete actorData.sort;
         updates ??= {};
@@ -77,7 +90,7 @@ export class SummonsManager {
         actorData.folder = (await this.#getOwnerFolder(summon.owner)).id;
         genericUtils.setProperty(actorData, 'flags.cat.summon', {
             owner: summon.owner.uuid,
-            sourceActor: summon.sourceActor.uuid,
+            sourceActor: (await summon.getSourceActor()).uuid,
             created,
             duration: summon.duration,
             animation,
@@ -111,7 +124,19 @@ export class SummonsManager {
         }));
         await documentUtils.deleteDocument(summon.actor, {options: {cat: {summonDelete: true}}});
         const ownerFolder = game.folders.find(folder => folder.flags?.cat?.summonOwner === summon.owner.uuid && folder.type === 'Actor');
-        if (ownerFolder && !ownerFolder.contents.length) await documentUtils.deleteDocument(ownerFolder, {forceGM: true});
+        if (ownerFolder && !ownerFolder.contents.length) {
+            if (this.#deletingFolders.has(ownerFolder.id)) {
+                await this.#deletingFolders.get(ownerFolder.id);
+            } else {
+                const deletePromise = documentUtils.deleteDocument(ownerFolder, {forceGM: true});
+                this.#deletingFolders.set(ownerFolder.id, deletePromise);
+                try {
+                    await deletePromise;
+                } finally {
+                    this.#deletingFolders.delete(ownerFolder.id);
+                }
+            }
+        }
         await summonEvents.deleted(summon);
         this.#summons.delete(actorId);
     }
@@ -128,6 +153,7 @@ export class SummonsManager {
     async placeSummon(summon, range, {token} = {}) {
         token ??= actorUtils.getFirstToken(summon.owner);
         if (!token) return;
+        if (summon.token) return;
         const summonImg = summon.actor.prototypeToken.texture.src;
         const summonWidth = summon.actor.prototypeToken.width;
         const crosshairConfig = {
@@ -171,17 +197,30 @@ export class SummonsManager {
     getSummonData(actor) {
         return this.#summons.get(actor.id);
     }
+    getSummonsBySource(document) {
+        return this.summons.filter(summon => summon.sourceDocument?.uuid === document.uuid);
+    }
+    async placeSummons(summons, range, {token} = {}) {
+        if (!summons.length) return;
+        const spawnedTokens = [];
+        for (const summon of summons) {
+            const resultToken = await this.placeSummon(summon, range, {token});
+            if (!resultToken) break; 
+            spawnedTokens.push(resultToken);
+        }
+        return spawnedTokens;
+    }
 }
 export class Summon {
     constructor(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds} = {}) {
-        this.sourceActor = sourceActor;
-        this.owner = owner;
+        this.sourceActorUuid = sourceActor.uuid;
+        this.ownerUuid = owner.uuid;
         this.actor = actor;
         this.created = created;
         this.duration = duration;
         this.animation = animation;
-        this.parent = parent;
-        this.sourceDocument = sourceDocument;
+        this.parentUuid = parent?.uuid;
+        this.sourceDocumentUuid = sourceDocument?.uuid;
         this.sounds = sounds ?? {};
     }
     get token() {
@@ -190,11 +229,27 @@ export class Summon {
     get folder() {
         return this.actor?.folder;
     }
+    get sourceDocument() {
+        return fromUuidSync(this.sourceDocumentUuid);
+    }
+    get owner() {
+        return fromUuidSync(this.ownerUuid);
+    }
+    get parent() {
+        if (!this.parentUuid) return undefined;
+        return fromUuidSync(this.parentUuid);
+    }
+    async getSourceActor() {
+        return await fromUuid(this.sourceActorUuid);
+    }
     getTimeRemaining(worldTime) {
         if (!this.duration) return Infinity;
         return this.created + this.duration - worldTime;
     }
     async place(range, {token} = {}) {
         return constants.summons.placeSummon(this, range, {token});
+    }
+    async recall() {
+        return constants.summons.removeSummon(this);
     }
 }

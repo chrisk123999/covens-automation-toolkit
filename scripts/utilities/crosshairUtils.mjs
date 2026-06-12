@@ -46,6 +46,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         }
         while (crosshairs.inFlight) {
             await genericUtils.sleep(100);
+            if (!crosshairs.inFlight || crosshairs._destroyed) break;
             
             if (maxRange) {
                 distance = canvas.grid.measurePath([centerpoint, crosshairs]).distance.toNearest(0.01);
@@ -99,7 +100,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         ...crosshairsConfig
     };
     if (trackDistance) options.label = '0ft';
-    if (token.rotation) options.direction = token.rotation;
+    if (token.rotation && options.direction === undefined && !options.lockDirection) options.direction = token.rotation;
     if (!maxRange) return await Crosshairs.showCrosshairs(options);
     const result = await Crosshairs.showCrosshairs(options, callbacks);
     if (drawing) {

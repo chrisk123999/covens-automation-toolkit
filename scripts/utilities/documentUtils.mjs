@@ -1,4 +1,4 @@
-import {activityUtils, actorUtils, documentUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
+import {activityUtils, actorUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
 function getRules(document, {documentType = document.documentName} = {}) {
     return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
@@ -7,7 +7,7 @@ function getSource(document) {
 }
 function getIdentifier(document, {documentType = document.documentName} = {}) {
     switch (documentType) {
-        case 'Activity': return document.midiProperties.identifier;
+        case 'Activity': return document.identifier;
         case 'Item': return document.system.identifier;
         default: return document.flags.cat?.identifier ?? document.name.slugify();
     }
@@ -88,7 +88,7 @@ async function setFlag(document, scope, key, value) {
     }
 }
 function getEffectByIdentifier(document, identifier, {multiple, includeItemEffects} = {}) {
-    const predicate = effect => documentUtils.getIdentifier(effect) === identifier;
+    const predicate = effect => getIdentifier(effect) === identifier;
     let effects;
     if (document.documentName === 'Actor') {
         effects = actorUtils.getEffects(document, {includeItemEffects});

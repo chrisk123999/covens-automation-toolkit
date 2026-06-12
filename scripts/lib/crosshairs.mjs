@@ -24,6 +24,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
         this.tileTexture = config.tileTexture;
         this.lockSize = config.lockSize;
         this.lockPosition = config.lockPosition;
+        this.lockDirection = config.lockDirection;
         this.direction = config.direction ?? 0;
         this.resolution = config.resolution;
         this.callbacks = callbacks;
@@ -55,7 +56,8 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
             texture: null,
             direction: 0,
             fillColor: game.user.color,
-            anchorTopLeft: true
+            anchorTopLeft: true,
+            lockDirection: true
         };
     }
     static async showCrosshairs(config = {}, callbacks = {}) {
@@ -285,7 +287,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
                     this.document.updateSource({shapes});
                     this.radius = (distance / canvas.dimensions.distance) * canvas.dimensions.size;
                     this.distance = distance;
-                } else if (!event.altKey) {
+                } else if (!event.altKey && !this.lockDirection) {
                     this.direction = this.direction + (snap * Math.sign(event.deltaY));
                 }
                 this.refresh();

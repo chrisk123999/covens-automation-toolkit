@@ -753,6 +753,14 @@ class SummonEvent extends CatEvent {
             summon: this.summon
         };
     }
+    get unsortedTriggers() {
+        let triggers = [];
+        if (this.summon.sourceDocument && CatEvent.hasCatFlag(this.summon.sourceDocument)) {
+            triggers.push(new this.trigger(this.summon.sourceDocument, this.pass));
+        }
+        triggers.push(...super.unsortedTriggers);
+        return triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+    }
 }
 class CalledEvent extends CatEvent {
     constructor(actor, pass, data) {

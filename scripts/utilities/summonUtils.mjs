@@ -1,6 +1,6 @@
 import {constants} from '../lib/_module.mjs';
-async function createSummon(ownerActor, sourceActor, {created = game.time.worldTime, duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent} = {}) {
-    return await constants.summons.createSummon(ownerActor, sourceActor, created, {duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent});
+async function createSummon(ownerActor, sourceActor, {created = game.time.worldTime, duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument} = {}) {
+    return await constants.summons.createSummon(ownerActor, sourceActor, created, {duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument});
 }
 async function placeSummon(summon, range, {preAnimation, postAnimation, alpha, token} = {}) {
     return await constants.summons.placeSummon(summon, range, {preAnimation, postAnimation, alpha, token});
@@ -20,6 +20,18 @@ function getSummons(actor) {
 function getSummonData(actor) {
     return constants.summons.getSummonData(actor);
 }
+function getSummonBySource(document) {
+    return constants.summons.getSummonsBySource(document);
+}
+function placeSummons(summons, range, {token} = {}) {
+    return constants.summons.placeSummons(summons, range, {token});
+}
+async function placeAllSourceSummons(document, range, {token} = {}) {
+    return await placeSummons(getSummonBySource(document), range, {token});
+}
+async function recallAllSourceSummons(document) {
+    return await Promise.all(getSummonBySource(document).map(async summon => summon.recall()));
+}
 export default {
     createSummon,
     placeSummon,
@@ -27,5 +39,9 @@ export default {
     removeSummon,
     getSummons,
     getSummonData,
-    deleteSummon
+    deleteSummon,
+    getSummonBySource,
+    placeSummons,
+    placeAllSourceSummons,
+    recallAllSourceSummons
 };
