@@ -1,9 +1,7 @@
+import genericUtils from '../utilities/genericUtils.mjs';
 const {CompendiumBrowser} = dnd5e.applications;
 export class CatCompendiumBrowser extends CompendiumBrowser {
-    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
-        allowedPacks: [], 
-        filterPredicate: null 
-    }, {inplace: false});
+    static DEFAULT_OPTIONS = genericUtils.mergeObject(super.DEFAULT_OPTIONS, {allowedPacks: [], filterPredicate: null}, {inplace: false});
     async _prepareResultsContext(context, options) {
         context.filters ??= {};
         context.filters.arbitrary ??= [];
@@ -24,7 +22,7 @@ export class CatCompendiumBrowser extends CompendiumBrowser {
         if (options.filters) {
             const idx = options.filters.findIndex(f => '_customPackFilter' in f);
             if (idx !== -1) {
-                allowedPacks = options.filters[idx]._customPackFilter || [];
+                allowedPacks = options.filters[idx]._customPackFilter ?? [];
                 customPredicate = options.filters[idx]._customPredicate;
                 options.filters.splice(idx, 1);
             }
