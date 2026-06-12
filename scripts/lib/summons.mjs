@@ -110,7 +110,7 @@ export class SummonsManager {
         if (!sourceItem) return;
         const itemData = sourceItem.toObject();
         delete itemData._id;
-        if (description) itemData.system.description = description;
+        if (description) itemData.system.description.value = description;
         const sourceClass = itemUtils.getSourceClass(summon.sourceDocument);
         if (!sourceClass) {
             updates.items.push(itemData);
@@ -129,7 +129,7 @@ export class SummonsManager {
                 genericUtils.setProperty(activityData, 'attack.bonus', String(attack));
             }
         });
-        updates.push(itemData);
+        updates.items.push(itemData);
     }
     async createSummon(ownerActor, sourceActor, created = game.time.worldTime, options = {}) {
         const summon = new Summon(ownerActor, sourceActor, created, options);

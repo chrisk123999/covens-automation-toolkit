@@ -1131,13 +1131,15 @@ cat-combobox {
     margin-bottom: 0;
 }
 
-.cat-generic-summon-options > legend {
+.cat-generic-summon-options > legend,
+.cat-generic-summon-item > legend {
     gap: var(--cat-space-sm);
     display: flex;
     align-items: center;
 }
 
-.cat-generic-summon-options > legend > button {
+.cat-generic-summon-options > legend > button,
+.cat-generic-summon-item > legend > button {
     width: 1.5rem;
     padding: 0;
     border: 0;
@@ -1145,12 +1147,19 @@ cat-combobox {
     background: transparent;
 }
 
-.cat-generic-summon-options > legend > button:hover {
+.cat-generic-summon-options > legend > button:hover,
+.cat-generic-summon-item > legend > button:hover {
     color: var(--cat-text-primary);
 }
 
 .cat-summon-add {
     width: auto;
+}
+
+.cat-summon-item-list {
+    gap: var(--cat-space-sm);
+    display: flex;
+    flex-direction: column;
 }
 
 .cat-sequencer-db,
