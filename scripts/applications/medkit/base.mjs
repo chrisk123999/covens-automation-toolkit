@@ -72,7 +72,10 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             removeListEntry: MedkitApp.#removeListEntry,
             addSummonEntry: MedkitApp.#addSummonEntry,
             removeSummonEntry: MedkitApp.#removeSummonEntry,
+            addSummonItem: MedkitApp.#addSummonItem,
+            removeSummonItem: MedkitApp.#removeSummonItem,
             openCompendiumActor: MedkitApp.#openCompendiumActor,
+            openCompendiumItem: MedkitApp.#openCompendiumItem,
             openSequencerDb: MedkitApp.#openSequencerDb,
             massApply: MedkitApp.#massApply
         }
@@ -302,7 +305,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 option.canAdd = entries.length < max;
                 option.summonEntries = entries.map((entry, i) => ({
                     index: i,
-                    legend: max > 1 ? `${option.label} ${i + 1}` : option.label,
+                    legend: entry.sourceActorName ?? (entry.sourceActorUuid ? fromUuidSync(entry.sourceActorUuid)?.name : null) ?? (max > 1 ? `${option.label} ${i + 1}` : option.label),
                     fields: [
                         {key: `summon-uuid-${i}`, name: `${base}.${i}.sourceActorUuid`, label: _loc('CAT.MEDKIT.Summons.Actor'), value: entry.sourceActorUuid ?? '', isCombobox: true, allowBlank: true, choices: this.#actorChoices(entry), compendiumPicker: true, compendiumMax: Number.isFinite(max) ? max : ''},
                         this.#buildOption({key: `summon-name-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Name'}, {name: `${base}.${i}.name`, value: entry.name}),
@@ -312,7 +315,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                         this.#buildOption({key: `summon-sound-place-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundPlaced'}, {name: `${base}.${i}.sounds.place`, value: entry.sounds?.place}),
                         this.#buildOption({key: `summon-sound-removed-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundRemoved'}, {name: `${base}.${i}.sounds.removed`, value: entry.sounds?.removed}),
                         this.#buildOption({key: `summon-sound-death-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundDeath'}, {name: `${base}.${i}.sounds.death`, value: entry.sounds?.death})
-                    ]
+                    ],
+                    items: this.#summonItems(entry, `${base}.${i}.items`, `${option.configPath}.${i}.items`)
                 }));
                 break;
             }
@@ -395,6 +399,38 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         const activities = this.#document.system?.activities;
         if (!activities) return [];
         return [...activities].map(a => ({value: a.id, label: a.name ?? a.id, image: a.img}));
+    }
+
+    #summonItems(entry, base, configPath) {
+        const items = Array.isArray(entry.items) ? entry.items : [];
+        return {
+            base: configPath,
+            entries: items.map((item, j) => ({
+                index: j,
+                legend: item.itemName ?? (item.uuid ? fromUuidSync(item.uuid)?.name : null) ?? `${_loc('CAT.MEDKIT.Summons.Item')} ${j + 1}`,
+                fields: [
+                    {key: `${base}-uuid-${j}`, name: `${base}.${j}.uuid`, label: _loc('CAT.MEDKIT.Summons.Item'), value: item.uuid ?? '', isCombobox: true, allowBlank: true, choices: this.#itemChoices(item), compendiumItemPicker: true},
+                    this.#buildOption({key: `${base}-dc-${j}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.MatchDC'}, {name: `${base}.${j}.matchDC`, value: item.matchDC ?? false}),
+                    this.#buildOption({key: `${base}-attack-${j}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.MatchAttack'}, {name: `${base}.${j}.matchAttack`, value: item.matchAttack ?? false}),
+                    this.#buildOption({key: `${base}-desc-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.Description'}, {name: `${base}.${j}.description`, value: item.description ?? ''})
+                ]
+            }))
+        };
+    }
+
+    // Compendium items come from the browser button, not this list — packs can hold thousands.
+    #itemChoices(entry = {}) {
+        const currentUuid = entry.uuid;
+        const world = game.items.map(i => ({value: i.uuid, label: i.name, image: i.img}));
+        if (currentUuid && !world.some(c => c.value === currentUuid)) {
+            const doc = entry.itemName ? null : fromUuidSync(currentUuid);
+            world.push({
+                value: currentUuid,
+                label: entry.itemName ?? doc?.name ?? currentUuid,
+                image: entry.itemImg ?? doc?.img
+            });
+        }
+        return world.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     }
 
     // Compendium actors come from the browser button, not this list — packs can hold thousands.
@@ -745,6 +781,50 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     /** @this {MedkitApp} */
     static #removeSummonEntry(_event, target) {
         const wrap = target.closest('.cat-summon-list');
+        const path = wrap?.dataset.flagPath;
+        if (!path) return;
+        const flags = this._getFlags();
+        const list = foundry.utils.getProperty(flags, path) ?? [];
+        foundry.utils.setProperty(flags, path, list.filter((_, i) => i !== Number(target.dataset.index)));
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static async #openCompendiumItem(_event, target) {
+        const CompendiumBrowser = dnd5e?.applications?.CompendiumBrowser;
+        const name = target.dataset.flagName;
+        const match = name?.match(/^flags\.cat\.(.+)\.(\d+)\.uuid$/);
+        if (!CompendiumBrowser || !match) return;
+        const [, listPath, indexStr] = match;
+        const startIndex = Number(indexStr);
+        const types = new Set(game.documentTypes.Item);
+        const result = await CompendiumBrowser.select({filters: {locked: {documentClass: 'Item', types}}, selection: {min: 1, max: null}});
+        if (!result?.size) return;
+        const flags = this._getFlags();
+        const list = foundry.utils.getProperty(flags, listPath) ?? [];
+        const uuids = [...result];
+        for (let j = 0; j < uuids.length; j++) {
+            const doc = await fromUuid(uuids[j]);
+            list[startIndex + j] = {...(list[startIndex + j] ?? {}), uuid: uuids[j], itemName: doc?.name ?? uuids[j], itemImg: doc?.img};
+        }
+        foundry.utils.setProperty(flags, listPath, list);
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static #addSummonItem(_event, target) {
+        const wrap = target.closest('.cat-summon-item-list');
+        const path = wrap?.dataset.flagPath;
+        if (!path) return;
+        const flags = this._getFlags();
+        const list = foundry.utils.getProperty(flags, path) ?? [];
+        foundry.utils.setProperty(flags, path, [...list, {}]);
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static #removeSummonItem(_event, target) {
+        const wrap = target.closest('.cat-summon-item-list');
         const path = wrap?.dataset.flagPath;
         if (!path) return;
         const flags = this._getFlags();

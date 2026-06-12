@@ -15,6 +15,11 @@
                     <i class="fa-solid fa-book-open"></i>
                 </button>
             {{/if}}
+            {{#if compendiumItemPicker}}
+                <button type="button" class="cat-compendium-pick" data-action="openCompendiumItem" data-flag-name="{{name}}" data-tooltip="{{localize 'CAT.MEDKIT.Summons.ItemCompendiumPick'}}">
+                    <i class="fa-solid fa-book-open"></i>
+                </button>
+            {{/if}}
         </div>
     </div>
 {{else if isMultiCombobox}}
@@ -73,6 +78,24 @@
                 {{#each fields}}
                     {{> "modules/cat/templates/medkit/shared/option-field.hbs" this}}
                 {{/each}}
+                <div class="cat-summon-item-list" data-flag-path="{{items.base}}">
+                    {{#each items.entries}}
+                        <fieldset class="cat-generic-summon-item" data-section="summon-item">
+                            <legend>
+                                <span>{{legend}}</span>
+                                <button type="button" data-action="removeSummonItem" data-index="{{index}}" data-tooltip="{{localize 'Remove'}}">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </legend>
+                            {{#each fields}}
+                                {{> "modules/cat/templates/medkit/shared/option-field.hbs" this}}
+                            {{/each}}
+                        </fieldset>
+                    {{/each}}
+                    <button type="button" class="cat-summon-add" data-action="addSummonItem">
+                        <i class="fa-solid fa-plus"></i> {{localize "CAT.MEDKIT.Summons.AddItem"}}
+                    </button>
+                </div>
             </fieldset>
         {{/each}}
         {{#if canAdd}}

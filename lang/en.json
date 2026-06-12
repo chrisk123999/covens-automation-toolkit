@@ -242,7 +242,13 @@
         "SoundRemoved": "Removed Sound",
         "SoundDeath": "Death Sound",
         "CompendiumPick": "Select actor from compendium",
-        "Add": "Add summon"
+        "Add": "Add summon",
+        "Item": "Item",
+        "MatchDC": "Match Save DC",
+        "MatchAttack": "Match Attack Bonus",
+        "Description": "Description Override",
+        "ItemCompendiumPick": "Select item from compendium",
+        "AddItem": "Add item"
       },
       "PackFolder": {
         "Folder": "Folder",
