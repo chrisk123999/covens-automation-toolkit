@@ -24,17 +24,12 @@ function flatToEmbedded(flat) {
     return {name: flat.name, event: flat.event, pass: flat.pass, macros: [macro]};
 }
 
-// Shared shell + in-memory state model + actions for every CAT medkit app.
-// Subclasses declare DEFAULT_OPTIONS (id), PARTS, TABS, KEEP_PATHS, and override
-// `static updateDocument` for doc-type-specific source-switch apply logic.
 export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2) {
     #document;
     /** In-memory mutable copy of document.flags.cat; flushed on Save. */
     #flags;
     /** In-memory mutable source selection; flushed on Save. */
     #selectedSource;
-    /** Cached compendium-actor choices for selectSummons; populated by _loadActorPackChoices. */
-    #actorPackChoices;
     /** In-memory mutable system.source.rules; flushed on Save. */
     #rulesValue;
 
@@ -77,6 +72,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             removeListEntry: MedkitApp.#removeListEntry,
             addSummonEntry: MedkitApp.#addSummonEntry,
             removeSummonEntry: MedkitApp.#removeSummonEntry,
+            openCompendiumActor: MedkitApp.#openCompendiumActor,
             openSequencerDb: MedkitApp.#openSequencerDb,
             massApply: MedkitApp.#massApply
         }
@@ -91,7 +87,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static PARTS = {...MedkitApp.SHARED_PARTS};
 
-    // Scene / Level share an identical Automations / Embedded / Macros layout.
     static SCENE_LEVEL_PARTS = {
         ...MedkitApp.SHARED_PARTS,
         automations: {template: 'modules/cat/templates/medkit/shared/mass-apply-tab.hbs'},
@@ -146,7 +141,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return parts;
     }
 
-    // Override per subclass to return iterable of Items for mass apply.
     _getMassApplyItems() { return []; }
 
     static _massApplyItemsFromScene(scene) {
@@ -192,7 +186,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return context;
     }
 
-    // Convert AutomationConfig[] into template-ready category groups.
     _prepareConfigurationCategories(automation) {
         const configs = automation?.config;
         if (!configs?.length) return [];
@@ -215,7 +208,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return Array.from(grouped.values());
     }
 
-    // Build one render-ready option from a descriptor {key,type,label,default,options,fileType,tooltip,i18nOption}.
     #buildOption(descriptor, {name, value, configPath, source, identifier} = {}) {
         const {key} = descriptor;
         const label = descriptor.label ? _loc(descriptor.label) : this.#humanize(key);
@@ -229,7 +221,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return option;
     }
 
-    // Build the field/widget from a (possibly macro-authored) descriptor; guarded by #buildOption.
     #applyOptionField(option, descriptor, {label, value, source, identifier}) {
         const {type} = descriptor;
         const COMBOBOX_THRESHOLD = 8;
@@ -313,7 +304,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                     index: i,
                     legend: max > 1 ? `${option.label} ${i + 1}` : option.label,
                     fields: [
-                        {key: `summon-uuid-${i}`, name: `${base}.${i}.sourceActorUuid`, label: _loc('CAT.MEDKIT.Summons.Actor'), value: entry.sourceActorUuid ?? '', isCombobox: true, allowBlank: true, choices: this.#actorChoices()},
+                        {key: `summon-uuid-${i}`, name: `${base}.${i}.sourceActorUuid`, label: _loc('CAT.MEDKIT.Summons.Actor'), value: entry.sourceActorUuid ?? '', isCombobox: true, allowBlank: true, choices: this.#actorChoices(entry), compendiumPicker: true, compendiumMax: Number.isFinite(max) ? max : ''},
                         this.#buildOption({key: `summon-name-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Name'}, {name: `${base}.${i}.name`, value: entry.name}),
                         this.#buildOption({key: `summon-avatar-${i}`, type: 'file', label: 'CAT.MEDKIT.Summons.AvatarImg'}, {name: `${base}.${i}.avatarImg`, value: entry.avatarImg}),
                         this.#buildOption({key: `summon-token-${i}`, type: 'file', label: 'CAT.MEDKIT.Summons.TokenImg'}, {name: `${base}.${i}.tokenImg`, value: entry.tokenImg}),
@@ -390,44 +381,38 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return {choices, selected, features};
     }
 
-    // Shared flags.cat.identifier override field for doc types without a native identifier (Effect, Actor, Region).
     _prepareIdentifierField(context) {
         context.identifierField = new fields.StringField({label: _loc('CAT.MEDKIT.Identifier.Label')});
         context.identifierValue = this.#flags.identifier ?? '';
     }
 
-    // Fallback label for descriptors without an explicit label: 'attackActivityId' -> 'Attack Activity Id'.
     // TODO: Make this not required by setting a label for everything.
     #humanize(key) {
         return key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase()).replace(/\bId\b/g, 'ID');
     }
 
-    // Activities on the open item, for selectActivity descriptors.
     #activityChoices() {
         const activities = this.#document.system?.activities;
         if (!activities) return [];
         return [...activities].map(a => ({value: a.id, label: a.name ?? a.id, image: a.img}));
     }
 
-    // World + compendium actors, for selectSummons source-actor selection.
-    // Compendium entries depend on #loadActorPackChoices having run during context prep.
-    #actorChoices() {
-        const world = game.actors.map(a => ({value: a.uuid, label: a.name, image: a.img}));
-        return [...world, ...(this.#actorPackChoices ?? [])]
-            .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+    // Compendium actors come from the browser button, not this list — packs can hold thousands.
+    #actorChoices(entry = {}) {
+        const currentUuid = entry.sourceActorUuid;
+        const world = game.actors.filter(a => !a.flags?.cat?.summon).map(a => ({value: a.uuid, label: a.name, image: a.img}));
+        if (currentUuid && !world.some(c => c.value === currentUuid)) {
+            const doc = entry.sourceActorName ? null : fromUuidSync(currentUuid);
+            world.push({
+                value: currentUuid,
+                label: entry.sourceActorName ?? doc?.name ?? currentUuid,
+                image: entry.sourceActorImg ?? doc?.img
+            });
+        }
+        return world.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     }
 
-    // Preload Actor compendium indices so #actorChoices can offer them synchronously.
-    async _loadActorPackChoices() {
-        if (this.#actorPackChoices) return;
-        const packs = game.packs.filter(p => p.metadata.type === 'Actor');
-        await Promise.all(packs.map(p => p.getIndex()));
-        this.#actorPackChoices = packs.flatMap(p => p.index.map(e => ({value: e.uuid, label: `${e.name} (${p.metadata.label})`, image: e.img})));
-    }
-
-    // Sidebar folders + compendium packs of a document type, for packOrFolderMultiSelect.
-    // Values are prefixed (folder:<id> / pack:<id>) so consumers can resolve either kind.
-    // mode 'folder'/'pack' restricts to one kind; omit for both.
+    // Values are prefixed folder:<id> / pack:<id> so consumers resolve either kind.
     #packFolderChoices(documentType, mode) {
         const choices = [];
         if (mode !== 'pack') {
@@ -443,7 +428,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return choices.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     }
 
-    // Every registered animation, for selectAnimation descriptors. Value encodes source|identifier.
     #animationChoices(requiredInputs) {
         let animations = constants.animations?.animations ?? [];
         if (Array.isArray(requiredInputs)) {
@@ -456,14 +440,12 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return animations.map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ? _loc(a.name) : a.identifier}));
     }
 
-    // Author credits declared on the selected animation, for display next to the picker.
     #animationCredits(selection) {
         if (!selection?.source || !selection?.identifier) return [];
         const animation = constants.animations?.getAnimation(selection.source, selection.identifier);
         return animation?.credits ?? [];
     }
 
-    // Sub-option fields from the selected animation's own config; persisted under flags.cat.animationGenericConfig.
     #animationSubOptions(source, identifier, selection) {
         if (!selection?.source || !selection?.identifier) return [];
         const animation = constants.animations?.getAnimation(selection.source, selection.identifier);
@@ -482,7 +464,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         });
     }
 
-    // Split a flags.cat.macros map into entries owned by generic features vs everything else.
     #partitionMacroEntries(macrosMap) {
         const generics = this._getGenericMacros();
         const isGeneric = e => generics.some(g => g.source === e.source && g.identifier === e.identifier);
@@ -496,7 +477,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return {generic, other};
     }
 
-    // Merge {event: [entry]} additions into target, deduping by source|identifier|rules.
     #mergeMacroEntries(target, additions) {
         for (const [event, entries] of Object.entries(additions ?? {})) {
             const list = (target[event] ??= []);
@@ -531,8 +511,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         else delete this.#flags.macros;
     }
 
-    // Every globally registered FnMacro (deduped by source|identifier|rules) is a choice.
-    // flagPath selects which flag map holds the picked entries (e.g. 'macros' or 'placed.region.macros').
     _prepareRegisteredMacros(flagPath = 'macros') {
         if (!constants.macros) return {choices: []};
         const all = [...(constants.macros.fnMacros ?? []), ...(constants.macros.overwriteMacros ?? [])].filter(m => !m.generic);
@@ -580,7 +558,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         foundry.utils.setProperty(this.#flags, flagPath, next);
     }
 
-    // CONFIGURABLE + GENERIC overlay UP_TO_DATE; nav pips surface those.
     _prepareHero({availableAutomations, sourceLabel, currentVersion, configCount, genericCount, statusLabel, medkitStatus}) {
         const isOutdated = medkitStatus === constants.MEDKIT_STATUSES.OUTDATED;
         const isUpToDate = medkitStatus === constants.MEDKIT_STATUSES.UP_TO_DATE
@@ -728,7 +705,30 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (tab) this.changeTab(tab, 'sheet');
     }
 
-    // Append a blank entry to a selectSummons list (capped at its max).
+    /** @this {MedkitApp} */
+    static async #openCompendiumActor(_event, target) {
+        const CompendiumBrowser = dnd5e?.applications?.CompendiumBrowser;
+        const name = target.dataset.flagName;
+        const match = name?.match(/^flags\.cat\.(.+)\.(\d+)\.sourceActorUuid$/);
+        if (!CompendiumBrowser || !match) return;
+        const [, listPath, indexStr] = match;
+        const startIndex = Number(indexStr);
+        const max = Number(target.dataset.summonMax) || Infinity;
+        const remaining = Number.isFinite(max) ? Math.max(1, max - startIndex) : null;
+        const types = new Set(game.documentTypes.Actor);
+        const result = await CompendiumBrowser.select({filters: {locked: {documentClass: 'Actor', types}}, selection: {min: 1, max: remaining}});
+        if (!result?.size) return;
+        const flags = this._getFlags();
+        const list = foundry.utils.getProperty(flags, listPath) ?? [];
+        const uuids = [...result];
+        for (let j = 0; j < uuids.length && startIndex + j < max; j++) {
+            const doc = await fromUuid(uuids[j]);
+            list[startIndex + j] = {...(list[startIndex + j] ?? {}), sourceActorUuid: uuids[j], sourceActorName: doc?.name ?? uuids[j], sourceActorImg: doc?.img};
+        }
+        foundry.utils.setProperty(flags, listPath, list);
+        this.render();
+    }
+
     /** @this {MedkitApp} */
     static #addSummonEntry(_event, target) {
         const wrap = target.closest('.cat-summon-list');
@@ -753,7 +753,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.render();
     }
 
-    // Open Sequencer's database viewer and route the next copied path into this field's file-picker.
     static #openSequencerDb(_event, target) {
         const viewer = globalThis.Sequencer?.DatabaseViewer;
         if (!viewer?.show) return;
@@ -827,7 +826,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.render();
     }
 
-    // Add an entry (uuid or raw string) to a flags.cat-relative array path. Used by documents + selectIdentifiers.
     /** @this {MedkitApp} */
     static async #addListEntry(_event, target) {
         const group = target.closest('[data-flag-path]');
@@ -859,7 +857,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         uiUtils.bringToFront(this);
     }
 
-    // Mutates in-memory state; document.update is deferred until Save / Save & Close.
     async _onChangeForm(formConfig, event) {
         await super._onChangeForm(formConfig, event);
         const target = event.target;

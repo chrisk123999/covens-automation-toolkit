@@ -241,6 +241,7 @@
         "SoundPlaced": "Placed Sound",
         "SoundRemoved": "Removed Sound",
         "SoundDeath": "Death Sound",
+        "CompendiumPick": "Select actor from compendium",
         "Add": "Add summon"
       },
       "PackFolder": {

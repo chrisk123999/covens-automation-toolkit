@@ -1153,7 +1153,8 @@ cat-combobox {
     width: auto;
 }
 
-.cat-sequencer-db {
+.cat-sequencer-db,
+.cat-compendium-pick {
     flex: 0 0 auto;
     width: auto;
 }

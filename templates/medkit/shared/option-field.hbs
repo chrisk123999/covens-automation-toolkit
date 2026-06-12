@@ -10,6 +10,11 @@
                     <option value="{{value}}" data-image="{{image}}">{{label}}</option>
                 {{/each}}
             </cat-combobox>
+            {{#if compendiumPicker}}
+                <button type="button" class="cat-compendium-pick" data-action="openCompendiumActor" data-flag-name="{{name}}" data-summon-max="{{compendiumMax}}" data-tooltip="{{localize 'CAT.MEDKIT.Summons.CompendiumPick'}}">
+                    <i class="fa-solid fa-book-open"></i>
+                </button>
+            {{/if}}
         </div>
     </div>
 {{else if isMultiCombobox}}

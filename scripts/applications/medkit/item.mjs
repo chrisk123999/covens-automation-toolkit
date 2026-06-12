@@ -4,9 +4,7 @@ import {documentUtils, automationUtils} from '../../utilities/_module.mjs';
 import DocPropertyEditorApp from '../doc-property-editor.mjs';
 const {fields} = foundry.data;
 
-// Item types that expose the Document Properties tab
 const DOC_PROP_TYPES = ['feat'];
-// Doc-prop flags
 const ARRAY_DOC_PROPS = ['alternateFormula', 'rollModifiers'];
 
 function docPropChoices() {
@@ -97,7 +95,6 @@ export default class ItemMedkit extends MedkitApp {
         const selectedSource = this._getSelectedSource();
         const rulesValue = this._getRulesValue();
         const itemType = this.document.type;
-        // Refetch automation using in-memory source so the Configuration tab reacts to source changes.
         const currAutomation = (identifier && rulesValue && selectedSource && selectedSource !== 'none')
             ? constants.automations.getAutomationByIdentifier(identifier, {rules: rulesValue, source: selectedSource, monsterIdentifier, type: itemType})
             : undefined;
@@ -133,7 +130,6 @@ export default class ItemMedkit extends MedkitApp {
                 context.statusLabel = 'CAT.MEDKIT.STATUSES.Generic';
         }
 
-        // Source label = registry only (constants.automations.sourceNames). Raw id when not registered.
         const labelFor = src => constants.automations.getSourceName?.(src) ?? src;
         const priority = automationUtils.getAutomationSources();
         const availableSet = new Set(availableAutomations.map(a => a.source));
@@ -162,7 +158,6 @@ export default class ItemMedkit extends MedkitApp {
         context.configurationCategories = this._prepareConfigurationCategories(currAutomation);
         context.classBonuses = this.#prepareClassBonuses();
 
-        await this._loadActorPackChoices();
         const genericData = this._prepareGenericFeatures();
         context.genericChoices = genericData.choices;
         context.genericSelected = genericData.selected;
@@ -183,7 +178,6 @@ export default class ItemMedkit extends MedkitApp {
         return context;
     }
 
-    // Document Properties tab: list the three feat flags, resolving ability labels for the summaries.
     #prepareDocProps(context) {
         const flags = this._getFlags();
         const choices = docPropChoices();
@@ -197,7 +191,6 @@ export default class ItemMedkit extends MedkitApp {
         }));
     }
 
-    // Configuration-tab class-bonus table: union of classDifficultyClass / classAttackBonus keys.
     #prepareClassBonuses() {
         const flags = this._getFlags();
         const dcMap = flags.classDifficultyClass ?? {};
@@ -280,7 +273,6 @@ export default class ItemMedkit extends MedkitApp {
         this.render();
     }
 
-    // Persist a normalized editor entry.
     #writeDocProp(type, entry, original) {
         const flags = this._getFlags();
         if (ARRAY_DOC_PROPS.includes(type)) {
