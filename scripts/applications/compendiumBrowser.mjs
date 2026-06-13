@@ -1,46 +1,41 @@
-import genericUtils from '../utilities/genericUtils.mjs';
 const {CompendiumBrowser} = dnd5e.applications;
 export class CatCompendiumBrowser extends CompendiumBrowser {
-    static DEFAULT_OPTIONS = genericUtils.mergeObject(super.DEFAULT_OPTIONS, {allowedPacks: [], filterPredicate: null}, {inplace: false});
+    static DEFAULT_OPTIONS = {
+        allowedPacks: [],
+        arbitraryFilters: []
+    };
+    static async select(config = {}, renderOptions = {}) {
+        for (const key of Object.keys(config)) {
+            if (config[key] === undefined) delete config[key];
+        }
+        const tabData = dnd5e.applications.CompendiumBrowser.TABS.find(t => t.tab === config.tab);
+        if (tabData && config.mode === undefined) {
+            config.mode = tabData.advanced ? 
+                dnd5e.applications.CompendiumBrowser.MODES.ADVANCED : 
+                dnd5e.applications.CompendiumBrowser.MODES.BASIC;
+        }
+        return new Promise(resolve => {
+            const browser = new CatCompendiumBrowser(config);
+            browser.addEventListener('close', () => {
+                resolve(browser.selected?.size ? browser.selected : null);
+            }, {once: true});
+            browser.render({force: true, ...renderOptions});
+        });
+    }
     async _prepareResultsContext(context, options) {
         context.filters ??= {};
         context.filters.arbitrary ??= [];
-        context.filters.arbitrary.push({
-            _customPackFilter: this.options.allowedPacks,
-            _customPredicate: this.options.filterPredicate
-        });
-        if (this.options.allowedPacks?.length > 0) {
-            options.filters ??= {};
-            options.filters.locked ??= {};
-            options.filters.locked.packages = new Set(this.options.allowedPacks);
-        }
-        return super._prepareResultsContext(context, options);
-    }
-    static async fetch(documentClass, options = {}) {
-        let allowedPacks = [];
-        let customPredicate = null;
-        if (options.filters) {
-            const idx = options.filters.findIndex(f => '_customPackFilter' in f);
-            if (idx !== -1) {
-                allowedPacks = options.filters[idx]._customPackFilter ?? [];
-                customPredicate = options.filters[idx]._customPredicate;
-                options.filters.splice(idx, 1);
-            }
-        }
-        let results = await super.fetch(documentClass, options);
-        if (allowedPacks.length > 0) {
-            const allowed = new Set(allowedPacks);
-            results = results.filter(doc => {
-                if (!doc.uuid) return false;
-                const parts = doc.uuid.split('.');
-                if (parts[0] === 'Compendium') {
-                    const packId = parts[1] + '.' + parts[2];
-                    return allowed.has(packId);
-                }
-                return false;
+        if (this.options.allowedPacks?.length) {
+            context.filters.arbitrary.push({
+                o: 'OR',
+                v: this.options.allowedPacks.map(packId => ({
+                    k: 'uuid',
+                    o: 'icontains',
+                    v: packId
+                }))
             });
         }
-        if (typeof customPredicate === 'function') results = results.filter(customPredicate);
-        return results;
+        if (this.options.arbitraryFilters?.length) context.filters.arbitrary.push(...this.options.arbitraryFilters);
+        return super._prepareResultsContext(context, options);
     }
 }

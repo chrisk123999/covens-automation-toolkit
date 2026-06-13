@@ -103,22 +103,24 @@ async function makeDependent(parentDocument, childDocuments = []) {
     if (!childDocuments.length) return;
     await Promise.all(childDocuments.map(async document => MidiQOL.addDependent(parentDocument, document)));
 }
-async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, nativeFilter, selection, title, hint, icon, position} = {}) {
-    const results = await CatCompendiumBrowser.select({
+async function selectFromCompendiumBrowser(tab, {packIds, arbitraryFilters, nativeFilter, selection, title, hint, icon, position} = {}) {
+    const options = {
         tab,
         allowedPacks: packIds,
-        filterPredicate,
+        arbitraryFilters,
         selection,
         filters: nativeFilter,
         hint,
-        window: {
-            title,
-            icon
-        },
         position
-    });
+    };
+    if (title || icon) {
+        options.window = {};
+        if (title) options.window.title = title;
+        if (icon) options.window.icon = icon;
+    }
+    const results = await CatCompendiumBrowser.select(options);
     if (!results?.size) return;
-    return (await Promise.all(results.map(async uuid => fromUuid(uuid)))).filter(Boolean);
+    return (await Promise.all(results.map(uuid => fromUuid(uuid)))).filter(Boolean);
 }
 export default {
     getRules,
