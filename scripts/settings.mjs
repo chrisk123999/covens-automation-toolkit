@@ -88,20 +88,41 @@ const settings = {
     }
 };
 const menus = {
+    general: {
+        icon: 'fas fa-gears'
+    },
     automation: {
         icon: 'fas fa-layer-group'
     },
-    devtools: {
-        icon: 'fas fa-tools'
+    backups: {
+        icon: 'fas fa-floppy-disk'
     },
-    general: {
-        icon: 'fas fa-gears'
+    compendiums: {
+        icon: 'fas fa-atlas'
     },
     integration: {
         icon: 'fas fa-puzzle-piece'
     },
     interface: {
         icon: 'fas fa-display'
+    },
+    manualRolls: {
+        icon: 'fas fa-calculator'
+    },
+    mechanics: {
+        icon: 'fas fa-dice'
+    },
+    permissions: {
+        icon: 'fas fa-shield-keyhole'
+    },
+    summons: {
+        icon: 'fas fa-dragon'
+    },
+    help: {
+        icon: 'fas fa-screwdriver-wrench'
+    },
+    devtools: {
+        icon: 'fas fa-tools'
     }
 };
 
@@ -110,7 +131,7 @@ function addSetting(key, options) {
         scope: 'world',
         config: false,
         name: 'CAT.Settings.' + key.capitalize() + '.Name',
-        hint: 'CAT.Settings.' + key.capitalize  () + '.Hint'
+        hint: 'CAT.Settings.' + key.capitalize() + '.Hint'
     };
     game.settings.register('cat', key, genericUtils.mergeObject(defaultOptions, options));
 }

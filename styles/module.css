@@ -96,8 +96,7 @@
     font-size: 1rem;
 }
 
-.cat-dialog-close,
-.cat-dialog-detach {
+.cat-app-header-button {
     display: inline-flex;
     justify-content: center;
     align-items: center;
@@ -112,8 +111,7 @@
     transition: var(--cat-transition-fast);
 }
 
-.cat-dialog-close:hover,
-.cat-dialog-detach:hover {
+.cat-app-header-button:hover {
     color: var(--cat-text-primary);
     background: var(--cat-bg-hover);
 }
@@ -1008,25 +1006,8 @@ cat-combobox {
     background: rgb(255 215 0 / 12%);
 }
 
-.cat-medkit-close {
-    display: inline-flex;
+.cat-medkit-header-button {
     flex: 0 0 auto;
-    justify-content: center;
-    align-items: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    padding: 0;
-    border: none;
-    border-radius: var(--cat-radius-sm);
-    color: var(--cat-text-muted);
-    cursor: pointer;
-    background: transparent;
-    transition: var(--cat-transition-fast);
-}
-
-.cat-medkit-close:hover {
-    color: var(--cat-text-primary);
-    background: var(--cat-bg-hover);
 }
 
 .cat-medkit-nav {
@@ -1281,7 +1262,7 @@ cat-combobox {
     cursor: auto;
 }
 
-.cat-medkit-header .cat-medkit-close,
+.cat-medkit-header .cat-medkit-header-button,
 .cat-medkit-header [data-action="detach"] {
     width: 1.75rem;
     height: 1.75rem;
@@ -1290,7 +1271,7 @@ cat-combobox {
     background: transparent;
 }
 
-.cat-medkit-header .cat-medkit-close:hover,
+.cat-medkit-header .cat-medkit-header-button:hover,
 .cat-medkit-header [data-action="detach"]:hover {
     border: none;
     color: var(--cat-text-primary);

@@ -412,7 +412,7 @@
     "Settings": {
       "Automation": {
         "Name": "Automation Sources",
-        "Label": "Open",
+        "Label": "Configure Automation Sources",
         "Hint": "Enable automation sources, set their priority, and pick extra compendiums to use."
       },
       "AutomationSources": {
@@ -426,18 +426,33 @@
         "SourceTag": "Source",
         "PackTag": "Pack"
       },
+      "Backups": {
+        "Name": "Backups",
+        "Label": "Configure Backups",
+        "Hint": "Settings for automatically creating actor backups."
+      },
+      "Compendiums": {
+        "Name": "Compendiums",
+        "Label": "Configure Compendiums",
+        "Hint": "Configure compendiums from which automations will retrieve documents."
+      },
       "Devtools": {
         "Name": "Development Tools",
-        "Label": "Open",
+        "Label": "Configure Development Tools",
         "Hint": "Settings for developers."
       },
       "DisplayDebugLogs": {
         "Name": "Display Debug Logs",
         "Hint": "When enabled, the console will show debug logs."
       },
+      "Help": {
+        "Name": "Help",
+        "Label": "Help",
+        "Hint": "Help with required module settings and troubleshooting CAT automations."
+      },
       "HideNames": {
         "Name": "Hide Token Names",
-        "Hint": "Whene enabled, various dialogs will not show enemy token names."
+        "Hint": "When enabled, various dialogs will not show enemy token names."
       },
       "DiceSoNice": {
         "Name": "Dice So Nice Compatibility",
@@ -445,17 +460,17 @@
       },
       "General": {
         "Name": "General",
-        "Label": "Open",
-        "Hint": "General settings."
+        "Label": "Configure Settings",
+        "Hint": "General module and API settings."
       },
       "Integration": {
         "Name": "Integration",
-        "Label": "Open",
+        "Label": "Configure Integrations",
         "Hint": "Settings for various module integrations."
       },
       "Interface": {
         "Name": "Interface",
-        "Label": "Open",
+        "Label": "Configure Interface",
         "Hint": "Settings for the user interface."
       },
       "EffectDescriptions": {
@@ -465,6 +480,26 @@
       "EffectDescriptionsNPC": {
         "Name": "Hide NPC Effect Descriptions",
         "Hint": "When enabled, the Automatic Effect Description setting will not apply for NPC created effects."
+      },
+      "ManualRolls": {
+        "Name": "Manual Rolls",
+        "Label": "Configure Manual Rolls",
+        "Hint": "Settings for CAT's roll resolver designed for manually rolling dice."
+      },
+      "Mechanics": {
+        "Name": "Mechanics",
+        "Label": "Configure Mechanics",
+        "Hint": "Settings for game mechanics automations."
+      },
+      "Permissions": {
+        "Name": "Permissions",
+        "Label": "Configure Permissions",
+        "Hint": "Settings for user permissions for CAT automation and configuration menus."
+      },
+      "Summons": {
+        "Name": "Summons",
+        "Label": "Configure Summons",
+        "Hint": "Settings for summons use and management."
       }
     },
     "DAE": {

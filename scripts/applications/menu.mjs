@@ -23,7 +23,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     static DEFAULT_OPTIONS = {
-        id: 'cat-dialog-app',
+        id: 'cat-menu-app',
         classes: ['cat', 'cat-dialog'],
         tag: 'form',
         form: {

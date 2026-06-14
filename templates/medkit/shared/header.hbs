@@ -2,10 +2,10 @@
     <i class="fa-solid fa-shield-cat cat-medkit-pip" data-medkit-status="{{medkitStatus}}"></i>
     <span class="cat-medkit-title">{{label}}</span>
     {{#if isDirty}}<span class="cat-medkit-dirty" data-tooltip="{{localize 'CAT.MEDKIT.Dirty.Tooltip'}}">{{localize "CAT.MEDKIT.Dirty.Label"}}</span>{{/if}}
-    <button type="button" class="cat-medkit-close" data-action="detach" data-tooltip aria-label="{{localize 'APPLICATION.ACTIONS.Detach'}}">
+    <button type="button" class="cat-app-header-button cat-medkit-header-button" data-action="detach" data-tooltip aria-label="{{localize 'APPLICATION.ACTIONS.Detach'}}">
         <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
     </button>
-    <button type="button" class="cat-medkit-close" data-action="cancel" data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
+    <button type="button" class="cat-app-header-button cat-medkit-header-button" data-action="cancel" data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
         <i class="fas fa-xmark" aria-hidden="true"></i>
     </button>
 </header>
