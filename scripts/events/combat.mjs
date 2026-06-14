@@ -23,7 +23,7 @@ async function updateCombat(combat, updates, context) {
             await regions.processRegionActivities(token, Array.from(token.regions), constants.combatPasses.everyTurn, {combatData: {inCombat: true, currentRound, currentTurn, combatId: combat.id}});
             await new Events.CombatEvent(combat, constants.combatPasses.everyTurn, token, {context, combatant: currentCombatant, round: currentRound, turn: currentTurn, previousCombatant, previousRound, previousTurn}).run();
         }
-        await regions.processRegionActivities(previousToken, Array.from(currentToken.regions), constants.combatPasses.turnStart, {combatData: {inCombat: true, currentRound, currentTurn, combatId: combat.id}});
+        await regions.processRegionActivities(currentToken, Array.from(currentToken.regions), constants.combatPasses.turnStart, {combatData: {inCombat: true, currentRound, currentTurn, combatId: combat.id}});
         await new Events.CombatEvent(combat, constants.combatPasses.turnStart, currentToken, {context, combatant: currentCombatant, round: currentRound, turn: currentTurn, previousCombatant, previousRound, previousTurn}).run();
     }
 }

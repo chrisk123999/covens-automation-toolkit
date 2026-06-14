@@ -249,6 +249,7 @@ export class Summon {
         this.actor = actor;
         this.created = created;
         this.duration = duration;
+        if (duration) this.duration += 6;
         this.animation = animation;
         this.parentUuid = parent?.uuid;
         this.sourceDocumentUuid = sourceDocument?.uuid;
