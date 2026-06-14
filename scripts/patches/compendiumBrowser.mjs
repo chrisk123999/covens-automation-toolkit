@@ -1,38 +1,29 @@
 import {Logging} from '../lib/_module.mjs';
 async function fetch(wrapped, documentClass, options = {}) {
+    const isCatRequest = Array.isArray(options.filters) && options.filters.some(f => Object.hasOwn(f, '_customPredicate') || Object.hasOwn(f, '_allowedPacks'));
+    if (!isCatRequest) return wrapped(documentClass, options);
     let customPredicate = null;
-    if (Array.isArray(options.filters)) {
-        options.filters = options.filters.filter(f => {
-            if (typeof f._customPredicate === 'function') {
-                customPredicate = f._customPredicate;
-                return false; 
-            }
-            return true;
-        });
-        const originalPush = options.filters.push;
-        options.filters.push = (...args) => {
-            if (args.length && args[0].k === 'system.container') return this.length;
-            return originalPush.apply(this, args);
-        };
-    }
-    let results = await wrapped(documentClass, options);
-    if (options.allowedPacks?.length) {
-        const allowed = new Set(options.allowedPacks);
-        results = results.filter(r => {
-            if (r.uuid) {
-                const parts = r.uuid.split('.');
-                if (parts.length >= 3) return allowed.has(parts[1] + '.' + parts[2]);
-            }
-            if (r.pack) return allowed.has(r.pack);
-            return true; 
-        });
-    }
-    results = results.filter(r => {
-        const c = foundry.utils.getProperty(r, 'system.container');
-        if (typeof c === 'string' && c.trim() !== '' && c !== 'null') return false;
-        if (c && typeof c === 'object' && c._id) return false;
+    let allowedPacks = null;
+    options.filters = options.filters.filter(f => {
+        if (Object.hasOwn(f, '_customPredicate')) {
+            customPredicate = f._customPredicate;
+            return false; 
+        }
+        if (Object.hasOwn(f, '_allowedPacks')) {
+            allowedPacks = f._allowedPacks;
+            return false;
+        }
         return true;
     });
+    let results = await wrapped(documentClass, options);
+    if (allowedPacks?.length) {
+        const allowed = new Set(allowedPacks);
+        results = results.filter(r => {
+            if (!r.uuid) return false; 
+            const parts = r.uuid.split('.');
+            return parts.length >= 3 && allowed.has(parts[1] + '.' + parts[2]);
+        });
+    }
     if (customPredicate) results = results.filter(customPredicate);
     return results;
 }

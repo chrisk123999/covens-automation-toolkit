@@ -10,7 +10,11 @@ export class CatCompendiumBrowser extends CompendiumBrowser {
             if (config[key] === undefined) delete config[key];
         }
         const tabData = dnd5e.applications.CompendiumBrowser.TABS.find(t => t.tab === config.tab);
-        if (tabData && config.mode === undefined) config.mode = tabData.advanced ?  dnd5e.applications.CompendiumBrowser.MODES.ADVANCED : dnd5e.applications.CompendiumBrowser.MODES.BASIC;
+        if (tabData && config.mode === undefined) {
+            config.mode = tabData.advanced ?  
+                dnd5e.applications.CompendiumBrowser.MODES.ADVANCED : 
+                dnd5e.applications.CompendiumBrowser.MODES.BASIC;
+        }
         return new Promise(resolve => {
             const browser = new CatCompendiumBrowser(config);
             browser.addEventListener('close', () => {
@@ -27,9 +31,12 @@ export class CatCompendiumBrowser extends CompendiumBrowser {
                 _customPredicate: this.options.filterPredicate
             });
         }
-        if (this.options.customFilters?.length > 0) {
-            context.filters.arbitrary.push(...this.options.customFilters);
+        if (this.options.allowedPacks?.length) {
+            context.filters.arbitrary.push({
+                _allowedPacks: this.options.allowedPacks
+            });
         }
+        if (this.options.customFilters?.length) context.filters.arbitrary.push(...this.options.customFilters);
         return super._prepareResultsContext(context, options);
     }
 }
