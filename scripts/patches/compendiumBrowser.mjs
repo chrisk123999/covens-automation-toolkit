@@ -16,26 +16,24 @@ async function fetch(wrapped, documentClass, options = {}) {
         };
     }
     let results = await wrapped(documentClass, options);
-    if (Array.isArray(results)) {
-        if (options.allowedPacks?.length) {
-            const allowed = new Set(options.allowedPacks);
-            results = results.filter(r => {
-                if (r.uuid) {
-                    const parts = r.uuid.split('.');
-                    if (parts.length >= 3) return allowed.has(parts[1] + '.' + parts[2]);
-                }
-                if (r.pack) return allowed.has(r.pack);
-                return true; 
-            });
-        }
+    if (options.allowedPacks?.length) {
+        const allowed = new Set(options.allowedPacks);
         results = results.filter(r => {
-            const c = foundry.utils.getProperty(r, 'system.container');
-            if (typeof c === 'string' && c.trim() !== '' && c !== 'null') return false;
-            if (c && typeof c === 'object' && c._id) return false;
-            return true;
+            if (r.uuid) {
+                const parts = r.uuid.split('.');
+                if (parts.length >= 3) return allowed.has(parts[1] + '.' + parts[2]);
+            }
+            if (r.pack) return allowed.has(r.pack);
+            return true; 
         });
-        if (customPredicate) results = results.filter(customPredicate);
     }
+    results = results.filter(r => {
+        const c = foundry.utils.getProperty(r, 'system.container');
+        if (typeof c === 'string' && c.trim() !== '' && c !== 'null') return false;
+        if (c && typeof c === 'object' && c._id) return false;
+        return true;
+    });
+    if (customPredicate) results = results.filter(customPredicate);
     return results;
 }
 function patch(enabled) {

@@ -16,8 +16,7 @@ async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filte
     }
     const results = await CatCompendiumBrowser.select(options);
     if (!results?.size) return;
-    const documents = await Promise.all(Array.from(results).map(uuid => fromUuid(uuid)));
-    return documents.filter(Boolean);
+    return (await Promise.all(Array.from(results).map(uuid => fromUuid(uuid)))).filter(Boolean);
 }
 export default {
     selectFromCompendiumBrowser
