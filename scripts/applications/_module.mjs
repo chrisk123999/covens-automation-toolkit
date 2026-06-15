@@ -1,4 +1,5 @@
 export {default as ActivityMedkit} from './medkit/activity.mjs';
+export {default as CatRollResolver} from './dice/roll-resolver.mjs';
 export {default as ActorMedkit} from './medkit/actor.mjs';
 export {default as CompendiumMedkit} from './medkit/compendium.mjs';
 export {default as DialogApp, DialogManager} from './dialog.mjs';

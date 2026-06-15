@@ -303,7 +303,7 @@
     opacity: 0.6;
 }
 
-.cat-dialog #dialog-app > .form-group:last-child:has(input[type="checkbox"]) {
+#cat-dialog-app #dialog-app > .form-group:last-child:has(input[type="checkbox"]) {
     margin-top: var(--cat-space-sm);
     padding-top: var(--cat-space-md);
     border-top: 1px solid var(--cat-border-light);
@@ -484,6 +484,10 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+}
+
+.cat-dialog .standard-form.scrollable > .form-group:first-child {
+    margin: 0;
 }
 
 .cat-dialog .form-group > .form-fields:has(> select) {
@@ -1149,6 +1153,145 @@ cat-combobox {
     width: auto;
 }
 
+.cat-roll-resolver {
+    max-width: min(37.5rem, 90vw);
+    max-height: min(50rem, 90vh);
+}
+
+.cat-roll-resolver .cat-dialog-body {
+    min-width: 18rem;
+    overflow-y: auto;
+}
+
+.cat-roll-resolver .cat-resolver-groups {
+    gap: var(--cat-space-sm);
+    display: flex;
+    flex-flow: column;
+}
+
+.cat-roll-resolver .cat-resolver-group {
+    gap: var(--cat-space-xs);
+    display: flex;
+    flex-flow: column;
+    margin: 0;
+    padding: var(--cat-space-md);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+}
+
+.cat-roll-resolver .cat-resolver-group-label {
+    gap: var(--cat-space-xs);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    font-weight: 600;
+}
+
+.cat-roll-resolver .cat-resolver-dice {
+    gap: var(--cat-space-sm);
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.cat-roll-resolver .cat-resolver-dice .form-fields {
+    flex: 1 1 auto;
+}
+
+.cat-roll-resolver .die-input {
+    gap: var(--cat-space-xs);
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: var(--cat-space-xs) var(--cat-space-sm);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    background: var(--cat-bg-input);
+    transition: var(--cat-transition-fast);
+}
+
+.cat-roll-resolver .die-input:focus-within {
+    border-color: var(--cat-border-focus);
+}
+
+.cat-roll-resolver .die-input input {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: var(--font-size-18);
+    font-weight: 600;
+    color: var(--cat-text-primary);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.cat-roll-resolver .die-input input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.cat-roll-resolver .cat-resolver-modifier {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    color: var(--cat-text-muted);
+    font-weight: 600;
+    font-size: var(--font-size-16);
+}
+
+.cat-roll-resolver .cat-resolver-icon {
+    color: var(--cat-text-accent);
+}
+
+.cat-roll-resolver .cat-resolver-context {
+    margin: 0 0 var(--cat-space-xs);
+    color: var(--cat-text-primary);
+    font-weight: 600;
+    text-align: center;
+}
+
+.cat-roll-resolver .cat-resolver-context i {
+    margin-right: var(--cat-space-xs);
+}
+
+.cat-roll-resolver .cat-resolver-subcontext {
+    margin: 0 0 var(--cat-space-sm);
+    color: var(--cat-text-muted);
+    text-align: center;
+}
+
+.cat-roll-resolver .cat-quick-outcomes {
+    gap: var(--cat-space-xs);
+    display: flex;
+    flex-flow: row wrap;
+    padding: 0 var(--cat-space-md) var(--cat-space-sm);
+}
+
+.cat-roll-resolver .cat-quick-outcomes > .cat-quick-outcome {
+    gap: var(--cat-space-xs);
+    flex: 1 1 auto;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--cat-space-xs) var(--cat-space-md);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    color: var(--cat-text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--cat-bg-input);
+    transition: var(--cat-transition-fast);
+}
+
+.cat-roll-resolver .cat-quick-outcomes > .cat-quick-outcome:hover {
+    border-color: var(--cat-border-focus);
+    background: var(--cat-bg-hover);
+}
+
 .cat-medkit-footer,
 .cat-medkit > footer.form-footer {
     gap: var(--cat-space-sm);
@@ -1221,12 +1364,14 @@ cat-combobox {
     background: var(--cat-bg-surface);
 }
 
-.cat-medkit .hint {
+.cat-medkit .hint,
+.cat-dialog .hint {
     opacity: 0.85;
     margin: var(--cat-space-xs) 0 0;
     color: var(--cat-text-muted);
     font-size: 12px;
     line-height: 1.35;
+    font-weight: normal;
 }
 
 .cat-medkit button {

@@ -35,6 +35,7 @@ Hooks.once('libWrapper.Ready', () => {
     patches.activityPatching.patch(true); //Early so initial sheet render is correct.
     patches.dataModelPatching.patch(true);
     patches.itemPatching.patch(true);
+    patches.dicePatching.patch(true);
 });
 let catGate;
 const catInitGate = new Promise(resolve => {
@@ -43,6 +44,7 @@ const catInitGate = new Promise(resolve => {
 Hooks.once('ready', async () => {
     lib.constants.summons = lib.SummonsManager.create();
     readyHooks();
+    if (game.settings.get('cat', 'manualRollsEnabled')) patches.dicePatching.force(true);
     integration.dae.injectFlags();
     patches.documentPatching.patch(true);
     patches.actorPatching.patch(true);

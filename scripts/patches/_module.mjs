@@ -6,3 +6,4 @@ export {default as dataModelPatching} from './dataModel.mjs';
 export {default as itemPatching} from './item.mjs';
 export {default as compendiumBrowserPatching} from './compendiumBrowser.mjs';
 export {default as combatPatching} from './combat.mjs';
+export {default as dicePatching} from './dice.mjs';

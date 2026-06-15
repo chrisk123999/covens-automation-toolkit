@@ -59,6 +59,17 @@ async function createFolder({folderData}) {
     const folder = await Folder.create(folderData);
     return folder.id;
 }
+async function manualRoll({roll: rollData}) {
+    const ResolverClass = CONFIG.Dice.fulfillment.methods.cat?.resolver;
+    if (!ResolverClass) return [];
+    const roll = Roll.fromData(rollData);
+    const resolver = new ResolverClass(roll);
+    resolver._forcePrompt = true;
+    await resolver.awaitFulfillment();
+    const results = Roll.defaultImplementation.identifyFulfillableTerms(roll.terms).map(term => term.results.map(result => result.result));
+    await resolver.close();
+    return results;
+}
 function registerQueries() {
     const handlers = {
         createEffects,
@@ -71,7 +82,8 @@ function registerQueries() {
         update,
         setFlag,
         createActor,
-        createFolder
+        createFolder,
+        manualRoll
     };
     globalThis.CONFIG.queries.cat = handlers;
     for (const [name, fn] of Object.entries(handlers)) {
@@ -90,5 +102,6 @@ export default {
     update,
     setFlag,
     createActor,
-    createFolder
+    createFolder,
+    manualRoll
 };

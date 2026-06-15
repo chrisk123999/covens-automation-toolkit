@@ -1,0 +1,40 @@
+<div class="cat-dialog-shell">
+    <header class="cat-dialog-header">
+        <i class="fa-solid fa-shield-cat cat-resolver-icon" aria-hidden="true"></i>
+        <span class="cat-dialog-title">{{localize "CAT.Manual.Title"}}</span>
+        <button type="button" class="cat-dialog-detach" data-action="toggleDetach" data-tooltip="{{localize 'APPLICATION.ACTIONS.Detach'}}" aria-label="{{localize 'APPLICATION.ACTIONS.Detach'}}">
+            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="cat-dialog-close" data-action="close" data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
+            <i class="fas fa-xmark" aria-hidden="true"></i>
+        </button>
+    </header>
+    <div class="cat-dialog-body standard-form scrollable">
+        {{#if formula}}<p class="cat-resolver-context">{{{formulaIcon}}}{{formula}}</p>{{/if}}
+        {{#if formulaSub}}<p class="cat-resolver-subcontext">{{formulaSub}}</p>{{/if}}
+        <div class="cat-resolver-groups">
+            {{#each groups}}
+            <fieldset class="cat-resolver-group" data-term-id="{{@key}}">
+                <legend class="cat-resolver-group-label"{{#if labelTooltip}} data-tooltip="{{labelTooltip}}"{{/if}}><span>{{label}}</span>{{#if modifier}}<span class="cat-resolver-modifier"{{#if modifierTooltip}} data-tooltip="{{modifierTooltip}}"{{/if}}>{{modifier}}</span>{{/if}}{{{icon}}}</legend>
+                <div class="cat-resolver-dice">
+                    {{#each results}}
+                    <div class="form-fields">
+                        <label class="icon die-input{{#if isNew}} new-addition{{/if}}" data-denomination="{{denomination}}" data-method="{{method}}">
+                            <input type="{{#if text}}text{{else}}number{{/if}}" name="{{id}}" step="1"
+                                {{#unless text}}min="{{#if minValue}}{{minValue}}{{else}}1{{/if}}"
+                                max="{{#if maxValue}}{{maxValue}}{{else}}{{faces}}{{/if}}"{{/unless}}
+                                inputmode="numeric" value="{{value}}" placeholder="{{denomination}}"
+                                {{#if readonly}}readonly{{/if}}{{#if disabled}} disabled{{/if}}>
+                            {{{icon}}}
+                        </label>
+                    </div>
+                    {{/each}}
+                </div>
+            </fieldset>
+            {{/each}}
+        </div>
+    </div>
+    <footer class="cat-dialog-footer form-footer">
+        <button type="submit"><i class="fa-solid fa-dice-d20"></i> {{localize "CAT.Manual.Submit"}}</button>
+    </footer>
+</div>

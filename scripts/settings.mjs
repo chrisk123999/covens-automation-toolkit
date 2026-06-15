@@ -1,5 +1,6 @@
 import {genericUtils} from './utilities/_module.mjs';
 import {SettingsMenuBase} from './applications/_module.mjs';
+import dicePatching from './patches/dice.mjs';
 
 /**
  * Settings to register.
@@ -85,6 +86,68 @@ const settings = {
         type: Boolean,
         default: false,
         menu: 'interface'
+    },
+    manualRollsEnabled: {
+        type: Boolean,
+        default: false,
+        scope: 'world',
+        menu: 'manualRolls',
+        onChange: value => dicePatching.force(value)
+    },
+    manualRollsUsers: {
+        type: Array,
+        default: [],
+        scope: 'world',
+        menu: 'manualRolls'
+    },
+    manualRollsInclusion: {
+        type: Number,
+        default: 0,
+        choices: {
+            0: 'CAT.Settings.ManualRollsInclusion.0',
+            1: 'CAT.Settings.ManualRollsInclusion.1',
+            2: 'CAT.Settings.ManualRollsInclusion.2',
+            3: 'CAT.Settings.ManualRollsInclusion.3',
+            4: 'CAT.Settings.ManualRollsInclusion.4',
+            5: 'CAT.Settings.ManualRollsInclusion.5'
+        },
+        scope: 'world',
+        menu: 'manualRolls'
+    },
+    manualRollsPromptOnMiss: {
+        type: Boolean,
+        default: false,
+        scope: 'world',
+        menu: 'manualRolls'
+    },
+    manualRollsPromptNoData: {
+        type: Boolean,
+        default: false,
+        scope: 'world',
+        menu: 'manualRolls'
+    },
+    manualRollsEntryMode: {
+        type: String,
+        default: 'rollTotal',
+        choices: {
+            rollTotal: 'CAT.Settings.ManualRollsEntryMode.rollTotal',
+            diceTotal: 'CAT.Settings.ManualRollsEntryMode.diceTotal',
+            perDie: 'CAT.Settings.ManualRollsEntryMode.perDie'
+        },
+        scope: 'client',
+        menu: 'manualRolls'
+    },
+    manualRollsGMFulfill: {
+        type: Boolean,
+        default: false,
+        scope: 'world',
+        menu: 'manualRolls'
+    },
+    manualRollsRichContext: {
+        type: Boolean,
+        default: false,
+        scope: 'client',
+        menu: 'manualRolls'
     }
 };
 const menus = {
@@ -107,7 +170,8 @@ const menus = {
         icon: 'fas fa-display'
     },
     manualRolls: {
-        icon: 'fas fa-calculator'
+        icon: 'fas fa-calculator',
+        restricted: false
     },
     mechanics: {
         icon: 'fas fa-dice'
@@ -153,7 +217,7 @@ function createMenu(key) {
     };
 }
 export function registerSettings() {
-    Object.entries(settings).sort().forEach(([key, options]) => {
+    Object.entries(settings).forEach(([key, options]) => {
         addSetting(key, options);
     });
     Object.entries(menus).forEach(([key, options]) => {

@@ -11,7 +11,7 @@ export default class SettingsMenu extends MenuApp {
         super([title, inputs, buttons, config]);
         this.key = key;
         game.settings.settings.forEach(s => s.namespace.includes('cat') ? this.#catSettings.push(s) : '');
-        this.#menuSettings = this.#catSettings.filter(s => s.menu === key);
+        this.#menuSettings = this.#catSettings.filter(s => s.menu === key && (s.scope !== 'world' || game.user.isGM));
     }
     #formatSetting(setting) {
         if (setting.key === 'additionalCompendiums') return null;
@@ -23,6 +23,7 @@ export default class SettingsMenu extends MenuApp {
             value: game.settings.get('cat', setting.key)
         };
         if (setting.key === 'automationSources') entry.type = 'priority';
+        else if (setting.key === 'manualRollsUsers') entry.type = 'users';
         else if (setting.choices) {
             entry.type = 'selectOption';
             entry.options = setting.choices;

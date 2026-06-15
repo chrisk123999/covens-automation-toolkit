@@ -2,7 +2,7 @@ import {uiUtils, genericUtils} from '../utilities/_module.mjs';
 import {constants} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
-const {StringField, BooleanField} = foundry.data.fields;
+const {StringField, BooleanField, SetField} = foundry.data.fields;
 
 export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     #context;
@@ -115,7 +115,20 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
             case 'checkbox': return this.#buildCheckbox(input);
             case 'selectOption': return this.#buildSelectOption(input);
             case 'priority': return this.#buildPriority(input);
+            case 'users': return this.#buildUsers(input);
         }
+    }
+
+    #buildUsers(input) {
+        const choices = game.users.reduce((acc, user) => { acc[user.id] = user.name; return acc; }, {});
+        return {
+            useHelper: true,
+            options: [{
+                field: new SetField(new StringField({choices, blank: false}), {label: _loc(input.label), hint: _loc(input.hint)}),
+                name: input.name,
+                value: input.value ?? []
+            }]
+        };
     }
 
     #sourceName(id) {

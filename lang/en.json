@@ -406,6 +406,62 @@
     "Common": {
       "Cover": "{amount} {cover}"
     },
+    "Manual": {
+      "MethodLabel": "Coven's Automation Toolkit",
+      "Title": "Roll!",
+      "Part": {
+        "Mod": "Mod",
+        "Prof": "Prof",
+        "Magic": "Magic",
+        "Bonus": "Bonus",
+        "Situational": "Situational"
+      },
+      "Context": {
+        "weapon": {
+          "attack": "{source} attacks {target} with {item}",
+          "attackNoTarget": "{source} attacks with {item}",
+          "damage": "{source} hits {target} with {item}, roll damage!",
+          "damageNoTarget": "{source} hits with {item}, roll damage!"
+        },
+        "spell": {
+          "attack": "{source} casts {item} at {target}, roll to hit!",
+          "attackNoTarget": "{source} casts {item}, roll to hit!",
+          "damage": "{source} casts {item} on {target}, roll damage!",
+          "damageNoTarget": "{source} casts {item}, roll damage!"
+        },
+        "feat": {
+          "attack": "{source} uses {item} on {target}, roll to hit!",
+          "attackNoTarget": "{source} uses {item}, roll to hit!",
+          "damage": "{source} uses {item} on {target}, roll damage!",
+          "damageNoTarget": "{source} uses {item}, roll damage!"
+        }
+      },
+      "SaveContext": "{source} targets you with a {type}, roll to save!",
+      "SaveLine": "DC {dc} {ability} Saving Throw",
+      "SaveLineNoDC": "{ability} Saving Throw",
+      "UnknownSource": "Someone",
+      "WithAdvantage": "With Advantage",
+      "WithDisadvantage": "With Disadvantage",
+      "ItemType": {
+        "spell": "spell",
+        "weapon": "weapon",
+        "feat": "feature",
+        "consumable": "item"
+      },
+      "Unknown": "an unseen target",
+      "DiceTotal": "Dice Total",
+      "RollTotal": "Roll Total",
+      "RerollDepth": "Maximum reroll/explode depth reached — resolve modified rolls manually before entering a total.",
+      "Submit": "Submit Rolls",
+      "Outcome": {
+        "Fumble": "Fumble",
+        "Miss": "Miss",
+        "Hit": "Hit",
+        "Critical": "Critical",
+        "Failure": "Failure",
+        "Success": "Success"
+      }
+    },
     "Senses": {
       "DevilsSight": "Devil's Sight"
     },
@@ -414,6 +470,52 @@
         "Name": "Automation Sources",
         "Label": "Configure Automation Sources",
         "Hint": "Enable automation sources, set their priority, and pick extra compendiums to use."
+      },
+      "ManualRolls": {
+        "Name": "Manual Rolls",
+        "Label": "Open",
+        "Hint": "Settings for manual rolling."
+      },
+      "ManualRollsEnabled": {
+        "Name": "Manual Rolls",
+        "Hint": "Enable the Roll Resolver for unfulfilled rolls."
+      },
+      "ManualRollsUsers": {
+        "Name": "Manual Rolls Enabled For",
+        "Hint": "Configure which users use Manual Rolls."
+      },
+      "ManualRollsInclusion": {
+        "Name": "Manual Rolls Inclusion",
+        "Hint": "What actor's rolls should be prompted for.",
+        "0": "None - No Manual Rolls",
+        "1": "All - Prompt for Any Actor",
+        "2": "All Characters Only",
+        "3": "All Linked Only",
+        "4": "Player Owned Linked Only",
+        "5": "All Player Owned and Controlled"
+      },
+      "ManualRollsPromptOnMiss": {
+        "Name": "Prompt on Miss",
+        "Hint": "Prompt for damage rolls even for missed attacks."
+      },
+      "ManualRollsPromptNoData": {
+        "Name": "Prompt on No Data",
+        "Hint": "Prompt for rolls with no data, likely used in macros."
+      },
+      "ManualRollsEntryMode": {
+        "Name": "Manual Rolls Input",
+        "Hint": "How dice results are entered when fulfilling rolls manually.",
+        "rollTotal": "Roll Total - Includes Modifiers",
+        "diceTotal": "Dice Total - Excludes Modifiers",
+        "perDie": "Per Die - Each Result"
+      },
+      "ManualRollsGMFulfill": {
+        "Name": "Gamemaster Fulfils Rolls",
+        "Hint": "When enabled the Gamemaster fulfils all rolls."
+      },
+      "ManualRollsRichContext": {
+        "Name": "Manual Rolls Rich Context",
+        "Hint": "Show full roll context (targets, save DCs, damage phrasing) in the prompt instead of a plain heading."
       },
       "AutomationSources": {
         "Name": "Automation Sources",
