@@ -180,8 +180,7 @@
         "Current": "Current Rules",
         "Hint": "Switch between 2014 (Legacy) and 2024 (Modern) rule sets.",
         "OtherRulesAvailable": "Automation available under {otherRulesLabel} rules.",
-        "NotApplicable": "Rules selection not applicable for this document.",
-        "All": "All"
+        "NotApplicable": "Rules selection not applicable for this document."
       },
       "STATUSES": {
         "HasUnregistered": "Unregistered Automation",
