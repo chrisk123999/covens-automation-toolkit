@@ -137,7 +137,8 @@ const sheetHookNames = {
     getHeaderControlsLevelConfig: 'getHeaderControlsLevelConfig',
     getHeaderControlsRegionConfig: 'getHeaderControlsRegionConfig',
     getHeaderControlsSceneConfig: 'getHeaderControlsSceneConfig',
-    getHeaderControlsTokenConfig: 'getHeaderControlsTokenConfig'
+    getHeaderControlsTokenConfig: 'getHeaderControlsTokenConfig',
+    renderSourceConfig: 'renderSourceConfig'
 };
 const restHookNames = {
     restCompleted: 'dnd5e.restCompleted'

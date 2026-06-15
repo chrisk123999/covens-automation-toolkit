@@ -180,7 +180,8 @@
         "Current": "Current Rules",
         "Hint": "Switch between 2014 (Legacy) and 2024 (Modern) rule sets.",
         "OtherRulesAvailable": "Automation available under {otherRulesLabel} rules.",
-        "NotApplicable": "Rules selection not applicable for this document."
+        "NotApplicable": "Rules selection not applicable for this document.",
+        "All": "All"
       },
       "STATUSES": {
         "HasUnregistered": "Unregistered Automation",
@@ -485,8 +486,8 @@
       },
       "ManualRolls": {
         "Name": "Manual Rolls",
-        "Label": "Open",
-        "Hint": "Settings for manual rolling."
+        "Label": "Configure Manual Rolls",
+        "Hint": "Settings for CAT's roll resolver designed for manually rolling dice."
       },
       "ManualRollsEnabled": {
         "Name": "Manual Rolls",
@@ -497,14 +498,14 @@
         "Hint": "Configure which users use Manual Rolls."
       },
       "ManualRollsInclusion": {
-        "Name": "Manual Rolls Inclusion",
-        "Hint": "What actor's rolls should be prompted for.",
         "0": "None - No Manual Rolls",
         "1": "All - Prompt for Any Actor",
         "2": "All Characters Only",
         "3": "All Linked Only",
         "4": "Player Owned Linked Only",
-        "5": "All Player Owned and Controlled"
+        "5": "All Player Owned and Controlled",
+        "Name": "Manual Rolls Inclusion",
+        "Hint": "What actor's rolls should be prompted for."
       },
       "ManualRollsPromptOnMiss": {
         "Name": "Prompt on Miss",
@@ -594,11 +595,6 @@
       "EffectDescriptionsNPC": {
         "Name": "Hide NPC Effect Descriptions",
         "Hint": "When enabled, the Automatic Effect Description setting will not apply for NPC created effects."
-      },
-      "ManualRolls": {
-        "Name": "Manual Rolls",
-        "Label": "Configure Manual Rolls",
-        "Hint": "Settings for CAT's roll resolver designed for manually rolling dice."
       },
       "Mechanics": {
         "Name": "Mechanics",

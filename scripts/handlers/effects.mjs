@@ -1,8 +1,4 @@
 import {actorUtils, documentUtils, effectUtils, genericUtils} from '../utilities/_module.mjs';
-function disableSpecialEffects(enabled) {
-    CONFIG.specialStatusEffects.BLIND = enabled ? undefined : 'blinded';
-    CONFIG.specialStatusEffects.INVISIBLE = enabled ? undefined : 'invisible';
-}
 async function addConditions(effect) {
     const conditions = effect.flags.cat?.conditions;
     if (!conditions) return;
@@ -65,7 +61,6 @@ function effectDescription(effect, updates) {
     if (description) effect.updateSource({description});
 }
 export default {
-    disableSpecialEffects,
     addConditions,
     removeConditions,
     applyActiveEffect,

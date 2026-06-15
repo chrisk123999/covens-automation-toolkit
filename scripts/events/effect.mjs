@@ -2,7 +2,7 @@ import {queryUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {auraEvents} from '../events/_module.mjs';
 import {effects} from '../handlers/_module.mjs';
-import specialDuration from '../mechanics/specialDuration.mjs';
+import {specialDuration} from '../mechanics/_module.mjs';
 async function doCreateActiveEffect(data, options) {
     let parent = options.parent;
     if (!parent) return;

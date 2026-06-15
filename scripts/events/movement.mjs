@@ -1,7 +1,7 @@
-import {genericUtils, queryUtils, regionUtils} from '../utilities/_module.mjs';
+import {genericUtils, regionUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {auraEvents, regionEvents} from '../events/_module.mjs';
-import specialDuration from '../mechanics/specialDuration.mjs';
+import {specialDuration} from '../mechanics/_module.mjs';
 import {regions} from '../handlers/_module.mjs';
 async function moveToken(token, movement, options, user) {
     if (user.id != game.user.id) return;

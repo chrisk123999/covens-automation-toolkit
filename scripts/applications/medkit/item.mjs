@@ -84,7 +84,7 @@ export default class ItemMedkit extends MedkitApp {
             ignore: new fields.BooleanField({label: _loc('CAT.MEDKIT.IgnoreItem.Label')}),
             rules: new fields.StringField({
                 label: _loc('CAT.MEDKIT.RulesToggle.Current'),
-                choices: {'2014': _loc('CAT.MEDKIT.RulesToggle.2014'), '2024': _loc('CAT.MEDKIT.RulesToggle.2024')},
+                choices: {'2014': _loc('CAT.MEDKIT.RulesToggle.2014'), '2024': _loc('CAT.MEDKIT.RulesToggle.2024'), 'all': _loc('CAT.MEDKIT.RulesToggle.All')},
                 required: true,
                 blank: false
             })

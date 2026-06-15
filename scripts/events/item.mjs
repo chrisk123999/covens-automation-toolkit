@@ -1,5 +1,5 @@
 import {constants, Events} from '../lib/_module.mjs';
-import specialDuration from '../mechanics/specialDuration.mjs';
+import {specialDuration} from '../mechanics/_module.mjs';
 import {queryUtils} from '../utilities/_module.mjs';
 import {items} from '../handlers/_module.mjs';
 async function bulkUpdated(items) {

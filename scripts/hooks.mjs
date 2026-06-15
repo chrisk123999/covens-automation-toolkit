@@ -1,7 +1,7 @@
 import {constants} from './lib/_module.mjs';
 import * as events from './events/_module.mjs';
 import {queryUtils} from './utilities/_module.mjs';
-import {titlebar, activities, effects, combat} from './handlers/_module.mjs';
+import {titlebar, activities, effects, combat, sheet} from './handlers/_module.mjs';
 import {dae, vae, tidy5e} from './integration/_modules.mjs';
 export function readyHooks() {
     // Handlers
@@ -19,6 +19,7 @@ export function readyHooks() {
     Hooks.on(constants.sheetHookNames.getHeaderControlsRegionConfig, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsSceneConfig, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsTokenConfig, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.renderSourceConfig, sheet.renderSourceConfig);
     // Combat Rendering
     Hooks.on(constants.miscHookNames.renderCombatTracker, combat.renderCombatTracker);
     // Workflow Events
