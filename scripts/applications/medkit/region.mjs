@@ -11,6 +11,7 @@ export default class RegionMedkit extends MedkitApp {
     static PARTS = {
         ...MedkitApp.SHARED_PARTS,
         docprops: {template: 'modules/cat/templates/medkit/region/docprops.hbs'},
+        ...MedkitApp.GENERIC_PART,
         embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
         macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'}
     };
@@ -19,6 +20,7 @@ export default class RegionMedkit extends MedkitApp {
         sheet: {
             tabs: [
                 {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'},
+                MedkitApp.GENERIC_TAB,
                 {id: 'embedded', icon: 'fa-solid fa-feather-pointed', label: 'CAT.MEDKIT.TABS.Embedded'},
                 {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'}
             ],

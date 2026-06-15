@@ -90,9 +90,14 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static PARTS = {...MedkitApp.SHARED_PARTS};
 
+    /** Generic-features part/tab, shared by every document medkit. */
+    static GENERIC_PART = {generic: {template: 'modules/cat/templates/medkit/shared/generic.hbs'}};
+    static GENERIC_TAB = {id: 'generic', icon: 'fa-solid fa-toolbox', label: 'CAT.MEDKIT.TABS.Generic'};
+
     static SCENE_LEVEL_PARTS = {
         ...MedkitApp.SHARED_PARTS,
         automations: {template: 'modules/cat/templates/medkit/shared/mass-apply-tab.hbs'},
+        generic: {template: 'modules/cat/templates/medkit/shared/generic.hbs'},
         embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
         macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'}
     };
@@ -101,6 +106,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         sheet: {
             tabs: [
                 {id: 'automations', icon: 'fa-solid fa-download', label: 'CAT.MEDKIT.TABS.Automations'},
+                {id: 'generic', icon: 'fa-solid fa-toolbox', label: 'CAT.MEDKIT.TABS.Generic'},
                 {id: 'embedded', icon: 'fa-solid fa-feather-pointed', label: 'CAT.MEDKIT.TABS.Embedded'},
                 {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'}
             ],
@@ -186,6 +192,12 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             {type: 'button', action: 'save', label: 'CAT.MEDKIT.Footer.Save', name: 'save', icon: 'fa-solid fa-download', tooltip: 'CAT.MEDKIT.Footer.SaveTooltip'}
         ];
         if ('macros' in this.constructor.PARTS) context.macroChoices = this._prepareRegisteredMacros().choices;
+        if ('generic' in this.constructor.PARTS) {
+            const generic = this._prepareGenericFeatures();
+            context.genericChoices = generic.choices;
+            context.genericSelected = generic.selected;
+            context.genericFeatures = generic.features;
+        }
         return context;
     }
 
@@ -308,6 +320,11 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                     legend: entry.sourceActorName ?? (entry.sourceActorUuid ? fromUuidSync(entry.sourceActorUuid)?.name : null) ?? (max > 1 ? `${option.label} ${i + 1}` : option.label),
                     fields: [
                         {key: `summon-uuid-${i}`, name: `${base}.${i}.sourceActorUuid`, label: _loc('CAT.MEDKIT.Summons.Actor'), value: entry.sourceActorUuid ?? '', isCombobox: true, allowBlank: true, choices: this.#actorChoices(entry), compendiumPicker: true, compendiumMax: Number.isFinite(max) ? max : ''},
+                        this.#buildOption({key: `summon-initiative-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Initiative', options: [
+                            {value: 'standard', label: _loc('CAT.MEDKIT.Summons.InitiativeStandard')},
+                            {value: 'follows', label: _loc('CAT.MEDKIT.Summons.InitiativeFollows')},
+                            {value: 'none', label: _loc('CAT.MEDKIT.Summons.InitiativeNone')}
+                        ]}, {name: `${base}.${i}.initiative`, value: entry.initiative ?? 'standard'}),
                         this.#buildOption({key: `summon-name-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Name'}, {name: `${base}.${i}.name`, value: entry.name}),
                         this.#buildOption({key: `summon-avatar-${i}`, type: 'file', label: 'CAT.MEDKIT.Summons.AvatarImg'}, {name: `${base}.${i}.avatarImg`, value: entry.avatarImg}),
                         this.#buildOption({key: `summon-token-${i}`, type: 'file', label: 'CAT.MEDKIT.Summons.TokenImg'}, {name: `${base}.${i}.tokenImg`, value: entry.tokenImg}),
@@ -977,23 +994,47 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.render();
     }
 
+    #bindDrop(el, handler) {
+        if (el.dataset.dropWired === '1') return;
+        el.dataset.dropWired = '1';
+        el.addEventListener('dragover', e => e.preventDefault());
+        el.addEventListener('drop', async event => {
+            event.preventDefault();
+            const uuid = foundry.applications.ux.TextEditor.implementation.getDragEventData(event)?.uuid;
+            if (uuid) await handler(uuid);
+        });
+    }
+
     #wireDocumentDrop() {
         for (const el of this.element.querySelectorAll('.cat-medkit-documents[data-validate="uuid"]')) {
-            if (el.dataset.dropWired === '1') continue;
-            el.dataset.dropWired = '1';
-            el.addEventListener('dragover', e => e.preventDefault());
-            el.addEventListener('drop', async event => {
-                event.preventDefault();
+            this.#bindDrop(el, async uuid => {
                 const path = el.dataset.flagPath;
                 if (!path) return;
-                const payload = foundry.applications.ux.DragDrop.implementation.getPayload(event);
-                const uuid = payload?.uuid;
-                if (!uuid) return;
-                const doc = fromUuidSync(uuid);
-                if (!doc) return ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
+                if (!fromUuidSync(uuid)) return ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
                 const current = foundry.utils.getProperty(this.#flags, path) ?? [];
                 if (current.includes(uuid)) return;
                 foundry.utils.setProperty(this.#flags, path, [...current, uuid]);
+                this.render();
+            });
+        }
+    }
+
+    #wireFieldDrop() {
+        for (const el of this.element.querySelectorAll('cat-combobox[name]')) {
+            const match = el.getAttribute('name').match(/^flags\.cat\.(.+)\.(\d+)\.(sourceActorUuid|uuid)$/);
+            if (!match) continue;
+            const [, listPath, indexStr, field] = match;
+            const kind = field === 'sourceActorUuid' ? 'Actor' : 'Item';
+            this.#bindDrop(el, async uuid => {
+                const doc = await fromUuid(uuid);
+                if (!doc) return ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
+                if (doc.documentName !== kind) return ui.notifications.warn(_loc('CAT.MEDKIT.Documents.WrongType', {type: kind}));
+                const index = Number(indexStr);
+                const list = foundry.utils.getProperty(this.#flags, listPath) ?? [];
+                list[index] = kind === 'Actor'
+                    ? {...(list[index] ?? {}), sourceActorUuid: uuid, sourceActorName: doc.name, sourceActorImg: doc.img}
+                    : {...(list[index] ?? {}), uuid, itemName: doc.name, itemImg: doc.img};
+                foundry.utils.setProperty(this.#flags, listPath, list);
                 this.render();
             });
         }
@@ -1008,6 +1049,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         super._onRender(context, options);
         uiUtils.enableWindowDrag(this, '.cat-medkit-header');
         this.#wireDocumentDrop();
+        this.#wireFieldDrop();
         if (options.isFirstRender) {
             this.bringToFront();
             uiUtils.centerWindow(this, {width: 700, height: 500});

@@ -230,7 +230,8 @@
       "Documents": {
         "Placeholder": "Paste UUID or drag a document here",
         "Add": "Add document",
-        "InvalidUuid": "No document found for that UUID."
+        "InvalidUuid": "No document found for that UUID.",
+        "WrongType": "Expected a {type} document."
       },
       "Summons": {
         "Actor": "Summon Actor",
@@ -238,6 +239,10 @@
         "AvatarImg": "Actor Image Override",
         "TokenImg": "Token Image Override",
         "Animation": "Animation",
+        "Initiative": "Initiative",
+        "InitiativeStandard": "Roll Initiative",
+        "InitiativeFollows": "Follows Summoner",
+        "InitiativeNone": "None",
         "SoundPlaced": "Placed Sound",
         "SoundRemoved": "Removed Sound",
         "SoundDeath": "Death Sound",

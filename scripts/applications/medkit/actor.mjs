@@ -15,6 +15,7 @@ export default class ActorMedkit extends MedkitApp {
     static PARTS = {
         ...MedkitApp.SHARED_PARTS,
         automations: {template: 'modules/cat/templates/medkit/actor/automations.hbs'},
+        ...MedkitApp.GENERIC_PART,
         embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
         docprops: {template: 'modules/cat/templates/medkit/actor/docprops.hbs'},
         macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'}
@@ -24,6 +25,7 @@ export default class ActorMedkit extends MedkitApp {
         sheet: {
             tabs: [
                 {id: 'automations', icon: 'fa-solid fa-download', label: 'CAT.MEDKIT.TABS.Automations'},
+                MedkitApp.GENERIC_TAB,
                 {id: 'embedded', icon: 'fa-solid fa-feather-pointed', label: 'CAT.MEDKIT.TABS.Embedded'},
                 {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'},
                 {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'}

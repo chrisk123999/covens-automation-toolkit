@@ -39,7 +39,7 @@ export default class ItemMedkit extends MedkitApp {
         ...MedkitApp.SHARED_PARTS,
         automation: {template: 'modules/cat/templates/medkit/item/automation.hbs'},
         configuration: {template: 'modules/cat/templates/medkit/item/configuration.hbs'},
-        generic: {template: 'modules/cat/templates/medkit/item/generic.hbs'},
+        generic: {template: 'modules/cat/templates/medkit/shared/generic.hbs'},
         embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
         docprops: {template: 'modules/cat/templates/medkit/item/docprops.hbs'},
         macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'}
