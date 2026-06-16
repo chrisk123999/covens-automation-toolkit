@@ -10,6 +10,7 @@ export {default as ItemMedkit} from './medkit/item.mjs';
 export {default as LevelMedkit} from './medkit/level.mjs';
 export {default as MedkitApp} from './medkit/base.mjs';
 export {default as MenuApp} from './menu.mjs';
+export {default as QuickConditions} from './quick-conditions.mjs';
 export {default as RegionMedkit} from './medkit/region.mjs';
 export {default as SceneMedkit} from './medkit/scene.mjs';
 export {default as SettingsMenuBase} from './settings-menu.mjs';

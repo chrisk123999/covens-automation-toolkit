@@ -131,6 +131,7 @@ const itemHookNames = {
 const sheetHookNames = {
     getHeaderControlsActiveEffectConfig: 'getHeaderControlsActiveEffectConfig',
     getHeaderControlsActivitySheet: 'getHeaderControlsActivitySheet',
+    renderActivitySheet: 'renderActivitySheet',
     getHeaderControlsActorSheetV2: 'getHeaderControlsActorSheetV2',
     getHeaderControlsCompendium: 'getHeaderControlsCompendium',
     getHeaderControlsItemSheet5e: 'getHeaderControlsItemSheet5e',

@@ -1,0 +1,58 @@
+<div class="cat-embedded-macros-shell">
+    <header class="cat-embedded-macros-header">
+        <span class="cat-embedded-macros-title">{{title}}</span>
+        <button type="button" class="cat-app-header-button cat-medkit-header-button" data-action="close" data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
+            <i class="fas fa-xmark" aria-hidden="true"></i>
+        </button>
+    </header>
+
+    <div class="cat-embedded-macros-body">
+        <div class="standard-form cat-quick-conditions">
+            <div class="form-group">
+                <textarea id="cat-condition-value" rows="3" placeholder="{{localize data.data.placeholder}}" readonly>{{data.data.value}}</textarea>
+            </div>
+            <div id="edit" class="form-group flex-col">
+            {{#each inputs.edit}}
+                <div class="{{class}}" id="{{id}}">
+                    {{#each inputs}}
+                        {{#if (eq type 'label')}}
+                            {{#labelP this}}{{/labelP}}
+                        {{else if (eq type 'button')}}
+                            {{#button this}}{{/button}}
+                        {{else if (eq type 'select')}}
+                            {{#selectDetailed this}}{{/selectDetailed}}
+                        {{else if (eq type 'selectMultiple')}}
+                            {{#selectMultiple this}}{{/selectMultiple}}
+                        {{else if (eq type 'content')}}
+                            {{#contentP this}}{{/contentP}}
+                        {{else if (eq type 'number')}}
+                            {{#numberInput this}}{{/numberInput}}
+                        {{else if (eq type 'text')}}
+                            {{#textInput this}}{{/textInput}}
+                        {{/if}}
+                    {{/each}}
+                </div>
+            {{/each}}
+            </div>
+            {{#if inputs.add.length}}
+            <fieldset id="add" class="quick-conditions-fieldset-add">
+                <legend id="add-legend">{{localize 'CAT.QuickConditions.Legend'}}</legend>
+                {{#each inputs.add}}
+                    {{#button this}}{{/button}}
+                {{/each}}
+            </fieldset>
+            {{/if}}
+        </div>
+    </div>
+
+    <footer class="cat-embedded-macros-footer">
+        <button type="button" data-action="close" data-tooltip="{{localize 'CAT.MEDKIT.Footer.CancelTooltip'}}">
+            <i class="fa-solid fa-xmark"></i>
+            {{localize "CAT.Generic.Cancel"}}
+        </button>
+        <button type="submit">
+            <i class="fa-solid fa-check"></i>
+            {{localize "CAT.Generic.Ok"}}
+        </button>
+    </footer>
+</div>

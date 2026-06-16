@@ -7,3 +7,4 @@ export {default as tokens} from './tokens.mjs';
 export {default as actors} from './actors.mjs';
 export {default as combat} from './combat.mjs';
 export {default as manualRolls} from './manualRolls.mjs';
+export {default as quickConditions} from './quickConditions.mjs';

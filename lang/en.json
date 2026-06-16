@@ -623,7 +623,44 @@
     },
     "Generic": {
       "Disabled": "Disabled",
-      "Chat": "Chat"
+      "Chat": "Chat",
+      "Ok": "Ok",
+      "Cancel": "Cancel"
+    },
+    "QuickConditions": {
+      "Legend": "Available Conditions",
+      "Placeholder": "Click below to add conditions",
+      "Title": "CAT Quick Conditions",
+      "Unknown": {
+        "Tooltip": "Unable to match to any condition search keys"
+      },
+      "Logic": {
+        "And": "And",
+        "Or": "Or"
+      },
+      "Comparators": {
+        "lt": "less than",
+        "le": "at most",
+        "gt": "greater than",
+        "ge": "at least"
+      },
+      "Not": {
+        "Is": "is",
+        "IsNot": "isn't"
+      },
+      "Conditions": {
+        "typeOrRace": "Type or Race",
+        "checkNearby": "Check Nearby",
+        "reaction": "Reaction",
+        "targetActorSize": "Target Size",
+        "activityType": "Activity Type",
+        "damageType": "Damage Type",
+        "critical": "Critical Hit",
+        "alignment": "Alignment",
+        "ability": "Ability Score",
+        "hasCondition": "Has Condition",
+        "itemType": "Item Type"
+      }
     },
     "Summons": {
       "SummonFolder": "Summons"

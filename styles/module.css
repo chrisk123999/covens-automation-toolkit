@@ -1881,3 +1881,194 @@ cat-combobox {
     flex: none;
     height: 25rem !important;
 }
+
+/* Quick Conditions */
+
+/* Activity-sheet injector: a trailing flex item, never overlapping the field's other buttons. */
+.form-fields > i.cat-quick-conditions {
+    flex: 0 0 auto;
+    align-self: center;
+    margin-left: var(--cat-space-xs);
+    padding: 0 var(--cat-space-xs);
+    color: var(--cat-text-accent);
+    cursor: pointer;
+    filter: drop-shadow(0 0 5px var(--dnd5e-color-gold));
+    transition: color 120ms ease;
+}
+
+.form-fields > i.cat-quick-conditions:hover {
+    color: var(--cat-text-primary);
+}
+
+.cat-quick-conditions-app .cat-quick-conditions {
+    gap: var(--cat-space-md);
+    display: flex;
+    flex-direction: column;
+}
+
+.cat-quick-conditions-app #cat-condition-value {
+    width: 100%;
+    min-height: 3.5rem;
+    resize: vertical;
+    font-family: var(--font-monospace, monospace);
+    font-size: 0.85em;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.cat-quick-conditions-app #edit {
+    gap: var(--cat-space-sm);
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.cat-quick-conditions-app #edit:empty {
+    display: none;
+}
+
+.cat-quick-conditions-app .quick-conditions-group-condition,
+.cat-quick-conditions-app .cat-row-center {
+    gap: var(--cat-space-xs) var(--cat-space-sm);
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    width: 100%;
+    padding: var(--cat-space-xs) var(--cat-space-sm);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    background: rgb(0 0 0 / 12%);
+}
+
+/* Value dropdowns share a standardized width so rows line up like a grid; they may shrink to keep a row on one line. */
+.cat-quick-conditions-app .quick-conditions-group-condition select,
+.cat-quick-conditions-app .quick-conditions-group-condition multi-select {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 5rem;
+    margin: 0;
+}
+
+/* Numeric value (e.g. ability score): narrow fixed input. */
+.cat-quick-conditions-app .quick-conditions-number {
+    flex: 0 0 4rem;
+    width: 4rem;
+    min-width: 0;
+    margin: 0;
+}
+
+/* Fixed first column: the condition name. */
+.cat-quick-conditions-app .quick-conditions-label {
+    flex: 0 0 7.5rem;
+    width: 7.5rem;
+    margin: 0;
+    color: var(--cat-text-accent);
+    font-weight: 600;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+/* Fixed second column: the is / isn't toggle (or an empty spacer when a condition has none). */
+.cat-quick-conditions-app .quick-conditions-group-condition select#not,
+.cat-quick-conditions-app .quick-conditions-spacer {
+    flex: 0 0 4.5rem;
+    width: 4.5rem;
+    min-width: 0;
+    margin: 0;
+}
+
+/* The raw format glue (".includes(...)", "(", ")") is shown in the read-only code field above. */
+.cat-quick-conditions-app .quick-conditions-div-content {
+    display: none;
+}
+
+.cat-quick-conditions-app .quick-conditions-button-remove {
+    flex: 0 0 auto;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-left: auto;
+    padding: 0;
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    color: var(--cat-status-red);
+    background: var(--cat-bg-input);
+}
+
+.cat-quick-conditions-app .quick-conditions-button-remove:hover {
+    border-color: var(--cat-status-red);
+    background: var(--cat-bg-hover);
+}
+
+/* Leading column: the And / Or operator (or an empty spacer on the first row).
+   The select selector is qualified so it outranks the generic value-dropdown rule. */
+.cat-quick-conditions-app .quick-conditions-group-condition select.quick-conditions-select-logic,
+.cat-quick-conditions-app .quick-conditions-op-spacer {
+    flex: 0 0 5rem;
+    width: 5rem;
+    min-width: 0;
+    margin: 0;
+}
+
+.cat-quick-conditions-app fieldset.quick-conditions-fieldset-add {
+    gap: var(--cat-space-sm);
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-start;
+    margin: 0;
+    padding: var(--cat-space-sm) var(--cat-space-md) var(--cat-space-md);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    background: rgb(0 0 0 / 12%);
+}
+
+.cat-quick-conditions-app fieldset.quick-conditions-fieldset-add > legend {
+    padding: 0 var(--cat-space-sm);
+    color: var(--cat-text-accent);
+    font-weight: 600;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cat-quick-conditions-app .quick-conditions-button-add {
+    flex: 0 0 auto;
+    width: auto;
+    padding: var(--cat-space-xs) var(--cat-space-sm);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    color: var(--cat-text-primary);
+    font-size: 0.85em;
+    background: var(--cat-bg-input);
+    transition: var(--cat-transition-fast);
+}
+
+.cat-quick-conditions-app .quick-conditions-button-add:hover {
+    border-color: var(--cat-border-focus);
+    background: var(--cat-bg-active);
+}
+
+.cat-quick-conditions-app .cat-embedded-macros-footer button {
+    gap: var(--cat-space-xs);
+    display: inline-flex;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    padding: var(--cat-space-xs) var(--cat-space-md);
+    border: 1px solid var(--cat-border-light);
+    border-radius: var(--cat-radius-sm);
+    color: var(--cat-text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--cat-bg-input);
+    transition: var(--cat-transition-fast);
+}
+
+.cat-quick-conditions-app .cat-embedded-macros-footer button[data-action="close"] {
+    flex: 0 0 auto;
+}
+
+.cat-quick-conditions-app .cat-embedded-macros-footer button:hover {
+    border-color: var(--cat-border-focus);
+    background: var(--cat-bg-hover);
+}

@@ -32,6 +32,7 @@ export default defineConfig([
                 Sequencer: 'writable',
                 socketlib: 'writable',
                 Hooks: 'writable',
+                Handlebars: 'writable',
                 fromUuid: 'writable',
                 fromUuidSync: 'writable',
                 canvas: 'writable',

@@ -1,7 +1,7 @@
 import {constants} from './lib/_module.mjs';
 import * as events from './events/_module.mjs';
 import {queryUtils} from './utilities/_module.mjs';
-import {titlebar, activities, effects, combat} from './handlers/_module.mjs';
+import {titlebar, activities, effects, combat, quickConditions} from './handlers/_module.mjs';
 import {dae, vae, tidy5e} from './integration/_modules.mjs';
 export function readyHooks() {
     // Handlers
@@ -12,6 +12,7 @@ export function readyHooks() {
     // Sheet Rendering
     Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsActivitySheet, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.renderActivitySheet, quickConditions.onRender);
     Hooks.on(constants.sheetHookNames.getHeaderControlsActorSheetV2, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsCompendium, titlebar.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsItemSheet5e, titlebar.appendHeaderControl);
