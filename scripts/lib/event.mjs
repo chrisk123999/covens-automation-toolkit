@@ -776,6 +776,14 @@ class CalledEvent extends CatEvent {
         };
     }
 }
+class DeathEvent extends CatEvent {
+    constructor(actor, pass) {
+        super(pass);
+        this.name = 'Death';
+        this.trigger = Triggers.DeathTrigger;
+        this.setContext(actor);
+    }
+}
 export default {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
@@ -794,5 +802,6 @@ export default {
     ToolEvent,
     TimeEvent,
     SummonEvent,
-    CalledEvent
+    CalledEvent,
+    DeathEvent
 };

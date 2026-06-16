@@ -82,6 +82,9 @@ const combatHookNames = {
     preUpdateCombatant: 'preUpdateCombatant',
     updateCombatant: 'updateCombatant'
 };
+const deathPasses = {
+    dead: 'dead'
+};
 const auraPasses = {
     update: 'update'
 };
@@ -297,6 +300,7 @@ export default {
     effectPasses,
     combatHookNames,
     combatPasses,
+    deathPasses,
     auraPasses,
     auraHookNames,
     regionHooksNames,
