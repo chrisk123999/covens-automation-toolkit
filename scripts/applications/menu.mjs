@@ -141,7 +141,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     #buildPriority(input) {
         const sources = input.value ?? {};
-        const registered = new Set(constants.automations?.sources ?? []);
+        const registered = new Set(Object.keys(constants.automations?.sourceNames ?? {}));
         const owned = new Set(ddbi.getCompendiumIds());
         const sourceTag = _loc('CAT.Settings.AutomationSources.SourceTag');
         const packTag = _loc('CAT.Settings.AutomationSources.PackTag');
@@ -150,7 +150,10 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         for (const id of sourceIds) {
             const cfg = sources[id] ?? {};
             const isPack = id.includes('.');
-            if (isPack && !game.packs.has(id)) continue;
+            if (isPack) {
+                const pack = game.packs.get(id);
+                if (!pack || sourceIds.has(pack.metadata.packageName)) continue;
+            }
             rows.push({
                 id, 
                 kind: isPack ? 'pack' : 'source', 
@@ -162,7 +165,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         for (const pack of game.packs) {
             const id = pack.metadata.id;
-            if (pack.metadata.type !== 'Item' || registered.has(pack.metadata.packageName) || owned.has(id) || sourceIds.has(id)) continue;
+            if (pack.metadata.type !== 'Item' || sourceIds.has(pack.metadata.packageName) || owned.has(id) || sourceIds.has(id)) continue;
             rows.push({
                 id, 
                 kind: 'pack', 

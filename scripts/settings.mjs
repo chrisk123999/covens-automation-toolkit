@@ -57,7 +57,7 @@ const settings = {
                 pack: false
             }
         },
-        onChange: () => items.registerCompendiums()
+        onChange: async () => items.registerCompendiums()
     },
     additionalCompendiums: {
         type: Object,

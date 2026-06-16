@@ -52,20 +52,15 @@ Hooks.once('ready', async () => {
     patches.compendiumBrowserPatching.patch(true);
     patches.combatPatching.patch(true);
     await utils.genericUtils.sleep(1000);
-    await integration.dnd5e.registerAutomations();
-    await integration.dnd5e.registerScales();
-    await integration.midiQol.registerAutomations();
-    if (game.modules.get('dnd-players-handbook')?.active) {
-        await integration.phb.registerAutomations();
-        await integration.phb.registerScales();
-    }
-    if (game.modules.get('dnd-dungeon-masters-guide')?.active) await integration.dmg.registerAutomations();
     await handlers.items.registerCompendiums({startup: true});
     catGate();
     Hooks.callAll('catReady');
 });
 Hooks.once('ddb-importer.compendiumCreationComplete', async () => {
     await catInitGate;
-    await integration.ddbi.registerAutomations();
-    await integration.ddbi.registerScales();
+    const enabledSources = utils.automationUtils.getAutomationSources();
+    if (enabledSources.includes('ddb-importer')) {
+        await integration.ddbi.registerAutomations({register: enabledSources.includes('ddb-importer')});
+        await integration.ddbi.registerScales({register: enabledSources.includes('ddb-importer')});
+    }
 });

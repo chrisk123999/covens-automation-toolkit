@@ -1,8 +1,9 @@
 import {constants} from '../lib/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
-async function registerAutomations() {
+async function registerAutomations({register = true} = {}) {
     const moduleId = 'midi-qol';
     constants.automations.registerSourceName(moduleId, game.modules.get(moduleId).title);
+    if (!register) return;
     Logging.group('Midi-QoL Automations');
     const packs = [
         'midiqol-sample-items'

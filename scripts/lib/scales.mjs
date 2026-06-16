@@ -47,6 +47,11 @@ export class RegisteredScales {
         }
         return data.map(i => this.registerScale(i));
     }
+    unregisterScalesBySource(sourceId) {
+        this.scales = this.scales.filter(scale => scale.source !== sourceId);
+        this.sources.delete(sourceId);
+        Logging.addEntry('DEBUG', 'Scales Unregistered from source: ' + sourceId);
+    }
 }
 export default {
     Scale,
