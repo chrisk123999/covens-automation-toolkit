@@ -55,21 +55,22 @@ function getEventStructure() {
     };
 }
 
-// Yields {pass, scope} for every pass a document type can fire on an event (bare scope is null).
+// Yields {pass, scope, group} for every pass a document type can fire on an event (bare scope and ungrouped are null).
 function* documentPassEntries(documentType, type) {
     const entry = getEventStructure()[type];
     if (!entry) return;
     const reach = DOCUMENT_SCOPES[documentType] ?? [];
     const scopes = entry.scopes.filter(scope => reach.includes(scope));
     for (const {pass, self, scoped} of entry.passes) {
-        if (self.includes(documentType)) yield {pass, scope: null};
-        if (scoped) for (const scope of scopes) yield {pass: scope + pass.capitalize(), scope};
+        const group = entry.passes.length > 1 ? pass.capitalize() : null;
+        if (self.includes(documentType)) yield {pass, scope: null, group};
+        if (scoped) for (const scope of scopes) yield {pass: scope + pass.capitalize(), scope, group};
     }
 }
 
 // The pass strings a given document type can fire for one event type (bare + reachable scope variants).
 function getDocumentPasses(documentType, type) {
-    return [...documentPassEntries(documentType, type)].map(entry => entry.pass);
+    return [...documentPassEntries(documentType, type)].map(entry => ({label: entry.pass, value: entry.pass, group: entry.group}));
 }
 
 // Map of event type -> pass list for a document, omitting events with no applicable passes.
@@ -159,7 +160,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
             event: {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Event'), choices: eventChoices, blank: true}), value: this.#macro.event}
         };
         if (this.#macro.event) {
-            const passChoices = (map[this.#macro.event] ?? []).reduce((acc, pass) => { acc[pass] = pass; return acc; }, {});
+            const passChoices = (map[this.#macro.event] ?? []).reduce((acc, pass) => (acc[pass.value] = pass, acc), {});
             inputs.pass = {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Pass'), choices: passChoices, blank: true}), value: this.#macro.pass};
             if (this.#macro.pass) {
                 const {required, optional} = getPassFields(this.#documentType, this.#macro.event, this.#macro.pass);
@@ -189,7 +190,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
             catch { this.#macro.disabled = []; }
         } else if (name === 'event') {
             this.#macro.event = target.value;
-            if (!getDocumentPasses(this.#documentType, target.value).includes(this.#macro.pass)) this.#macro.pass = undefined;
+            if (!getDocumentPasses(this.#documentType, target.value).some(p => p.value === this.#macro.pass)) this.#macro.pass = undefined;
             this.render();
         } else if (name === 'pass') {
             this.#macro.pass = target.value;
