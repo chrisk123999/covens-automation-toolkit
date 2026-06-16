@@ -49,18 +49,6 @@ function preUpdateActiveEffect(effect, updates, options, userId) {
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     new Events.EffectEvent(effect, constants.effectPasses.preUpdated, {options, updates}).runSync();
 }
-function getConditions(effect) {
-    const conditions = new Set();
-    if (effect.changes) {
-        effect.changes.forEach(element => {
-            if (constants.statusEffectKeys.includes(element.key)) conditions.add(element.value.toLowerCase());
-        });
-    }
-    const effectConditions = effect.flags.cat?.conditions;
-    if (effectConditions) effectConditions.forEach(c => conditions.add(c.toLowerCase()));
-    if (effect.statuses) effect.statuses.forEach(status => conditions.add(status));
-    return conditions;
-}
 export default {
     createActiveEffect,
     deleteActiveEffect,
@@ -69,6 +57,5 @@ export default {
     preDeleteActiveEffect,
     preUpdateActiveEffect,
     doCreateActiveEffect,
-    doDeleteActiveEffect,
-    getConditions
+    doDeleteActiveEffect
 };
