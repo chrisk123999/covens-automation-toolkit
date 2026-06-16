@@ -109,7 +109,7 @@ function getAutomationSources({packsOnly = false} = {}) {
     for (const [key, priority] of Object.entries(compendiums)) entries.push([key, priority]);
     return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
 }
-function getAppliedOrPreferedAutomation(item) {
+function getAppliedOrPreferredAutomation(item) {
     const currentAutomation = getCurrentAutomation(item);
     if (currentAutomation) return currentAutomation;
     const allAutomations = getAvailableAutomations(item);
@@ -127,7 +127,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     if (source) {
         automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier});
     } else {
-        automation = getAppliedOrPreferedAutomation(item);
+        automation = getAppliedOrPreferredAutomation(item);
     }
     if (!automation) return;
     const sourceDocument = await fromUuid(automation.uuid);
@@ -254,7 +254,7 @@ export default {
     setConfigValues,
     setGenericConfigValues,
     getAutomationSources,
-    getAppliedOrPreferedAutomation,
+    getAppliedOrPreferredAutomation,
     updateItem,
     updateScales,
     getDocumentHash,
