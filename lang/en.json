@@ -365,6 +365,7 @@
         "SpecialDurations": {
           "endOfWorkflow": "End of workflow",
           "forceSave": "Forced a save",
+          "attackMissed": "Attack missed",
           "damagedByAlly": "Damaged by ally",
           "damagedByEnemy": "Damaged by enemy",
           "hitByAnotherCreature": "Hit by another creature",

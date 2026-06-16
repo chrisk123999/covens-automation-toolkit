@@ -61,6 +61,12 @@ async function specialDuration(workflow) {
                     remove = true;
                     break outerLoop;
                 }
+                case 'attackMissed': {
+                    if (!workflow.activity || !workflowUtils.isAttackType(workflow, 'attack')) break;
+                    if (!workflow.targets.size || workflow.hitTargets.size) break;
+                    remove = true;
+                    break outerLoop;
+                }
                 case 'endOfWorkflow': {
                     remove = true;
                     break outerLoop;

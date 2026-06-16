@@ -6,6 +6,7 @@ const {fields} = foundry.data;
 const SPECIAL_DURATIONS = [
     'endOfWorkflow',
     'forceSave',
+    'attackMissed',
     'damagedByAlly',
     'damagedByEnemy',
     'hitByAnotherCreature',
