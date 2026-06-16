@@ -25,6 +25,7 @@ export class RegisteredMacros {
             tool: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             roll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             summon: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            death: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             genericConfig: new fields.ObjectField({required: false, nullable: false}),
             documents: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: false})
         });
@@ -76,6 +77,7 @@ export class RegisteredMacros {
             tool: data.tool ?? [],
             roll: data.roll ?? [],
             summon: data.summon ?? [],
+            death: data.death ?? [],
             generic: data.generic,
             genericConfig: data.genericConfig,
             documents: data.documents
@@ -99,7 +101,7 @@ export class RegisteredMacros {
     }
 }
 class FnMacro {
-    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], aura = [], check = [], region = [], rest = [], save = [], skill = [], time = [], tool = [], summon = [], generic, genericConfig, documents} = {}) {
+    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], aura = [], check = [], region = [], rest = [], save = [], skill = [], time = [], tool = [], summon = [], death = [], generic, genericConfig, documents} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
@@ -119,7 +121,8 @@ class FnMacro {
             time,
             tool,
             roll,
-            summon
+            summon,
+            death
         };
     }
     get flagData() {

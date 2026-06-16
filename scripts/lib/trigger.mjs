@@ -196,6 +196,15 @@ class CalledTrigger extends Trigger {
         if (this.distances) this.processDistanceMacros();
     }
 }
+class DeathTrigger extends Trigger {
+    constructor(document, pass, data) {
+        super(document, pass, data);
+        const fnMacroData = this.document.flags.cat?.macros?.death ?? [];
+        this.processFnMacros(fnMacroData, 'death', pass);
+        this.type = 'death';
+        this.processEmbeddedMacro();
+    }
+}
 export default {
     Trigger,
     RollTrigger,
@@ -212,5 +221,6 @@ export default {
     ToolTrigger,
     TimeTrigger,
     SummonTrigger,
-    CalledTrigger
+    CalledTrigger,
+    DeathTrigger
 };

@@ -17,6 +17,7 @@ async function createActiveEffect(effect, options, userId) {
     if (effect.parent instanceof Actor) effects.addConditions(effect);
     await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
     await auraEvents.effect(effect, options);
+    if (effect.parent instanceof Actor && effect.statuses.has('dead')) await new Events.DeathEvent(effect.parent, constants.deathPasses.dead).run();
     if (effect.statuses.size) await specialDuration.specialDurationConditions(effect);
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await specialDuration.specialDurationZeroSpeed(effect.parent);
 }
