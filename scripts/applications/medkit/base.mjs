@@ -993,14 +993,18 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     async _onChangeForm(formConfig, event) {
         await super._onChangeForm(formConfig, event);
         const target = event.target;
-        const name = target?.name ?? target?.getAttribute?.('name');
+        const filePicker = target?.closest?.('file-picker');
+        const named = filePicker ?? target;
+        const name = named?.name ?? named?.getAttribute?.('name');
         if (!name) return;
         const multi = target.closest?.('cat-multi-combobox');
         const inMultiCombobox = !!multi;
         const singleCombobox = !inMultiCombobox && target.matches?.('cat-combobox') ? target : null;
         const isAnimationSelect = !!singleCombobox?.hasAttribute('data-animation-select');
         let value;
-        if (inMultiCombobox) {
+        if (filePicker) {
+            value = filePicker.value ?? '';
+        } else if (inMultiCombobox) {
             const raw = multi.querySelector('input[type="hidden"]')?.value ?? target.value;
             try { value = raw ? JSON.parse(raw) : []; }
             catch { value = []; }
