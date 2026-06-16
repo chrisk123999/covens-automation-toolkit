@@ -5,13 +5,13 @@ const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {fields} = foundry.data;
 
 const CREATURE_SCOPES = ['actor', 'scene', 'nearby', 'region', 'level', 'group', 'vehicle', 'encounter'];
-const WORKFLOW_SCOPES = ['actor', 'token', 'scene', 'nearby', 'region', 'level', 'target', 'group', 'encounter', 'vehicle'];
+const WORKFLOW_SCOPES = ['actor', 'token', 'scene', 'nearby', 'region', 'level', 'target', 'group', 'encounter', 'vehicle', 'item', 'enchantment', 'castEnchantment'];
 
 // Which scope prefixes land on each document type at runtime (intersected with an event's scope set).
 const DOCUMENT_SCOPES = {
-    item: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
-    activeeffect: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
-    activity: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
+    item: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter', 'item'],
+    activeeffect: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter', 'enchantment'],
+    activity: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter', 'castEnchantment'],
     actor: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
     token: ['token', 'actor', 'scene', 'nearby', 'level', 'target'],
     region: ['region', 'target'],
@@ -39,19 +39,21 @@ function getEventStructure() {
     const itemScoped = Object.values(c.itemPasses).filter(pass => !itemBare.includes(pass));
     const mk = (list, self, scoped) => list.map(pass => ({pass, self, scoped}));
     return _eventStructure = {
-        roll: {scopes: WORKFLOW_SCOPES, passes: mk(Object.values(c.workflowPasses), ['item', 'activeeffect', 'activity'], true)},
+        roll: {scopes: WORKFLOW_SCOPES, passes: mk(Object.values(c.workflowPasses), ['activity'], true)},
         combat: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.combatPasses), [], true)},
         move: {scopes: CREATURE_SCOPES, passes: mk(['moved'], [], true)},
         effect: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.effectPasses), ['activeeffect'], true)},
         item: {scopes: CREATURE_SCOPES, passes: [...mk(itemScoped, ['item'], true), ...mk(itemBare, ['item'], false)]},
         region: {scopes: [], passes: mk(Object.values(c.regionPasses), ['region'], false)},
-        aura: {scopes: [], passes: mk(Object.values(c.auraPasses), ['item', 'activeeffect'], false)},
+        aura: {scopes: [], passes: mk(Object.values(c.auraPasses), ['item', 'activeeffect', 'actor', 'token', 'activity'], false)},
         rest: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.restPasses), [], true)},
         time: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.timePasses), [], true)},
         check: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
         skill: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
         save: {scopes: CREATURE_SCOPES, passes: mk([...rollChecks, 'targetSituational'], [], true)},
-        tool: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)}
+        tool: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
+        summon: {scopes: CREATURE_SCOPES, passes: mk(c.summonPasses ? Object.values(c.summonPasses) : ['summoned'], ['item', 'activity', 'actor', 'activeeffect'], true)},
+        called: {scopes: CREATURE_SCOPES, passes: mk(c.calledPasses ? Object.values(c.calledPasses) : ['called'], ['item', 'activity', 'actor', 'activeeffect'], true)}
     };
 }
 
@@ -124,7 +126,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
 
     constructor({macro, onSubmit, titleName, documentType, ...options}) {
         super({...options});
-        this.#macro = {name: '', event: undefined, pass: undefined, priority: 0, code: '', ...(macro ?? {})};
+        this.#macro = {name: '', event: undefined, pass: undefined, priority: 50, code: '', ...(macro ?? {})};
         this.#onSubmit = onSubmit;
         this.#titleName = titleName ?? '';
         this.#documentType = documentType;
@@ -181,7 +183,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
         if (name === 'macro') {
             this.#macro.code = target.value;
         } else if (name === 'priority') {
-            this.#macro.priority = Number(target.value) || 0;
+            this.#macro.priority = Number(target.value) || 50;
         } else if (name === 'distance') {
             this.#macro.distance = target.value === '' ? undefined : Number(target.value);
         } else if (name === 'disabled') {

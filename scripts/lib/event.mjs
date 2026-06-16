@@ -54,7 +54,7 @@ class CatEvent {
     getActorTriggers(actor, pass, data) {
         const triggers = [];
         if (CatEvent.hasCatFlag(actor)) triggers.push(new this.trigger(actor, pass, data));
-        if (this.token && CatEvent.hasCatFlag(this.token)) triggers.push(new this.trigger(actor, pass, data));
+        if (this.token && CatEvent.hasCatFlag(this.token)) triggers.push(new this.trigger(this.token, pass, data));
         actor.items.forEach(item => {
             if (CatEvent.hasCatFlag(item)) triggers.push(new this.trigger(item, pass, data));
             item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
