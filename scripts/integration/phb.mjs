@@ -2,7 +2,9 @@ import {constants, Logging} from '../lib/_module.mjs';
 import documentUtils from '../utilities/documentUtils.mjs';
 async function registerAutomations({register = true} = {}) {
     const moduleId = 'dnd-players-handbook';
-    constants.automations.registerSourceName(moduleId, game.modules.get(moduleId).title);
+    const module = game.modules.get(moduleId);
+    if (!module) return Logging.addRegistrationError(moduleId, 'integrations', 'Automation module not found!');
+    constants.automations.registerSourceName(moduleId, module.title);
     if (!register) return;
     Logging.group('D&D Players Handbook Automations');
     const packs = [
