@@ -58,7 +58,7 @@ export class RegisteredMacros {
     registerFnMacro(data, overwrite = false) {
         const validationError = this.#macrosSchema.validate(data);
         if (validationError) {
-            Logging.addRegistrationError(data, validationError.asError());
+            Logging.addRegistrationError(data, 'macro', validationError.asError());
             return false;
         }
         const fnArray = !overwrite ? this.fnMacros : this.overwriteMacros;
@@ -84,7 +84,7 @@ export class RegisteredMacros {
     registerFnMacros(data = [], overwrite = false) {
         const validationError = this.#multiMacrosSchema.validate(data);
         if (validationError) {
-            Logging.addRegistrationError(data, validationError.asError());
+            Logging.addRegistrationError(data, 'macro', validationError.asError());
             return false;
         }
         return data.map(i => this.registerFnMacro(i, overwrite));

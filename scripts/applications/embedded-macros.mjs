@@ -126,7 +126,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
 
     constructor({macro, onSubmit, titleName, documentType, ...options}) {
         super({...options});
-        this.#macro = {name: '', event: undefined, pass: undefined, priority: 50, code: '', ...(macro ?? {})};
+        this.#macro = {name: '', event: undefined, pass: undefined, priority: 50, macro: '', ...(macro ?? {})};
         this.#onSubmit = onSubmit;
         this.#titleName = titleName ?? '';
         this.#documentType = documentType;
@@ -170,7 +170,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
             }
         }
         inputs.priority = {field: new fields.NumberField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Priority'), integer: true, min: 0}), value: this.#macro.priority};
-        inputs.macro = {field: new fields.JavaScriptField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Macro'), async: true}), value: this.#macro.code};
+        inputs.macro = {field: new fields.JavaScriptField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Macro'), async: true}), value: this.#macro.macro};
         context.inputs = inputs;
         return context;
     }
@@ -181,7 +181,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
         const name = target?.name ?? target?.getAttribute?.('name');
         if (!name) return;
         if (name === 'macro') {
-            this.#macro.code = target.value;
+            this.#macro.macro = target.value;
         } else if (name === 'priority') {
             this.#macro.priority = Number(target.value) || 50;
         } else if (name === 'distance') {

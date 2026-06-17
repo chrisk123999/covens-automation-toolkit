@@ -1,4 +1,4 @@
-import {documentUtils, tokenUtils} from '../utilities/_module.mjs';
+import {automationUtils, documentUtils, tokenUtils} from '../utilities/_module.mjs';
 import {constants, EmbeddedMacros} from '../lib/_module.mjs';
 class Trigger {
     constructor(document, pass, data) {
@@ -19,22 +19,24 @@ class Trigger {
     }
     processDistanceMacros() {
         const filterFn = (macro) => {
-            if (!this.distances || !this.targetToken) return false;
-            const disabled = macro.configDisabled ? documentUtils.getConfigValue(this.document, macro.configDisabled) : macro.disabled;
+            const target = this.targetToken || this.sourceToken;
+            if (!this.distances || !target) return false;
+            const disabled = macro.configDisabled ? automationUtils.getConfigValue(this.document, macro.configDisabled) : macro.disabled;
             if (disabled) {
                 const actor = this.targetToken.actor;
                 if (actor && disabled.some(reason => actor.statuses.has(reason))) return false;
             }
-            const dispositions = macro.configDispositions ? documentUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
+            const dispositions = macro.configDispositions ? automationUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
             if (dispositions) {
                 const isEnemy = tokenUtils.isEnemy(this.token, this.targetToken);
                 const isAlly = !isEnemy;
                 if (!(dispositions.includes('all') || (dispositions.includes('ally') && isAlly) || (dispositions.includes('enemy') && isEnemy))) return false;
             }
-            const maxDistance = (macro.configDistance ? documentUtils.getConfigValue(this.document, macro.configDistance) : macro.distance) ?? 0;
-            const distance = this.distances[this.targetToken.id] ?? Infinity;
-            if (distance < 0) return false;
-            if (maxDistance < distance) return false;
+            const maxDistance = macro.configDistance ? automationUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
+            if (maxDistance !== undefined) {
+                const distance = this.distances[target.id] ?? Infinity;
+                if (distance < 0 || maxDistance < distance) return false;
+            }
             return macro;
         };
         if (this.fnMacros.length) {

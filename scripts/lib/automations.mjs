@@ -147,7 +147,7 @@ export class RegisteredAutomations {
     registerAutomation(data) {
         const validationError = this.#automationsSchema.validate(data);
         if (validationError) {
-            Logging.addAutomationError(data, validationError);
+            Logging.addRegistrationError(data, 'automation', validationError);
             return false;
         }
         this.automations.push(new Automation(data.source, data.rules, data.identifier, data.uuid, data.version, {
@@ -169,7 +169,7 @@ export class RegisteredAutomations {
     registerAutomations(data) {
         const validationError = this.#multiAutomationsSchema.validate(data);
         if (validationError) {
-            Logging.addAutomationError(data, validationError);
+            Logging.addRegistrationError(data, 'automation', validationError);
             return false;
         }
         return data.map(i => this.registerAutomation(i));

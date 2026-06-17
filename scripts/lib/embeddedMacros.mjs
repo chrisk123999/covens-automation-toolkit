@@ -1,11 +1,18 @@
 import {Logging} from '../lib/_module.mjs';
+import {documentUtils} from '../utilities/_module.mjs';
 export default class EmbeddedMacros {
     constructor(document) {
         this.document = document;
         this.embeddedMacros = document.flags.cat?.embeddedMacros ?? [];
     }
     getMacros(event, pass) {
-        return this.embeddedMacros.filter(macro => macro.event === event && macro.pass === pass);
+        const macros = this.embeddedMacros.filter(macro => macro.event === event && macro.pass === pass);
+        return macros.map(macro => ({
+            source: 'embedded',
+            rules: documentUtils.getVersion(this.document),
+            identifier: macro.name,
+            macros: [macro] 
+        }));
     }
     async #update() {
         await this.document.setFlag('cat', 'embeddedMacros', this.embeddedMacros);
@@ -20,7 +27,7 @@ export default class EmbeddedMacros {
     async addMacro(data) {
         let macro = this.getMacro(data.name);
         if (macro) {
-            Logging.addUserError('Embedded macro ' + data.name + ' already exists on document!');
+            Logging.addEntry('WARNING', 'Embedded macro ' + data.name + ' already exists on document!');
             return;
         }
         this.embeddedMacros.push(data);

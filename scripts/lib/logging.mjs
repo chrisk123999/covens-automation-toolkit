@@ -1,30 +1,40 @@
 const logs = [];
-const macroErrors = [];
-const userErrors = [];
-const registrationErrors = [];
-const automationsErrors = [];
+const macroErrors = {};
+const embeddedMacroErrors = {};
+const registrationErrors = {};
 function addEntry(type = 'DEBUG', message, {force = false} = {}) {
     logs.push('CAT | ' + type + ' > ' + message);
-    // 'CAT' in orange, rest default, using string concatenation
     if (force || game.settings.get('cat', 'displayDebugLogs')) console.log('%cCAT%c | ' + type + ' > ' + message, 'color: orange; font-weight: bold;', 'color: inherit;');
     if (logs.length > 100) logs.shift();
 }
-function addMacroError(message) {
-    console.error(message);
-    macroErrors.push(message);
-    if (macroErrors.length > 10) macroErrors.shift();
+function addMacroError(trigger, error) {
+    const key = trigger.macroClass.identifier + '-' + trigger.macroClass.source + '-' + trigger.macroClass.rules;
+    macroErrors[key] ??= [];
+    macroErrors[key].push({
+        message: error.message,
+        stack: error.stack,
+        trigger,
+        time: Date.now()
+    });
+    if (macroErrors[key].length > 10) macroErrors[key].shift();
+    console.error('%cCAT%c | ERROR > Execution error in macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
 }
-function addUserError(message) {
-    console.warn(message);
-    userErrors.push(message);
-    if (userErrors.length > 25) userErrors.shift();
+function addEmbeddedMacroError(trigger, error) {
+    const key = trigger.document.uuid;
+    embeddedMacroErrors[key] ??= [];
+    embeddedMacroErrors[key].push({
+        message: error.message,
+        stack: error.stack,
+        trigger,
+        time: Date.now(),
+        name: trigger.macroClass.identifier
+    });
+    if (embeddedMacroErrors[key].length > 10) embeddedMacroErrors[key].shift();
+    console.error('%cCAT%c | ERROR > Execution error in embedded macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
 }
-function addRegistrationError(data, message) {
+function addRegistrationError(data, type, message) {
     registrationErrors.push([JSON.stringify(data), message]);
-    console.error(data, message);
-}
-function addAutomationError(data, message) {
-    automationsErrors.push([JSON.stringify(data), message]);
+    if (!registrationErrors[type]) registrationErrors[type] = [];
     console.error(data, message);
 }
 function group(label = 'Group', {force = false} = {}) {
@@ -38,13 +48,11 @@ function groupEnd({force = false} = {}) {
 export default {
     logs,
     macroErrors,
-    userErrors,
     registrationErrors,
     addEntry,
     addMacroError,
-    addUserError,
+    addEmbeddedMacroError,
     addRegistrationError,
-    addAutomationError,
     group,
     groupEnd
 };

@@ -27,7 +27,7 @@ export class RegisteredAnimations {
     registerAnimation(data) {
         const validationError = this.#animationSchema.validate(data);
         if (validationError) {
-            Logging.addRegistrationError(data, validationError.asError());
+            Logging.addRegistrationError(data, 'animation', validationError.asError());
             return false;
         }
         this.animations.push(new Animation(data.source, data.identifier, data.name, data.macros, data.inputs, {requirements: data.requirements, type: data.type, config: data.config, category: data.category, credits: data.credits}));
@@ -36,7 +36,7 @@ export class RegisteredAnimations {
     registerAnimations(data = []) {
         const validationError = this.#multiAnimationSchema.validate(data);
         if (validationError) {
-            Logging.addRegistrationError(data, validationError.asError());
+            Logging.addRegistrationError(data, 'animation', validationError.asError());
             return false;
         }
         return data.map(i => this.registerAnimation(i));

@@ -179,7 +179,9 @@ class CatEvent {
                         castData: trigger.castData,
                         document: trigger.document,
                         identifier: trigger.identifier,
-                        name: trigger.name
+                        name: trigger.name,
+                        macroClass: i,
+                        macroConfig: macro
                     };
                     if (trigger.sourceToken) data.sourceToken = trigger.sourceToken;
                     sortedTriggers.push(this.appendData(data));
@@ -231,10 +233,9 @@ class CatEvent {
                 try {
                     result = await trigger.macro(trigger);
                 } catch (error) {
-                    Logging.addMacroError(error);
+                    Logging.addMacroError(trigger, error);
                 }
             }
-            //Possibly update trigger.roll here!
             if (result) {
                 if (!this.multiResult) {
                     return result;
@@ -260,7 +261,7 @@ class CatEvent {
                 try {
                     result = trigger.macro(trigger);
                 } catch (error) {
-                    Logging.addMacroError(error);
+                    Logging.addMacroError(trigger, error);
                 }
             }
             if (result) {
@@ -273,20 +274,20 @@ class CatEvent {
         }
         return results;
     }
-    async executeScript(script, ...scope) {
-        const {fn, argValues} = this.buildScriptFunction(script, ...scope);
+    async executeScript(script, scope) {
+        const {fn, argValues} = this.buildScriptFunction(script, scope);
         try {
             return await fn(...argValues);
         } catch (error) {
-            Logging.addMacroError(error);
+            Logging.addEmbeddedMacroError(scope, error);
         }
     }
-    executeScriptSync(script, ...scope) {
-        const {fn, argValues} = this.buildScriptFunction(script, ...scope);
+    executeScriptSync(script, scope) {
+        const {fn, argValues} = this.buildScriptFunction(script, scope);
         try {
             return fn(...argValues);
         } catch (error) {
-            Logging.addMacroError(error);
+            Logging.addEmbeddedMacroError(scope, error);
         }
     }
 }
