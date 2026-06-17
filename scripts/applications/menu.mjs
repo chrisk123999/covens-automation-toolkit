@@ -108,6 +108,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 context.buttons.push(MenuApp.#makeButton('Cancel', 'false'));
                 break;
         }
+        context.tabbed = context.inputs.length > 1 && context.inputs.every(input => input.isPriority);
         this.#context = context;
     }
 
@@ -139,7 +140,35 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
             ?? id;
     }
 
+    #buildPackPriority(input) {
+        const sources = input.value ?? {};
+        const packTag = _loc('CAT.Settings.AutomationSources.PackTag');
+        const rows = [];
+        for (const pack of game.packs) {
+            if (pack.metadata.type !== input.packType) continue;
+            const cfg = sources[pack.metadata.id] ?? {};
+            rows.push({
+                id: pack.metadata.id,
+                kind: 'pack',
+                kindLabel: packTag,
+                name: pack.metadata.label,
+                enabled: cfg.enabled ?? false,
+                priority: cfg.priority ?? 50
+            });
+        }
+        rows.sort((a, b) => a.priority - b.priority);
+        return {
+            isPriority: true,
+            name: input.name,
+            label: _loc(input.label),
+            hint: _loc(input.hint),
+            enabledRows: rows.filter(r => r.enabled),
+            disabledRows: rows.filter(r => !r.enabled)
+        };
+    }
+
     #buildPriority(input) {
+        if (input.packType) return this.#buildPackPriority(input);
         const sources = input.value ?? {};
         const registered = new Set(Object.keys(constants.automations?.sourceNames ?? {}));
         const owned = new Set(ddbi.getCompendiumIds());
@@ -221,8 +250,25 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         uiUtils.bringToFront(this);
     }
 
+    #wireTabs() {
+        const nav = this.element?.querySelector('.cat-menu-tabs');
+        if (!nav || nav.dataset.wired === '1') return;
+        nav.dataset.wired = '1';
+        nav.addEventListener('click', event => {
+            const tab = event.target.closest('.cat-menu-tab');
+            if (!tab) return;
+            const name = tab.dataset.tab;
+            nav.querySelectorAll('.cat-menu-tab').forEach(t => t.classList.toggle('active', t === tab));
+            this.element.querySelectorAll('.cat-menu-tab-panel').forEach(panel => panel.classList.toggle('active', panel.dataset.tabPanel === name));
+            this.setPosition({width: 'auto', height: 'auto'});
+        });
+    }
+
     #wirePriority() {
-        const widget = this.element?.querySelector('.cat-settings-priority');
+        this.element?.querySelectorAll('.cat-settings-priority').forEach(widget => this.#wirePriorityWidget(widget));
+    }
+
+    #wirePriorityWidget(widget) {
         if (!widget || widget.dataset.wired === '1') return;
         widget.dataset.wired = '1';
         const enabledList = widget.querySelector('.cat-priority-list[data-list="enabled"]');
@@ -354,6 +400,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _onRender(context, options) {
         super._onRender(context, options);
         uiUtils.enableWindowDrag(this, '.cat-dialog-header');
+        this.#wireTabs();
         this.#wirePriority();
         const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
         const header = this.element?.querySelector('.cat-dialog-header');
