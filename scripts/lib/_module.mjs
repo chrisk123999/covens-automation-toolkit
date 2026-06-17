@@ -10,4 +10,3 @@ export {default as Scales} from './scales.mjs';
 export {Crosshairs} from './crosshairs.mjs';
 export {default as Animations} from './animation.mjs';
 export {Summon, SummonsManager} from './summons.mjs';
-export {Source, SourceManager} from './sourceDocuments.mjs';

@@ -82,6 +82,7 @@ async function registerCompendiums({startup = false} = {}) {
         const loadDdbi = enabledSources.includes('ddb-importer') && !sources.has('ddb-importer') && game.modules.get('ddb-importer');
         await integration.ddbi.registerAutomations({register: loadDdbi});
         await integration.ddbi.registerScales({register: loadDdbi});
+        await integration.ddbi.registerDocumentSources({register: loadDdbi});
     }
     const compendiums = automationUtils.getAutomationSources({packsOnly: true}).map(id => game.packs.get(id)).filter(Boolean);
     await Promise.all(compendiums.map(async compendium => {

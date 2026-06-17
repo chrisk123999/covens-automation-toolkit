@@ -289,16 +289,6 @@ export default {
     animations: undefined,
     /** @type {SummonsManager} */
     summons: undefined,
-    sources: {
-        /** @type {SourceManager} */
-        monster: undefined,
-        /** @type {SourceManager} */
-        item: undefined,
-        /** @type {SourceManager} */
-        spell: undefined,
-        /** @type {SourceManager} */
-        macro: undefined
-    },
     gameReady: false,
     workflowPasses,
     workflowHookNames,
