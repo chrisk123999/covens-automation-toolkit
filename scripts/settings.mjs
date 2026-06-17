@@ -151,28 +151,19 @@ const settings = {
         default: {
             'dnd5e.actors24': {
                 enabled: true,
-                priority: 70,
-                pack: true
+                priority: 70
             },
             'dnd5e.monsters': {
                 enabled: true,
-                priority: 60,
-                pack: true
+                priority: 60
             },
             'dnd-players-handbook.actors': {
                 enabled: true,
-                priority: 50,
-                pack: true
+                priority: 50
             },
             'dnd-dungeon-masters-guide.actors': {
                 enabled: true,
-                priority: 40,
-                pack: true
-            },
-            'ddb-importer': {
-                enabled: true,
-                priority: 30,
-                pack: false
+                priority: 40
             }
         },
         scope: 'world',
@@ -181,7 +172,26 @@ const settings = {
     itemCompendiums: {
         type: Object,
         default: {
-            
+            'dnd5e.equipment24': {
+                enabled: true,
+                priority: 70
+            },
+            'dnd5e.items': {
+                enabled: true,
+                priority: 60
+            },
+            'dnd5e.tradegoods': {
+                enabled: true,
+                priority: 50
+            },
+            'dnd-players-handbook.equipment': {
+                enabled: true,
+                priority: 40
+            },
+            'dnd-dungeon-masters-guide.equipment': {
+                enabled: true,
+                priority: 30
+            }
         },
         scope: 'world',
         menu: 'compendiums'
@@ -189,7 +199,18 @@ const settings = {
     spellCompendiums: {
         type: Object,
         default: {
-            
+            'dnd5e.spells24': {
+                enabled: true,
+                priority: 70
+            },
+            'dnd5e.spells': {
+                enabled: true,
+                priority: 60
+            },
+            'dnd-players-handbook.spells': {
+                enabled: true,
+                priority: 50
+            }
         },
         scope: 'world',
         menu: 'compendiums'

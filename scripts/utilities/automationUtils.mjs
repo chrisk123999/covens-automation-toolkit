@@ -250,7 +250,15 @@ function getStoredHash(document) {
     return document.flags.cat?.automation?.hash;
 }
 async function getSourceDocumentByIdentifier(identifier, type) {
-    return await constants.sources[type]?.getSourceByIdentifier(identifier);
+    const sortedPacks = getSourceDataSources(type);
+    if (!sortedPacks) return;
+    for (const packId of sortedPacks) {
+        const pack = game.packs.get(packId);
+        if (!pack) continue;
+        const index = await pack.getIndex({fields: ['system.identifier', 'flags.cat.automation.identifier']});
+        const match = index.find(document => documentUtils.getIdentifier(document) === identifier);
+        if (match) return await pack.getDocument(match._id);
+    }
 }
 export default {
     getCurrentAutomation,
