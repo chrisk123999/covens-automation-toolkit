@@ -222,6 +222,7 @@ class CatEvent {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.actor.name);
         this.canOverlap = canOverlap;
         this.multiResult = multiResult;
+        this._debugEvent();
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
@@ -250,6 +251,7 @@ class CatEvent {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
         this.canOverlap = canOverlap;
         this.multiResult = multiResult;
+        this._debugEvent();
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
@@ -289,6 +291,19 @@ class CatEvent {
         } catch (error) {
             Logging.addEmbeddedMacroError(scope, error);
         }
+    }
+    _debugEvent() {
+        if (!game.settings.get('cat', 'displayDebugEventData')) return;
+        let sample = this.sortedTriggers[0];
+        if (!sample) {
+            sample = this.appendData({
+                name: 'Developer Sample Trigger',
+                identifier: 'developerSample',
+                priority: 50,
+                macroConfig: {pass: this.pass, priority: 50}
+            });
+        }
+        console.log(sample);
     }
 }
 class BaseWorkflowEvent extends CatEvent {
@@ -438,6 +453,7 @@ class RegionEvent extends CatEvent {
         } else {
             Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.regions[0].name);
         }
+        this._debugEvent();
         for (let trigger of this.sortedTriggers) {
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macro.name + ' from ' + trigger.name);
@@ -541,6 +557,7 @@ class AuraEvent extends CatEvent {
     }
     async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
+        this._debugEvent();
         if (!this.actor) return;
         const removedEffects = [];
         const effects = actorUtils.getEffects(this.actor).filter(effect => effect.flags.cat?.auraEffect);

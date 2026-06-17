@@ -56,7 +56,6 @@ async function rollFinished(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
     await specialDuration.specialDuration(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.cleanup, workflow).run();
-    console.log(workflow);
 }
 export default {
     preTargeting,

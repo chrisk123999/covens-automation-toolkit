@@ -576,6 +576,10 @@
         "Name": "Display Debug Logs",
         "Hint": "When enabled, the console will show debug logs."
       },
+      "DisplayDebugEventData": {
+        "Name": "Display Event Data",
+        "Hint": "When enabled, the console will show sample event data for every event."
+      },
       "Help": {
         "Name": "Help",
         "Label": "Help",

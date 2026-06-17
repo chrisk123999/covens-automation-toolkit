@@ -24,7 +24,12 @@ import items from './handlers/items.mjs';
 const settings = {
     displayDebugLogs: {
         type: Boolean,
-        default: true, // Change this to false eventually.
+        default: true,
+        menu: 'devtools'
+    },
+    displayDebugEventData: {
+        type: Boolean,
+        default: true,
         menu: 'devtools'
     },
     automationSources: {
