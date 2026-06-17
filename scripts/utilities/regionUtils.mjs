@@ -12,7 +12,6 @@ function getIntersections(region, A, B, boolOnly = false) {
             const intersections = shape.segmentIntersections(A, B);
             totalIntersections.push(... intersections);
         } else {
-            const intersections = [];
             const points = shape.points;
             for (let i = 0; i < points.length; i += 2) {
                 const currCoord = {
@@ -28,7 +27,6 @@ function getIntersections(region, A, B, boolOnly = false) {
                     if (boolOnly) return true;
                 }
             }
-            totalIntersections.push(...intersections);
         }
     });
     if (boolOnly) return totalIntersections.length ? true : false;

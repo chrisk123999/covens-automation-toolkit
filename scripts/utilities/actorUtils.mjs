@@ -72,7 +72,7 @@ function getEquivalentSpellSlotName(actor, level, {canCast = false} = {}) {
 function getCastableSpells(actor, {identifiers = []} = {}) {
     const maxSlot = Math.max(...Object.values(actor.system.spells).filter(i => i.value).map(j => j.level), 0);
     let validSpells = actor.items.filter(i => i.type === 'spell');
-    if (identifiers.length) validSpells.filter(i => identifiers.includes(documentUtils.getIdentifier(i)));
+    if (identifiers.length) validSpells = validSpells.filter(i => identifiers.includes(documentUtils.getIdentifier(i)));
     validSpells = validSpells.filter(i => i.system.method != 'spell' || i.system.level === 0 || i.system.prepared);
     validSpells = validSpells.filter(i => !i.system.hasLimitedUses || i.system.uses.value);
     validSpells = validSpells.filter(i => ['atwill', 'innate'].includes(i.system.method) || maxSlot >= i.system.level);
