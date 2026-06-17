@@ -1,0 +1,56 @@
+{
+    "id":"cat",
+    "title":"Coven's Automation Toolkit",
+    "description":"A toolkit for high-automation Midi-Qol D&D games.",
+    "version":"0.01",
+    "socket":true,
+    "compatibility":{
+        "minimum":"14",
+        "verified":"14",
+        "maximum":"14"
+    },
+    "url":"https://github.com/chrisk123999/",
+    "esmodules":[
+        "dist/main.js"
+    ],
+    "languages": [
+        {
+        "lang": "en",
+        "name": "English",
+        "path": "lang/en.json",
+        "flags": {}
+        }
+    ],
+    "styles": [
+        "styles/module.css"
+    ],
+    "relationships":{
+        "systems":[
+            {
+                "id":"dnd5e",
+                "type":"system",
+                "compatibility":{
+                    "minimum":"5.3",
+                    "verified":"6.0.0",
+                    "maximum":"6.9.9"
+                }
+            }
+        ],
+        "requires":[
+            {
+                "id":"midi-qol",
+                "type":"module",
+                "compatibility":{
+                    "minimum":"13.0.17"
+                }
+            },
+            {
+                "id":"dae",
+                "type":"module",
+                "compatibility":{
+                    "minimum":"13.0.4"
+                }
+            }
+        ]
+    }
+}
