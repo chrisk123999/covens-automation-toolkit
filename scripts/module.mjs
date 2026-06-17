@@ -55,7 +55,7 @@ Hooks.once('ready', async () => {
     patches.effectPatching.patch(true);
     patches.compendiumBrowserPatching.patch(true);
     patches.combatPatching.patch(true);
-    await utils.genericUtils.sleep(1000);
+    await utils.genericUtils.sleep(1000); //To avoid eating console logs from other modules.
     await handlers.items.registerCompendiums({startup: true});
     catGate();
     Hooks.callAll('catReady');

@@ -3,7 +3,6 @@ import documentUtils from '../utilities/documentUtils.mjs';
 async function registerAutomations({register = true} = {}) {
     const moduleId = 'dnd-players-handbook';
     const module = game.modules.get(moduleId);
-    if (!module) return Logging.addRegistrationError(moduleId, 'integrations', 'Automation module not found!');
     constants.automations.registerSourceName(moduleId, module.title);
     if (!register) return;
     Logging.group('D&D Players Handbook Automations');

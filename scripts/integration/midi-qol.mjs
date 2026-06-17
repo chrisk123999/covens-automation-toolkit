@@ -3,7 +3,6 @@ import {Logging} from '../lib/_module.mjs';
 async function registerAutomations({register = true} = {}) {
     const moduleId = 'midi-qol';
     const module = game.modules.get(moduleId);
-    if (!module) return Logging.addRegistrationError(moduleId, 'integrations', 'Automation module not found!');
     constants.automations.registerSourceName(moduleId, module.title);
     if (!register) return;
     Logging.group('Midi-QoL Automations');

@@ -73,13 +73,13 @@ async function registerCompendiums({startup = false} = {}) {
     await integration.dnd5e.registerScales({register: load5e});
     const loadMidi = enabledSources.includes('midi-qol') && !sources.has('midi-qol');
     await integration.midiQol.registerAutomations({register: loadMidi});
-    const loadPhb = enabledSources.includes('dnd-players-handbook') && !sources.has('dnd-players-handbook');
+    const loadPhb = enabledSources.includes('dnd-players-handbook') && !sources.has('dnd-players-handbook') && game.modules.get('dnd-players-handbook');
     await integration.phb.registerAutomations({register: loadPhb});
     await integration.phb.registerScales({register: loadPhb});
-    const loadDmg = enabledSources.includes('dnd-dungeon-masters-guide') && !sources.has('dnd-dungeon-masters-guide');
+    const loadDmg = enabledSources.includes('dnd-dungeon-masters-guide') && !sources.has('dnd-dungeon-masters-guide') && game.modules.get('dnd-dungeon-masters-guide');
     await integration.dmg.registerAutomations({register: loadDmg});
     if (!startup) {
-        const loadDdbi = enabledSources.includes('ddb-importer') && !sources.has('ddb-importer');
+        const loadDdbi = enabledSources.includes('ddb-importer') && !sources.has('ddb-importer') && game.modules.get('ddb-importer');
         await integration.ddbi.registerAutomations({register: loadDdbi});
         await integration.ddbi.registerScales({register: loadDdbi});
     }
