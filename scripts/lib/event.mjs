@@ -300,7 +300,11 @@ class CatEvent {
                 name: 'Developer Sample Trigger',
                 identifier: 'developerSample',
                 priority: 50,
-                macroConfig: {pass: this.pass, priority: 50}
+                macroConfig: {pass: this.pass, priority: 50},
+                document: null,
+                macro: function() {},
+                castData: {castLevel: 10, saveDC: 10},
+                macroClass: null
             });
         }
         console.log(sample);
