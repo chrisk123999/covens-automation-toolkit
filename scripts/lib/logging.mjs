@@ -14,7 +14,10 @@ function addMacroError(trigger, error) {
         message: error.message,
         stack: error.stack,
         trigger,
-        time: Date.now()
+        time: Date.now(),
+        source: trigger.macroClass.source,
+        identifier: trigger.macroClass.identifier,
+        rules: trigger.macroClass.rules
     });
     if (macroErrors[key].length > 10) macroErrors[key].shift();
     console.error('%cCAT%c | ERROR > Execution error in macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
@@ -27,14 +30,16 @@ function addEmbeddedMacroError(trigger, error) {
         stack: error.stack,
         trigger,
         time: Date.now(),
-        name: trigger.macroClass.identifier
+        identifier: trigger.macroClass.identifier,
+        source: trigger.macroClass.source,
+        rules: trigger.macroClass.rules
     });
     if (embeddedMacroErrors[key].length > 10) embeddedMacroErrors[key].shift();
     console.error('%cCAT%c | ERROR > Execution error in embedded macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
 }
 function addRegistrationError(data, type, message) {
-    registrationErrors.push([JSON.stringify(data), message]);
-    if (!registrationErrors[type]) registrationErrors[type] = [];
+    registrationErrors[type] ??= [];
+    registrationErrors[type].push([JSON.stringify(data), message]);
     console.error(data, message);
 }
 function group(label = 'Group', {force = false} = {}) {

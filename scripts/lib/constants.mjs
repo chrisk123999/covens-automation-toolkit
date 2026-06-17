@@ -3,6 +3,7 @@ import {RegisteredAutomations} from './automations.mjs';
 import {RegisteredScales} from './scales.mjs';
 import {RegisteredAnimations} from './animation.mjs';
 import {SummonsManager} from './summons.mjs';
+import {Source, SourceManager} from './sourceDocuments.mjs';
 const workflowPasses = {
     preTargeting: 'preTargeting',
     preItemRoll: 'preItemRoll',
@@ -288,6 +289,16 @@ export default {
     animations: undefined,
     /** @type {SummonsManager} */
     summons: undefined,
+    sources: {
+        /** @type {SourceManager} */
+        monster: undefined,
+        /** @type {SourceManager} */
+        item: undefined,
+        /** @type {SourceManager} */
+        spell: undefined,
+        /** @type {SourceManager} */
+        macro: undefined
+    },
     gameReady: false,
     workflowPasses,
     workflowHookNames,

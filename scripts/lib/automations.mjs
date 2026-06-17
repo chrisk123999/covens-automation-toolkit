@@ -205,7 +205,7 @@ export class RegisteredAutomations {
      */
     async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, source, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
         const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation.version', 'type']});
-        if (!source) source = pack.metadata.packageName;
+        source ??= pack.metadata.packageName;
         const documentType = pack.metadata.type;
         Logging.group('Automation Compendium Registered: ' + pack.metadata.label + ' (' + pack.metadata.packageName + ')');
         //Logging.addEntry('DEBUG', 'Automation Compendium Registered: ' + pack.metadata.label + ' from ' + pack.metadata.packageName);
@@ -238,7 +238,7 @@ export class RegisteredAutomations {
             }
             const data = {
                 source,
-                rules: rule,
+                rule: rules,
                 identifier,
                 version: versions[identifier] ?? documentUtils.getVersion(document) ?? '0',
                 uuid: document.uuid,
@@ -268,7 +268,6 @@ export class RegisteredAutomations {
         const module = game.modules.get(id);
         if (!module?.active) return false;
         Logging.group('Automation Module Registered: ' + module.title);
-        //Logging.addEntry('DEBUG', 'Automation Module Registered: ' + module.title);
         const itemPacks = module.packs.filter(pack => pack.type === 'Item' && !ignoredPackIds.includes(pack.id));
         if (!itemPacks.size) return;
         const results = await Promise.all(itemPacks.map(async data => {

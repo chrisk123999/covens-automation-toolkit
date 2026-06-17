@@ -104,9 +104,20 @@ async function setAllGenericConfigs(item, configData) {
 }
 function getAutomationSources({packsOnly = false} = {}) {
     const settings = game.settings.get('cat', 'automationSources');
-    const compendiums = game.settings.get('cat', 'additionalCompendiums') ?? {};
     const entries = Object.entries(settings).filter(([key, value]) => value.enabled && (!packsOnly || value.pack)).map(([key, value]) => [key, value.priority]);
-    for (const [key, priority] of Object.entries(compendiums)) entries.push([key, priority]);
+    return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
+}
+function getSourceDataSources(type, {packsOnly = false} = {}) {
+    const settingKeys = {
+        Monster: 'monsterCompendiums',
+        Item: 'itemCompendiums',
+        Spell: 'spellCompendiums',
+        Macro: 'macroCompendiums'
+    };
+    const key = settingKeys[type];
+    if (!key) return;
+    const settings = game.settings.get('cat', key);
+    const entries = Object.entries(settings).filter(([key, value]) => value.enabled && (!packsOnly || value.pack)).map(([key, value]) => [key, value.priority]);
     return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
 }
 function getAppliedOrPreferredAutomation(item) {
@@ -238,8 +249,8 @@ async function setDocumentHash(document, hash) {
 function getStoredHash(document) {
     return document.flags.cat?.automation?.hash;
 }
-async function getMonsterByIdentifier(identifier) {
-    
+async function getSourceDocumentByIdentifier(identifier, type) {
+    return await constants.sources[type]?.getSourceByIdentifier(identifier);
 }
 export default {
     getCurrentAutomation,
@@ -264,5 +275,7 @@ export default {
     getActorAutomationStatus,
     getAllGenericConfigs,
     setAllGenericConfigs,
-    getGenericAnimationConfig
+    getGenericAnimationConfig,
+    getSourceDataSources,
+    getSourceDocumentByIdentifier
 };

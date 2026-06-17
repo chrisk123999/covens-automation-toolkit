@@ -59,11 +59,6 @@ const settings = {
         },
         onChange: async () => items.registerCompendiums()
     },
-    additionalCompendiums: {
-        type: Object,
-        menu: 'automation',
-        default: {}
-    },
     hideNames: {
         type: Boolean,
         default: false,
@@ -76,7 +71,7 @@ const settings = {
     },
     effectDescriptions: {
         type: Number,
-        default: 2, // Change this to 0 once the setting menu is fixed.
+        default: 0,
         choices: {
             0: 'CAT.Generic.Disabled',
             1: 'CAT.Generic.Chat',
@@ -152,8 +147,64 @@ const settings = {
         menu: 'manualRolls'
     },
     monsterCompendiums: {
-        type: String,
-        default: '',
+        type: Object,
+        default: {
+            'dnd5e.actors24': {
+                enabled: true,
+                priority: 70,
+                pack: true
+            },
+            'dnd5e.monsters': {
+                enabled: true,
+                priority: 60,
+                pack: true
+            },
+            'dnd-players-handbook.actors': {
+                enabled: true,
+                priority: 50,
+                pack: true
+            },
+            'dnd-dungeon-masters-guide.actors': {
+                enabled: true,
+                priority: 40,
+                pack: true
+            },
+            'ddb-importer': {
+                enabled: true,
+                priority: 30,
+                pack: false
+            }
+        },
+        scope: 'world',
+        menu: 'compendiums'
+    },
+    itemCompendiums: {
+        type: Object,
+        default: {
+            
+        },
+        scope: 'world',
+        menu: 'compendiums'
+    },
+    spellCompendiums: {
+        type: Object,
+        default: {
+            
+        },
+        scope: 'world',
+        menu: 'compendiums'
+    },
+    spellListJournals: {
+        type: Object,
+        default: {
+            
+        },
+        scope: 'world',
+        menu: 'compendiums'
+    },
+    macroCompendiums: {
+        type: Object,
+        default: {},
         scope: 'world',
         menu: 'compendiums'
     }

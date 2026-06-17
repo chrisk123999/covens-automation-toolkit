@@ -6,7 +6,6 @@ import {buildApi} from './api.mjs';
 import * as applications from './applications/_module.mjs';
 import CatCombobox from './applications/elements/combobox.mjs';
 import CatMultiCombobox from './applications/elements/multi-combobox.mjs';
-import {test} from './test.mjs';
 import * as patches from './patches/_module.mjs';
 import * as integration from './integration/_modules.mjs';
 import * as handlers from './handlers/_module.mjs';
@@ -23,6 +22,10 @@ Hooks.once('init', () => {
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
     lib.constants.scales = new lib.Scales.RegisteredScales();
     lib.constants.animations = new lib.Animations.RegisteredAnimations();
+    lib.constants.sources.item = new lib.SourceManager('Item');
+    lib.constants.sources.macro = new lib.SourceManager('Macro');
+    lib.constants.sources.monster = new lib.SourceManager('Monster');
+    lib.constants.sources.spell = new lib.SourceManager('Spell');
     handlers.quickConditions.registerHelpers();
     globalThis.cat = {
         api: buildApi(),

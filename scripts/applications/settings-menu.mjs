@@ -14,7 +14,6 @@ export default class SettingsMenu extends MenuApp {
         this.#menuSettings = this.#catSettings.filter(s => s.menu === key && (s.scope !== 'world' || game.user.isGM));
     }
     #formatSetting(setting) {
-        if (setting.key === 'additionalCompendiums') return null;
         let entry = {
             name: setting.key,
             label: setting.name,
