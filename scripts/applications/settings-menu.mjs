@@ -21,8 +21,17 @@ export default class SettingsMenu extends MenuApp {
             default: setting.default,
             value: game.settings.get('cat', setting.key)
         };
+        const packTypes = {
+            monsterCompendiums: 'Actor',
+            itemCompendiums: 'Item',
+            spellCompendiums: 'Item',
+            macroCompendiums: 'Macro'
+        };
         if (setting.key === 'automationSources') entry.type = 'priority';
-        else if (setting.key === 'manualRollsUsers') entry.type = 'users';
+        else if (packTypes[setting.key]) {
+            entry.type = 'priority';
+            entry.packType = packTypes[setting.key];
+        } else if (setting.key === 'manualRollsUsers') entry.type = 'users';
         else if (setting.choices) {
             entry.type = 'selectOption';
             entry.options = setting.choices;

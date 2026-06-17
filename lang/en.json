@@ -551,6 +551,22 @@
         "Label": "Configure Compendiums",
         "Hint": "Configure compendiums from which automations will retrieve documents."
       },
+      "MonsterCompendiums": {
+        "Name": "Monsters",
+        "Hint": "Compendiums searched when an automation requests a monster. Drag to set priority, the lowest number takes priority."
+      },
+      "ItemCompendiums": {
+        "Name": "Items",
+        "Hint": "Compendiums searched when an automation requests an item. Drag to set priority, the lowest number takes priority."
+      },
+      "SpellCompendiums": {
+        "Name": "Spells",
+        "Hint": "Compendiums searched when an automation requests a spell. Drag to set priority, the lowest number takes priority."
+      },
+      "MacroCompendiums": {
+        "Name": "Macros",
+        "Hint": "Compendiums searched when an automation requests a macro. Drag to set priority, the lowest number takes priority."
+      },
       "Devtools": {
         "Name": "Development Tools",
         "Label": "Configure Development Tools",

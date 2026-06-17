@@ -6,13 +6,22 @@
     </button>
 </header>
 <div id="menu-app" class="cat-dialog-body standard-form scrollable">
+    {{#if tabbed}}
+    <nav class="cat-menu-tabs">
+        {{#each inputs}}
+            <a class="cat-menu-tab{{#if @first}} active{{/if}}" data-tab="{{name}}">{{label}}</a>
+        {{/each}}
+    </nav>
+    {{/if}}
     {{#each inputs}}
+        {{#if ../tabbed}}<section class="cat-menu-tab-panel{{#if @first}} active{{/if}}" data-tab-panel="{{name}}">{{/if}}
         {{#if useHelper}}
             {{#each options}}
                 {{formGroup field name=name value=value}}
             {{/each}}
         {{else if isPriority}}
             <div class="cat-settings-priority" data-source-setting="{{name}}" data-pack-setting="{{packSetting}}">
+                {{#unless ../tabbed}}{{#if label}}<h3 class="cat-priority-label">{{label}}</h3>{{/if}}{{/unless}}
                 {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                 <ul class="cat-priority-list" data-list="enabled">
                     {{#each enabledRows}}
@@ -43,6 +52,7 @@
                 </details>
             </div>
         {{/if}}
+        {{#if ../tabbed}}</section>{{/if}}
     {{/each}}
 </div>
 {{#if buttons.length}}
