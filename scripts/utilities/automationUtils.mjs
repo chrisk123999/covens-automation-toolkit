@@ -8,7 +8,11 @@ function getCurrentAutomation(item) {
     const type = item.type;
     const actorType = type === 'spell' ? 'character' : item.actor?.type ?? 'character';
     const monsterIdentifier = actorType === 'npc' ? documentUtils.getIdentifier(item.actor) : undefined;
-    if (!identifier || !rules || !source) return;
+    if (!identifier || !rules) return;
+    if (!source) {
+        const allAutomations = constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, monsterIdentifier});
+        return allAutomations.find(automation => automation.uuid === item.uuid);
+    }
     return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type});
 }
 function getAutomationStatus(document) {
