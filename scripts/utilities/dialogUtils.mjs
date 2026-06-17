@@ -1,6 +1,5 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
-import queryUtils from './queryUtils.mjs';
-import tokenUtils from './tokenUtils.mjs';
+import {queryUtils, tokenUtils, automationUtils} from './_module.mjs';
 
 async function runDialog(userId, title, content, inputs, buttons, config) {
     if (userId === game.user.id) return await DialogApp.dialog(title, content, inputs, buttons, config);
@@ -184,10 +183,10 @@ async function selectDamageType(damageTypes, title, content, {addNo = false, use
     if (addNo) buttons.push(['No', false, {image: 'icons/svg/cancel.svg'}]);
     return await buttonDialog(title, content, buttons, {userId});
 }
-// TODO: re-add sangromancy branch when CPR sangromancy lands.
-async function selectHitDie(actor, title, content, {max = 1, userId = game.user.id} = {}) {
+async function selectHitDie(actor, title, content, {max = 1, userId = game.user.id, additionalItems = []} = {}) {
     let documents = actor.items.filter(i => i.type === 'class' && (i.system.levels - i.system.hd.spent) > 0);
-    if (!documents.length) return false;
+    let validAdditionalItems = additionalItems.filter(i => i && i.system?.uses?.value > 0);
+    if (!documents.length && !validAdditionalItems.length) return false;
     documents = documents.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     let inputFields = documents.map(i => ({
         label: _loc('CAT.Dialog.HitDieLabel', {
@@ -203,10 +202,29 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
             maxAmount: Math.min(i.system.levels - i.system.hd.spent, max)
         }
     }));
+    if (validAdditionalItems.length) {
+        let additionalInputFields = validAdditionalItems.map(i => ({
+            label: _loc('CAT.Dialog.HitDieLabel', {
+                className: i.name,
+                remaining: i.system.uses.value,
+                max: i.system.uses.max,
+                denomination: automationUtils.getConfigValue(i, 'diceSize')
+            }),
+            name: i.id,
+            options: {
+                image: i.img,
+                minAmount: 0,
+                maxAmount: Math.min(i.system.uses.max, i.system.uses.value, max)
+            }
+        }));
+        inputFields.push(...additionalInputFields);
+        documents.push(...validAdditionalItems);
+    }
     let inputs = [[max === 1 ? 'checkbox' : 'selectAmount', inputFields, {displayAsRows: true, totalMax: max}]];
     let result = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!result?.buttons) return false;
     delete result.buttons;
+    
     return Object.entries(result).map(([key, value]) => ({
         document: documents.find(d => d.id === key),
         amount: Number(value)
