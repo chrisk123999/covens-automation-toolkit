@@ -226,6 +226,11 @@
     background: var(--cat-bg-hover);
 }
 
+.cat-settings-priority {
+    width: 30rem;
+    max-width: 100%;
+}
+
 .cat-settings-priority + .cat-settings-priority {
     margin-top: var(--cat-space-md);
     padding-top: var(--cat-space-md);
@@ -311,6 +316,8 @@
 
 .cat-settings-priority .cat-priority-name {
     flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .cat-settings-priority .cat-priority-rank {
@@ -333,6 +340,12 @@
     margin-top: var(--cat-space-sm);
     padding-top: var(--cat-space-sm);
     border-top: 1px solid var(--cat-border-light);
+}
+
+.cat-settings-priority .cat-priority-list[data-list="enabled"]:not(:has(.cat-priority-row)) + .cat-priority-disabled-section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 .cat-settings-priority .cat-priority-disabled-section > summary {

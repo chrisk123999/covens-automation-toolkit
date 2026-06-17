@@ -565,7 +565,7 @@
       },
       "MacroCompendiums": {
         "Name": "Macros",
-        "Hint": "Compendiums searched when an automation requests a macro. Drag to set priority, the lowest number takes priority."
+        "Hint": "Overwrites registered macros with the macros from the selected compendiums. Every macro in these compendiums is executed on load. Drag to set priority, the lowest number takes priority."
       },
       "Devtools": {
         "Name": "Development Tools",

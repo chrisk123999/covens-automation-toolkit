@@ -27,10 +27,15 @@ export default class SettingsMenu extends MenuApp {
             spellCompendiums: 'Item',
             macroCompendiums: 'Macro'
         };
+        const packFilters = {
+            itemCompendiums: 'items',
+            spellCompendiums: 'spells'
+        };
         if (setting.key === 'automationSources') entry.type = 'priority';
         else if (packTypes[setting.key]) {
             entry.type = 'priority';
             entry.packType = packTypes[setting.key];
+            if (packFilters[setting.key]) entry.packFilter = packFilters[setting.key];
         } else if (setting.key === 'manualRollsUsers') entry.type = 'users';
         else if (setting.choices) {
             entry.type = 'selectOption';

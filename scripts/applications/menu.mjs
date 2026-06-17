@@ -6,6 +6,7 @@ const {StringField, BooleanField, SetField} = foundry.data.fields;
 
 export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     #context;
+    #spellPacks = new Set();
     constructor(options) {
         let title, inputs, buttons, config;
         if (options?.length) [title, inputs, buttons, config] = options;
@@ -142,10 +143,14 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     #buildPackPriority(input) {
         const sources = input.value ?? {};
+        const registered = new Set(Object.keys(constants.automations?.sourceNames ?? {}));
         const packTag = _loc('CAT.Settings.AutomationSources.PackTag');
         const rows = [];
         for (const pack of game.packs) {
             if (pack.metadata.type !== input.packType) continue;
+            if (registered.has(pack.metadata.packageName)) continue;
+            if (input.packFilter === 'spells' && !this.#spellPacks.has(pack.metadata.id)) continue;
+            if (input.packFilter === 'items' && this.#spellPacks.has(pack.metadata.id)) continue;
             const cfg = sources[pack.metadata.id] ?? {};
             rows.push({
                 id: pack.metadata.id,
@@ -242,8 +247,20 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
-        if (!this.#context) this.#formatInputs();
+        if (!this.#context) {
+            if (this.inputs?.some(input => input.packFilter)) await this.#loadSpellPacks();
+            this.#formatInputs();
+        }
         return {...context, ...this.#context, title: this.windowTitle};
+    }
+
+    async #loadSpellPacks() {
+        this.#spellPacks = new Set();
+        for (const pack of game.packs) {
+            if (pack.metadata.type !== 'Item') continue;
+            const index = await pack.getIndex({fields: ['type']});
+            if (index.size && index.contents.every(entry => entry.type === 'spell')) this.#spellPacks.add(pack.metadata.id);
+        }
     }
 
     bringToFront() {
