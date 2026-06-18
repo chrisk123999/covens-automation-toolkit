@@ -12,10 +12,9 @@ function getCompendiumIds() {
     if (!game.modules.get('ddb-importer')?.active) return [];
     return COMPENDIUM_SETTINGS.map(setting => game.settings.get('ddb-importer', setting)).filter(Boolean);
 }
-async function registerAutomations({register = true} = {}) {
-    const moduleId = 'ddb-importer';
-    constants.automations.registerSourceName(moduleId, game.modules.get(moduleId).title);
-    if (!register) return;
+async function registerAutomations(module) {
+    const moduleId = module.id;
+    constants.automations.registerSourceName(moduleId, module.title);
     Logging.group('D&D Beyond Importer Automations');
     const packs = getCompendiumIds();
     await Promise.all(packs.map(async id => {
@@ -38,9 +37,8 @@ async function registerAutomations({register = true} = {}) {
     }));
     Logging.groupEnd();
 }
-async function registerScales({register = true} = {}) {
-    if (!register) return;
-    const moduleId = 'ddb-importer';
+async function registerScales(module) {
+    const moduleId = module.id;
     const settings = [
         'entity-class-compendium'
     ];

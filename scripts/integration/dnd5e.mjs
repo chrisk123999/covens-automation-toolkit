@@ -1,8 +1,7 @@
 import {documentUtils} from '../utilities/_module.mjs';
 import {constants, Logging} from '../lib/_module.mjs';
-async function registerAutomations({register = true} = {}) {
+async function registerAutomations() {
     constants.automations.registerSourceName(game.system.id, game.system.title);
-    if (!register) return;
     Logging.group('D&D 5e Automations');
     const packs = [
         'items',
@@ -26,8 +25,7 @@ async function registerAutomations({register = true} = {}) {
     }));
     Logging.groupEnd();
 }
-async function registerScales({register = true} = {}) {
-    if (!register) return;
+async function registerScales() {
     Logging.group('D&D 5e Scales');
     const packs = [
         'classes',

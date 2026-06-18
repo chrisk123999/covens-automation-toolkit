@@ -1,9 +1,7 @@
 import {constants, Logging} from '../lib/_module.mjs';
-async function registerAutomations({register = true} = {}) {
-    const moduleId = 'dnd-dungeon-masters-guide';
-    const module = game.modules.get(moduleId);
+async function registerAutomations(module) {
+    const moduleId = module.id;
     constants.automations.registerSourceName(moduleId, module.title);
-    if (!register) return;
     Logging.group('D&D Dungeon Master\'s Guide Automations');
     const packs = [
         'equipment',
