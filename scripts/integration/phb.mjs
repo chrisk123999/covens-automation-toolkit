@@ -1,10 +1,8 @@
 import {constants, Logging} from '../lib/_module.mjs';
 import documentUtils from '../utilities/documentUtils.mjs';
-async function registerAutomations({register = true} = {}) {
-    const moduleId = 'dnd-players-handbook';
-    const module = game.modules.get(moduleId);
+async function registerAutomations(module) {
+    const moduleId = module.id;
     constants.automations.registerSourceName(moduleId, module.title);
-    if (!register) return;
     Logging.group('D&D Players Handbook Automations');
     const packs = [
         'classes',
@@ -20,9 +18,8 @@ async function registerAutomations({register = true} = {}) {
     }));
     Logging.groupEnd();
 }
-async function registerScales({register = true} = {}) {
-    if (!register) return;
-    const moduleId = 'dnd-players-handbook';
+async function registerScales(module) {
+    const moduleId = module.id;
     Logging.group('D&D Players Handbook Scales');
     const packs = [
         'classes'

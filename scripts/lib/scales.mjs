@@ -32,7 +32,7 @@ export class RegisteredScales {
     registerScale(data) {
         const validationError = this.#scaleSchema.validate(data);
         if (validationError) {
-            Logging.addAutomationError(data, validationError);
+            Logging.addAutomationError(data, validationError.asError());
             return false;
         }
         this.scales.push(new Scale(data.source, data.rules, data.identifier, data.data, {classIdentifier: data.classIdentifier}));
@@ -42,7 +42,7 @@ export class RegisteredScales {
     registerScales(data) {
         const validationError = this.#multiScalesSchema.validate(data);
         if (validationError) {
-            Logging.addAutomationError(data, validationError);
+            Logging.addAutomationError(data, validationError.asError());
             return false;
         }
         return data.map(i => this.registerScale(i));

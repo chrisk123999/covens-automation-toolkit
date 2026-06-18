@@ -59,8 +59,9 @@ Hooks.once('ready', async () => {
 Hooks.once('ddb-importer.compendiumCreationComplete', async () => {
     await catInitGate;
     const enabledSources = utils.automationUtils.getAutomationSources();
+    const module = game.modules.get('ddb-importer');
     if (enabledSources.includes('ddb-importer')) {
-        await integration.ddbi.registerAutomations({register: enabledSources.includes('ddb-importer')});
-        await integration.ddbi.registerScales({register: enabledSources.includes('ddb-importer')});
+        await integration.ddbi.registerAutomations(module);
+        await integration.ddbi.registerScales(module);
     }
 });
