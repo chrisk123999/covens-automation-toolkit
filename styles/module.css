@@ -563,6 +563,11 @@
     align-items: center;
 }
 
+.cat-medkit .cat-permission-notice {
+    margin: 0 0 var(--cat-space-sm);
+    flex: 0 0 auto;
+}
+
 .cat-medkit cat-multi-combobox {
     gap: var(--cat-space-xs);
     display: flex;
@@ -1383,16 +1388,23 @@ cat-combobox {
     --input-text-color: var(--cat-text-primary);
 }
 
-.cat-medkit input[disabled],
+.cat-medkit input[disabled]:not([type="checkbox"]):not([type="radio"]),
 .cat-medkit select[disabled],
 .cat-medkit textarea[disabled],
-.cat-embedded-macros input[disabled],
+.cat-embedded-macros input[disabled]:not([type="checkbox"]):not([type="radio"]),
 .cat-embedded-macros select[disabled],
 .cat-embedded-macros textarea[disabled] {
     opacity: 1;
     color: var(--cat-text-muted);
     cursor: auto;
     background: rgb(0 0 0 / 55%);
+}
+
+.cat-medkit input[type="checkbox"][disabled]::before,
+.cat-medkit input[type="radio"][disabled]::before,
+.cat-embedded-macros input[type="checkbox"][disabled]::before,
+.cat-embedded-macros input[type="radio"][disabled]::before {
+    color: rgb(0 0 0 / 55%);
 }
 
 .cat-medkit input::placeholder,
@@ -1460,6 +1472,11 @@ cat-combobox {
 .cat-medkit button[disabled] {
     opacity: 0.55;
     cursor: auto;
+}
+
+.cat-medkit button[disabled]:hover {
+    border-color: var(--cat-border-light);
+    background: var(--cat-bg-input);
 }
 
 .cat-medkit-header .cat-medkit-header-button,

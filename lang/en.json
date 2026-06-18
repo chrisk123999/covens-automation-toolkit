@@ -3,6 +3,7 @@
     "MEDKIT": {
       "Title": "Coven's Automation Toolkit Configuration: {name}",
       "HeaderLabel": "CAT Medkit",
+      "NoPermission": "You do not have permission to modify this tab.",
       "TABS": {
         "Automation": "Info",
         "Automations": "Automations",
@@ -621,6 +622,34 @@
         "Name": "Permissions",
         "Label": "Configure Permissions",
         "Hint": "Settings for user permissions for CAT automation and configuration menus."
+      },
+      "PermissionsAutomation": {
+        "Name": "Automation Tab",
+        "Hint": "Minimum user role allowed to modify the Automation tab."
+      },
+      "PermissionsConfiguration": {
+        "Name": "Configuration Tab",
+        "Hint": "Minimum user role allowed to modify the Configuration tab."
+      },
+      "PermissionsGeneric": {
+        "Name": "Generic Tab",
+        "Hint": "Minimum user role allowed to modify the Generic tab."
+      },
+      "PermissionsEmbedded": {
+        "Name": "Embedded Macros Tab",
+        "Hint": "Minimum user role allowed to modify the Embedded Macros tab."
+      },
+      "PermissionsDocProps": {
+        "Name": "Document Properties Tab",
+        "Hint": "Minimum user role allowed to modify the Document Properties tab."
+      },
+      "PermissionsMacros": {
+        "Name": "Registered Macros Tab",
+        "Hint": "Minimum user role allowed to modify the Registered Macros tab."
+      },
+      "PermissionsPlacedRegion": {
+        "Name": "Placed Region Tab",
+        "Hint": "Minimum user role allowed to modify the Placed Region tab."
       },
       "Summons": {
         "Name": "Summons",

@@ -118,6 +118,24 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static KEEP_PATHS = [];
 
+    /** Maps a tab id to the world setting holding the minimum user role allowed to edit it. */
+    static PERMISSION_SETTINGS = {
+        automation: 'permissionsAutomation',
+        automations: 'permissionsAutomation',
+        configuration: 'permissionsConfiguration',
+        generic: 'permissionsGeneric',
+        embedded: 'permissionsEmbedded',
+        docprops: 'permissionsDocProps',
+        macros: 'permissionsMacros',
+        region: 'permissionsPlacedRegion'
+    };
+
+    static canEditTab(tabId) {
+        const key = MedkitApp.PERMISSION_SETTINGS[tabId];
+        if (!key) return true;
+        return game.user.role >= Number(game.settings.get('cat', key));
+    }
+
     get document() {
         return this.#document;
     }
@@ -1091,9 +1109,25 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         uiUtils.enableWindowDrag(this, '.cat-medkit-header');
         this.#wireDocumentDrop();
         this.#wireFieldDrop();
+        this.#applyTabPermissions();
         if (options.isFirstRender) {
             this.bringToFront();
             uiUtils.centerWindow(this, {width: 700, height: 500});
+        }
+    }
+
+    #applyTabPermissions() {
+        if (game.user.isGM) return;
+        for (const section of this.element.querySelectorAll('section.tab[data-tab]')) {
+            if (MedkitApp.canEditTab(section.dataset.tab)) continue;
+            section.querySelectorAll('input, select, textarea, button, multi-select, multi-checkbox, [contenteditable]').forEach(el => {
+                el.disabled = true;
+                el.setAttribute('contenteditable', 'false');
+            });
+            const notice = document.createElement('p');
+            notice.className = 'cat-permission-notice notification warning';
+            notice.textContent = _loc('CAT.MEDKIT.NoPermission');
+            section.prepend(notice);
         }
     }
 }

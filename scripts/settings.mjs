@@ -21,6 +21,12 @@ import items from './handlers/items.mjs';
  *    select
  *  }
  */
+const permissionChoices = {
+    1: 'USER.RolePlayer',
+    2: 'USER.RoleTrusted',
+    3: 'USER.RoleAssistant',
+    4: 'USER.RoleGamemaster'
+};
 const settings = {
     displayDebugLogs: {
         type: Boolean,
@@ -228,6 +234,48 @@ const settings = {
         default: {},
         scope: 'world',
         menu: 'compendiums'
+    },
+    permissionsAutomation: {
+        type: Number,
+        default: 4,
+        choices: permissionChoices,
+        menu: 'permissions'
+    },
+    permissionsConfiguration: {
+        type: Number,
+        default: 1,
+        choices: permissionChoices,
+        menu: 'permissions'
+    },
+    permissionsGeneric: {
+        type: Number,
+        default: 4,
+        choices: permissionChoices,
+        menu: 'permissions'
+    },
+    permissionsEmbedded: {
+        type: Number,
+        default: 4,
+        choices: permissionChoices,
+        menu: 'permissions'
+    },
+    permissionsDocProps: {
+        type: Number,
+        default: 4,
+        choices: permissionChoices,
+        menu: 'permissions'
+    },
+    permissionsMacros: {
+        type: Number,
+        default: 4,
+        choices: permissionChoices,
+        menu: 'permissions'
+    },
+    permissionsPlacedRegion: {
+        type: Number,
+        default: 4,
+        choices: permissionChoices,
+        menu: 'permissions'
     }
 };
 const menus = {
