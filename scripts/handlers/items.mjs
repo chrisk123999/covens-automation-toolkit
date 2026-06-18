@@ -68,20 +68,15 @@ async function registerCompendiums({startup = false} = {}) {
             }
         }
     }
-    const sourceConfig = [
-        {id: 'dnd5e', integrator: integration.dnd5e, system: true},
-        {id: 'midi-qol', integrator: integration.midiQol},
-        {id: 'dnd-players-handbook',integrator: integration.phb},
-        {id: 'dnd-dungeon-masters-guide', integrator: integration.dmg},
-        {id: 'ddb-importer', integrator: integration.ddbi, notStartup: true}
-    ];
-    for (const config of sourceConfig) {
-        if (startup && config.notStartup) continue;
-        const module = config.system || game.modules.get(config.id);
-        if (!module || !enabledSources.includes(config.id) || sources.has(config.id)) continue;
-        await config.integrator.registerAutomations?.(module);
-        await config.integrator.registerScales?.(module);
-        await config.integrator.registerDocumentSources?.(module);
+    const sourceList = [integration.dnd5e, integration.midiQol, integration.phb, integration.dmg, integration.ddbi];
+    for (const source of sourceList) {
+        const c = source.CONFIG;
+        if (startup && c.skipStartup) continue;
+        const module = c.system || game.modules.get(c.id);
+        if (!module || !enabledSources.includes(c.id) || sources.has(c.id)) continue;
+        await source.registerAutomations?.(module);
+        await source.registerScales?.(module);
+        await source.registerDocumentSources?.(module);
     }
     const compendiums = automationUtils.getAutomationSources({packsOnly: true}).map(id => game.packs.get(id)).filter(Boolean);
     await Promise.all(compendiums.map(async compendium => {

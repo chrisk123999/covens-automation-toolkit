@@ -1,5 +1,9 @@
 import {documentUtils} from '../utilities/_module.mjs';
 import {constants, Logging} from '../lib/_module.mjs';
+const CONFIG = Object.freeze({
+    id: 'dnd5e',
+    system: true
+});
 async function registerAutomations() {
     constants.automations.registerSourceName(game.system.id, game.system.title);
     Logging.group('D&D 5e Automations');
@@ -53,6 +57,7 @@ async function registerScales() {
     Logging.groupEnd();
 }
 export default {
+    CONFIG,
     registerAutomations,
     registerScales
 };

@@ -8,13 +8,16 @@ const COMPENDIUM_SETTINGS = [
     'entity-species-compendium',
     'entity-spell-compendium'
 ];
+const CONFIG = Object.freeze({
+    id: 'ddb-importer',
+    skipStartup: true
+});
 function getCompendiumIds() {
     if (!game.modules.get('ddb-importer')?.active) return [];
     return COMPENDIUM_SETTINGS.map(setting => game.settings.get('ddb-importer', setting)).filter(Boolean);
 }
 async function registerAutomations(module) {
-    const moduleId = module.id;
-    constants.automations.registerSourceName(moduleId, module.title);
+    constants.automations.registerSourceName(CONFIG.id, module.title);
     Logging.group('D&D Beyond Importer Automations');
     const packs = getCompendiumIds();
     await Promise.all(packs.map(async id => {
@@ -26,7 +29,7 @@ async function registerAutomations(module) {
             const version = entry.flags.ddbimporter?.version;
             if (!version) return;
             constants.automations.registerAutomation({
-                source: moduleId,
+                source: CONFIG.id,
                 rules: entry.system.source.rules,
                 identifier: entry.system.identifier,
                 version: version,
@@ -38,11 +41,10 @@ async function registerAutomations(module) {
     Logging.groupEnd();
 }
 async function registerScales(module) {
-    const moduleId = module.id;
     const settings = [
         'entity-class-compendium'
     ];
-    const packs = settings.map(setting => game.settings.get(moduleId, setting));
+    const packs = settings.map(setting => game.settings.get(CONFIG.id, setting));
     Logging.group('D&D Beyond Importer Scales');
     await Promise.all(packs.map(async id => {
         const pack = game.packs.get(id);
@@ -53,7 +55,7 @@ async function registerScales(module) {
             if (!scales.length) return;
             scales.forEach(scale => {
                 constants.scales.registerScale({
-                    source: moduleId,
+                    source: CONFIG.id,
                     rules: documentUtils.getRules(document),
                     identifier: scale.identifier,
                     classIdentifier: documentUtils.getIdentifier(document),
@@ -65,6 +67,7 @@ async function registerScales(module) {
     Logging.groupEnd();
 }
 export default {
+    CONFIG,
     registerAutomations,
     registerScales,
     getCompendiumIds

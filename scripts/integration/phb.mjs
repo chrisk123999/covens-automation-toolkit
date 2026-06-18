@@ -1,8 +1,10 @@
 import {constants, Logging} from '../lib/_module.mjs';
 import documentUtils from '../utilities/documentUtils.mjs';
+const CONFIG = Object.freeze({
+    id: 'dnd-players-handbook'
+});
 async function registerAutomations(module) {
-    const moduleId = module.id;
-    constants.automations.registerSourceName(moduleId, module.title);
+    constants.automations.registerSourceName(CONFIG.id, module.title);
     Logging.group('D&D Players Handbook Automations');
     const packs = [
         'classes',
@@ -12,20 +14,19 @@ async function registerAutomations(module) {
         'equipment'
     ];
     await Promise.all(packs.map(async id => {
-        const pack = game.packs.get(moduleId + '.' + id);
+        const pack = game.packs.get(CONFIG.id + '.' + id);
         if (!pack) return;
         await constants.automations.registerAutomationCompendium(pack);
     }));
     Logging.groupEnd();
 }
-async function registerScales(module) {
-    const moduleId = module.id;
+async function registerScales() {
     Logging.group('D&D Players Handbook Scales');
     const packs = [
         'classes'
     ];
     await Promise.all(packs.map(async id => {
-        const pack = game.packs.get(moduleId + '.' + id);
+        const pack = game.packs.get(CONFIG.id + '.' + id);
         if (!pack) return;
         const documents = await pack.getDocuments({type__in: ['class', 'subclass']});
         documents.forEach(document => {
@@ -45,6 +46,7 @@ async function registerScales(module) {
     Logging.groupEnd();
 }
 export default {
+    CONFIG,
     registerAutomations,
     registerScales
 };
