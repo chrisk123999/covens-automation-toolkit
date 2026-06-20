@@ -11,10 +11,10 @@ Hooks.once('setup', () => {
 
 function embeddedToFlat(entry) {
     const macro = entry.macros?.[0] ?? {};
-    return {name: entry.name ?? '', event: entry.event, pass: entry.pass, priority: macro.priority ?? 0, code: macro.macro ?? '', distance: macro.distance, configDistance: macro.configDistance, dispositions: macro.dispositions, configDispositions: macro.configDispositions, disabled: macro.disabled, configDisabled: macro.configDisabled};
+    return {name: entry.name ?? '', event: entry.event, pass: entry.pass, priority: macro.priority ?? 0, macro: macro.macro ?? '', distance: macro.distance, configDistance: macro.configDistance, dispositions: macro.dispositions, configDispositions: macro.configDispositions, disabled: macro.disabled, configDisabled: macro.configDisabled};
 }
 function flatToEmbedded(flat) {
-    const macro = {macro: flat.code ?? '', priority: flat.priority ?? 0};
+    const macro = {macro: flat.macro ?? '', priority: flat.priority ?? 0};
     if (flat.distance != null && flat.distance !== '') macro.distance = Number(flat.distance);
     if (flat.configDistance) macro.configDistance = flat.configDistance;
     if (flat.dispositions) macro.dispositions = flat.dispositions;
