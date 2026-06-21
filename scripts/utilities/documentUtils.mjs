@@ -102,6 +102,20 @@ async function makeDependent(parentDocument, childDocuments = []) {
     if (!childDocuments.length) return;
     await Promise.all(childDocuments.map(async document => MidiQOL.addDependent(parentDocument, document)));
 }
+async function modifyBatch(operations) {
+    if (queryUtils.isTheGM()) {
+        return await foundry.documents.modifyBatch(operations);
+    } else {
+        operations.forEach(op => {
+            if (op.parent) op.parent = op.parent.uuid;
+        });
+        const uuidBatches = await queryUtils.query('modifyBatch', queryUtils.gmUser(), {operations});
+        if (!uuidBatches) return [];
+        return await Promise.all(uuidBatches.map(async batch => {
+            return (await Promise.all(batch.map(uuid => fromUuid(uuid)))).filter(Boolean);
+        }));
+    }
+}
 export default {
     getRules,
     getSource,
@@ -115,5 +129,6 @@ export default {
     updateEmbeddedDocuments,
     setFlag,
     getEffectByIdentifier,
-    makeDependent
+    makeDependent,
+    modifyBatch
 };

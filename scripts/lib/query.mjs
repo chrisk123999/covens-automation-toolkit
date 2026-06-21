@@ -70,6 +70,15 @@ async function manualRoll({roll: rollData}) {
     await resolver.close();
     return results;
 }
+async function modifyBatch({operations}) {
+    if (!operations || !operations.length) return [];
+    const reconstructedOperations = await Promise.all(operations.map(async op => {
+        if (op.parent) op.parent = await fromUuid(op.parent);
+        return op;
+    }));
+    const results = await foundry.documents.modifyBatch(reconstructedOperations);
+    return results.map(batch => batch.map(doc => doc.uuid));
+}
 function registerQueries() {
     const handlers = {
         createEffects,
@@ -83,7 +92,8 @@ function registerQueries() {
         setFlag,
         createActor,
         createFolder,
-        manualRoll
+        manualRoll,
+        modifyBatch
     };
     globalThis.CONFIG.queries.cat = handlers;
     for (const [name, fn] of Object.entries(handlers)) {
