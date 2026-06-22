@@ -79,6 +79,11 @@ async function modifyBatch({operations}) {
     const results = await foundry.documents.modifyBatch(reconstructedOperations);
     return results.map(batch => batch.map(doc => doc.uuid));
 }
+async function moveToken({uuid, waypoints, options}) {
+    const token = await fromUuid(uuid);
+    if (!token) return;
+    return await token.move(waypoints, options);
+}
 function registerQueries() {
     const handlers = {
         createEffects,
@@ -93,7 +98,8 @@ function registerQueries() {
         createActor,
         createFolder,
         manualRoll,
-        modifyBatch
+        modifyBatch,
+        moveToken
     };
     globalThis.CONFIG.queries.cat = handlers;
     for (const [name, fn] of Object.entries(handlers)) {
@@ -113,5 +119,7 @@ export default {
     setFlag,
     createActor,
     createFolder,
-    manualRoll
+    manualRoll,
+    modifyBatch,
+    moveToken
 };

@@ -1,5 +1,5 @@
 import {constants, Events} from '../lib/_module.mjs';
-import {crosshairUtils, genericUtils} from './_module.mjs';
+import {crosshairUtils, genericUtils, queryUtils} from './_module.mjs';
 function getSavedCastData(token) {
     return token.flags.cat?.castData;
 }
@@ -44,6 +44,14 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
     };
     return MidiQOL.findNearby(dispositions[disposition], token.object, range, {includeIncapacitated, includeToken}).filter(token => !token.document.hidden);
 }
+async function moveToken(token, waypoints, options = {}) {
+    const hasPermission = queryUtils.hasPermission(token, game.user.id);
+    if (hasPermission) {
+        return await token.move(waypoints, options);
+    } else {
+        return await queryUtils.query('moveToken', queryUtils.gmUser(), {uuid: token.uuid, waypoints, options});
+    }
+}
 async function teleportToken(token, {destination, animation, range = 30} = {}) {
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation}).run();
@@ -55,7 +63,7 @@ async function teleportToken(token, {destination, animation, range = 30} = {}) {
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
     if (preAnimation) await preAnimation(token, {destination});
-    await token.move([
+    await moveToken(token, [
         {
             x: destination.x,
             y: destination.y,
@@ -73,14 +81,13 @@ async function displaceToken(token, {sourceToken, destination, animation, range 
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
     if (preAnimation) await preAnimation(token, {sourceToken, destination});
-    await token.move([
+    await moveToken(token, [
         {
             x: destination.x,
             y: destination.y,
             action: token.movementAction
         }
-    ],
-    {
+    ],{
         constrainOptions: {
             ignoreCost: true,
             ignoreWalls: false
@@ -132,7 +139,7 @@ async function slideToken(token, {sourceToken, distance = 5, ray} = {}) {
         y: token.y + Math.sin(angle) * pixelDistance
     };
     if (!isGridless) targetPoint = scene.grid.getSnappedPoint(targetPoint, {mode: 0xFF0});
-    await token.move([
+    await moveToken(token, [
         {
             x: targetPoint.x,
             y: targetPoint.y,
@@ -155,5 +162,6 @@ export default {
     findNearby,
     teleportToken,
     displaceToken,
-    slideToken
+    slideToken,
+    moveToken
 };
