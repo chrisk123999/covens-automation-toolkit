@@ -89,7 +89,6 @@ async function displaceToken(token, {sourceToken, destination, animation, range 
         }
     ],{
         constrainOptions: {
-            ignoreCost: true,
             ignoreWalls: false
         }
     });
@@ -148,7 +147,6 @@ async function slideToken(token, {sourceToken, distance = 5, ray} = {}) {
     ],
     {
         constrainOptions: {
-            ignoreCost: true,
             ignoreWalls: false
         }
     });
