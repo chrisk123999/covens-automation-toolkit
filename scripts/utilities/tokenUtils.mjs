@@ -1,4 +1,5 @@
-import {genericUtils} from './_module.mjs';
+import {constants, Events} from '../lib/_module.mjs';
+import {crosshairUtils, genericUtils} from './_module.mjs';
 function getSavedCastData(token) {
     return token.flags.cat?.castData;
 }
@@ -43,11 +44,116 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
     };
     return MidiQOL.findNearby(dispositions[disposition], token.object, range, {includeIncapacitated, includeToken}).filter(token => !token.document.hidden);
 }
+async function teleportToken(token, {destination, animation, range = 30} = {}) {
+    if (!destination) {
+        const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation}).run();
+        if (result) return;
+        destination = await crosshairUtils.aimCrosshair({token, maxRange: range});
+    }
+    if (!destination || destination?.cancelled) return;
+    const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation}).run();
+    if (result) return;
+    const preAnimation = animation?.macros?.preAnimation;
+    if (preAnimation) await preAnimation(token, {destination});
+    await token.move([
+        {
+            x: destination.x,
+            y: destination.y,
+            action: 'displace'
+        }
+    ]);
+    const postAnimation = animation?.macros?.postAnimation;
+    if (postAnimation) await postAnimation(token, {destination});
+    await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation}).run();
+}
+async function displaceToken(token, {sourceToken, destination, animation, range = 5} = {}) {
+    destination ??= await await crosshairUtils.aimCrosshair({token, maxRange: range});
+    if (!destination || destination?.cancelled) return;
+    const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation}).run();
+    if (result) return;
+    const preAnimation = animation?.macros?.preAnimation;
+    if (preAnimation) await preAnimation(token, {sourceToken, destination});
+    await token.move([
+        {
+            x: destination.x,
+            y: destination.y,
+            action: token.movementAction
+        }
+    ],
+    {
+        constrainOptions: {
+            ignoreCost: true,
+            ignoreWalls: false
+        }
+    });
+    const postAnimation = animation?.macros?.postAnimation;
+    if (postAnimation) await postAnimation(token, {sourceToken, destination});
+}
+async function slideToken(token, {sourceToken, distance = 5, ray} = {}) {
+    const results = await new Events.MovementEvent(token, constants.movementPasses.slide, {sourceToken, distance, ray}).run({multiResult: true});
+    if (results && results.length) {
+        if (results.includes(0)) return;
+        distance = results.reduce((acc, curr) => {
+            return typeof curr === 'number' ? acc + curr : acc;
+        }, distance);
+    }
+    if (distance === 0) return;
+    let angle;
+    if (ray) {
+        angle = ray.angle;
+    } else if (sourceToken) {
+        angle = Math.atan2(token.y - sourceToken.y, token.x - sourceToken.x);
+    } else {
+        return;
+    }
+    const scene = token.parent;
+    const isGridless = scene.grid.isGridless || scene.grid.type === CONST.GRID_TYPES.GRIDLESS;
+    const dUnits = distance / scene.dimensions.distance;
+    let kGrid = dUnits;
+    if (!isGridless) {
+        const ux = Math.abs(Math.cos(angle));
+        const uy = Math.abs(Math.sin(angle));
+        const maxU = Math.max(ux, uy);
+        const minU = Math.min(ux, uy);
+        const diagonalRule = scene.grid.diagonals;
+        if (diagonalRule === CONST.GRID_DIAGONALS.EQUIDISTANT) {
+            kGrid = dUnits / maxU;
+        } else if (diagonalRule === CONST.GRID_DIAGONALS.ALTERNATING_1 || diagonalRule === CONST.GRID_DIAGONALS.ALTERNATING_2) {
+            kGrid = dUnits / (maxU + 0.5 * minU);
+        } else if (diagonalRule === CONST.GRID_DIAGONALS.RECTILINEAR || diagonalRule === CONST.GRID_DIAGONALS.ILLEGAL) {
+            kGrid = dUnits / (maxU + minU);
+        } else if (diagonalRule === CONST.GRID_DIAGONALS.EXACT || diagonalRule === CONST.GRID_DIAGONALS.APPROXIMATE) {
+            kGrid = dUnits;
+        }
+    }
+    const pixelDistance = kGrid * scene.dimensions.size;
+    let targetPoint = {
+        x: token.x + Math.cos(angle) * pixelDistance,
+        y: token.y + Math.sin(angle) * pixelDistance
+    };
+    if (!isGridless) targetPoint = scene.grid.getSnappedPoint(targetPoint, {mode: 0xFF0});
+    await token.move([
+        {
+            x: targetPoint.x,
+            y: targetPoint.y,
+            action: token.movementAction
+        }
+    ],
+    {
+        constrainOptions: {
+            ignoreCost: true,
+            ignoreWalls: false
+        }
+    });
+}
 export default {
     getSavedCastData,
     getDistance,
     checkCover,
     isEnemy,
     getCombatData,
-    findNearby
+    findNearby,
+    teleportToken,
+    displaceToken,
+    slideToken
 };

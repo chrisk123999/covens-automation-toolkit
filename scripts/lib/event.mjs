@@ -425,12 +425,26 @@ class TokenDamageWorkflowEvent extends WorkflowEvent {
     }
 }
 class MovementEvent extends CatEvent {
-    constructor(token, pass, {options} = {}) {
+    constructor(token, pass, {options, destination, animation, range, sourceToken} = {}) {
         super(pass);
         this.name = 'Movement';
         this.trigger = Triggers.MoveTrigger;
         this.options = options;
+        this.destination = destination;
+        this.animation = animation;
+        this.range = range;
+        this.sourceToken = sourceToken;
         this.setContext(token.actor, {token});
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            options: this.options,
+            destination: this.destination,
+            animation: this.animation,
+            range: this.range,
+            sourceToken: this.sourceToken
+        };
     }
 }
 class RegionEvent extends CatEvent {

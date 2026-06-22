@@ -45,7 +45,12 @@ const workflowHookNames = {
 };
 const movementPasses = {
     moved: 'moved',
-    movedNear: 'movedNear'
+    movedNear: 'movedNear',
+    aimTeleport: 'aimTeleport',
+    preTeleport: 'preTeleport',
+    postTeleport: 'postTeleport',
+    displace: 'displace',
+    slide: 'slide'
 };
 const movementHookNames = {
     moveToken: 'moveToken'
