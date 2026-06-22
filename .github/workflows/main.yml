@@ -61,12 +61,12 @@ jobs:
         tag: ${{ github.event.release.tag_name }}
         body: ${{ github.event.release.body }}
 
-    # Ping Foundry VTT API to auto-publish (Requires FOUNDRY_KEY repository secret)
-    #- name: FoundryVTT AutoPublish
-    #  uses: fjogeleit/http-request-action@v2
-    #  continue-on-error: true
-    #  with:
-    #    url: 'https://foundryvtt.com/_api/packages/release_version/'
-    #    method: 'POST'
-    #    customHeaders: '{"Content-Type": "application/json", "Authorization" : "${{ secrets.FOUNDRY_KEY }}"}'
-    #    data: '{"dry_run": false, "id" : "cat", "release": {"version" : "${{env.VERSION}}", "manifest": "${{env.FOUNDRY_MANIFEST}}", "notes" : "https://github.com/${{github.repository}}/releases/tag/${{github.event.release.tag_name}}", "compatibility" : {"minimum": "14", "verified": "14", "maximum": "14"} } }'
+     Ping Foundry VTT API to auto-publish (Requires FOUNDRY_KEY repository secret)
+    - name: FoundryVTT AutoPublish
+      uses: fjogeleit/http-request-action@v2
+      continue-on-error: true
+      with:
+        url: 'https://foundryvtt.com/_api/packages/release_version/'
+        method: 'POST'
+        customHeaders: '{"Content-Type": "application/json", "Authorization" : "${{ secrets.FOUNDRY_KEY }}"}'
+        data: '{"dry_run": false, "id" : "cat", "release": {"version" : "${{env.VERSION}}", "manifest": "${{env.FOUNDRY_MANIFEST}}", "notes" : "https://github.com/${{github.repository}}/releases/tag/${{github.event.release.tag_name}}", "compatibility" : {"minimum": "14", "verified": "14", "maximum": "14"} } }'
