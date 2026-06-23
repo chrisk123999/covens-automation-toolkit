@@ -6,14 +6,15 @@ const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {fields} = foundry.data;
 
 const CREATURE_SCOPES = ['actor', 'scene', 'nearby', 'region', 'level', 'group', 'vehicle', 'encounter'];
-const WORKFLOW_SCOPES = ['actor', 'token', 'scene', 'nearby', 'region', 'level', 'target', 'group', 'encounter', 'vehicle', 'item', 'enchantment', 'castEnchantment'];
+const WORKFLOW_SCOPES = ['item', ...CREATURE_SCOPES,'token', 'target', 'enchantment', 'castEnchantment'];
+const ACTOR_SCOPES = [...CREATURE_SCOPES.filter(scope => scope !== 'region'), 'target'];
 
 // Which scope prefixes land on each document type at runtime (intersected with an event's scope set).
 const DOCUMENT_SCOPES = {
-    item: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter', 'item'],
-    activeeffect: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter', 'enchantment'],
-    activity: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter', 'castEnchantment'],
-    actor: ['actor', 'scene', 'nearby', 'level', 'target', 'group', 'vehicle', 'encounter'],
+    actor: ACTOR_SCOPES,
+    item: ['item', ...ACTOR_SCOPES],
+    activeeffect: [...ACTOR_SCOPES, 'enchantment'],
+    activity: [...ACTOR_SCOPES, 'castEnchantment'],
     token: ['token', 'actor', 'scene', 'nearby', 'level', 'target'],
     region: ['region', 'target'],
     scene: ['scene'],
@@ -35,14 +36,14 @@ let _eventStructure;
 function getEventStructure() {
     if (_eventStructure) return _eventStructure;
     const c = constants;
-    const rollChecks = ['situational', 'context', 'bonus', 'post'];
+    const rollChecks = Object.values(c.rollPasses).filter(pass => pass !== 'targetSituational');
     const itemBare = ['bulkUpdated', 'munched'];
     const itemScoped = Object.values(c.itemPasses).filter(pass => !itemBare.includes(pass));
     const mk = (list, self, scoped) => list.map(pass => ({pass, self, scoped}));
     return _eventStructure = {
         roll: {scopes: WORKFLOW_SCOPES, passes: mk(Object.values(c.workflowPasses), ['activity'], true)},
         combat: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.combatPasses), [], true)},
-        move: {scopes: CREATURE_SCOPES, passes: mk(['moved'], [], true)},
+        move: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.movementPasses), [], true)},
         effect: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.effectPasses), ['activeeffect'], true)},
         item: {scopes: CREATURE_SCOPES, passes: [...mk(itemScoped, ['item'], true), ...mk(itemBare, ['item'], false)]},
         region: {scopes: [], passes: mk(Object.values(c.regionPasses), ['region'], false)},
@@ -51,9 +52,9 @@ function getEventStructure() {
         time: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.timePasses), [], true)},
         check: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
         skill: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
-        save: {scopes: CREATURE_SCOPES, passes: mk([...rollChecks, 'targetSituational'], [], true)},
+        save: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
         tool: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
-        summon: {scopes: CREATURE_SCOPES, passes: mk(c.summonPasses ? Object.values(c.summonPasses) : ['summoned'], ['item', 'activity', 'actor', 'activeeffect'], true)},
+        summon: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.summonPasses), ['item', 'activity', 'actor', 'activeeffect'], true)},
         called: {scopes: CREATURE_SCOPES, passes: mk(c.calledPasses ? Object.values(c.calledPasses) : ['called'], ['item', 'activity', 'actor', 'activeeffect'], true)}
     };
 }
