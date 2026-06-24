@@ -347,7 +347,7 @@ class BaseWorkflowEvent extends CatEvent {
         if (this.level) triggers.push(...this.getLevelTriggers(this.level, 'level' + passName));
         if (this.targets?.size) {
             this.targets.forEach(token => {
-                if (!this.actor) return;
+                if (!token.actor) return;
                 if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, 'target' + passName, {sourceToken: token, distances: this.distances}));
                 triggers.push(...this.getActorTriggers(token.actor, 'target' + passName, {sourceToken: token, distances: this.distances}));
                 token.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {

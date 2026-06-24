@@ -1,17 +1,29 @@
-import {Events, constants, Logging} from '../lib/_module.mjs';
+import {Events, constants, Logging, Summon} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
 
 // reference https://gitlab.com/tposney/midi-qol/-/blob/v13/src/module/lib/midiCompletions.ts#L969
-// TODO remove out of scope vars e.g. macroItem, macroActivity
 
 const mkVar = (detail, info) => ({type: 'variable', detail, info: mkInfo(info)});
+const mkProp = (detail, info) => ({type: 'property', detail, info: mkInfo(info)});
 const mkInfo = msg => `CAT Data: ${msg}`;
+const fnDetails = (fnEntry, params, info) => {
+    fnEntry.detail = params;
+    fnEntry.info = mkInfo(info);
+}; 
 const clsInst = (api, cls, info) => {
-    const walked = CLASS_CACHE[cls.name] ?? api.classToCompletions(cls);
-    CLASS_CACHE[cls.name] ??= walked;
+    let walked = api.tree[cls.name];
+    if (!walked) {
+        walked = CLASS_CACHE[cls.name] ?? api.classToCompletions(cls);
+        CLASS_CACHE[cls.name] ??= walked;
+    }
     const v = mkVar(cls.name, info);
     api.mergeCompletions(v, walked.instanceChildren);
     return v;
+};
+const clsInstProp = (api, cls, info) => {
+    const prop = clsInst(api, cls, info);
+    prop.type = 'property';
+    return prop;
 };
 const cls = (key) => {
     switch (key) {
@@ -38,6 +50,7 @@ const alias = (api, base, info) => {
     return clsInst(api, c, info);
 };
 
+const OUT_OF_SCOPE = ['args', 'macroActivity', 'macroItem', 'midiData', 'scope', 'speaker'];
 const CLASS_CACHE = {};
 
 const VARS = {
@@ -58,7 +71,7 @@ const VARS = {
     targetToken: (api, {event}) => clsInst(api, CONFIG.Token.documentClass, INFO.targetToken[event]),
 
     // Damage    
-    ditem: (api) => mkVar('object', 'Live copy of workflow.damageItem.'),
+    ditem: () => mkVar('object', 'Live copy of workflow.damageItem.'),
 
     // Region
     tokens: () => mkVar(`${cls('token').name}[]`, 'Tokens in the trigger region.'),
@@ -93,7 +106,49 @@ const VARS = {
     diff: () => mkVar('number', 'Change in world time.'),
 
     // Summon
-    summon: (api) => clsInst(api, CONFIG.Token.documentClass, 'The summoned token.'),
+    summon: (api) => {
+        const walked = api.tree.cat?.children.lib?.children.Summon ?? api.classToCompletions(Summon);
+        if (!walked.enriched) {
+            const summon = walked.instanceChildren;
+            fnDetails(summon.getSourceActor, `() => Promise<${cls('actor').name}>`, 'Fetch the sidebar actor for this summon using summon.sourceActorUuid.');
+            fnDetails(summon.getTimeRemaining, `(worldTime) => number`, 'The remaining time before this summon expires. Pass in the current world time.');
+            fnDetails(summon.place, `(range, {token} = {}) => Promise<${cls('token').name}>`, 'Place the summon within range of the specified token. Uses the summoner token by default. Returns the summoned token.');
+            fnDetails(summon.recall, '() => Promise', 'Delete the summoned token.');
+            summon.folder = clsInstProp(api, CONFIG.Folder.documentClass, 'The sidebar folder that holds the template actor for the summon.');
+            summon.actor = clsInstProp(api, CONFIG.Actor.documentClass, 'The summoned actor.');
+            summon.token = clsInstProp(api, CONFIG.Token.documentClass, 'The summoned token.');
+            summon.owner = clsInstProp(api, CONFIG.Actor.documentClass, 'The summoner actor.');
+            summon.ownerToken = clsInstProp(api, CONFIG.Token.documentClass, 'The summoner token.');
+            summon.sourceDocument = clsInstProp(api, foundry.abstract.Document, 'The document used to create the summon.');
+            summon.parent = clsInstProp(api, foundry.abstract.Document, 'The parent document of the summon, often a concentration effect.');
+            summon.created = mkProp('number', 'The world time when the summon was created.');
+            summon.duration = mkProp('number', 'The duration in world time this summon will last.');
+            summon.parentUuid = mkProp('string', 'Parent document uuid for this summon, often a concentration effect.');
+            summon.sourceDocumentUuid = mkProp('string', 'The uuid of the document used to create this summon.');
+            summon.sourceActorUuid = mkProp('string', 'Sidebar actor uuid for this summon.');
+            summon.ownerUuid = mkProp('string', 'Summoner actor uuid.');
+            summon.animation = {
+                ...mkProp('object', 'Summon animation config.'),
+                children: {
+                    source: mkProp('string', 'Identifier for animation source.'),
+                    identifier: mkProp('string', 'Identifier for registered animation.')
+                }
+            };
+            summon.sounds = {
+                ...mkProp('object', 'Summon sound effects.'),
+                children: {
+                    place: mkProp('string', 'Filepath for summon placed sound.'),
+                    removed: mkProp('string', 'Filepath for summon removed sound.'),
+                    death: mkProp('string', 'Filepath for summon death sound.')
+                }
+            };
+            summon.initiative = mkProp('string', 'Initiative mode for this summon: "standard" | "follows" | "none"');
+            walked.enriched = true;
+        }
+        const v = mkVar('Summon', 'Summon data and helpers.');
+        api.mergeCompletions(v, walked.instanceChildren);
+        return v;
+    },
 
     // Called
     data: () => mkVar('object', 'Called event data.')
@@ -107,7 +162,6 @@ const OVERRIDES = {
     token: (api) => clsInst(api, CONFIG.Token.documentClass, 'The trigger token.')
 };
 
-// TODO any more detail here?
 const INFO = {
     options: {
         none: 'Event options.',
@@ -119,16 +173,19 @@ const INFO = {
         time: 'Time event options.'
     },
     updates: {
+        none: 'Updates.',
         region: 'Region updates.',
         effect: 'Effect updates.',
         item: 'Item updates.',
         summon: 'Summon updates.'
     },
     targetToken: {
+        none: 'Target Token.',
         roll: 'The token taking damage.',
         aura: 'The token on which to apply an aura.'
     },
     config:{
+        none: 'Configuration.',
         roll: 'Item roll configuration.',
         rest: 'Rest configuration.',
         check: 'Dice roll configuration.',
@@ -137,6 +194,7 @@ const INFO = {
         tool: 'Dice roll configuration.'
     },
     dialog: {
+        none: 'Dialog configuration.',
         roll: 'Item roll dialog configuration.',
         check: 'Dice roll dialog configuration.',
         save: 'Dice roll dialog configuration.',
@@ -144,6 +202,7 @@ const INFO = {
         tool: 'Dice roll dialog configuration.'
     }, 
     message: {
+        none: 'Message configuration.',
         roll: 'Item roll message configuration.',
         check: 'Dice message configuration.',
         save: 'Dice message configuration.',
@@ -162,10 +221,10 @@ function registerCAT({mergeCompletions, objectToCompletions, rebuildSignatureMap
 }
 
 function inContext(config, context, docType) {
-    const codeMirror = context.element.querySelector('code-mirror');
-    if (!codeMirror) return;
     const autocomplete = game.modules.get('macro-autocomplete')?.api;
     if (!autocomplete) return;
+    const codeMirror = context.element.querySelector('code-mirror');
+    if (!codeMirror) return;
     const baseTree = autocomplete.tree;
     const tree = baseTree.cat?.children;
     if (!tree) return;
@@ -181,9 +240,9 @@ function inContext(config, context, docType) {
         castData: {
             ...mkVar('object', 'Cast scaling info for spell effects.'),
             children: {
-                castLevel: mkVar('number', 'Spell upcast level.'),
-                baseLevel: mkVar('number', 'Spell level.'),
-                saveDC: mkVar('number', 'Spell DC')
+                castLevel: mkProp('number', 'Spell upcast level.'),
+                baseLevel: mkProp('number', 'Spell level.'),
+                saveDC: mkProp('number', 'Spell DC')
             }
         }
     };
@@ -199,6 +258,10 @@ function inContext(config, context, docType) {
         }
         let triggerData = VARS[key]?.(autocomplete, {event, pass, docType});
         completions[key] = triggerData || mkVar('any', 'unregistered');
+    }
+    for (const key of OUT_OF_SCOPE) {
+        if (key in completions) continue;
+        completions[key] = alias(autocomplete, key, 'Not in scope for CAT embedded macros.');
     }
     autocomplete.setContextCompletions(codeMirror, completions /*, blockly */);
     Logging.addEntry('DEBUG', `macro-autocomplete injected ${Object.keys(completions).length} contextual completions`);

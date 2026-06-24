@@ -75,7 +75,7 @@ async function teleportToken(token, {destination, animation, range = 30} = {}) {
     await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation}).run();
 }
 async function displaceToken(token, {sourceToken, destination, animation, range = 5} = {}) {
-    destination ??= await await crosshairUtils.aimCrosshair({token, maxRange: range});
+    destination ??= await crosshairUtils.aimCrosshair({token, maxRange: range});
     if (!destination || destination?.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation}).run();
     if (result) return;
