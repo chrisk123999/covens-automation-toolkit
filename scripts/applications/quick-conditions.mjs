@@ -5,7 +5,7 @@ const {Collection} = foundry.utils;
 export default class QuickConditions extends HandlebarsApplicationMixin(ApplicationV2) {
     constructor(data) {
         super({id: 'cat-quick-conditions-window'});
-        this.windowTitle = genericUtils.translate('CAT.QuickConditions.Title');
+        this.windowTitle = _loc('CAT.QuickConditions.Title');
         this.data = data;
         this.value = this.data.entity[this.data.fieldId];
         this._conditions = quickConditions.constants;
@@ -300,7 +300,7 @@ export default class QuickConditions extends HandlebarsApplicationMixin(Applicat
                 class: 'quick-conditions-button-add',
                 dataAction: 'add',
                 label: condition.label ?? key
-            })).sort((a, b) => genericUtils.translate(a.label).localeCompare(genericUtils.translate(b.label)))
+            })).sort((a, b) => _loc(a.label).localeCompare(_loc(b.label)))
         };
         this.context = context;
     }

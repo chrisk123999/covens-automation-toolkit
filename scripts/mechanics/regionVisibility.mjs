@@ -28,10 +28,10 @@ export async function regionVisibility(workflow) {
     obscuredRegions.forEach(region => {
         if (!checkVision(sourceToken, sourceSenses, region)) {
             workflow.flankingAdvantage = false;
-            workflow.tracker.disadvantage.add(region.name, genericUtils.translate('CAT.Region.AttackerCantSeeTarget'));
+            workflow.tracker.disadvantage.add(region.name, _loc('CAT.Region.AttackerCantSeeTarget'));
         }
         if (!checkVision(targetToken, targetSenses, region)) {
-            workflow.tracker.advantage.add(region.name, genericUtils.translate('CAT.Region.TargetCantSeeAttacker'));
+            workflow.tracker.advantage.add(region.name, _loc('CAT.Region.TargetCantSeeAttacker'));
         }
     });
 }

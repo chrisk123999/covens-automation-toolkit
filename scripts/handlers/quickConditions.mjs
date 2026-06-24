@@ -10,7 +10,7 @@ function onRender(application, element) {
         const el = document.createElement('i');
         el.id = name;
         el.classList.add('fa-solid', 'fa-plus', 'cat-quick-conditions');
-        el.dataset.tooltip = genericUtils.translate('CAT.QuickConditions.Title');
+        el.dataset.tooltip = _loc('CAT.QuickConditions.Title');
         node.appendChild(el);
         el.addEventListener('click', onClick.bind(data));
     });
@@ -25,7 +25,7 @@ function button(input) {
     html += `<p class="button-text"`;
     if (input.tooltip) html += `data-tooltip="${input.tooltip}"`;
     html += `>`;
-    if (input.label) html += genericUtils.translate(input.label);
+    if (input.label) html += _loc(input.label);
     if (input.icon) html += `<i class="${input.icon}"></i>`;
     html += `</p></button>`;
     return html;
@@ -37,14 +37,14 @@ function selectDetailed(input) {
         if (input.value === i.value) html += ` selected `;
         html += `>`;
         let text = i.display ?? i.name;
-        if (text) html += genericUtils.translate(text.toString());
+        if (text) html += _loc(text.toString());
         html += `</option>`;
     });
     html += `</select>`;
     if (input.label || input.image) {
         html += `<label for="${input.id}">`;
         if (input.image) html += `<img class="label-image" src=${input.image}>`;
-        if (input.label) html += `<p class="label-text">${genericUtils.translate(input.label?.toString())}</p>`;
+        if (input.label) html += `<p class="label-text">${_loc(input.label?.toString())}</p>`;
         html += `</label>`;
     }
     return html;
@@ -55,14 +55,14 @@ function selectMultiple(input) {
         html += `<option value="${i.value}"`;
         if (input.value.includes(i.value)) html += ` selected `;
         html += `>`;
-        if (i.name) html += genericUtils.translate(i.name?.toString());
+        if (i.name) html += _loc(i.name?.toString());
         html += `</option>`;
     });
     html += `</multi-select>`;
     if (input.label || input.image) {
         html += `<label for="${input.id}">`;
         if (input.image) html += `<img class="label-image" src=${input.image}>`;
-        if (input.label) html += `<p class="label-text">${genericUtils.translate(input.label?.toString())}</p>`;
+        if (input.label) html += `<p class="label-text">${_loc(input.label?.toString())}</p>`;
         html += `</label>`;
     }
     return html;
@@ -75,13 +75,13 @@ function contentP(input) {
 }
 function textInput(input) {
     let html = `<input type="text" class="${input.class}" id="${input.id}" name="${input.name}" value="${input.value}"`;
-    if (input.tooltip) html += `data-tooltip="${genericUtils.translate(input.tooltip)}"`;
+    if (input.tooltip) html += `data-tooltip="${_loc(input.tooltip)}"`;
     html += `></input>`;
-    if (input.label) html += `<label for="${input.id}"><p class="label-text">${genericUtils.translate(input.label?.toString())}</p></label>`;
+    if (input.label) html += `<label for="${input.id}"><p class="label-text">${_loc(input.label?.toString())}</p></label>`;
     return html;
 }
 function labelP(input) {
-    return `<span class="${input.class}" id="${input.id}">${genericUtils.translate(input.value?.toString())}</span>`;
+    return `<span class="${input.class}" id="${input.id}">${_loc(input.value?.toString())}</span>`;
 }
 function numberInput(input) {
     let html = `<input type="number" class="quick-conditions-number" id="${input.id}" name="${input.name}" value="${input.value}"`;
@@ -193,7 +193,7 @@ class itemTypes {
     static default = 'spell';
     static type = 'select';
     static varType = isVar.string;
-    static get options() {return Object?.entries(CONFIG?.Item?.typeLabels ?? {})?.map(([key, value]) => ({name: genericUtils.translate(value), value: key}));}
+    static get options() {return Object?.entries(CONFIG?.Item?.typeLabels ?? {})?.map(([key, value]) => ({name: _loc(value), value: key}));}
 }
 const constants = new Collection([
     ['typeOrRace', {

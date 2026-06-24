@@ -25,9 +25,6 @@ function convertDistance(scene, distanceFt) {
         default: return distanceFt;
     }
 }
-function translate(key) {
-    return _loc(key);
-}
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -43,7 +40,6 @@ export default {
     deepClone,
     mergeObject,
     convertDistance,
-    translate,
     sleep,
     decimalToFraction,
     isEmpty,
