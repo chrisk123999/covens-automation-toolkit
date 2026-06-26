@@ -1,143 +1,116 @@
-import {Logging} from '../lib/_module.mjs';
+import {constants, Logging} from '../lib/_module.mjs';
 import {rollUtils} from '../utilities/_module.mjs';
 /*
-item.flags.cat.rollModifiers = [
-    {
-        modifiers: ['x', 'min1'],
-        restrictions: {
-            identifier: {
-                value: ['example']
-            },
-            type: {
-                value: ['spell', 'weapon'],
-                requireAll: false
-            },
-            property: {
-                value: ['verbal', 'material'],
-                requireAll: false
-            },
-            school: {
-                value: ['evocation', 'necromancy'],
-                requireAll: true
-            },
-            level: {
-                value: [0]
-            },
-            ability: {
-                value: ['int', 'wis'],
-                requireAll: false
-            },
-            method: {
-                value: ['spell', 'atwill'],
-                requireAll: false
-            },
-            damageTypes: {
-                value: ['fire', 'lightning']
-                requireAll: false
+item.flags.cat.alternateAttributes = {
+    RollModifier: [
+        {
+            value: ['x', 'min2'],
+            restrictions: {
+                Identifier: {
+                    value: ['example', 'itemID|activityID|partID']
+                }
+                Type: {
+                    value: ['spell', 'weapon']
+                },
+                Property: {
+                    value: ['verbal', 'material'],
+                    requireAll: false
+                },
+                School: {
+                    value: ['evocation', 'necromancy']
+                },
+                Level: {
+                    value: [1, 2, 3]
+                },
+                Ability: {
+                    value: ['int', 'wis']
+                },
+                Method: {
+                    value: ['spell', 'atwill']
+                },
+                DamageType: {
+                    value: ['fire', 'lightning']
+                }
+            }
+        },
+        {
+            value: ['min10'],
+            restrictions: {
+                ...
             }
         }
-    }
-]
-item.flags.cat.alternateFormula = [
-    value: '1d8 + @mod',
-    identifiers: ['example']
-]
+    ],
+    DamageFormula: [ 
+        {
+            value: '1d8 + @mod',
+            restrictions: {
+                ... same options as roll modifier
+            }
+        },
+        {
+            value: '2d4 + @mod',
+            restrictions: {
+                ...
+            }
+        }
+    ]
+}
 */
-function checkReq(requirement, itemData, defaultRequireAll = true) {
-    if (!requirement) return true;
-    const reqValues = requirement.value;
-    const requireAll = requirement.requireAll ?? defaultRequireAll;
-    if (itemData instanceof Set) {
-        return requireAll ? reqValues.every(v => itemData.has(v))  : reqValues.some(v => itemData.has(v));
-    }
-    if (Array.isArray(itemData)) {
-        return requireAll ? reqValues.every(v => itemData.includes(v)) : reqValues.some(v => itemData.includes(v));
-    }
-    return requireAll ? reqValues.every(v => v === itemData) : reqValues.some(v => v === itemData);
-}
-function checkIdentifier(identifiers, identifier, {activityIdentifier, partIndex} = {}) {
-    if (!identifiers) return true;
-    return identifiers.some(id => {
-        let [itemID, activityID, idx = 0] = id.split('|').map(i => i.trim());
-        if (itemID !== identifier) return false;
-        if (activityID !== activityIdentifier) return false;
-        if (idx === 'all' || !activityID?.length) return true;
-        return idx == partIndex;
-    });
-}
-function isValidModifier(modDef, targetItem, identifier, {activityIdentifier, partIndex, damage} = {}) {
-    const reqs = modDef.restrictions;
-    if (!reqs) return true;
-    if (!checkIdentifier(reqs.identifier?.value, identifier, {activityIdentifier, partIndex})) return false;
-    if (!checkReq(reqs.type, targetItem.type, false)) return false;
-    if (!checkReq(reqs.property, targetItem.system.properties, true)) return false;
-    if (targetItem.type === 'spell') {
-        if (!checkReq(reqs.school, targetItem.system.school, false)) return false;
-        if (!checkReq(reqs.level, targetItem.system.level, false)) return false;
-        if (!checkReq(reqs.method, targetItem.system.method, false)) return false;
-        if (!checkReq(reqs.ability, targetItem.system.ability, false)) return false;
-    }
-    if (!checkReq(reqs.classIdentifier, targetItem.system.classIdentifier, false)) return false;
-    if (reqs.damageTypes) {
-        if (!damage) return false; 
-        const currentTypes = damage.types || [damage.type];
-        if (!checkReq(reqs.damageTypes, currentTypes, false)) return false;
-    }
-    return true;
-}
 function formula(wrapped) {
     const parent = this.parent;
     if (!parent) return wrapped();
-    let identifier;
-    let activityIdentifier;
-    let partIndex;
-    let actor;
-    let document;
-    let targetItem; 
+    let context;
     if (parent.documentName === 'Activity') {
-        actor = parent.actor;
+        const actor = parent.actor;
         if (!actor) return wrapped();
-        targetItem = parent.item;
-        identifier = targetItem.system.identifier; 
-        activityIdentifier = parent.identifier;
-        partIndex = this._index;
-        document = parent;
+        context = {
+            actor,
+            damage: this,
+            activity: parent,
+            document: parent,
+            item: parent.item,
+            partIndex: this._index,
+            activityIdentifier: parent.identifier,
+            identifier: parent.item.system.identifier
+        };
     } else {
         const grandParent = parent.parent;
         if (grandParent?.documentName !== 'Item') return wrapped();
-        actor = grandParent.actor;
+        const actor = grandParent.actor;
         if (!actor) return wrapped();
-        targetItem = grandParent;
-        identifier = grandParent.system.identifier;
-        document = grandParent;
+        context = {
+            actor,
+            damage: this,
+            item: grandParent,
+            document: grandParent,
+            identifier: grandParent.system.identifier
+        };
     }
     const originalFormula = wrapped();
-    const alternateFormulas = [originalFormula];
+    const alternateFormulas = new Set([originalFormula]);
     const rollModifiers = new Set();
-    actor.items.forEach(item => {
-        if (item.type != 'feat') return;
-        const altFormula = item.flags.cat?.alternateFormula?.find(a => checkIdentifier(a.identifiers, identifier, {activityIdentifier, partIndex}))?.value;
-        if (altFormula) alternateFormulas.push(altFormula);
-        const modifiersList = item.flags.cat?.rollModifiers;
-        if (modifiersList) {
-            modifiersList.forEach(modDef => {
-                if (isValidModifier(modDef, targetItem, identifier, {activityIdentifier, partIndex, damage: this}) && modDef.modifiers) 
-                    modDef.modifiers.forEach(m => rollModifiers.add(m));
-            });
-        }
+    const attributeFlagHolders = [
+        ...context.actor.itemTypes.feat,
+        ...context.actor.itemTypes.equipment
+    ];
+    attributeFlagHolders.forEach(item => {
+        context.sourceItem = item;
+        const newFormulas = constants.alternateAttributes.DamageFormula.evaluate(context);
+        if (newFormulas?.size) newFormulas.forEach(f => alternateFormulas.add(f));
+        const newModifiers = constants.alternateAttributes.RollModifier.evaluate(context);
+        if (newModifiers?.size) newModifiers.forEach(mod => rollModifiers.add(mod));
     });
     let bestFormula = originalFormula;
-    if (alternateFormulas.length > 1) {
-        const highestIndex = alternateFormulas.reduce((accumulator, currentFormula, currentIndex) => {
+    if (alternateFormulas.size > 1) {
+        bestFormula = alternateFormulas.reduce((accumulator, currentFormula) => {
             if (!currentFormula.length) return accumulator;
-            const currentMax = rollUtils.rollDiceSync(currentFormula, {document, options: {maximize: true}}).total;
-            if (currentMax > accumulator.maxValue) return {index: currentIndex, maxValue: currentMax};
+            const currentMax = rollUtils.rollDiceSync(currentFormula, {document: context.document, options: {maximize: true}}).total;
+            if (currentMax > accumulator.maxValue) return {best: currentFormula, maxValue: currentMax};
             return accumulator;
-        }, {index: 0, maxValue: -Infinity}).index;
-        bestFormula = alternateFormulas[highestIndex];
+        }, {best: originalFormula, maxValue: -Infinity}).best;
     }
     if (rollModifiers.size) {
-        const terms = Roll.parse(bestFormula, document.getRollData());
+        const terms = Roll.parse(bestFormula, context.document.getRollData());
         terms.forEach(term => {
             if (term.modifiers) {
                 rollModifiers.forEach(mod => {
@@ -173,6 +146,5 @@ function patch(enabled) {
     }
 }
 export default {
-    patch,
-    isValidModifier
+    patch
 };
