@@ -9,9 +9,11 @@ class AlternateAttribute {
 
     #type;
     #schema;
+    #getFlagHolders;
 
-    constructor({type, valueSchema, restrictionSchema}) {
+    constructor({type, valueSchema, restrictionSchema, getFlagHolders}) {
         this.#type = type;
+        this.#getFlagHolders = getFlagHolders;
         this.#schema = new fields.SchemaField({
             value: valueSchema,
             restrictions: new fields.SchemaField(restrictionSchema, {required: false})
@@ -42,6 +44,10 @@ class AlternateAttribute {
         if (!sourceItem.system.equipped) return false;
         if (sourceItem.system.attunement === 'required' && !sourceItem.system.attuned) return false;
         return true;
+    }
+
+    getFlagHolders(actor) {
+        return this.#getFlagHolders?.(actor) ?? actor.items;
     }
 
     create(item, value, restrictions) {
@@ -77,14 +83,15 @@ class AlternateAttribute {
     }
 }
 
-function registerAttribute({type, valueSchema, getRestrictionSchema}) {
-    TYPES.push({type, valueSchema, getRestrictionSchema});
+function registerAttribute({type, valueSchema, getRestrictionSchema, getFlagHolders}) {
+    TYPES.push({type, valueSchema, getRestrictionSchema, getFlagHolders});
 }
 
 function buildAttributes() {
     return TYPES.reduce((list, attribute) => (list[attribute.type] = new AlternateAttribute({
         type: attribute.type,
         valueSchema: attribute.valueSchema,
+        getFlagHolders: attribute.getFlagHolders,
         restrictionSchema: attribute.getRestrictionSchema().reduce((list, r) => (list[r.type] = r.schema, list), {})
     }), list), {});
 }
@@ -102,12 +109,20 @@ function getFormulaRestrictions() {
     ];
 }
 
+function getFormulaFlagHolders(actor) {
+    return [
+        ...actor.itemTypes.feat,
+        ...actor.itemTypes.equipment
+    ];
+}
+
 registerAttribute({
     type: 'DamageFormula',
     valueSchema: new dndFields.FormulaField({
         placeholder: '1d4 + @mod',
         required: true
     }),
+    getFlagHolders: getFormulaFlagHolders,
     getRestrictionSchema: getFormulaRestrictions
 });
 
@@ -117,6 +132,7 @@ registerAttribute({
         placeholder: 'x, min2, r',
         required: true
     })),
+    getFlagHolders: getFormulaFlagHolders,
     getRestrictionSchema: getFormulaRestrictions
 });
 
@@ -132,7 +148,8 @@ registerAttribute({
         Restrictions.Identifier,
         Restrictions.Property,
         Restrictions.Type
-    ]
+    ],
+    getFlagHolders: (actor) => actor.itemTypes.feat
 });
 
 export default {

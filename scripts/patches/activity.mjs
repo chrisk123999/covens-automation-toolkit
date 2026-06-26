@@ -49,15 +49,12 @@ function availableAbilities(wrapped) {
         item: this.item,
         actor: this.actor,
         activityIdentifier: this.identifier,
-        identifier: this.item.system.identifier,
+        identifier: this.item.system.identifier
     };
-    const attributeFlagHolders = [
-        ...this.actor.itemTypes.feat,
-        ...this.actor.itemTypes.equipment
-    ];
-    attributeFlagHolders.forEach(item => {
+    const Ability = constants.alternateAttributes.Ability;
+    Ability.getFlagHolders(this.actor).forEach(item => {
         context.sourceItem = item;
-        const newAbilities = constants.alternateAttributes.Ability.evaluate(context);
+        const newAbilities = Ability.evaluate(context);
         if (newAbilities?.size) newAbilities.forEach(a => allAbilities.add(a));
     });
     return allAbilities;
@@ -73,19 +70,16 @@ function getDamageConfig(wrapped, config) {
         document: this,
         item: this.item,
         activityIdentifier: this.identifier,
-        identifier: this.item.system.identifier,
+        identifier: this.item.system.identifier
     };
+    const RollModifier = constants.alternateAttributes.RollModifier;
+    const flagHolders = RollModifier.getFlagHolders(actor);
     rollConfig.rolls.forEach(rollData => {
         if (!rollData.parts) return;
         const rollModifiers = new Set();
-        const attributeFlagHolders = [
-            ...actor.itemTypes.feat,
-            ...actor.itemTypes.equipment
-        ];
-        context.damage = rollData.options;
-        attributeFlagHolders.forEach(item => {
+        flagHolders.forEach(item => {
             context.sourceItem = item;
-            const newModifiers = constants.alternateAttributes.RollModifier.evaluate(context);
+            const newModifiers = RollModifier.evaluate(context);
             if (newModifiers?.size) newModifiers.forEach(mod => rollModifiers.add(mod));
         });
         if (rollModifiers.size) {

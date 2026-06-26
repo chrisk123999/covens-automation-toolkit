@@ -48,7 +48,7 @@ function addRegistrationError(data, type, error) {
     error = convertValidationError(error);
     registrationErrors[type] ??= [];
     registrationErrors[type].push({
-        message: error.toString(),
+        message: error.message,
         stack: error.stack,
         data: JSON.stringify(data),
         time: Date.now()

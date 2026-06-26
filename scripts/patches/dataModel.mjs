@@ -89,15 +89,12 @@ function formula(wrapped) {
     const originalFormula = wrapped();
     const alternateFormulas = new Set([originalFormula]);
     const rollModifiers = new Set();
-    const attributeFlagHolders = [
-        ...context.actor.itemTypes.feat,
-        ...context.actor.itemTypes.equipment
-    ];
-    attributeFlagHolders.forEach(item => {
+    const {DamageFormula, RollModifier} = constants.alternateAttributes;
+    DamageFormula.getFlagHolders(context.actor).forEach(item => {
         context.sourceItem = item;
-        const newFormulas = constants.alternateAttributes.DamageFormula.evaluate(context);
+        const newFormulas = DamageFormula.evaluate(context);
         if (newFormulas?.size) newFormulas.forEach(f => alternateFormulas.add(f));
-        const newModifiers = constants.alternateAttributes.RollModifier.evaluate(context);
+        const newModifiers = RollModifier.evaluate(context);
         if (newModifiers?.size) newModifiers.forEach(mod => rollModifiers.add(mod));
     });
     let bestFormula = originalFormula;
