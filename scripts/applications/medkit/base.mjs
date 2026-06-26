@@ -1,5 +1,5 @@
-import {constants} from '../../lib/_module.mjs';
-import {documentUtils, genericUtils, automationUtils, dialogUtils, uiUtils} from '../../utilities/_module.mjs';
+import {constants, Logging} from '../../lib/_module.mjs';
+import {documentUtils, genericUtils, automationUtils, dialogUtils, uiUtils, itemUtils} from '../../utilities/_module.mjs';
 import EmbeddedMacroEditorApp from '../embedded-macros.mjs';
 const {fields} = foundry.data;
 
@@ -926,16 +926,47 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {MedkitApp} */
     static async #massApply() {
-        const items = Array.from(await this._getMassApplyItems() ?? []);
-        if (!items.length) return;
+        const rawItems = Array.from(await this._getMassApplyItems() ?? []);
+        if (!rawItems.length) return;
         const confirmed = await dialogUtils.confirm('CAT.MEDKIT.MassApply.ConfirmTitle', _loc('CAT.MEDKIT.MassApply.ConfirmPrompt'));
         if (!confirmed) return;
-        for (const item of items) {
-            const source = documentUtils.getSource(item);
-            if (!source) continue;
-            await automationUtils.updateItem(item, {source});
+        const dependencyMap = new Map();
+        rawItems.forEach(item => dependencyMap.set(item.id, itemUtils.getDependencies(item)));
+        const sortedItems = [];
+        const visited = new Set();
+        const visiting = new Set();
+        let cycleDetected = false;
+        const visit = (item) => {
+            if (visited.has(item.id)) return; 
+            if (visiting.has(item.id)) {
+                Logging.addEntry('WARNING', 'Circular dependency detected involving item:' + item.name + '(ID: ' + item.id + ')');
+                cycleDetected = true;
+                return; 
+            }
+            visiting.add(item.id);
+            const deps = dependencyMap.get(item.id) || new Set();
+            deps.forEach(depId => {
+                const depItem = rawItems.find(i => i.id === depId);
+                if (depItem) visit(depItem); 
+            });
+            visiting.delete(item.id);
+            visited.add(item.id);
+            sortedItems.push(item);
+        };
+        rawItems.forEach(visit);
+        if (cycleDetected) ui.notifications.warn('CAT.MEDKIT.MassApply.CycleWarning');
+        for (const item of sortedItems) {
+            const isApplied = automationUtils.getCurrentAutomation(item) || automationUtils.getStoredHash(item);
+            let needsUpdate = false;
+            if (isApplied) {
+                needsUpdate = !automationUtils.isUpToDate(item);
+            } else {
+                const available = automationUtils.getAvailableAutomations(item);
+                if (available?.length) needsUpdate = true;
+            }
+            if (needsUpdate) await automationUtils.updateItem(item);
         }
-        ui.notifications.info(_loc('CAT.MEDKIT.MassApply.Done'));
+        ui.notifications.info('CAT.MEDKIT.MassApply.Done');
         this.render();
     }
 

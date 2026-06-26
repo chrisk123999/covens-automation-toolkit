@@ -1,7 +1,7 @@
 /** @import Item5e from "../../dnd5e/module/documents/item.mjs" */
 
 import {Logging} from '../lib/_module.mjs';
-import {documentUtils, effectUtils, genericUtils} from './_module.mjs';
+import {activityUtils, documentUtils, effectUtils, genericUtils} from './_module.mjs';
 const activityVisibilityLocks = new Map();
 
 /**
@@ -154,6 +154,12 @@ function getSourceClass(item) {
     if (!sourceClassIdentifier) return;
     return item.actor.classes[sourceClassIdentifier];
 }
+function getDependencies(item) {
+    const dependencies = new Set();
+    if (!item.system.activities) return dependencies;
+    item.system.activities.forEach(activity => activityUtils.getDependencies(activity).forEach(depId => dependencies.add(depId)));
+    return dependencies;
+}
 export default {
     getSaveDC,
     getSavedCastData,
@@ -164,5 +170,6 @@ export default {
     rehideActivities,
     getSourceClassIdentifier,
     getEquipmentState,
-    getSourceClass
+    getSourceClass,
+    getDependencies
 };
