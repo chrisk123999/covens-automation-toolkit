@@ -156,7 +156,6 @@ export default class ItemMedkit extends MedkitApp {
         context.otherRulesAutomationAvailable = !availableAutomations.length && otherRulesAutomations.length > 0;
 
         context.configurationCategories = this._prepareConfigurationCategories(currAutomation);
-        context.classBonuses = this.#prepareClassBonuses();
 
         const genericData = this._prepareGenericFeatures();
         context.genericChoices = genericData.choices;
@@ -189,6 +188,7 @@ export default class ItemMedkit extends MedkitApp {
             modifiers: (entry.modifiers ?? []).join(', '),
             summary: Object.keys(entry.restrictions ?? {}).join(', ')
         }));
+        context.classBonuses = this.#prepareClassBonuses();
     }
 
     #prepareClassBonuses() {
