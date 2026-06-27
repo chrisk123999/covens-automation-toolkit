@@ -182,6 +182,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
         document = await Item.create(documentData, {keepId: true, pack}); //May need to GM socket this.
     }
     if (!document) return;
+    if (actor) await updateScales(document, {automation});
     if (!skipEvent && actor) await itemEvents.itemMedkit(document);
     if (openSheet) await document.sheet.render(true);
 }
@@ -194,22 +195,24 @@ async function updateScales(item, {automation} = {}) {
     const rules = documentUtils.getRules(item);
     const classIdentifier = getConfigValue(item, 'classIdentifier');
     const subclassIdentifier = getConfigValue(item, 'subclassIdentifier');
+    if (!classIdentifier && !subclassIdentifier) return;
     const updates = [];
-    automation.scales.forEach(scaleData => {
-        let scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: scaleData.source, classIdentifier});
+    automation.scales?.forEach(scaleData => {
+        let scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: scaleData.source});
         let targetIdentifier = classIdentifier;
         if (!scale && subclassIdentifier) {
-            scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: automation.source, classIdentifier: subclassIdentifier});
+            scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: automation.source});
             targetIdentifier = subclassIdentifier;
         }
         if (!scale) return;
         const classItem = item.actor.classes[targetIdentifier];
         if (!classItem) return;
-        const scaleValue = classItem.advancement.byType.ScaleValue.find(i => i.configuration.identifier === scale.identifier);
+        const scaleValue = classItem.advancement.byType?.ScaleValue?.find(i => i.configuration.identifier === targetIdentifier);
         if (scaleValue && scaleValue.type === scale.data.type) return;
         const advancementKey = scaleValue ? scaleValue.id : (scale.data._id ?? foundry.utils.randomID());
         const classData = classItem.toObject();
         classData.system.advancement[advancementKey] = scale.data;
+        classData.system.advancement[advancementKey].configuration.identifier = targetIdentifier;
         if (scaleValue) delete classData.system.advancement[advancementKey]._id;
         const change = {_id: classItem.id, 'system.advancement': classData.system.advancement};
         const currentUpdate = updates.find(i => i._id === classItem.id);
