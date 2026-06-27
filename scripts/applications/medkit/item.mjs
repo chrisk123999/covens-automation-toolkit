@@ -4,24 +4,6 @@ import {documentUtils, automationUtils} from '../../utilities/_module.mjs';
 import DocPropertyEditorApp from '../doc-property-editor.mjs';
 const {fields} = foundry.data;
 
-const DOC_PROP_TYPES = ['feat'];
-const ARRAY_DOC_PROPS = ['alternateFormula', 'rollModifiers'];
-
-function docPropChoices() {
-    const D = CONFIG.DND5E ?? {};
-    const label = v => (typeof v === 'string' ? v : (v?.label ?? v?.name ?? ''));
-    const mapOf = obj => Object.entries(obj ?? {}).reduce((acc, [key, val]) => {
-        const text = label(val) || key;
-        acc[key] = text.includes('.') ? _loc(text) : text;
-        return acc;
-    }, {});
-    const itemTypes = Object.entries(CONFIG.Item?.typeLabels ?? {}).reduce((acc, [key, val]) => {
-        acc[key] = (typeof val === 'string' && val.includes('.')) ? _loc(val) : (val ?? key);
-        return acc;
-    }, {});
-    return {ability: mapOf(D.abilities), type: itemTypes, property: mapOf(D.itemProperties), school: mapOf(D.spellSchools), damageTypes: mapOf(D.damageTypes), level: mapOf(D.spellLevels), method: mapOf(D.spellcasting)};
-}
-
 export default class ItemMedkit extends MedkitApp {
     static DOCUMENT_TYPE = 'item';
     static DEFAULT_OPTIONS = {
@@ -60,7 +42,8 @@ export default class ItemMedkit extends MedkitApp {
     };
 
     get #showDocProps() {
-        return DOC_PROP_TYPES.includes(this.document.type);
+        const allowed = constants.alternateAttributes.DamageFormula.allowedFlagHolders;
+        return !allowed?.length || allowed.includes(this.document.type);
     }
 
     _prepareTabs(group) {
@@ -179,16 +162,22 @@ export default class ItemMedkit extends MedkitApp {
     }
 
     #prepareDocProps(context) {
+        const attributes = Object.entries(constants.alternateAttributes);
+        context.docPropHint = _loc('CAT.MEDKIT.DocProps.Hint', {list: attributes.map(a => _loc(`CAT.MEDKIT.DocProps.Props.${a[0]}.Label`)).join(', ')});
         const flags = this._getFlags();
-        const choices = docPropChoices();
-        const labelList = (keys, map) => keys.map(k => map[k] ?? k).join(', ');
-        context.alternateFormula = (Array.isArray(flags.alternateFormula) ? flags.alternateFormula : []).map((entry, index) => ({index, value: entry?.value ?? '', identifiers: (entry?.identifiers ?? []).join(', ')}));
-        context.alternateAbilities = Object.entries(flags.alternateAbilities ?? {}).map(([identifier, entry]) => ({identifier, summary: labelList(entry?.value ?? [], choices.ability)}));
-        context.rollModifiers = (flags.rollModifiers ?? []).map((entry, index) => ({
-            index,
-            modifiers: (entry.modifiers ?? []).join(', '),
-            summary: Object.keys(entry.restrictions ?? {}).join(', ')
-        }));
+        context.alternateAttributes = [];
+        for (const [type, attributeConfig] of attributes) {
+            if (!attributeConfig.allowedFlagHolders.includes(this.document.type)) continue;
+            context.alternateAttributes.push({
+                type,
+                label: _loc(`CAT.MEDKIT.DocProps.Props.${type}.Label`),
+                attributes: (flags.alternateAttributes[type] ?? []).map((attr, index) => ({
+                    index, 
+                    valueSummary: Array.isArray(attr.value) ? attr.value.join(', ') : attr.value,
+                    restrictionSummary: Object.entries(attr.restrictions).filter(r => !!r[1]).map(r => _loc(`CAT.MEDKIT.DocProps.Restrictions.${r[0]}.Label`)).join(', ')
+                }))
+            });
+        }
     }
 
     #prepareClassBonuses() {
@@ -233,7 +222,7 @@ export default class ItemMedkit extends MedkitApp {
     }
 
     #openDocPropEditor(type, entry, onSubmit) {
-        new DocPropertyEditorApp({type, entry, choices: docPropChoices(), onSubmit, titleName: this.document.name}).render(true);
+        new DocPropertyEditorApp({type, entry, onSubmit, titleName: this.document.name}).render(true);
     }
 
     /** @this {ItemMedkit} */
@@ -245,54 +234,34 @@ export default class ItemMedkit extends MedkitApp {
     /** @this {ItemMedkit} */
     static #editDocProp(_event, target) {
         const type = target.dataset.prop;
-        const flags = this._getFlags();
-        if (ARRAY_DOC_PROPS.includes(type)) {
-            const index = Number(target.dataset.index);
-            const entry = (foundry.utils.getProperty(flags, type) ?? [])[index];
-            if (!entry) return;
-            this.#openDocPropEditor(type, entry, next => this.#writeDocProp(type, next, index));
-        } else {
-            const key = target.dataset.key;
-            const stored = foundry.utils.getProperty(flags, type)?.[key];
-            if (!stored) return;
-            this.#openDocPropEditor(type, {identifier: key, value: stored.value}, next => this.#writeDocProp(type, next, key));
-        }
+        const index = Number(target.dataset.index);
+        const entry = (this._getFlags().alternateAttributes?.[type] ?? [])[index];
+        if (!entry) return;
+        this.#openDocPropEditor(type, entry, next => this.#writeDocProp(type, next, index));
     }
 
     /** @this {ItemMedkit} */
     static #removeDocProp(_event, target) {
-        const type = target.dataset.prop;
         const flags = this._getFlags();
-        if (ARRAY_DOC_PROPS.includes(type)) {
-            const list = foundry.utils.getProperty(flags, type);
-            if (Array.isArray(list)) list.splice(Number(target.dataset.index), 1);
-        } else {
-            const map = foundry.utils.getProperty(flags, type);
-            if (map) delete map[target.dataset.key];
+        const type = target.dataset.prop;
+        const list = flags.alternateAttributes?.[type];
+        if (Array.isArray(list)) {
+            list.splice(Number(target.dataset.index), 1);
+            if (!list.length) delete flags.alternateAttributes[type];
         }
         this.render();
     }
 
     #writeDocProp(type, entry, original) {
+        const attribute = constants.alternateAttributes[type];
+        if (!attribute) return ui.notifications.error(_loc('CAT.MEDKIT.DocProps.NotDefined', {type}));
+        const created = attribute.create(this.document, entry.value, entry.restrictions);
+        if (!created) return;
         const flags = this._getFlags();
-        if (ARRAY_DOC_PROPS.includes(type)) {
-            const existing = foundry.utils.getProperty(flags, type);
-            const list = Array.isArray(existing) ? existing : [];
-            if (original === null) list.push(entry);
-            else list[original] = entry;
-            foundry.utils.setProperty(flags, type, list);
-            this.render();
-            return;
-        }
-        const map = (foundry.utils.getProperty(flags, type) ?? {});
-        const renaming = original !== null && original !== entry.identifier;
-        if ((original === null || renaming) && map[entry.identifier]) {
-            ui.notifications.error(_loc('CAT.MEDKIT.DocProps.Duplicate', {name: entry.identifier}));
-            return false;
-        }
-        if (renaming) delete map[original];
-        map[entry.identifier] = {value: entry.value};
-        foundry.utils.setProperty(flags, type, map);
+        flags.alternateAttributes ??= {};
+        flags.alternateAttributes[type] ??= [];
+        if (original === null) flags.alternateAttributes[type].push(created);
+        else flags.alternateAttributes[type][original] = created;
         this.render();
     }
 }

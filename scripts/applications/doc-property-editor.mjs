@@ -1,3 +1,4 @@
+import {constants} from '../lib/_module.mjs';
 import {uiUtils, genericUtils} from '../utilities/_module.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {fields} = foundry.data;
@@ -14,32 +15,18 @@ const splitCsv = raw => String(raw ?? '').split(',').map(s => s.trim()).filter(B
 export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(ApplicationV2) {
     #type;
     #entry;
-    #choices;
     #onSubmit;
+    #attribute;
     #titleName;
 
-    constructor({type, entry, choices, onSubmit, titleName, ...options}) {
+    constructor({type, entry, onSubmit, titleName, ...options}) {
         super({...options});
         this.#type = type;
-        this.#choices = choices ?? {};
         this.#onSubmit = onSubmit;
         this.#titleName = titleName ?? '';
-        this.#entry = this.#hydrate(entry);
-    }
-
-    // Normalize an incoming entry (or a blank one) into the flat working shape the form edits.
-    #hydrate(entry) {
-        const e = entry ?? {};
-        if (this.#type === 'rollModifiers') {
-            const r = e.restrictions ?? {};
-            const lists = {};
-            const requireAll = {};
-            for (const key of [...CHOICE_RESTRICTIONS, ...FREEFORM_RESTRICTIONS]) lists[key] = [...(r[key]?.value ?? [])];
-            for (const key of REQUIRE_ALL) requireAll[key] = !!r[key]?.requireAll;
-            return {modifiers: [...(e.modifiers ?? [])], lists, requireAll};
-        }
-        if (this.#type === 'alternateFormula') return {value: e.value ?? '', identifiers: [...(e.identifiers ?? [])]};
-        return {identifier: e.identifier ?? '', value: [...(e.value ?? [])]}; // alternateAbilities
+        this.#attribute = constants.alternateAttributes[type];
+        this.#entry = entry ?? this.#attribute?.create();
+        if (!this.#attribute) ui.notifications.error(_loc('CAT.MEDKIT.DocProps.NotDefined', {type}));
     }
 
     static DEFAULT_OPTIONS = {
@@ -56,7 +43,21 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
     };
 
     get title() {
-        return _loc(`CAT.MEDKIT.DocProps.${this.#type}.Title`, {name: this.#titleName});
+        return _loc('CAT.MEDKIT.DocProps.Title', {type: _loc(`CAT.MEDKIT.DocProps.Props.${this.#type}.Label`), name: this.#titleName});
+    }
+
+    #fetchChoices(choices, values = []) {
+        let options = typeof choices === 'function' ? choices() : choices;
+        if (typeof options === 'object') 
+            return Object.entries(options).map(([value, label]) => ({value, label, selected: values.includes(value)}));
+        else options.forEach(o => o.selected = values.includes(o.value));
+        return options;
+    }
+
+    #prepBasicField(schema) {
+        if (schema.hint) schema.hint = _loc(schema.hint);
+        if (schema.label) schema.label = _loc(schema.label);
+        return schema;
     }
 
     async _prepareContext(options) {
@@ -64,29 +65,39 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
         context.title = this.title;
         context.type = this.#type;
         const e = this.#entry;
-        if (this.#type === 'rollModifiers') {
-            context.modifiers = csv(e.modifiers);
-            context.choiceRestrictions = CHOICE_RESTRICTIONS.map(key => ({
-                key,
-                label: _loc(`CAT.MEDKIT.DocProps.Restrictions.${key}`),
-                options: Object.entries(this.#choices[key] ?? {}).map(([value, label]) => ({value, label, selected: e.lists[key].map(String).includes(value)})),
-                requireAll: e.requireAll[key],
-                hasRequireAll: REQUIRE_ALL.includes(key)
-            }));
-            context.freeformRestrictions = FREEFORM_RESTRICTIONS.map(key => ({
-                key,
-                label: _loc(`CAT.MEDKIT.DocProps.Restrictions.${key}`),
-                value: csv(e.lists[key])
-            }));
-        } else if (this.#type === 'alternateFormula') {
-            context.formulaField = new fields.StringField({label: _loc('CAT.MEDKIT.DocProps.alternateFormula.Field')});
-            context.formula = e.value;
-            context.identifiers = csv(e.identifiers);
+        const schema = this.#attribute.schema.fields;
+        if (schema.value instanceof fields.ArrayField) {
+            context.value = csv(e.value);
+            context.valueHint = schema.value.element.hint;
+            context.valueLabel = schema.value.element.label;
+            const choices = schema.value.element.choices;
+            if (choices) {
+                context.valueChoices = this.#fetchChoices(choices, e.value);
+            } else {
+                context.valueField = this.#prepBasicField(schema.value.element);
+            }
         } else {
-            context.identifierField = new fields.StringField({label: _loc('CAT.MEDKIT.DocProps.Identifier')});
-            context.identifier = e.identifier;
-            context.abilityOptions = Object.entries(this.#choices.ability ?? {}).map(([value, label]) => ({value, label, selected: e.value.includes(value)}));
+            context.value = e.value ?? '';
+            context.valueField = this.#prepBasicField(schema.value);
         }
+        context.restrictions = schema.restrictions.entries().map(([key, restrictionSchema]) => {
+            const {value, requireAll} = restrictionSchema.fields;
+            const config = {
+                key,
+                hint: value.element.hint,
+                label: value.element.label,
+                hasRequireAll: !!requireAll,
+                requireAll: foundry.utils.getProperty(e, requireAll?.fieldPath)
+            };
+            const data = foundry.utils.getProperty(e, value.fieldPath);
+            if (value.element.choices) {
+                config.options = this.#fetchChoices(value.element.choices, data);
+            } else {
+                config.value = csv(data);
+                config.field = this.#prepBasicField(value.element);
+            }
+            return config;
+        });
         return context;
     }
 

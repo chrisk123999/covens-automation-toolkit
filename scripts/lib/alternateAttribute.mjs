@@ -93,14 +93,14 @@ class AlternateAttribute {
 
 function getFormulaRestrictions() {
     return [
-        Restrictions.DamageType,
         Restrictions.Identifier,
+        Restrictions.DamageType,
+        Restrictions.Type,
         Restrictions.Property,
         Restrictions.Ability,
         Restrictions.School,
         Restrictions.Method,
-        Restrictions.Level,
-        Restrictions.Type
+        Restrictions.Level
     ];
 }
 
@@ -114,8 +114,8 @@ function buildAttributes() {
     registerAttribute({
         type: 'DamageFormula',
         valueSchema: new dndFields.FormulaField({
-            hint: '',
-            label: '',
+            hint: 'CAT.MEDKIT.DocProps.Props.DamageFormula.Hint',
+            label: 'CAT.MEDKIT.DocProps.Props.DamageFormula.Field',
             placeholder: '1d4 + @mod',
             required: true
         }),
@@ -126,8 +126,8 @@ function buildAttributes() {
     registerAttribute({
         type: 'RollModifier',
         valueSchema: new fields.ArrayField(new fields.StringField({
-            hint: '',
-            label: '',
+            hint: 'CAT.MEDKIT.DocProps.Props.RollModifier.Hint',
+            label: 'CAT.MEDKIT.DocProps.Props.RollModifier.Field',
             placeholder: 'x, min2, r',
             required: true
         })),
@@ -139,15 +139,15 @@ function buildAttributes() {
         type: 'Ability',
         valueSchema: new fields.ArrayField(new fields.StringField({
             choices: () => Restrictions.mapKeyLabel(CONFIG.DND5E.abilities),
-            hint: '',
-            label: '',
+            hint: 'CAT.MEDKIT.DocProps.Props.Ability.Hint',
+            label: 'CAT.MEDKIT.DocProps.Props.Ability.Field',
             placeholder: 'dex, con',
             required: true
         })),
         allowedFlagHolders: ['feat'],
         restrictions: [
-            Restrictions.DamageType,
             Restrictions.Identifier,
+            Restrictions.DamageType,
             Restrictions.Property,
             Restrictions.Type
         ]

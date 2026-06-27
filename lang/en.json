@@ -84,51 +84,71 @@
         }
       },
       "DocProps": {
-        "Hint": "Document properties feed the dnd5e patches (alternate formulas, abilities, and roll modifiers).",
-        "Empty": "None defined.",
         "Add": "Add",
-        "Duplicate": "An entry for identifier \"{name}\" already exists.",
-        "Identifier": "Target Identifier",
-        "IdentifierHint": "The identifier of the item this entry applies to.",
-        "InvalidIdentifier": "An identifier is required.",
+        "Empty": "None defined.",
+        "Hint": "Document properties feed the dnd5e patches ({list}).",
         "InvalidValue": "A value is required.",
-        "alternateFormula": {
-          "Title": "Alternate Formula: {name}",
-          "Label": "Alternate Formula",
-          "Field": "Formula",
-          "Hint": "Roll formula offered as an alternative; the highest-rolling option is used.",
-          "Identifiers": "Target Identifiers",
-          "IdentifiersHint": "Comma-separated target identifiers this formula applies to (item|activity|partIndex)."
-        },
-        "alternateAbilities": {
-          "Title": "Alternate Abilities: {name}",
-          "Label": "Alternate Abilities",
-          "Field": "Abilities"
+        "NotDefined": "\"{type}\" is not a registered attribute!",
+        "Title": "{type}: {name}",
+        "Props": {
+          "Ability": {
+            "Field": "Abilities",
+            "Hint": "Extra abilities this attack may use.",
+            "Label": "Alternate Abilities"
+          },
+          "DamageFormula": {
+            "Field": "Formula",
+            "Hint": "Roll formula offered as an alternative; the highest-rolling option is used.",
+            "Label": "Alternate Formulas"
+          },
+          "RollModifier": {
+            "Field": "Modifiers",
+            "Hint": "Comma-separated dice modifiers (e.g. x, min1, kh1).",
+            "Invalid": "At least one modifier is required.",
+            "Label": "Roll Modifiers"
+          }
         },
         "otherAbilities": {
-          "Label": "Other Abilities",
           "Field": "Abilities",
-          "Hint": "Extra abilities this attack may use."
-        },
-        "rollModifiers": {
-          "Title": "Roll Modifier: {name}",
-          "Label": "Roll Modifiers",
-          "Modifiers": "Modifiers",
-          "ModifiersHint": "Comma-separated dice modifiers (e.g. x, min1, kh1).",
-          "Invalid": "At least one modifier is required."
+          "Hint": "Extra abilities this attack may use.",
+          "Label": "Other Abilities"
         },
         "Restrictions": {
           "Legend": "Restrictions",
           "Hint": "Leave a restriction empty to skip it. Comma-separate free-form values.",
           "RequireAll": "Require all",
-          "identifier": "Item Identifiers",
-          "type": "Item Types",
-          "property": "Properties",
-          "school": "Spell Schools",
-          "level": "Spell Levels",
-          "ability": "Abilities",
-          "method": "Spell Methods",
-          "damageTypes": "Damage Types"
+          "Ability": {
+            "Label": "Abilities",
+            "Hint": "Match spells that use any selected ability."
+          },
+          "DamageType": {
+            "Label": "Damage Types",
+            "Hint": "Match any selected damage type."
+          },
+          "Identifier": {
+            "Label": "Target Identifiers",
+            "Hint": "A comma separated list. Match one or more particular items by identifier: item|activity|partIndex."
+          },
+          "Level": {
+            "Label": "Spell Levels",
+            "Hint": "Match any selected spell level."
+          },
+          "Method": {
+            "Label": "Spell Methods",
+            "Hint": "Match any selected spellcasting method."
+          },
+          "Property": {
+            "Label": "Properties",
+            "Hint": "Match any or all selected item properties."
+          },
+          "School": {
+            "Label": "Spell Schools",
+            "Hint": "Match any selected spell school."
+          },
+          "Type": {
+            "Label": "Item Types",
+            "Hint": "Match any selected item type."
+          }
         }
       },
       "Hero": {

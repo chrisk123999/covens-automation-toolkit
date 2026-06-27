@@ -18,12 +18,12 @@ class AttributeRestriction {
 
     constructor({type, evaluate, choices, canRequireAll, propertyPath, hint, label}) {
         this.#type = type;
-        this.#hint = hint;
-        this.#label = label;
         this.#choices = choices;
         this.#evaluate = evaluate;
         this.#propertyPath = propertyPath;
         this.#canRequireAll = canRequireAll;
+        this.#hint = hint || `CAT.MEDKIT.DocProps.Restrictions.${type}.Hint`;
+        this.#label = label || `CAT.MEDKIT.DocProps.Restrictions.${type}.Label`;
     }
 
     get type() {
@@ -63,8 +63,6 @@ function checkList({value, requireAll}, {data, item, propertyPath}) {
 
 registerRestriction({
     type: 'Identifier',
-    label: '',
-    hint: '',
     evaluate: ({value: ids}, {identifier, activityIdentifier, partIndex}) => {
         return ids.some(id => {
             let [itemID, activityID, idx = 0] = id.split('|').map(i => i.trim());
@@ -79,8 +77,6 @@ registerRestriction({
 const ITEM_TYPES = ['consumable', 'equipment' ,'feat', 'loot', 'spell', 'tool', 'weapon'];
 registerRestriction({
     type: 'Type',
-    label: '',
-    hint: '',
     propertyPath: 'type',
     choices: () => ITEM_TYPES.reduce((acc, key) => (acc[key] = _loc(CONFIG.Item.typeLabels[key]), acc), {}),
     evaluate: checkList
@@ -88,8 +84,6 @@ registerRestriction({
 
 registerRestriction({
     type: 'Property',
-    label: '',
-    hint: '',
     propertyPath: 'system.properties',
     canRequireAll: true,
     choices: () => mapKeyLabel(CONFIG.DND5E.itemProperties),
@@ -98,8 +92,6 @@ registerRestriction({
 
 registerRestriction({
     type: 'School',
-    label: '',
-    hint: '',
     propertyPath: 'system.school',
     choices: () => mapKeyLabel(CONFIG.DND5E.spellSchools),
     evaluate: checkList
@@ -107,8 +99,6 @@ registerRestriction({
 
 registerRestriction({
     type: 'Level',
-    label: '',
-    hint: '',
     propertyPath: 'system.level',
     choices: () => CONFIG.DND5E.spellLevels,
     evaluate: checkList
@@ -116,8 +106,6 @@ registerRestriction({
 
 registerRestriction({
     type: 'Ability',
-    label: '',
-    hint: '',
     propertyPath: 'system.ability',
     choices: () => mapKeyLabel(CONFIG.DND5E.abilities),
     evaluate: checkList
@@ -125,8 +113,6 @@ registerRestriction({
 
 registerRestriction({
     type: 'Method',
-    label: '',
-    hint: '',
     propertyPath: 'system.method',
     choices: () => mapKeyLabel(CONFIG.DND5E.spellcasting),
     evaluate: checkList
@@ -134,8 +120,6 @@ registerRestriction({
 
 registerRestriction({
     type: 'DamageType',
-    label: '',
-    hint: '',
     choices: () => mapKeyLabel(CONFIG.DND5E.damageTypes),
     evaluate: (restriction, {damage}) => {
         if (!damage) return false;

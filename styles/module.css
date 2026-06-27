@@ -1432,7 +1432,8 @@ cat-combobox {
 }
 
 .cat-medkit .hint,
-.cat-dialog .hint {
+.cat-dialog .hint,
+.cat-embedded-macros-body .hint {
     opacity: 0.85;
     margin: var(--cat-space-xs) 0 0;
     color: var(--cat-text-muted);

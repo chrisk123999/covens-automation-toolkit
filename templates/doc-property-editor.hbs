@@ -8,21 +8,28 @@
 
     <div class="cat-embedded-macros-body">
         <div class="standard-form">
-            {{#if (eq type "rollModifiers")}}
+            {{#if valueChoices}}
                 <div class="form-group">
-                    <label>{{localize "CAT.MEDKIT.DocProps.rollModifiers.Modifiers"}}</label>
+                    <label for="cat-docprop-value">{{localize valueLabel}}</label>
                     <div class="form-fields">
-                        <input type="text" name="modifiers" value="{{modifiers}}">
+                        <cat-multi-combobox input-id="cat-docprop-value" name="value">
+                            {{#each valueChoices}}
+                                <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                            {{/each}}
+                        </cat-multi-combobox>
                     </div>
-                    <p class="hint">{{localize "CAT.MEDKIT.DocProps.rollModifiers.ModifiersHint"}}</p>
+                    <p class="hint">{{localize valueHint}}</p>
                 </div>
-
-                <fieldset>
-                    <legend>{{localize "CAT.MEDKIT.DocProps.Restrictions.Legend"}}</legend>
-                    <p class="hint">{{localize "CAT.MEDKIT.DocProps.Restrictions.Hint"}}</p>
-                    {{#each choiceRestrictions as |r|}}
+            {{else}}
+                {{formGroup valueField value=value}}
+            {{/if}}
+            <fieldset>
+                <legend>{{localize "CAT.MEDKIT.DocProps.Restrictions.Legend"}}</legend>
+                <p>{{localize "CAT.MEDKIT.DocProps.Restrictions.Hint"}}</p>
+                {{#each restrictions as |r|}}
+                    {{#if r.options}}
                         <div class="form-group">
-                            <label for="cat-docprop-{{r.key}}">{{r.label}}</label>
+                            <label for="cat-docprop-{{r.key}}">{{localize r.label}}</label>
                             <div class="form-fields">
                                 <cat-multi-combobox input-id="cat-docprop-{{r.key}}" name="{{r.key}}">
                                     {{#each r.options}}
@@ -37,38 +44,12 @@
                                 </label>
                             {{/if}}
                         </div>
-                    {{/each}}
-                    {{#each freeformRestrictions as |r|}}
-                        <div class="form-group">
-                            <label>{{r.label}}</label>
-                            <div class="form-fields">
-                                <input type="text" name="{{r.key}}" value="{{r.value}}">
-                            </div>
-                        </div>
-                    {{/each}}
-                </fieldset>
-            {{else if (eq type "alternateFormula")}}
-                {{formGroup formulaField value=formula name="value" hint=(localize "CAT.MEDKIT.DocProps.alternateFormula.Hint")}}
-                <div class="form-group">
-                    <label>{{localize "CAT.MEDKIT.DocProps.alternateFormula.Identifiers"}}</label>
-                    <div class="form-fields">
-                        <input type="text" name="identifiers" value="{{identifiers}}">
-                    </div>
-                    <p class="hint">{{localize "CAT.MEDKIT.DocProps.alternateFormula.IdentifiersHint"}}</p>
-                </div>
-            {{else}}
-                {{formGroup identifierField value=identifier name="identifier" hint=(localize "CAT.MEDKIT.DocProps.IdentifierHint")}}
-                <div class="form-group">
-                    <label for="cat-docprop-abilities">{{localize "CAT.MEDKIT.DocProps.alternateAbilities.Field"}}</label>
-                    <div class="form-fields">
-                        <cat-multi-combobox input-id="cat-docprop-abilities" name="value">
-                            {{#each abilityOptions}}
-                                <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
-                            {{/each}}
-                        </cat-multi-combobox>
-                    </div>
-                </div>
-            {{/if}}
+                        <p class="hint">{{localize r.hint}}</p>
+                    {{else}}
+                        {{formGroup r.field value=r.value}}
+                    {{/if}}
+                {{/each}}
+            </fieldset>
         </div>
     </div>
 
