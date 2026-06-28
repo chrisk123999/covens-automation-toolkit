@@ -1,6 +1,6 @@
 import {constants} from '../lib/_module.mjs';
 function getAnimation({source, identifier}) {
-    if (!source || !identifier) return;
+    if (!source || !identifier || source === 'none' || identifier === 'none') return;
     return constants.animations.getAnimation(source, identifier);
 }
 async function preloadAnimations(animations, {showProgressBar} = {}) {

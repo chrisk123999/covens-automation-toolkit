@@ -547,7 +547,10 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 return inputs.length === required.length && inputs.every((v, i) => v === required[i]);
             });
         }
-        return animations.map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ? _loc(a.name) : a.identifier}));
+        return [
+            {value: 'none|none', label: _loc('DND5E.None')},
+            ...animations.map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ? _loc(a.name) : a.identifier}))
+        ];
     }
 
     #animationCredits(selection) {
