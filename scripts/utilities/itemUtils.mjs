@@ -146,7 +146,7 @@ function getSourceClassIdentifier(item, {subclass = false} = {}) {
 function getEquipmentState(item) {
     if (item.system.equipped === undefined) return true;
     if (!item.system.equipped) return false;
-    if (item.system.attunement && item.system.attunement === 1) return false;
+    if (item.system.attunement === 'required' && !item.system.attuned) return false;
     return true;
 }
 function getSourceClass(item, {subclass = false} = {}) {
