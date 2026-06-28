@@ -19,6 +19,7 @@
 - Removed movedNear from the movement event, the move pass already handles movement near a token as well.
 - Updating an item works correctly in compendiums now.
 - Automations with scales now properly get applied to the source class when an item is updated.
+- Fixed itemUtils.getEquipmentState.
 ## Bug Fixes:
 - Class bonuses show up in the document properties intead of config.
 - Automation configs now properly work.
