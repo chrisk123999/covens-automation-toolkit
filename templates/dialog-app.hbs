@@ -9,7 +9,7 @@
     </button>
 </header>
 <div id="dialog-app" class="cat-dialog-body standard-form scrollable">
-    {{#if content}}<div class="cat-dialog-content">{{{localize content}}}</div>{{/if}}
+    {{#if content}}<div class="cat-dialog-content{{#unless inputs}} cat-dialog-content-only{{/unless}}">{{{localize content}}}</div>{{/if}}
     {{#each inputs}}
         {{#if useHelper}}
             {{#each options}}

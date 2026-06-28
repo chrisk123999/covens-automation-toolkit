@@ -142,6 +142,10 @@
     display: none;
 }
 
+.cat-dialog-content-only {
+    text-align: center;
+}
+
 .cat-dialog .cat-body-buttons {
     gap: var(--cat-space-sm);
     display: flex;
