@@ -78,6 +78,7 @@ class AlternateAttribute {
                 }
             }
             if (!succeeds) continue; 
+            if (!resolveDamageParts(context)) continue;
             if (Array.isArray(cleaned.value)) cleaned.value.forEach(v => options.add(v));
             else options.add(cleaned.value);
         }
@@ -85,9 +86,17 @@ class AlternateAttribute {
     }
 }
 
+function resolveDamageParts({item, partIndex, allowedDamageParts}) {
+    if (!item) return;
+    const weapon = item.type === 'weapon';
+    if (!allowedDamageParts?.length) return weapon ? partIndex === undefined : partIndex === 0;
+    return allowedDamageParts.includes(String((partIndex ?? -1) + weapon));
+}
+
 function getFormulaRestrictions() {
     return [
         Restrictions.Identifier,
+        Restrictions.DamagePart,
         Restrictions.DamageType,
         Restrictions.Type,
         Restrictions.WeaponType,

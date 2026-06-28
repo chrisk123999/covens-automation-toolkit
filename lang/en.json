@@ -125,8 +125,16 @@
             "Hint": "Match spells that use any selected ability.",
             "InvertedHint": "Exclude spells that use selected abilities."
           },
+          "DamagePart": {
+            "Label": "Damage Part",
+            "Hint": "Target selected damage parts on matched items. \"Base\" is default if this is empty.",
+            "Base": "Base",
+            "First": "First Part",
+            "Second": "Second Part",
+            "Third": "Third Part"
+          },
           "DamageType": {
-            "Label": "Damage Types",
+            "Label": "Damage Type",
             "Hint": "Match any selected damage type.",
             "InvertedHint": "Exclude any selected damage type."
           },
@@ -135,12 +143,12 @@
             "Hint": "A comma separated list. Match one or more particular items by identifier: item|activity|partIndex."
           },
           "Level": {
-            "Label": "Spell Levels",
+            "Label": "Spell Level",
             "Hint": "Match any selected spell level.",
             "InvertedHint": "Exclude selected spell levels."
           },
           "Method": {
-            "Label": "Spell Methods",
+            "Label": "Spell Method",
             "Hint": "Match any selected spellcasting method.",
             "InvertedHint": "Exclude selected spellcasting methods."
           },
@@ -150,14 +158,19 @@
             "InvertedHint": "Exclude any or all selected item properties."
           },
           "School": {
-            "Label": "Spell Schools",
+            "Label": "Spell School",
             "Hint": "Match any selected spell school.",
             "InvertedHint": "Exclude selected spell schools"
           },
           "Type": {
-            "Label": "Item Types",
+            "Label": "Item Type",
             "Hint": "Match any selected item type.",
             "InvertedHint": "Exclude selected item types."
+          },
+          "WeaponType": {
+            "Label": "Weapon Type",
+            "Hint": "Match any selected weapon type.",
+            "InvertedHint": "Exclude selected weapon types."
           }
         }
       },

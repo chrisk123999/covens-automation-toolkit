@@ -150,6 +150,20 @@ registerRestriction({
     evaluate: checkList
 });
 
+registerRestriction({
+    type: 'DamagePart',
+    choices: () => ({
+        0: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Base'),
+        1: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.First'),
+        2: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Second'),
+        3: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Third')
+    }),
+    evaluate: (restriction, context) => {
+        context.allowedDamageParts = restriction.value;
+        return RESULTS.FORCE_PASS;
+    }
+});
+
 export default {
     mapKeyKey,
     mapKeyLabel,
