@@ -42,7 +42,7 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
         neutral: 0,
         enemy: -1
     };
-    return MidiQOL.findNearby(dispositions[disposition], token.object, range, {includeIncapacitated, includeToken}).filter(token => !token.document.hidden);
+    return MidiQOL.findNearby(dispositions[disposition], token.object, range, {includeIncapacitated, includeToken}).map(placeable => placeable.document).filter(token => !token.hidden);
 }
 async function moveToken(token, waypoints, options = {}) {
     const hasPermission = queryUtils.hasPermission(token, game.user.id);

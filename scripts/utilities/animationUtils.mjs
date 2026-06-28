@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-function getAnimation(source, identifier) {
+function getAnimation({source, identifier}) {
     if (!source || !identifier) return;
     return constants.animations.getAnimation(source, identifier);
 }

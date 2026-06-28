@@ -182,7 +182,7 @@ class CatEvent {
                         name: trigger.name,
                         macroClass: i,
                         macroConfig: macro,
-                        macroName: macro.name ?? i.name
+                        macroName: macro.macro.name ?? i.name
                     };
                     if (trigger.sourceToken) data.sourceToken = trigger.sourceToken;
                     sortedTriggers.push(this.appendData(data));
@@ -804,6 +804,7 @@ class CalledEvent extends CatEvent {
     constructor(actor, pass, data) {
         super(pass);
         this.name = 'Called';
+        this.trigger = Triggers.CalledTrigger;
         this.data = data;
         this.setContext(actor);
     }

@@ -286,7 +286,7 @@ export class SummonsManager {
             y: location.y,
             elevation: elevation ?? summon.ownerToken?.elevation 
         });
-        const animation = summon.animation ? animationUtils.getAnimation(summon.animation.source, summon.animation.identifier) : undefined;
+        const animation = summon.animation ? animationUtils.getAnimation({source: summon.animation.source, identifier: summon.animation.identifier}) : undefined;
         if (animation?.macros?.prePlace) await animation.macros.prePlace(summon, location, preToken);
         const token = (await documentUtils.createEmbeddedDocuments(scene, 'Token', [preToken.toObject()], {cat: {summonCreate: true}}))?.[0];
         await this.#summonInitiative(summon, token);
@@ -297,7 +297,7 @@ export class SummonsManager {
         token ??= summon.token;
         if (!token) return;
         await summonEvents.remove(summon);
-        const animation = summon.animation ? animationUtils.getAnimation(summon.animation.source, summon.animation.identifier) : undefined;
+        const animation = summon.animation ? animationUtils.getAnimation({source: summon.animation.source, identifier: summon.animation.identifier}) : undefined;
         if (animation?.macros?.preRemove) await animation.macros.preRemove(summon, token);
         const location = {x: token.x, y: token.y, elevation: token.elevation};
         await documentUtils.deleteDocument(token, {options: {cat: {summonRemove: true}}});

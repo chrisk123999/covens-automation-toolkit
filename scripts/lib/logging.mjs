@@ -1,5 +1,6 @@
 const logs = [];
 const macroErrors = {};
+const macroWarnings = {};
 const embeddedMacroErrors = {};
 const registrationErrors = {};
 const attributeErrors = {};
@@ -22,6 +23,16 @@ function addMacroError(trigger, error) {
     });
     if (macroErrors[key].length > 10) macroErrors[key].shift();
     console.error('%cCAT%c | ERROR > Execution error in macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
+}
+function addMacroWarning(source, identifier, message) {
+    const key = source + '-' + identifier;
+    macroWarnings[key] ??= [];
+    macroWarnings[key].push({
+        message,
+        source: source,
+        identifier,
+        time: Date.now()
+    });
 }
 function addEmbeddedMacroError(trigger, error) {
     const key = trigger.document.uuid;
@@ -81,6 +92,7 @@ export default {
     logs,
     macroErrors,
     attributeErrors,
+    macroWarnings,
     registrationErrors,
     embeddedMacroErrors,
     addEntry,
@@ -89,5 +101,6 @@ export default {
     addEmbeddedMacroError,
     addRegistrationError,
     group,
-    groupEnd
+    groupEnd,
+    addMacroWarning
 };

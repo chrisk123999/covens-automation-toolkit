@@ -11,6 +11,7 @@ export function buildApi() {
         registerAutomations: automations.registerAutomations.bind(automations),
         registerAutomationCompendium: automations.registerAutomationCompendium.bind(automations),
         registerAutomationModule: automations.registerAutomationModule.bind(automations),
+        registerSourceName: automations.registerSourceName.bind(automations),
         registerScale: registeredScales.registerScale.bind(registeredScales),
         registerScales: registeredScales.registerScales.bind(registeredScales),
         registerAnimation: registeredAnimations.registerAnimation.bind(registeredAnimations),

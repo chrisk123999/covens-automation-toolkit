@@ -1,7 +1,7 @@
 /** @import Item5e from "../../dnd5e/module/documents/item.mjs" */
 
 import {Logging} from '../lib/_module.mjs';
-import {documentUtils, effectUtils, genericUtils} from './_module.mjs';
+import {activityUtils, documentUtils, effectUtils, genericUtils} from './_module.mjs';
 const activityVisibilityLocks = new Map();
 
 /**
@@ -134,13 +134,13 @@ async function rehideActivities(item, identifiers = [], {all = false} = {}) {
         if (activityVisibilityLocks.get(uuid) === nextPromise) activityVisibilityLocks.delete(uuid);
     }
 }
-function getSourceClassIdentifier(item) {
+function getSourceClassIdentifier(item, {subclass = false} = {}) {
     if (!item?.actor?.classes) return;
     if (item.system.sourceItem && item.system.sourceItem.indexOf('class:') === 0) return item.system.sourceItem.split(':')[1];
     if (item.system.advancementRootItem) {
         let rootItem = item.system.advancementRootItem;
-        if (rootItem.type === 'subclass' && rootItem.class) rootItem = rootItem.class;
-        if (rootItem.type === 'class') return rootItem.identifier;
+        if (!subclass && rootItem.type === 'subclass' && rootItem.class) rootItem = rootItem.class;
+        if (['subclass', 'class'].includes(rootItem.type)) return rootItem.identifier;
     }
 }
 function getEquipmentState(item) {
@@ -149,10 +149,16 @@ function getEquipmentState(item) {
     if (item.system.attunement && item.system.attunement === 1) return false;
     return true;
 }
-function getSourceClass(item) {
-    const sourceClassIdentifier = getSourceClassIdentifier(item);
+function getSourceClass(item, {subclass = false} = {}) {
+    const sourceClassIdentifier = getSourceClassIdentifier(item, {subclass});
     if (!sourceClassIdentifier) return;
     return item.actor.classes[sourceClassIdentifier];
+}
+function getDependencies(item) {
+    const dependencies = new Set();
+    if (!item.system.activities) return dependencies;
+    item.system.activities.forEach(activity => activityUtils.getDependencies(activity).forEach(depId => dependencies.add(depId)));
+    return dependencies;
 }
 export default {
     getSaveDC,
@@ -164,5 +170,6 @@ export default {
     rehideActivities,
     getSourceClassIdentifier,
     getEquipmentState,
-    getSourceClass
+    getSourceClass,
+    getDependencies
 };

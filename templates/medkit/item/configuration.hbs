@@ -7,43 +7,4 @@
             {{/each}}
         </fieldset>
     {{/each}}
-
-    <fieldset data-section="class-bonuses">
-        <legend>{{localize "CAT.MEDKIT.ClassBonus.Label"}}</legend>
-        <p class="hint">{{localize "CAT.MEDKIT.ClassBonus.Hint"}}</p>
-        <div class="cat-class-bonus-add" data-class-bonus-add>
-            <input type="text" placeholder="{{localize 'CAT.MEDKIT.ClassBonus.AddPlaceholder'}}">
-            <button type="button" data-action="addClassBonus" data-tooltip="{{localize 'CAT.MEDKIT.ClassBonus.Add'}}">
-                <i class="fa-solid fa-plus"></i>
-            </button>
-        </div>
-        {{#if classBonuses.rows.length}}
-            <table class="cat-table">
-                <thead>
-                    <tr>
-                        <th>{{localize "CAT.MEDKIT.ClassBonus.Class"}}</th>
-                        <th>{{localize "CAT.MEDKIT.ClassBonus.DC"}}</th>
-                        <th>{{localize "CAT.MEDKIT.ClassBonus.Attack"}}</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{#each classBonuses.rows}}
-                        <tr>
-                            <td>{{identifier}}</td>
-                            <td><input type="number" name="flags.cat.classDifficultyClass.{{identifier}}.value" value="{{dc}}"></td>
-                            <td><input type="number" name="flags.cat.classAttackBonus.{{identifier}}.value" value="{{attack}}"></td>
-                            <td>
-                                <button type="button" data-action="removeClassBonus" data-key="{{identifier}}" data-tooltip="{{localize 'Remove'}}">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    {{/each}}
-                </tbody>
-            </table>
-        {{else}}
-            <p class="hint">{{localize "CAT.MEDKIT.ClassBonus.Empty"}}</p>
-        {{/if}}
-    </fieldset>
 </section>

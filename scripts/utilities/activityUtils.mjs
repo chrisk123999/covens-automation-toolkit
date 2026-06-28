@@ -87,6 +87,14 @@ function getEffectDuration(activity) {
 function getDuration(activity) {
     return getEffectDuration(activity).seconds;
 }
+function getDependencies(activity) {
+    const dependencies = new Set();
+    const targets = activity.consumption?.targets ?? [];
+    targets.forEach(target => {
+        if (target.type === 'itemUses' && target.target) dependencies.add(target.target);
+    });
+    return dependencies;
+}
 export default {
     getSaveDC,
     getSavedCastData,
@@ -94,5 +102,6 @@ export default {
     getDamageModifiedActivityData,
     syntheticActivity,
     getEffectDuration,
-    getDuration
+    getDuration,
+    getDependencies
 };

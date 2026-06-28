@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, genericUtils, itemUtils, queryUtils} from './_module.mjs';
+import {activityUtils, actorUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 function getActionType(workflow) {
     if (!workflow.activity) return;
     return workflow.activity.getActionType(workflow.attackMode);
@@ -150,6 +150,19 @@ function negateDamageItemDamage(ditem) {
     ditem.damageDetail.forEach(i => i.value = 0);
     ditem.rawDamageDetail.forEach(i => i.value = 0);
 }
+function setWorkflowProperty(workflow, path, value) {
+    genericUtils.setProperty(workflow, 'cat.' + path, value);
+}
+function getWorkflowProperty(workflow, path) {
+    return genericUtils.getProperty(workflow, 'cat.' + path);
+}
+async function bonusDamage(workflow, formula, {ignoreCrit = false, damageType = workflow.defaultDamageType} = {}) {
+    formula = String(formula);
+    if (workflow.isCritical && !ignoreCrit) formula = rollUtils.getCriticalFormula(formula, workflow.activity);
+    const roll = await new CONFIG.Dice.DamageRoll(formula, workflow.activity.getRollData(), {type: damageType}).evaluate();
+    workflow.damageRolls.push(roll);
+    await workflow.setDamageRolls(workflow.damageRolls);
+}
 export default {
     getActionType,
     isAttackType,
@@ -159,5 +172,8 @@ export default {
     completeItemUse,
     syntheticItemRoll,
     syntheticItemDataRoll,
-    negateDamageItemDamage
+    negateDamageItemDamage,
+    setWorkflowProperty,
+    getWorkflowProperty,
+    bonusDamage
 };

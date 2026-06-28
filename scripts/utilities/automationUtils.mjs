@@ -1,5 +1,5 @@
 import {documentUtils, genericUtils} from './_module.mjs';
-import {constants} from '../lib/_module.mjs';
+import {constants, Events} from '../lib/_module.mjs';
 import {itemEvents} from '../events/_module.mjs';
 function getCurrentAutomation(item) {
     const identifier = documentUtils.getIdentifier(item);
@@ -173,14 +173,16 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
         }
     }
     const actor = item.actor;
+    const pack = item.pack;
     await documentUtils.deleteDocument(item);
     let document;
     if (actor) {
         document = (await documentUtils.createEmbeddedDocuments(actor, 'Item', [documentData], {keepId: true}))?.[0];
     } else {
-        document = await Item.create(documentData, {keepId: true}); //May need to GM socket this.
+        document = await Item.create(documentData, {keepId: true, pack}); //May need to GM socket this.
     }
     if (!document) return;
+    if (actor) await updateScales(document, {automation});
     if (!skipEvent && actor) await itemEvents.itemMedkit(document);
     if (openSheet) await document.sheet.render(true);
 }
@@ -193,22 +195,24 @@ async function updateScales(item, {automation} = {}) {
     const rules = documentUtils.getRules(item);
     const classIdentifier = getConfigValue(item, 'classIdentifier');
     const subclassIdentifier = getConfigValue(item, 'subclassIdentifier');
+    if (!classIdentifier && !subclassIdentifier) return;
     const updates = [];
-    automation.scales.forEach(scaleData => {
-        let scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: scaleData.source, classIdentifier});
+    automation.scales?.forEach(scaleData => {
+        let scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: scaleData.source});
         let targetIdentifier = classIdentifier;
         if (!scale && subclassIdentifier) {
-            scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: automation.source, classIdentifier: subclassIdentifier});
+            scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: automation.source});
             targetIdentifier = subclassIdentifier;
         }
         if (!scale) return;
         const classItem = item.actor.classes[targetIdentifier];
         if (!classItem) return;
-        const scaleValue = classItem.advancement.byType.ScaleValue.find(i => i.configuration.identifier === scale.identifier);
+        const scaleValue = classItem.advancement.byType?.ScaleValue?.find(i => i.configuration.identifier === targetIdentifier);
         if (scaleValue && scaleValue.type === scale.data.type) return;
         const advancementKey = scaleValue ? scaleValue.id : (scale.data._id ?? foundry.utils.randomID());
         const classData = classItem.toObject();
         classData.system.advancement[advancementKey] = scale.data;
+        classData.system.advancement[advancementKey].configuration.identifier = scale.identifier;
         if (scaleValue) delete classData.system.advancement[advancementKey]._id;
         const change = {_id: classItem.id, 'system.advancement': classData.system.advancement};
         const currentUpdate = updates.find(i => i._id === classItem.id);
@@ -264,6 +268,12 @@ async function getSourceDocumentByIdentifier(identifier, type) {
         if (match) return await pack.getDocument(match._id);
     }
 }
+async function calledEvent(pass, actor, {multiResult, canOverlap, data} = {}) {
+    return new Events.CalledEvent(actor, pass, data).run({canOverlap, multiResult});
+}
+function calledEventSync(pass, actor, {multiResult, canOverlap, data} = {}) {
+    return new Events.CalledEvent(actor, pass, data).runSync({canOverlap, multiResult});
+}
 export default {
     getCurrentAutomation,
     getAutomationStatus,
@@ -289,5 +299,7 @@ export default {
     setAllGenericConfigs,
     getGenericAnimationConfig,
     getSourceDataSources,
-    getSourceDocumentByIdentifier
+    getSourceDocumentByIdentifier,
+    calledEvent,
+    calledEventSync
 };

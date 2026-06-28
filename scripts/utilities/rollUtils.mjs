@@ -7,8 +7,12 @@ async function rollDice(formula, {document, options: {strict = false, maximize =
 function getRollsTotal(rolls) {
     return rolls.reduce((acc, roll) => acc + roll.total, 0);
 }
+function getCriticalFormula(formula, document) {
+    return new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {isCritical: true}).formula;
+}
 export default {
     rollDiceSync,
     rollDice,
-    getRollsTotal
+    getRollsTotal,
+    getCriticalFormula
 };

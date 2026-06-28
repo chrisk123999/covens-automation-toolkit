@@ -203,7 +203,7 @@ export class RegisteredAutomations {
      * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
      * @param {string} [options.source]                                     The source of the automations
      */
-    async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, source, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
+    async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions2014 = {}, versions2024 = {}, versionsAll = {}, rules = {}, source, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
         const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation.version', 'type']});
         source ??= pack.metadata.packageName;
         const documentType = pack.metadata.type;
@@ -216,31 +216,35 @@ export class RegisteredAutomations {
             let notes;
             let scales;
             let type;
+            let version;
             switch (rule) {
                 case '2014':
                     config = configs2014[identifier];
                     notes = notes2014[identifier];
                     scales = scales2014[identifier];
                     type = types2014[identifier];
+                    version = versions2014[identifier] ?? documentUtils.getVersion(document) ?? '0';
                     break;
                 case '2024':
                     config = configs2024[identifier];
                     notes = notes2024[identifier];
                     scales = scales2024[identifier];
                     type = types2024[identifier];
+                    version = versions2024[identifier] ?? documentUtils.getVersion(document) ?? '0';
                     break;
                 default:
                     config = configsAll[identifier];
                     notes = notesAll[identifier];
                     scales = scalesAll[identifier];
                     type = typesAll[identifier];
+                    version = versionsAll[identifier] ?? documentUtils.getVersion(document) ?? '0';
                     break;
             }
             const data = {
                 source,
                 rules: rule,
                 identifier,
-                version: versions[identifier] ?? documentUtils.getVersion(document) ?? '0',
+                version,
                 uuid: document.uuid,
                 config,
                 notes,

@@ -42,6 +42,10 @@ let catGate;
 const catInitGate = new Promise(resolve => {
     catGate = resolve;
 });
+let ddbGate;
+const ddbInitGate = new Promise(resolve => {
+    ddbGate = resolve;
+});
 Hooks.once('ready', async () => {
     lib.constants.summons = lib.SummonsManager.create();
     readyHooks();
@@ -55,6 +59,12 @@ Hooks.once('ready', async () => {
     await utils.genericUtils.sleep(1000); //To avoid eating console logs from other modules.
     await handlers.items.registerCompendiums({startup: true});
     catGate();
+    if (game.modules.get('ddb-importer')?.active) {
+        await Promise.race([
+            ddbInitGate,
+            utils.genericUtils.sleep(10000)
+        ]);
+    }
     Hooks.callAll('catReady');
 });
 Hooks.once('ddb-importer.compendiumCreationComplete', async () => {
@@ -65,5 +75,6 @@ Hooks.once('ddb-importer.compendiumCreationComplete', async () => {
         await integration.ddbi.registerAutomations(module);
         await integration.ddbi.registerScales(module);
     }
+    ddbGate();
 });
 Hooks.once('macro-autocomplete.ready', integration.macroautocomplete.registerCAT);
