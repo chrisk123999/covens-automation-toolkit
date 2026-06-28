@@ -72,12 +72,12 @@ async function teleportToken(token, {destination, animation, range = 30} = {}) {
     ]);
     const postAnimation = animation?.macros?.postAnimation;
     if (postAnimation) await postAnimation(token, {destination});
-    await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation}).run();
+    await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run();
 }
 async function displaceToken(token, {sourceToken, destination, animation, range = 5, action = 'catForce'} = {}) {
     destination ??= await crosshairUtils.aimCrosshair({token, maxRange: range});
     if (!destination || destination?.cancelled) return;
-    const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation}).run();
+    const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation, action}).run();
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
     if (preAnimation) await preAnimation(token, {sourceToken, destination});
@@ -93,10 +93,10 @@ async function displaceToken(token, {sourceToken, destination, animation, range 
         }
     });
     const postAnimation = animation?.macros?.postAnimation;
-    if (postAnimation) await postAnimation(token, {sourceToken, destination});
+    if (postAnimation) await postAnimation(token, {sourceToken, destination, action});
 }
 async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catForce'} = {}) {
-    const results = await new Events.MovementEvent(token, constants.movementPasses.slide, {sourceToken, distance, ray}).run({multiResult: true});
+    const results = await new Events.MovementEvent(token, constants.movementPasses.slide, {sourceToken, distance, ray, action}).run({multiResult: true});
     if (results && results.length) {
         if (results.includes(0)) return;
         distance = results.reduce((acc, curr) => {

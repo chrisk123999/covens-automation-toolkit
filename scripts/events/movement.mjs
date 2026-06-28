@@ -47,7 +47,9 @@ async function moveToken(token, movement, options, user) {
     await movementPromise;
     if (!ignore) {
         const teleport = CONFIG.Token.movement.actions[movement.passed.waypoints.at(-1).action]?.teleport;
+        const action = movement.passed.waypoints.at(-1).action;
         genericUtils.setProperty(options, 'cat.movement.teleport', teleport);
+        genericUtils.setProperty(options, 'cat.movement.action', action);
         if (!skipMove) {
             if (isFinalMovement) await auraEvents.updateAuras(token.parent.tokens, {options, targetToken: token});
             await new Events.MovementEvent(token, constants.movementPasses.moved, {options}).run();
