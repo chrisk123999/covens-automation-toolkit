@@ -12,7 +12,7 @@ async function queuedDialog({title, content, inputs, buttons, config, reason}) {
 async function createEffects({uuid, effectDatas, effectOptions}) {
     const document = await fromUuid(uuid);
     if (!document) return;
-    const effects = await effectUtils.createEffects(document, effectDatas, effectOptions);
+    const effects = await effectUtils.createEffects(document, effectDatas, {effectOptions});
     return effects.map(effect => effect.uuid);
 }
 async function deleteEmbeddedDocuments({uuid, type, ids, options}) {

@@ -117,6 +117,16 @@ async function modifyBatch(operations) {
         }));
     }
 }
+function getEffectData(document, id, {duration, concentrationItem} = {}) {
+    const sourceEffect = document.item ? document.item.effects.get(id) : document.effects.get(id);
+    if (sourceEffect) return;
+    const effectData = sourceEffect.toObject();
+    delete effectData._id;
+    effectData.origin = !concentrationItem ? sourceEffect.uuid : effectUtils.getConcentrationEffect(document.actor, document.item ?? document)?.uuid;
+    if (document.documentName === 'Activity' && !duration) effectData.duration = activityUtils.getEffectDuration(document);
+    if (duration) effectData.duration = duration;
+    return effectData;
+}
 export default {
     getRules,
     getSource,
@@ -131,5 +141,6 @@ export default {
     setFlag,
     getEffectByIdentifier,
     makeDependent,
-    modifyBatch
+    modifyBatch,
+    getEffectData
 };

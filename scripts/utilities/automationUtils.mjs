@@ -181,6 +181,9 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
 function getGenericAnimationConfig(document, source, identifier, settingKey, key) {
     return constants.animations.getGenericAnimationConfig(document, source, identifier, settingKey, key);
 }
+function getAnimationConfig(document, settingKey, key) {
+    return constants.animations.getAnimationConfig(document, settingKey, key);
+}
 async function updateScales(item, {automation} = {}) {
     automation ??= getCurrentAutomation(item);
     if (!automation) return;
@@ -266,6 +269,16 @@ async function calledEvent(pass, actor, {multiResult, canOverlap, data} = {}) {
 function calledEventSync(pass, actor, {multiResult, canOverlap, data} = {}) {
     return new Events.CalledEvent(actor, pass, data).runSync({canOverlap, multiResult});
 }
+function getResolvedAnimation(document, settingKey, {source, identifier} = {}) {
+    const isGeneric = source && identifier;
+    const animationSetting = isGeneric ? getGenericConfigValue(document, source, identifier, settingKey) : getConfigValue(document, settingKey);
+    if (!animationSetting || !animationSetting.source || !animationSetting.identifier || animationSetting.source === 'none' || animationSetting.identifier === 'none') return {animation: undefined, options: {}};
+    const animation = constants.animations.getAnimation(animationSetting.source, animationSetting.identifier);
+    if (!animation) return {animation: undefined, options: {}};
+    const options = {};
+    if (animation.config) Object.keys(animation.config).forEach(key => options[key] = isGeneric ? getGenericAnimationConfig(document, source, identifier, settingKey, key) : getAnimationConfig(document, settingKey, key));
+    return {animation, options};
+}
 export default {
     getCurrentAutomation,
     getAutomationStatus,
@@ -293,5 +306,7 @@ export default {
     getSourceDataSources,
     getSourceDocumentByIdentifier,
     calledEvent,
-    calledEventSync
+    calledEventSync,
+    getAnimationConfig,
+    getResolvedAnimation
 };

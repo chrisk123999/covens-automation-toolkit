@@ -47,7 +47,7 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
             item: items
         }
     });
-    return await effectUtils.createEffects(item, [effectData], effectOptions, {forceGM});
+    return await effectUtils.createEffects(item, [effectData], {effectOptions, forceGM});
 }
 async function unhideActivities(item, identifiers) {
     const uuid = item.uuid;

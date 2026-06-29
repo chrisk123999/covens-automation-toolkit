@@ -1,8 +1,23 @@
-import {queryUtils} from './_module.mjs';
+import {genericUtils, queryUtils} from './_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
-async function createEffects(document, effectDatas, effectOptions, {forceGM = false} = {}) {
+async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions} = {}) {
+    if (macros?.length) {
+        effectDatas.forEach(effectData => {
+            const targetIdentifier = effectData.flags?.cat?.identifier ?? effectData.name?.slugify();
+            if (!targetIdentifier) return;
+            macros.forEach(macroGroup => {
+                const applicableMacros = macroGroup.macros.filter(m => !m.effectIdentifier || m.effectIdentifier === targetIdentifier).map(({effectIdentifier, ...rest}) => rest);
+                if (!applicableMacros.length) return;
+                const existingMacros = effectData.flags?.cat?.macros?.[macroGroup.type] ?? [];
+                const combinedMacros = [...existingMacros, ...applicableMacros];
+                const uniqueMacros = new Map();
+                combinedMacros.forEach(macro => uniqueMacros.set(macro.source + '|' + macro.identifier + '|' + macro.rules, macro));
+                genericUtils.setProperty(effectData, 'flags.cat.macros.' + macroGroup.type, Array.from(uniqueMacros.values()));
+            });
+        });
+    }
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
     if (hasPermission && !forceGM) {
