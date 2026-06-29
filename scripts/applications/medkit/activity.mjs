@@ -19,6 +19,7 @@ export default class ActivityMedkit extends MedkitApp {
     static PARTS = {
         ...MedkitApp.SHARED_PARTS,
         docprops: {template: 'modules/cat/templates/medkit/activity/docprops.hbs'},
+        ...MedkitApp.GENERIC_PART,
         embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
         macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'},
         region: {template: 'modules/cat/templates/medkit/activity/region.hbs'}
@@ -28,6 +29,7 @@ export default class ActivityMedkit extends MedkitApp {
         sheet: {
             tabs: [
                 {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'},
+                MedkitApp.GENERIC_TAB,
                 {id: 'embedded', icon: 'fa-solid fa-feather-pointed', label: 'CAT.MEDKIT.TABS.Embedded'},
                 {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'},
                 {id: 'region', icon: 'fa-solid fa-vector-square', label: 'CAT.MEDKIT.TABS.PlacedRegion'}
