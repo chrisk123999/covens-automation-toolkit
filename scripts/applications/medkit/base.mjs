@@ -979,7 +979,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             if (isApplied) {
                 needsUpdate = !automationUtils.isUpToDate(item);
             } else {
-                const available = automationUtils.getAvailableAutomations(item);
+                const available = automationUtils.getAvailableAutomations(item, {excludeSources: constants.massApplyExcludeSources});
                 if (available?.length) needsUpdate = true;
             }
             if (needsUpdate) await automationUtils.updateItem(item);

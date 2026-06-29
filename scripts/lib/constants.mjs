@@ -281,6 +281,11 @@ function getItemKeepPaths({spell = false} = {}) {
     }
     return paths;
 }
+const massApplyExcludeSources = [
+    'dnd-dungeon-masters-guide',
+    'dnd5e',
+    'dnd-players-handbook'
+];
 export default {
     /** @type {RegisteredMacros} */
     macros: undefined,
@@ -330,5 +335,6 @@ export default {
     automationStatus,
     getItemKeepPaths,
     summonPasses,
-    tokenHookNames
+    tokenHookNames,
+    massApplyExcludeSources
 };

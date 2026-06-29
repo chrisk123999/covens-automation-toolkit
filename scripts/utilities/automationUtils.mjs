@@ -53,11 +53,11 @@ function isUpToDate(item) {
     }
     return true;
 }
-function getAvailableAutomations(item) {
+function getAvailableAutomations(item, {excludeSources = []} = {}) {
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item) ?? 'all';
     const type = item.type;
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type});
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, excludeSources});
 }
 function getConfigValue(item, key) {
     return constants.automations.getConfigValue(item, key);

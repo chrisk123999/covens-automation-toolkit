@@ -132,11 +132,21 @@ export class RegisteredAutomations {
      * @param {'all'|'2014'|'2024'} [options.rules='all']   The ruleset of the automation
      * @param {string} [options.source='all']               The source of the automation
      * @param {boolean} [options.multiple=false]            Whether to return all matching automations or only one
-     * @param {string} monsterIdentifier                    Match using a monster identifier as well
+     * @param {string} [options.monsterIdentifier]          Match using a monster identifier as well
+     * @param {string} [options.type]                       The item type to get automation(s) for
+     * @param {string[]} [options.excludeSources]           Which sources to exclude from consideration, if any
      * @returns {Automation[]|Automation|undefined}
      */
-    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type} = {}) {
-        const predicate = automation => automation.identifier === identifier && (rules === 'all' || automation.rules === rules) && (source === 'all' || automation.source === source) && (!monsterIdentifier || monsterIdentifier === automation.monsterIdentifier || (!type || type === automation.type));
+    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type, excludeSources = []} = {}) {
+        const predicate = automation => {
+            if (automation.identifier !== identifier) return false;
+            if (rules !== 'all' && automation.rules !== rules) return false;
+            if (source !== 'all' && automation.source !== source) return false;
+            if (excludeSources.includes(automation.source)) return false;
+            if (monsterIdentifier && monsterIdentifier !== automation.monsterIdentifier) return false;
+            if (type && type !== automation.type) return false;
+            return true;
+        };
         return multiple ? this.automations.filter(predicate) : this.automations.find(predicate);
     }
 
