@@ -60,6 +60,12 @@ function effectDescription(effect, updates) {
     const description = (item.system.identified ?? true) ? item.system.description[type] : item.system.unidentified.description;
     if (description) effect.updateSource({description});
 }
+async function createAnimations(effect) {
+
+}
+async function deleteAnimations(effect) {
+
+}
 export default {
     addConditions,
     removeConditions,

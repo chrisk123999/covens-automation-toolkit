@@ -2,7 +2,7 @@ import {genericUtils, queryUtils} from './_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
-async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions} = {}) {
+async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, animation, animationOptions} = {}) {
     if (macros?.length) {
         effectDatas.forEach(effectData => {
             const targetIdentifier = effectData.flags?.cat?.identifier ?? effectData.name?.slugify();
