@@ -3,12 +3,12 @@ import {ddbi} from '../integration/_modules.mjs';
 
 // reference https://gitlab.com/tposney/midi-qol/-/blob/v13/src/module/lib/midiCompletions.ts#L969
 
-const variable = (detail, info) => ({type: 'variable', detail, info: info(info)});
-const property = (detail, info) => ({type: 'property', detail, info: info(info)});
-const info = msg => msg ? `CAT Data: ${msg}` : '';
+const variable = (detail, info) => ({type: 'variable', detail, info: makeInfo(info)});
+const property = (detail, info) => ({type: 'property', detail, info: makeInfo(info)});
+const makeInfo = msg => msg ? `CAT Data: ${msg}` : '';
 const fnDetails = (fnEntry, params, info) => {
     fnEntry.detail = params;
-    fnEntry.info = info(info);
+    fnEntry.info = makeInfo(info);
 }; 
 const classInstance = (api, cls, info) => {
     let walked = api.tree[cls.name];
@@ -42,7 +42,7 @@ const alias = (api, base, info) => {
     const original = api.tree[base];
     const c = cls(base);
     if (original) {
-        const aliased = {...original, info: info(info)};
+        const aliased = {...original, info: makeInfo(info)};
         if (c.name !== 'INVALID') aliased.detail = c.name;
         return aliased;
     }
@@ -170,10 +170,10 @@ const VARS = {
 };
 
 const OVERRIDES = {
-    options: (_, {event}) => ({info: info(INFO.options[event])}),
-    actor: () => ({info: info('The trigger actor.')}),
-    item: () => ({info: info('The item for this workflow.')}),
-    activity: () => ({info: info('The activity for this workflow.')}),
+    options: (_, {event}) => ({info: makeInfo(INFO.options[event])}),
+    actor: () => ({info: makeInfo('The trigger actor.')}),
+    item: () => ({info: makeInfo('The item for this workflow.')}),
+    activity: () => ({info: makeInfo('The activity for this workflow.')}),
     token: (api) => classInstance(api, CONFIG.Token.documentClass, 'The trigger token.')
 };
 
