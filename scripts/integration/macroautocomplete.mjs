@@ -1,27 +1,27 @@
-import {Events, constants, Logging, Summon} from '../lib/_module.mjs';
+import {constants, Crosshairs, Events, Logging, Summon} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
 
 // reference https://gitlab.com/tposney/midi-qol/-/blob/v13/src/module/lib/midiCompletions.ts#L969
 
-const mkVar = (detail, info) => ({type: 'variable', detail, info: mkInfo(info)});
-const mkProp = (detail, info) => ({type: 'property', detail, info: mkInfo(info)});
-const mkInfo = msg => `CAT Data: ${msg}`;
+const variable = (detail, info) => ({type: 'variable', detail, info: info(info)});
+const property = (detail, info) => ({type: 'property', detail, info: info(info)});
+const info = msg => msg ? `CAT Data: ${msg}` : '';
 const fnDetails = (fnEntry, params, info) => {
     fnEntry.detail = params;
-    fnEntry.info = mkInfo(info);
+    fnEntry.info = info(info);
 }; 
-const clsInst = (api, cls, info) => {
+const classInstance = (api, cls, info) => {
     let walked = api.tree[cls.name];
     if (!walked) {
         walked = CLASS_CACHE[cls.name] ?? api.classToCompletions(cls);
         CLASS_CACHE[cls.name] ??= walked;
     }
-    const v = mkVar(cls.name, info);
+    const v = variable(cls.name, info);
     api.mergeCompletions(v, walked.instanceChildren);
     return v;
 };
-const clsInstProp = (api, cls, info) => {
-    const prop = clsInst(api, cls, info);
+const propertyClassInstance = (api, cls, info) => {
+    const prop = classInstance(api, cls, info);
     prop.type = 'property';
     return prop;
 };
@@ -42,12 +42,12 @@ const alias = (api, base, info) => {
     const original = api.tree[base];
     const c = cls(base);
     if (original) {
-        const aliased = {...original, info: mkInfo(info)};
+        const aliased = {...original, info: info(info)};
         if (c.name !== 'INVALID') aliased.detail = c.name;
         return aliased;
     }
-    if (c.name === 'INVALID') return mkVar(base, info);
-    return clsInst(api, c, info);
+    if (c.name === 'INVALID') return variable(base, info);
+    return classInstance(api, c, info);
 };
 
 const OUT_OF_SCOPE = ['args', 'macroActivity', 'macroItem', 'midiData', 'scope', 'speaker'];
@@ -55,55 +55,55 @@ const CLASS_CACHE = {};
 
 const VARS = {
     // General
-    encounters: () => mkVar(`${cls('actor').name}[]`, 'Any encounter actors that include the trigger actor.'),
-    distances: () => mkVar('object', 'Distances to other tokens on the scene, mapped by their token id.'),
-    vehicles: () => mkVar(`${cls('actor').name}[]`, 'Any vehicle actors that include the trigger actor.'),
-    groups: () => mkVar(`${cls('actor').name}[]`, 'Any group actors that include the trigger actor.'),
-    regions: () => mkVar(`Set<${cls('region').name}>`, 'Any regions containing the trigger token.'),
-    level: (api) => clsInst(api, CONFIG.Level.documentClass, 'The scene level of the trigger token.'),
-    scene: (api) => clsInst(api, CONFIG.Scene.documentClass, 'The scene for the trigger token.'),
+    encounters: () => variable(`${cls('actor').name}[]`, 'Any encounter actors that include the trigger actor.'),
+    distances: () => variable('object', 'Distances to other tokens on the scene, mapped by their token id.'),
+    vehicles: () => variable(`${cls('actor').name}[]`, 'Any vehicle actors that include the trigger actor.'),
+    groups: () => variable(`${cls('actor').name}[]`, 'Any group actors that include the trigger actor.'),
+    regions: () => variable(`Set<${cls('region').name}>`, 'Any regions containing the trigger token.'),
+    level: (api) => classInstance(api, CONFIG.Level.documentClass, 'The scene level of the trigger token.'),
+    scene: (api) => classInstance(api, CONFIG.Scene.documentClass, 'The scene for the trigger token.'),
 
     // Shared
-    config: (_, {event}) => mkVar('object', INFO.config[event]),
-    dialog: (_, {event}) => mkVar('object', INFO.dialog[event]),
-    message: (_, {event}) => mkVar('object', INFO.message[event]),
-    updates: (_, {event}) => mkVar('object', INFO.updates[event]),
-    targetToken: (api, {event}) => clsInst(api, CONFIG.Token.documentClass, INFO.targetToken[event]),
+    config: (_, {event}) => variable('object', INFO.config[event]),
+    dialog: (_, {event}) => variable('object', INFO.dialog[event]),
+    message: (_, {event}) => variable('object', INFO.message[event]),
+    updates: (_, {event}) => variable('object', INFO.updates[event]),
+    targetToken: (api, {event}) => classInstance(api, CONFIG.Token.documentClass, INFO.targetToken[event]),
 
     // Damage    
-    ditem: () => mkVar('object', 'Live copy of workflow.damageItem.'),
+    ditem: () => variable('object', 'Live copy of workflow.damageItem.'),
 
     // Region
-    tokens: () => mkVar(`${cls('token').name}[]`, 'Tokens in the trigger region.'),
+    tokens: () => variable(`${cls('token').name}[]`, 'Tokens in the trigger region.'),
 
     // Effect
-    effect: (api) => clsInst(api, CONFIG.ActiveEffect.documentClass, 'The trigger ActiveEffect.'),
+    effect: (api) => classInstance(api, CONFIG.ActiveEffect.documentClass, 'The trigger ActiveEffect.'),
 
     // Combat
-    combatant: (api) => clsInst(api, CONFIG.Combatant.documentClass, 'Current combatant.'),
-    previousCombatant: (api) => clsInst(api, CONFIG.Combatant.documentClass, 'Previous combatant.'),
-    previousRound: () => mkVar('number', 'Previous combat round.'),
-    previousTurn: () => mkVar('number', 'Previous combat turn.'),
-    round: () => mkVar('number', 'Current combat round.'),
-    turn: () => mkVar('number', 'Current combat turn.'),
-    context: () => mkVar('object', 'Combat event context.'),
+    combatant: (api) => classInstance(api, CONFIG.Combatant.documentClass, 'Current combatant.'),
+    previousCombatant: (api) => classInstance(api, CONFIG.Combatant.documentClass, 'Previous combatant.'),
+    previousRound: () => variable('number', 'Previous combat round.'),
+    previousTurn: () => variable('number', 'Previous combat turn.'),
+    round: () => variable('number', 'Current combat round.'),
+    turn: () => variable('number', 'Current combat turn.'),
+    context: () => variable('object', 'Combat event context.'),
 
     // Items
     ddbCharacter: (api) => {
         let ddb = game.modules.get(ddbi.CONFIG.id);
-        if (ddb) return clsInst(api, ddb.api.lib.DDBCharacter, 'DDBI character helpers.');
-        return mkVar('object', 'DDBI is not installed!');
+        if (ddb) return classInstance(api, ddb.api.lib.DDBCharacter, 'DDBI character helpers.');
+        return variable('object', 'DDBI is not installed!');
     },
 
     // Rest
-    result: () => mkVar('object', 'Changes to apply from rest.'),
+    result: () => variable('object', 'Changes to apply from rest.'),
 
     // Check / Skill / Save / Tool
-    roll: (api) => clsInst(api, CONFIG.Dice.D20Roll, 'The trigger roll.'),
+    roll: (api) => classInstance(api, CONFIG.Dice.D20Roll, 'The trigger roll.'),
 
     // Time
-    worldTime: () => mkVar('number', 'Current world time.'),
-    diff: () => mkVar('number', 'Change in world time.'),
+    worldTime: () => variable('number', 'Current world time.'),
+    diff: () => variable('number', 'Change in world time.'),
 
     // Summon
     summon: (api) => {
@@ -114,52 +114,65 @@ const VARS = {
             fnDetails(summon.getTimeRemaining, `(worldTime) => number`, 'The remaining time before this summon expires. Pass in the current world time.');
             fnDetails(summon.place, `(range, {token} = {}) => Promise<${cls('token').name}>`, 'Place the summon within range of the specified token. Uses the summoner token by default. Returns the summoned token.');
             fnDetails(summon.recall, '() => Promise', 'Delete the summoned token.');
-            summon.folder = clsInstProp(api, CONFIG.Folder.documentClass, 'The sidebar folder that holds the template actor for the summon.');
-            summon.actor = clsInstProp(api, CONFIG.Actor.documentClass, 'The summoned actor.');
-            summon.token = clsInstProp(api, CONFIG.Token.documentClass, 'The summoned token.');
-            summon.owner = clsInstProp(api, CONFIG.Actor.documentClass, 'The summoner actor.');
-            summon.ownerToken = clsInstProp(api, CONFIG.Token.documentClass, 'The summoner token.');
-            summon.sourceDocument = clsInstProp(api, foundry.abstract.Document, 'The document used to create the summon.');
-            summon.parent = clsInstProp(api, foundry.abstract.Document, 'The parent document of the summon, often a concentration effect.');
-            summon.created = mkProp('number', 'The world time when the summon was created.');
-            summon.duration = mkProp('number', 'The duration in world time this summon will last.');
-            summon.parentUuid = mkProp('string', 'Parent document uuid for this summon, often a concentration effect.');
-            summon.sourceDocumentUuid = mkProp('string', 'The uuid of the document used to create this summon.');
-            summon.sourceActorUuid = mkProp('string', 'Sidebar actor uuid for this summon.');
-            summon.ownerUuid = mkProp('string', 'Summoner actor uuid.');
+            summon.folder = propertyClassInstance(api, CONFIG.Folder.documentClass, 'The sidebar folder that holds the template actor for the summon.');
+            summon.actor = propertyClassInstance(api, CONFIG.Actor.documentClass, 'The summoned actor.');
+            summon.token = propertyClassInstance(api, CONFIG.Token.documentClass, 'The summoned token.');
+            summon.owner = propertyClassInstance(api, CONFIG.Actor.documentClass, 'The summoner actor.');
+            summon.ownerToken = propertyClassInstance(api, CONFIG.Token.documentClass, 'The summoner token.');
+            summon.sourceDocument = propertyClassInstance(api, foundry.abstract.Document, 'The document used to create the summon.');
+            summon.parent = propertyClassInstance(api, foundry.abstract.Document, 'The parent document of the summon, often a concentration effect.');
+            summon.created = property('number', 'The world time when the summon was created.');
+            summon.duration = property('number', 'The duration in world time this summon will last.');
+            summon.parentUuid = property('string', 'Parent document uuid for this summon, often a concentration effect.');
+            summon.sourceDocumentUuid = property('string', 'The uuid of the document used to create this summon.');
+            summon.sourceActorUuid = property('string', 'Sidebar actor uuid for this summon.');
+            summon.ownerUuid = property('string', 'Summoner actor uuid.');
             summon.animation = {
-                ...mkProp('object', 'Summon animation config.'),
+                ...property('object', 'Summon animation config.'),
                 children: {
-                    source: mkProp('string', 'Identifier for animation source.'),
-                    identifier: mkProp('string', 'Identifier for registered animation.')
+                    source: property('string', 'Identifier for animation source.'),
+                    identifier: property('string', 'Identifier for registered animation.')
                 }
             };
             summon.sounds = {
-                ...mkProp('object', 'Summon sound effects.'),
+                ...property('object', 'Summon sound effects.'),
                 children: {
-                    place: mkProp('string', 'Filepath for summon placed sound.'),
-                    removed: mkProp('string', 'Filepath for summon removed sound.'),
-                    death: mkProp('string', 'Filepath for summon death sound.')
+                    place: property('string', 'Filepath for summon placed sound.'),
+                    removed: property('string', 'Filepath for summon removed sound.'),
+                    death: property('string', 'Filepath for summon death sound.')
                 }
             };
-            summon.initiative = mkProp('string', 'Initiative mode for this summon: "standard" | "follows" | "none"');
+            summon.initiative = property('string', 'Initiative mode for this summon: "standard" | "follows" | "none"');
             walked.enriched = true;
         }
-        const v = mkVar('Summon', 'Summon data and helpers.');
+        const v = variable('Summon', 'Summon data and helpers.');
         api.mergeCompletions(v, walked.instanceChildren);
         return v;
     },
 
     // Called
-    data: () => mkVar('object', 'Called event data.')
+    data: () => variable('object', 'Data provided by events called from macros.'),
+
+    // Movement
+    destination: () => ({
+        ...variable('Object', 'Data about chosen crosshair coordinates.'),
+        x: property('number', 'Position in pixel coordinates.'),
+        y: property('number', 'Position in pixel coordinates.'),
+        name: property('string')
+    }),
+    // animation: () => variable(), ???
+    range: () => variable('number', 'Distance or range limit for movement.'),
+    sourceToken: (api) => classInstance(api, CONFIG.Token.documentClass, 'Token that initiated teleport.'),
+    action: () => variable('string', 'Movement action, one of CONFIG.Token.movement.actions.'),
+    teleport: () => variable('boolean', 'Trigger was a teleport')
 };
 
 const OVERRIDES = {
-    options: (_, {event}) => ({info: mkInfo(INFO.options[event])}),
-    actor: () => ({info: mkInfo('The trigger actor.')}),
-    item: () => ({info: mkInfo('The item for this workflow.')}),
-    activity: () => ({info: mkInfo('The activity for this workflow.')}),
-    token: (api) => clsInst(api, CONFIG.Token.documentClass, 'The trigger token.')
+    options: (_, {event}) => ({info: info(INFO.options[event])}),
+    actor: () => ({info: info('The trigger actor.')}),
+    item: () => ({info: info('The item for this workflow.')}),
+    activity: () => ({info: info('The activity for this workflow.')}),
+    token: (api) => classInstance(api, CONFIG.Token.documentClass, 'The trigger token.')
 };
 
 const INFO = {
@@ -232,17 +245,17 @@ function inContext(config, context, docType) {
         ...tree.utils?.children,
         constants: tree.lib?.children.constants,
         document: alias(autocomplete, docType, 'The document from which this macro was fetched.'),
-        name: mkVar('string', 'The name of the document from which this macro was fetched.'),
-        identifier: mkVar('string', 'The identifier of this macro.'),
-        priority: mkVar('number', 'The priority of this macro.'),
-        macroName: mkVar('string', 'The name of this macro.'),
-        macro: mkVar('string', 'This macro.'),
+        name: variable('string', 'The name of the document from which this macro was fetched.'),
+        identifier: variable('string', 'The identifier of this macro.'),
+        priority: variable('number', 'The priority of this macro.'),
+        macroName: variable('string', 'The name of this macro.'),
+        macro: variable('string', 'This macro.'),
         castData: {
-            ...mkVar('object', 'Cast scaling info for spell effects.'),
+            ...variable('object', 'Cast scaling info for spell effects.'),
             children: {
-                castLevel: mkProp('number', 'Spell upcast level.'),
-                baseLevel: mkProp('number', 'Spell level.'),
-                saveDC: mkProp('number', 'Spell DC')
+                castLevel: property('number', 'Spell upcast level.'),
+                baseLevel: property('number', 'Spell level.'),
+                saveDC: property('number', 'Spell DC')
             }
         }
     };
@@ -257,7 +270,7 @@ function inContext(config, context, docType) {
             continue;
         }
         let triggerData = VARS[key]?.(autocomplete, {event, pass, docType});
-        completions[key] = triggerData || mkVar('any', 'unregistered');
+        completions[key] = triggerData || variable('any', 'unregistered');
     }
     for (const key of OUT_OF_SCOPE) {
         if (key in completions) continue;

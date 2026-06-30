@@ -54,12 +54,12 @@ async function moveToken(token, waypoints, options = {}) {
 }
 async function teleportToken(token, {destination, animation, range = 30} = {}) {
     if (!destination) {
-        const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation}).run();
+        const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
         destination = await crosshairUtils.aimCrosshair({token, maxRange: range});
     }
     if (!destination || destination?.cancelled) return;
-    const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation}).run();
+    const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
     if (preAnimation) await preAnimation(token, {destination});
@@ -77,7 +77,7 @@ async function teleportToken(token, {destination, animation, range = 30} = {}) {
 async function displaceToken(token, {sourceToken, destination, animation, range = 5, action = 'catForce'} = {}) {
     destination ??= await crosshairUtils.aimCrosshair({token, maxRange: range});
     if (!destination || destination?.cancelled) return;
-    const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation, action}).run();
+    const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation, action, destination, range}).run();
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
     if (preAnimation) await preAnimation(token, {sourceToken, destination});
@@ -96,7 +96,7 @@ async function displaceToken(token, {sourceToken, destination, animation, range 
     if (postAnimation) await postAnimation(token, {sourceToken, destination, action});
 }
 async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catForce'} = {}) {
-    const results = await new Events.MovementEvent(token, constants.movementPasses.slide, {sourceToken, distance, ray, action}).run({multiResult: true});
+    const results = await new Events.MovementEvent(token, constants.movementPasses.slide, {sourceToken, range: distance, ray, action}).run({multiResult: true});
     if (results && results.length) {
         if (results.includes(0)) return;
         distance = results.reduce((acc, curr) => {
