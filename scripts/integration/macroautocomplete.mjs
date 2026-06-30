@@ -156,9 +156,11 @@ const VARS = {
     // Movement
     destination: () => ({
         ...variable('Object', 'Data about chosen crosshair coordinates.'),
-        x: property('number', 'Position in pixel coordinates.'),
-        y: property('number', 'Position in pixel coordinates.'),
-        name: property('string')
+        children: {
+            x: property('number', 'Position in pixel coordinates.'),
+            y: property('number', 'Position in pixel coordinates.'),
+            name: property('string')
+        }
     }),
     // animation: () => variable(), ???
     range: () => variable('number', 'Distance or range limit for movement.'),
