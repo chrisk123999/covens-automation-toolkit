@@ -131,10 +131,10 @@ function getEffectData(document, id, {duration, concentrationItem} = {}) {
  * Filter for documents that have a given property and return a sorted array.
  * @param {Document[]} documents
  * @param {string} path
- * @param {object} options
- * @param {string} options.sortPath Path to a value on each document for sorting. Uses path if not specified.
- * @param {string[]} options.excludeIds Document ids to exclude from the results.
- * @param {boolean} options.ascending Sort order, default descending.
+ * @param {*} [options]
+ * @param {string} [options.sortPath] Path to a value on each document for sorting. Uses path if not specified.
+ * @param {string[]} [options.excludeIds] Document ids to exclude from the results.
+ * @param {boolean} [options.ascending] Sort order, default descending.
  * @returns {Document[]}
  */
 function filterSortDocuments(documents, path, {sortPath, excludeIds = [], ascending = false} = {}) {
