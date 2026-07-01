@@ -515,7 +515,7 @@ class RegionEvent extends CatEvent {
     }
 }
 class EffectEvent extends CatEvent {
-    constructor(effect, pass, {options, updates, parent} = {}) {
+    constructor(effect, pass, {options, updates, parent, originActivity} = {}) {
         super(pass);
         this.name = 'Effect';
         this.trigger = Triggers.EffectTrigger;
@@ -534,6 +534,7 @@ class EffectEvent extends CatEvent {
             this.item = parent;
             this.actor = parent.actor;
         }
+        this.originActivity = originActivity;
         this.options = options;
         this.updates = updates;
         this.setContext(this.actor);
@@ -541,12 +542,18 @@ class EffectEvent extends CatEvent {
     get unsortedTriggers() {
         let triggers = [];
         if (CatEvent.hasCatFlag(this.effect)) triggers.push(new Triggers.EffectTrigger(this.effect, this.pass));
+        if (this.originActivity) {
+            const passName = this.pass.capitalize();
+            if (CatEvent.hasCatFlag(this.originActivity)) triggers.push(new Triggers.EffectTrigger(this.originActivity, 'activity' + passName));
+            if (CatEvent.hasCatFlag(this.originActivity.item)) triggers.push(new Triggers.EffectTrigger(this.originActivity.item, 'item' + passName));
+        }
         triggers.push(...super.unsortedTriggers);
         return triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
     }
     appendData(data) {
         return {
             ...super.appendData(data),
+            originActivity: this.originActivity,
             effect: this.effect,
             options: this.options,
             updates: this.updates

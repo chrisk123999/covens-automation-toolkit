@@ -44,7 +44,7 @@ function getEventStructure() {
         roll: {scopes: WORKFLOW_SCOPES, passes: mk(Object.values(c.workflowPasses), [], true)},
         combat: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.combatPasses), [], true)},
         move: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.movementPasses), [], true)},
-        effect: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.effectPasses), ['activeeffect'], true)},
+        effect: {scopes: ['activity', 'item', ...CREATURE_SCOPES], passes: mk(Object.values(c.effectPasses), ['activeeffect'], true)},
         item: {scopes: CREATURE_SCOPES, passes: [...mk(itemScoped, ['item'], true), ...mk(itemBare, ['item'], false)]},
         region: {scopes: [], passes: mk(Object.values(c.regionPasses), ['region'], false)},
         aura: {scopes: [], passes: mk(Object.values(c.auraPasses), ['item', 'activeeffect', 'actor', 'token', 'activity'], false)},

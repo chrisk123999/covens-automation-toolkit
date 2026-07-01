@@ -127,29 +127,6 @@ function getEffectData(document, id, {duration, concentrationItem} = {}) {
     if (duration) effectData.duration = duration;
     return effectData;
 }
-/**
- * Filter for documents that have a given property and return a sorted array.
- * @param {Document[]} documents
- * @param {string} path
- * @param {*} [options]
- * @param {string} [options.sortPath] Path to a value on each document for sorting. Uses path if not specified.
- * @param {string[]} [options.excludeIds] Document ids to exclude from the results.
- * @param {boolean} [options.ascending] Sort order, default descending.
- * @returns {Document[]}
- */
-function filterSortDocuments(documents, path, {sortPath, excludeIds = [], ascending = false} = {}) {
-    sortPath ??= path;
-    excludeIds.push('CAT-NO-ID');
-    return documents.filter(i => genericUtils.getProperty(i, path) !== undefined && !excludeIds.includes(i.id ?? i._id ?? 'CAT-NO-ID'))
-        .sort((a, b) => {
-            const A = genericUtils.getProperty(a, sortPath);
-            const B = genericUtils.getProperty(b, sortPath);
-            if (A === undefined) return ascending ? 1 : -1;
-            if (B === undefined) return ascending ? -1 : 1;
-            if (Number.isNumeric(A) && Number.isNumeric(B)) return ascending ? A - B : B - A;
-            return ascending ? A.localeCompare(B, game.i18n.lang) : B.localeCompare(A, game.i18n.lang);
-        });
-}
 export default {
     getRules,
     getSource,
@@ -165,6 +142,5 @@ export default {
     getEffectByIdentifier,
     makeDependent,
     modifyBatch,
-    getEffectData,
-    filterSortDocuments
+    getEffectData
 };

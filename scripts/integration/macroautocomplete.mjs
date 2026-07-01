@@ -78,6 +78,7 @@ const VARS = {
 
     // Effect
     effect: (api) => classInstance(api, CONFIG.ActiveEffect.documentClass, 'The trigger ActiveEffect.'),
+    originActivity: (api) => alias(api, 'activity', 'Activity that created the effect, if any.'),
 
     // Combat
     combatant: (api) => classInstance(api, CONFIG.Combatant.documentClass, 'Current combatant.'),

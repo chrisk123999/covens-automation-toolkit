@@ -1,4 +1,4 @@
-import {queryUtils} from '../utilities/_module.mjs';
+import {effectUtils, queryUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {auraEvents} from '../events/_module.mjs';
 import {effects} from '../handlers/_module.mjs';
@@ -15,7 +15,7 @@ async function createActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     if (effect.parent instanceof Actor) await effects.addConditions(effect);
-    await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
+    await new Events.EffectEvent(effect, constants.effectPasses.created, {options, originActivity: await effectUtils.getOriginActivity(effect)}).run();
     await auraEvents.effect(effect, options);
     if (effect.statuses.size) await specialDuration.specialDurationConditions(effect);
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await specialDuration.specialDurationZeroSpeed(effect.parent);
@@ -37,7 +37,7 @@ function preCreateActiveEffect(effect, updates, options, userId) {
     effects.noAnimation(effect, options);
     effects.effectDescription(effect, updates);
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
-    new Events.EffectEvent(effect, constants.effectPasses.preCreated, {options, updates}).runSync();
+    new Events.EffectEvent(effect, constants.effectPasses.preCreated, {options, updates, originActivity: effectUtils.getOriginActivitySync(effect)}).runSync();
 }
 function preDeleteActiveEffect(effect, options, userId) {
     effects.noAnimation(effect, options);
