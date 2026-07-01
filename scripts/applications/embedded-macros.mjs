@@ -6,7 +6,7 @@ const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {fields} = foundry.data;
 
 const CREATURE_SCOPES = ['actor', 'scene', 'nearby', 'region', 'level', 'group', 'vehicle', 'encounter'];
-const WORKFLOW_SCOPES = ['item', ...CREATURE_SCOPES,'token', 'target', 'enchantment', 'castEnchantment'];
+const WORKFLOW_SCOPES = ['activity', 'item', ...CREATURE_SCOPES,'token', 'target', 'enchantment', 'castEnchantment'];
 const ACTOR_SCOPES = [...CREATURE_SCOPES.filter(scope => scope !== 'region'), 'target'];
 
 // Which scope prefixes land on each document type at runtime (intersected with an event's scope set).
@@ -14,7 +14,7 @@ const DOCUMENT_SCOPES = {
     actor: ACTOR_SCOPES,
     item: ['item', ...ACTOR_SCOPES],
     activeeffect: [...ACTOR_SCOPES, 'enchantment'],
-    activity: [...ACTOR_SCOPES, 'castEnchantment'],
+    activity: ['activity', 'item',...ACTOR_SCOPES, 'castEnchantment'],
     token: ['token', 'actor', 'scene', 'nearby', 'level', 'target'],
     region: ['region', 'target'],
     scene: ['scene'],
@@ -41,7 +41,7 @@ function getEventStructure() {
     const itemScoped = Object.values(c.itemPasses).filter(pass => !itemBare.includes(pass));
     const mk = (list, self, scoped) => list.map(pass => ({pass, self, scoped}));
     return _eventStructure = {
-        roll: {scopes: WORKFLOW_SCOPES, passes: mk(Object.values(c.workflowPasses), ['activity'], true)},
+        roll: {scopes: WORKFLOW_SCOPES, passes: mk(Object.values(c.workflowPasses), [], true)},
         combat: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.combatPasses), [], true)},
         move: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.movementPasses), [], true)},
         effect: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.effectPasses), ['activeeffect'], true)},

@@ -37,6 +37,19 @@ class CatEvent {
             argValues: Object.values(scope)
         };
     }
+    buildSyncScriptFunction(script, scope) {
+        const defaultScope = {
+            ...utils,
+            constants
+        };
+        scope = {...defaultScope, ...scope};
+        let argNames = Object.keys(scope);
+        if (argNames.some(k => Number.isNumeric(k))) throw new Error('Illegal numeric Macro parameter passed to execution scope.');
+        return {
+            fn: new Function(...argNames, '{' + script + '}\n'),
+            argValues: Object.values(scope)
+        };
+    }
     appendData(data = {}) {
         return {
             ...data,
@@ -286,7 +299,7 @@ class CatEvent {
         }
     }
     executeScriptSync(script, scope) {
-        const {fn, argValues} = this.buildScriptFunction(script, scope);
+        const {fn, argValues} = this.buildSyncScriptFunction(script, scope);
         try {
             return fn(...argValues);
         } catch (error) {
