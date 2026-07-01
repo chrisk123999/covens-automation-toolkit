@@ -317,7 +317,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 option.isCombobox = true;
                 option.allowBlank = true;
                 option.choices = this.#effectChoices();
-                console.log(option.choices);
                 break;
             case 'selectAnimation': {
                 const sel = (value && typeof value === 'object') ? value : descriptor.default;

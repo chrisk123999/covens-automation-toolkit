@@ -66,10 +66,84 @@ async function createAnimations(effect) {
 async function deleteAnimations(effect) {
 
 }
+function preImageCreate(effect, id) {
+    if (game.user.id != id) return;
+    if (!(effect.parent instanceof Actor)) return;
+    const actorImg = effect.flags.cat?.image?.actor?.value;
+    const tokenImg = effect.flags.cat?.image?.token?.value;
+    let effects;
+    const updates = {};
+    if (actorImg) {
+        effects = actorUtils.getEffects(effect.parent);
+        const otherActorEffects = documentUtils.filterSortDocuments(effects, 'flags.cat.image.actor.priority', {excludeIds: [effect.id]});
+        genericUtils.setProperty(updates, 'flags.cat.image.actor.original', otherActorEffects.length ? otherActorEffects[0].flags.cat.image.actor.original : effect.parent.img);
+    }
+    if (tokenImg) {
+        effects ??= actorUtils.getEffects(effect.parent);
+        const otherTokenEffects = documentUtils.filterSortDocuments(effects, 'flags.cat.image.token.priority', {excludeIds: [effect.id]});
+        genericUtils.setProperty(updates, 'flags.cat.image.token.original', otherTokenEffects.length ? otherTokenEffects[0].flags.cat.image.token.original : effect.parent.prototypeToken.texture.src);
+    }
+    effect.updateSource(updates);
+}
+async function imageCreate(effect) {
+    const actorImg = effect.flags.cat?.image?.actor?.value;
+    const tokenImg = effect.flags.cat?.image?.token?.value;
+    let effects;
+    const updates = [];
+    if (actorImg) {
+        effects = actorUtils.getEffects(effect.parent);
+        const otherActorEffects = documentUtils.filterSortDocuments(effects, 'flags.cat.image.actor.priority', {excludeIds: [effect.id]});
+        updates.push({
+            action: 'update',
+            documentName: 'Actor',
+            updates: [{_id: effect.parent.id, img: otherActorEffects.length ? otherActorEffects[0].flags.cat.image.actor.value : actorImg}]
+        });
+    }
+    if (tokenImg) {
+        effects ??= actorUtils.getEffects(effect.parent);
+        const otherTokenEffects = documentUtils.filterSortDocuments(effects, 'flags.cat.image.token.priority', {excludeIds: [effect.id]});
+        effect.parent.getActiveTokens().forEach(t => updates.push({
+            action: 'update',
+            parent: t.document.parent,
+            documentName: 'Token',
+            updates: [{_id: t.id, 'texture.src': otherTokenEffects.length ? otherTokenEffects[0].flags.cat.image.token.value : tokenImg}]
+        }));
+    }
+    if (updates.length) await documentUtils.modifyBatch(updates);
+}
+async function imageRemove(effect) {
+    const actorImg = effect.flags.cat?.image?.actor?.value;
+    const tokenImg = effect.flags.cat?.image?.token?.value;
+    let effects;
+    const updates = [];
+    if (actorImg) {
+        effects = actorUtils.getEffects(effect.parent);
+        const otherActorEffects = documentUtils.filterSortDocuments(effects, 'flags.cat.image.actor.priority', {excludeIds: [effect.id]});
+        updates.push({
+            action: 'update',
+            documentName: 'Actor',
+            updates: [{_id: effect.parent.id, img: otherActorEffects.length ? otherActorEffects[0].flags.cat.image.actor.original : effect.flags.cat.image.actor.original}]
+        });
+    }
+    if (tokenImg) {
+        effects ??= actorUtils.getEffects(effect.parent);
+        const otherTokenEffects = documentUtils.filterSortDocuments(effects, 'flags.cat.image.token.priority', {excludeIds: [effect.id]});
+        effect.parent.getActiveTokens().forEach(t => updates.push({
+            action: 'update',
+            parent: t.document.parent,
+            documentName: 'Token',
+            updates: [{_id: t.id, 'texture.src': otherTokenEffects.length ? otherTokenEffects[0].flags.cat.image.token.original : effect.flags.cat.image.token.original}]
+        }));
+    }
+    if (updates.length) await documentUtils.modifyBatch(updates);
+}
 export default {
     addConditions,
     removeConditions,
     applyActiveEffect,
     noAnimation,
-    effectDescription
+    effectDescription,
+    preImageCreate,
+    imageCreate,
+    imageRemove
 };

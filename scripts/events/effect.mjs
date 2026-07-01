@@ -14,7 +14,10 @@ async function doDeleteActiveEffect(effect, options) {
 async function createActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
-    if (effect.parent instanceof Actor) effects.addConditions(effect);
+    if (effect.parent instanceof Actor) {
+        await effects.addConditions(effect);
+        await effects.imageCreate(effect);
+    }
     await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
     await auraEvents.effect(effect, options);
     if (effect.statuses.size) await specialDuration.specialDurationConditions(effect);
@@ -23,7 +26,10 @@ async function createActiveEffect(effect, options, userId) {
 async function deleteActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
-    if (effect.parent instanceof Actor) await effects.removeConditions(effect);
+    if (effect.parent instanceof Actor) {
+        await effects.removeConditions(effect);
+        await effects.imageRemove(effect);
+    }
     if (effect.statuses.size) await specialDuration.specialDurationRemovedConditions(effect);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
     await auraEvents.effect(effect, options);
@@ -37,6 +43,7 @@ function preCreateActiveEffect(effect, updates, options, userId) {
     effects.noAnimation(effect, options);
     effects.effectDescription(effect, updates);
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
+    effects.preImageCreate(effect, userId);
     new Events.EffectEvent(effect, constants.effectPasses.preCreated, {options, updates}).runSync();
 }
 function preDeleteActiveEffect(effect, options, userId) {
