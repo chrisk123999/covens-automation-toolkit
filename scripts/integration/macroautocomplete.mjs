@@ -1,4 +1,4 @@
-import {constants, Crosshairs, Events, Logging, Summon} from '../lib/_module.mjs';
+import {constants, Events, Logging, Summon} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
 
 // reference https://gitlab.com/tposney/midi-qol/-/blob/v13/src/module/lib/midiCompletions.ts#L969

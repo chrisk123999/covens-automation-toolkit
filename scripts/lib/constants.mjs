@@ -191,7 +191,8 @@ const miscHookNames = {
     renderTidy5eItemSheetClassic: 'renderTidy5eItemSheetClassic',
     renderTidy5eItemSheetQuadrone: 'renderTidy5eItemSheetQuadrone',
     renderTidy5eCharacterSheetQuadrone: 'renderTidy5eCharacterSheetQuadrone',
-    renderCombatTracker: 'renderCombatTracker'
+    renderCombatTracker: 'renderCombatTracker',
+    macroautocomplete: 'macro-autocomplete.ready'
 };
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',

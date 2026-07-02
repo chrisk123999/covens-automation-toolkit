@@ -78,4 +78,3 @@ Hooks.once('ddb-importer.compendiumCreationComplete', async () => {
     }
     ddbGate();
 });
-Hooks.once('macro-autocomplete.ready', integration.macroautocomplete.registerCAT);
