@@ -28,6 +28,7 @@ async function updateItem(item, updates, options, userId) {
         await effects.specialDurationEquipment(item);
         await new Events.ItemEvent(item, constants.itemPasses.equipped, {options, updates}).run();
     } else if (!currentlyEquipped && previouslyEquipped) {
+        await effects.specialDurationEquipment(item, {removed: true});
         await new Events.ItemEvent(item, constants.itemPasses.unequipped, {options, updates}).run();
     }
     const currentlyAttuned = updates.system?.attuned ?? item.system.attuned;

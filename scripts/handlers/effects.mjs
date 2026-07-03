@@ -157,8 +157,9 @@ async function specialDurationRemovedConditions(effect) {
         if (effect.statuses.some(k => specialDurations.includes(k + 'Removed'))) await documentUtils.deleteDocument(eff);
     }));
 }
-async function specialDurationEquipment(item) {
-    const equipmentTypes = Object.keys(CONFIG.DND5E.armorTypes);
+async function specialDurationEquipment(item, {removed} = {}) {
+    let equipmentTypes = Object.keys(CONFIG.DND5E.armorTypes);
+    if (removed) equipmentTypes = equipmentTypes.map(i => i + 'Removed');
     await Promise.all(actorUtils.getEffects(item.actor, {includeItemEffects: true}).map(async effect => {
         let specialDurations = effect.flags.cat?.specialDuration;
         if (!specialDurations) return;
