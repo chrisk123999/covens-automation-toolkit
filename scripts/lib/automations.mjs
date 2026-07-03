@@ -229,17 +229,17 @@ export class RegisteredAutomations {
             let version;
             switch (rule) {
                 case '2014':
-                    config = configs2014[identifier];
-                    notes = notes2014[identifier];
-                    scales = scales2014[identifier];
-                    type = types2014[identifier];
+                    config = configs2014[identifier] ?? configsAll[identifier];
+                    notes = notes2014[identifier] ?? notesAll[identifier];
+                    scales = scales2014[identifier] ?? scalesAll[identifier];
+                    type = types2014[identifier] ?? typesAll[identifier];
                     version = versions2014[identifier] ?? documentUtils.getVersion(document) ?? '0';
                     break;
                 case '2024':
-                    config = configs2024[identifier];
-                    notes = notes2024[identifier];
-                    scales = scales2024[identifier];
-                    type = types2024[identifier];
+                    config = configs2024[identifier] ?? configsAll[identifier];
+                    notes = notes2024[identifier] ?? notesAll[identifier];
+                    scales = scales2024[identifier] ?? scalesAll[identifier];
+                    type = types2024[identifier] ?? typesAll[identifier];
                     version = versions2024[identifier] ?? documentUtils.getVersion(document) ?? '0';
                     break;
                 default:
