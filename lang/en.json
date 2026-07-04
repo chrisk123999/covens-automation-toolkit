@@ -427,6 +427,7 @@
             "ConditionAdded": "Condition Added",
             "ConditionRemoved": "Condition Removed",
             "Equipped": "Armor Equipped",
+            "Unequipped": "Armor Unequipped",
             "ToolRolled": "Tool Rolled",
             "ToolFailed": "Tool Check Failed",
             "ToolSucceeded": "Tool Check Succeeded"
