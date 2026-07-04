@@ -77,7 +77,7 @@ class CatEvent {
                 triggers.push(new this.trigger(activity, pass, data));
             });
         });
-        actorUtils.getEffects(actor).filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
+        actorUtils.getEffects(actor).filter(effect => CatEvent.hasCatFlag(effect) && effect.active).forEach(effect => {
             triggers.push(new this.trigger(effect, pass, data));
         });
         return triggers;
