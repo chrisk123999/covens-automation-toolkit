@@ -55,22 +55,17 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
         context.type = this.#type;
         const e = this.#entry;
         const schema = this.#attribute.schema.fields;
+        context.valueHint = _loc(`CAT.MEDKIT.DocProps.Props.${this.#attribute.type}.Hint`);
+        context.valueLabel = _loc(`CAT.MEDKIT.DocProps.Props.${this.#attribute.type}.Field`);
         context.valuePath = schema.value.fieldPath;
         if (schema.value instanceof fields.ArrayField) {
             context.value = csv(e.value);
-            context.valueHint = _loc(schema.value.element.hint);
-            context.valueLabel = _loc(schema.value.element.label);
             const choices = schema.value.element.choices;
-            if (choices) {
-                context.valueChoices = this.#fetchChoices(choices, e.value);
-            } else {
-                context.valueField = schema.value.element;
-            }
+            if (choices) context.valueChoices = this.#fetchChoices(choices, e.value);
+            else context.valueField = schema.value.element;
         } else {
             context.value = e.value ?? '';
             context.valueField = schema.value;
-            context.valueHint = _loc(schema.value.hint);
-            context.valueLabel = _loc(schema.value.label);
         }
         context.restrictions = schema.restrictions.entries().map(([key, restrictionSchema]) => {
             const {value, requireAll, invert} = restrictionSchema.fields;

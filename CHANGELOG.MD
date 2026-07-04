@@ -1,3 +1,32 @@
+# 0.0.4 Release:
+## Update Notes:
+- Added more fields to document alternate attributes.
+- Dialogs without inputs are now centered.
+- Added none option to animation selection for item configs.
+- Jsdocs added to many helpers.
+- Integrated sources such as the DMG, 5E System, and PHB will no longer be used in the actor mass updater.
+- Updated macro autocomplete integration.
+## API Update Notes:
+- Added catForce as a movement type, this movement type is for forced movement via macros.
+- Movement events now have information about if the movement was a teleport and it's action type.
+- Added selectEffect as a config option.
+- automationUtils.getAutomationByIdentifier now has an excludeSources option.
+- automationUtils.getAnimationConfig added.
+- automationUtils.getResolvedAnimation added. This helper is useful for using using registered animations via the API.
+- documentUtils.getEffectData added. Returns the effectData from on an item with the duration and origin properly set. Useful for macros.
+- Updated effectUtils.createEffects to be able to add macros to created effects without having to directly modify flags.
+- When using the bulk automation registration, the all rules will used as a fallback.
+- Added dataUtils.setRules and dataUtils.setIdentifier. These helpers are useful for when you want to add an identifier or rules to the data of a document in a macro.
+## API Bug Fixes:
+- Macros on inactive effects will no longer fire.
+## Bug Fixes:
+- Removed unnecessary roll patch.
+- Fixed CatKit automation lookup.
+- CatKit shows correct colors for no automation found now.
+- Called embedded macros let you type in the called macro pass now.
+- Sync embedded macros should now work properly.
+- Added more special durations to the effect CatKit.
+
 # 0.0.3 Release:
 ## API Update Notes:
 - Added teleportToken, slideToken, and displaceToken to tokenUtils. Currently these count as token moves (and use up your turn movement), but this will be improved upon soon.

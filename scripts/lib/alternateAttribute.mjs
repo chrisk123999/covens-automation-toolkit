@@ -112,14 +112,12 @@ function buildAttributes() {
     const ATTRIBUTES = {};
     const registerAttribute = attribute => ATTRIBUTES[attribute.type] = new AlternateAttribute({
         ...attribute,
-        restrictionSchema: attribute.restrictions.reduce((list, r) => (list[r.type] = r.schema, list), {})
+        restrictionSchema: attribute.restrictions.reduce((list, r) => (r ? list[r.type] = r.schema : '', list), {})
     });
 
     registerAttribute({
         type: 'DamageFormula',
         valueSchema: new dndFields.FormulaField({
-            hint: 'CAT.MEDKIT.DocProps.Props.DamageFormula.Hint',
-            label: 'CAT.MEDKIT.DocProps.Props.DamageFormula.Field',
             placeholder: '1d4 + @mod',
             required: true
         }),
@@ -130,8 +128,6 @@ function buildAttributes() {
     registerAttribute({
         type: 'RollModifier',
         valueSchema: new fields.ArrayField(new fields.StringField({
-            hint: 'CAT.MEDKIT.DocProps.Props.RollModifier.Hint',
-            label: 'CAT.MEDKIT.DocProps.Props.RollModifier.Field',
             placeholder: 'x, min2, r',
             required: true
         })),
@@ -143,8 +139,6 @@ function buildAttributes() {
         type: 'Ability',
         valueSchema: new fields.ArrayField(new fields.StringField({
             choices: () => Restrictions.mapKeyLabel(CONFIG.DND5E.abilities),
-            hint: 'CAT.MEDKIT.DocProps.Props.Ability.Hint',
-            label: 'CAT.MEDKIT.DocProps.Props.Ability.Field',
             placeholder: 'dex, con',
             required: true
         })),
