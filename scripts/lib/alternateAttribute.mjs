@@ -95,16 +95,16 @@ function resolveDamageParts({item, partIndex, allowedDamageParts}) {
 
 function getFormulaRestrictions() {
     return [
-        Restrictions.Identifier,
-        Restrictions.DamagePart,
-        Restrictions.DamageType,
-        Restrictions.Type,
-        Restrictions.WeaponType,
-        Restrictions.Property,
-        Restrictions.Ability,
-        Restrictions.School,
-        Restrictions.Method,
-        Restrictions.Level
+        Restrictions.Item.Identifier,
+        Restrictions.Item.DamagePart,
+        Restrictions.Item.DamageType,
+        Restrictions.Item.Type,
+        Restrictions.Item.WeaponType,
+        Restrictions.Item.Property,
+        Restrictions.Item.Ability,
+        Restrictions.Item.School,
+        Restrictions.Item.Method,
+        Restrictions.Item.Level
     ];
 }
 
@@ -150,11 +150,36 @@ function buildAttributes() {
         })),
         allowedFlagHolders: ['feat'],
         restrictions: [
-            Restrictions.Identifier,
-            Restrictions.DamageType,
-            Restrictions.Property,
-            Restrictions.Type,
-            Restrictions.WeaponType
+            Restrictions.Item.Identifier,
+            Restrictions.Item.DamageType,
+            Restrictions.Item.Property,
+            Restrictions.Item.Type,
+            Restrictions.Item.WeaponType
+        ]
+    });
+
+    registerAttribute({
+        type: 'ACFormula',
+        valueSchema: new dndFields.FormulaField({
+            deterministic: true,
+            required: true
+        }),
+        allowedFlagHolders: ['feat'],
+        restrictions: [
+            Restrictions.Actor.Armor
+        ]
+    });
+
+    registerAttribute({
+        type: 'ACAbility',
+        valueSchema: new fields.StringField({
+            choices: () => Restrictions.mapKeyLabel(CONFIG.DND5E.abilities),
+            initial: 'dex',
+            required: true
+        }),
+        allowedFlagHolders: ['feat'],
+        restrictions: [
+            Restrictions.Actor.Armor
         ]
     });
 

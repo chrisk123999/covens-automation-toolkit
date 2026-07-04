@@ -7,7 +7,7 @@ const RESULTS = {
     FORCE_PASS: 'force',
     FORCE_FAIL: 'force-fail'
 };
-const TYPES = {};
+const TYPES = {Item: {}, Actor: {}};
 
 const mapKeyKey = config => Object.entries(config).reduce((acc, [key, _]) => (acc[key] = key, acc), {});
 const mapKeyLabel = config => Object.entries(config).reduce((acc, [key, value]) => (acc[key] = value.label, acc), {});
@@ -21,7 +21,7 @@ class AttributeRestriction {
     #canRequireAll;
     #propertyPath;
 
-    constructor({type, evaluate, choices, canInvert, canRequireAll, propertyPath, hint, label}) {
+    constructor({type, evaluate, choices, canInvert, canRequireAll, propertyPath}) {
         this.#type = type;
         this.#choices = choices;
         this.#evaluate = evaluate;
@@ -53,8 +53,12 @@ class AttributeRestriction {
     }
 }
 
-function registerRestriction({type, evaluate, choices, canInvert, canRequireAll, propertyPath}) {
-    TYPES[type] = new AttributeRestriction({type, evaluate, choices, canInvert, canRequireAll, propertyPath});
+function registerItemRestriction(config) {
+    TYPES.Item[config.type] = new AttributeRestriction(config);
+}
+
+function registerActorRestriction(config) {
+    TYPES.Actor[config.type] = new AttributeRestriction(config);
 }
 
 function checkList({value, requireAll}, {data, item, propertyPath}) {
@@ -69,7 +73,7 @@ function checkList({value, requireAll}, {data, item, propertyPath}) {
     return requireAll ? value.every(v => v === data) : value.some(v => v === data);
 }
 
-registerRestriction({
+registerItemRestriction({
     type: 'Identifier',
     evaluate: ({value: ids}, {identifier, activityIdentifier, partIndex}) => {
         return ids.some(id => {
@@ -83,7 +87,7 @@ registerRestriction({
 });
 
 const ITEM_TYPES = ['consumable', 'equipment' ,'feat', 'loot', 'spell', 'tool', 'weapon'];
-registerRestriction({
+registerItemRestriction({
     type: 'Type',
     propertyPath: 'type',
     canInvert: true,
@@ -91,7 +95,7 @@ registerRestriction({
     evaluate: checkList
 });
 
-registerRestriction({
+registerItemRestriction({
     type: 'Property',
     propertyPath: 'system.properties',
     canRequireAll: true,
@@ -100,7 +104,7 @@ registerRestriction({
     evaluate: checkList
 });
 
-registerRestriction({
+registerItemRestriction({
     type: 'School',
     propertyPath: 'system.school',
     canInvert: true,
@@ -108,7 +112,7 @@ registerRestriction({
     evaluate: checkList
 });
 
-registerRestriction({
+registerItemRestriction({
     type: 'Level',
     propertyPath: 'system.level',
     canInvert: true,
@@ -116,7 +120,7 @@ registerRestriction({
     evaluate: checkList
 });
 
-registerRestriction({
+registerItemRestriction({
     type: 'Ability',
     propertyPath: 'system.ability',
     canInvert: true,
@@ -124,7 +128,7 @@ registerRestriction({
     evaluate: checkList
 });
 
-registerRestriction({
+registerItemRestriction({
     type: 'Method',
     propertyPath: 'system.method',
     canInvert: true,
@@ -132,7 +136,7 @@ registerRestriction({
     evaluate: checkList
 });
 
-registerRestriction({
+registerItemRestriction({
     type: 'DamageType',
     canInvert: true,
     choices: () => mapKeyLabel(CONFIG.DND5E.damageTypes),
@@ -142,7 +146,7 @@ registerRestriction({
     }
 });
 
-registerRestriction({
+registerItemRestriction({
     type: 'WeaponType',
     propertyPath: 'system.type.value',
     canInvert: true,
@@ -150,7 +154,7 @@ registerRestriction({
     evaluate: checkList
 });
 
-registerRestriction({
+registerItemRestriction({
     type: 'DamagePart',
     choices: () => ({
         0: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Base'),
@@ -161,6 +165,44 @@ registerRestriction({
     evaluate: (restriction, context) => {
         context.allowedDamageParts = restriction.value;
         return RESULTS.FORCE_PASS;
+    }
+});
+
+registerActorRestriction({
+    type: 'Armor',
+    canInvert: true,
+    canRequireAll: true,
+    choices: () => ({
+        heavy: CONFIG.DND5E.armorTypes.heavy,
+        light: CONFIG.DND5E.armorTypes.light,
+        medium: CONFIG.DND5E.armorTypes.medium,
+        shield: CONFIG.DND5E.armorTypes.shield,
+        unarmored: _loc('DND5E.ArmorClassUnarmored')
+    }),
+    evaluate: (restriction, {actor}) => {
+        const armors = [];
+        const ac = genericUtils.getProperty(actor, 'system.attributes.ac');
+        for (const requirement of restriction.value) switch (requirement) {
+            case 'heavy':
+            case 'medium':
+            case 'light':
+                armors.push(requirement);
+                break;
+            case 'shield': {
+                const shield = !!ac.equippedShield;
+                if (shield && !restriction.requireAll) return RESULTS.PASS;
+                if (!shield && restriction.requireAll) return RESULTS.FAIL;
+                break;
+            }
+            case 'unarmored': {
+                const unarmored = !ac.equippedArmor;
+                if (unarmored && !restriction.requireAll) return RESULTS.PASS;
+                if (!unarmored && restriction.requireAll) return RESULTS.FAIL;
+                break;
+            }
+        }
+        if (!armors.length) return RESULTS.PASS;
+        return armors.includes(ac.equippedArmor?.system.type.value);
     }
 });
 
