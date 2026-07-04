@@ -77,7 +77,7 @@ class CatEvent {
                 triggers.push(new this.trigger(activity, pass, data));
             });
         });
-        actorUtils.getEffects(actor).filter(effect => CatEvent.hasCatFlag(effect)).forEach(effect => {
+        actorUtils.getEffects(actor).filter(effect => CatEvent.hasCatFlag(effect) && effect.active).forEach(effect => {
             triggers.push(new this.trigger(effect, pass, data));
         });
         return triggers;
@@ -596,7 +596,7 @@ class AuraEvent extends CatEvent {
         this._debugEvent();
         if (!this.actor) return;
         const removedEffects = [];
-        const effects = actorUtils.getEffects(this.actor).filter(effect => effect.flags.cat?.auraEffect);
+        const effects = actorUtils.getEffects(this.actor).filter(effect => effect.flags.cat?.auraEffect && effect.active);
         await Promise.all(effects.map(async effect => {
             let identifier = documentUtils.getIdentifier(effect);
             if (!identifier || !effect.origin) {
