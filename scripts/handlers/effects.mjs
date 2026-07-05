@@ -69,7 +69,7 @@ async function createAnimations(effect) {
     if (!animationData) return;
     const animation = animationUtils.getAnimation(animationData);
     if (!animation) return;
-    await animation.macros.create?.(effect, token);
+    await animation.macros.create?.(effect, token, animationData.config);
 }
 async function deleteAnimations(effect) {
     const actor = effectUtils.getActor(effect);
@@ -80,7 +80,7 @@ async function deleteAnimations(effect) {
     if (!animationData) return;
     const animation = animationUtils.getAnimation(animationData);
     if (!animation) return;
-    await animation.macros.delete?.(effect, token);
+    await animation.macros.delete?.(effect, token, animationData.config);
 }
 async function specialDuration(workflow) {
     if (!workflow.token) return;
