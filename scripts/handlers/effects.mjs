@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {actorUtils, animationUtils, documentUtils, effectUtils, genericUtils, workflowUtils} from '../utilities/_module.mjs';
+import {actorUtils, animationUtils, documentUtils, effectUtils, genericUtils, itemUtils, workflowUtils} from '../utilities/_module.mjs';
 async function addConditions(effect) {
     const conditions = effect.flags.cat?.conditions;
     if (!conditions) return;
@@ -224,6 +224,20 @@ async function specialDurationZeroSpeed(actor) {
     if (!allZero) return;
     await documentUtils.deleteEmbeddedDocuments(actor, 'ActiveEffect', effects.map(i => i.id));
 }
+async function unhideActivities(effect) {
+    const identifiers = effect.flags.cat?.unhideActivities;
+    if (!identifiers?.length) return;
+    const originActivity = await effectUtils.getOriginActivity(effect);
+    if (!originActivity) return;
+    await itemUtils.unhideActivities(originActivity.item, identifiers);
+}
+async function rehideActivities(effect) {
+    const identifiers = effect.flags.cat?.unhideActivities;
+    if (!identifiers?.length) return;
+    const originActivity = await effectUtils.getOriginActivity(effect);
+    if (!originActivity) return;
+    await itemUtils.rehideActivities(originActivity.item, identifiers);
+}
 export default {
     addConditions,
     removeConditions,
@@ -239,5 +253,7 @@ export default {
     specialDurationMove,
     specialDurationZeroSpeed,
     createAnimations,
-    deleteAnimations
+    deleteAnimations,
+    unhideActivities,
+    rehideActivities
 };

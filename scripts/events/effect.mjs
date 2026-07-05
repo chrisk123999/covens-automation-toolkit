@@ -17,6 +17,7 @@ async function createActiveEffect(effect, options, userId) {
     if (effect.statuses.size) await effects.specialDurationConditions(effect);
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await effects.specialDurationZeroSpeed(effect.parent);
     effects.createAnimations(effect);
+    effects.unhideActivities(effect);
     await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
     await auraEvents.effect(effect, options);
 }
@@ -26,6 +27,7 @@ async function deleteActiveEffect(effect, options, userId) {
     if (effect.parent instanceof Actor) await effects.removeConditions(effect);
     if (effect.statuses.size) await effects.specialDurationRemovedConditions(effect);
     effects.deleteAnimations(effect);
+    effects.rehideActivities(effect);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
     await auraEvents.effect(effect, options);
 }
