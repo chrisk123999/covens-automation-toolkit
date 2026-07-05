@@ -66,22 +66,23 @@ class AlternateAttribute {
         for (const a of attributes) {
             const {cleaned, valid} = this.validate(sourceItem, a);
             if (!valid) continue;
+            delete context.allowedDamageParts;
             let succeeds = true;
             for (const [type, r] of Object.entries(cleaned.restrictions)) {
                 if (!r) continue;
-                const evaluate = Restrictions[type]?.evaluate?.bind(Restrictions[type]);
-                if (!evaluate) {
+                const restriction = Restrictions[type];
+                if (!restriction.evaluate) {
                     Logging.addAttributeError(sourceItem, r, new Error(`Restriction of type ${type} is missing an evaluator!`));
                     continue;
                 }
-                if (!evaluate(r, context)) {
+                if (!restriction.evaluate(r, context)) {
                     succeeds = false;
                     break;
                 }
             }
-            if (!succeeds) continue; 
-            if (!resolveDamageParts(context)) continue;
-            if (Array.isArray(cleaned.value)) cleaned.value.forEach(v => options.add(v));
+            if (!succeeds) continue;
+            if (context.item && !resolveDamageParts(context)) continue;
+            if (Array.isArray(cleaned.value)) for (const v of cleaned.value) options.add(v);
             else options.add(cleaned.value);
         }
         return options;
@@ -98,10 +99,9 @@ class AlternateAttribute {
 }
 
 function resolveDamageParts({item, partIndex, allowedDamageParts}) {
-    if (!item) return true;
-    const weapon = item.type === 'weapon';
-    if (!allowedDamageParts?.length) return weapon ? partIndex === undefined : partIndex === 0;
-    return allowedDamageParts.includes(String((partIndex ?? -1) + weapon));
+    const targetIndex = (partIndex ?? -1) + (item.type === 'weapon');
+    if (allowedDamageParts === undefined) return targetIndex === 0;
+    return (allowedDamageParts & 1 << targetIndex) !== 0;
 }
 
 function getFormulaRestrictions() {

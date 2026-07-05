@@ -59,14 +59,14 @@ function registerRestriction(config) {
 
 function checkList({value, requireAll}, {data, item, propertyPath}) {
     data ??= genericUtils.getProperty(item, propertyPath);
-    if (!data) return RESULTS.FORCE_FAIL;
+    if (data === undefined) return RESULTS.FORCE_FAIL;
     if (data instanceof Set) {
         return requireAll ? value.every(v => data.has(v)) : value.some(v => data.has(v));
     }
     if (Array.isArray(data)) {
         return requireAll ? value.every(v => data.includes(v)) : value.some(v => data.includes(v));
     }
-    return requireAll ? value.every(v => v === data) : value.some(v => v === data);
+    return value.includes(data);
 }
 
 registerRestriction({
@@ -153,13 +153,14 @@ registerRestriction({
 registerRestriction({
     type: 'DamagePart',
     choices: () => ({
-        0: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Base'),
-        1: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.First'),
-        2: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Second'),
-        3: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Third')
+        1: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Base'),
+        2: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.First'),
+        4: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Second'),
+        8: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Third')
     }),
     evaluate: (restriction, context) => {
-        context.allowedDamageParts = restriction.value;
+        for (const part of restriction.value)
+            context.allowedDamageParts |= part;
         return RESULTS.FORCE_PASS;
     }
 });
@@ -173,31 +174,28 @@ registerRestriction({
         unarmored: _loc('DND5E.ArmorClassUnarmored')
     }),
     evaluate: ({value, requireAll}, {actor}) => {
-        const results = [];
         const ac = actor.system.attributes?.ac;
         if (!ac) return RESULTS.FORCE_FAIL;
-        for (const requirement of value) switch (requirement) {
-            case 'shield': {
-                const shield = !!ac.equippedShield;
-                if (shield && !requireAll) return RESULTS.PASS;
-                if (!shield && requireAll) return RESULTS.FAIL;
-                results.push(shield);
-                break;
+        const shield = !!ac.equippedShield;
+        const armor = ac.equippedArmor?.system.type.value;
+        for (const requirement of value) {
+            let matches = false;
+            switch (requirement) {
+                case 'shield':
+                    matches = shield;
+                    break;
+                case 'natural':
+                case 'unarmored': 
+                    matches = armor === undefined;
+                    break;
+                default:
+                    matches = armor === requirement;
+                    break;
             }
-            case 'natural':
-            case 'unarmored': {
-                const unarmored = !ac.equippedArmor;
-                if (unarmored && !requireAll) return RESULTS.PASS;
-                if (!unarmored && requireAll) return RESULTS.FAIL;
-                results.push(unarmored);
-                break;
-            }
-            default:
-                results.push(requirement);
-                break;
+            if (requireAll && !matches) return RESULTS.FAIL;
+            if (!requireAll && matches) return RESULTS.PASS;
         }
-        const evaluate = r => typeof r === 'boolean' ? r : ac.equippedArmor?.system.type.value === r;
-        return (requireAll ? results.every : results.some).call(results, evaluate);
+        return requireAll;
     }
 });
 

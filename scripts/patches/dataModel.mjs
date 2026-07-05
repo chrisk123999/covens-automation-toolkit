@@ -56,6 +56,13 @@ item.flags.cat.alternateAttributes = {
     ]
 }
 */
+function rollData({activity, document, item}) {
+    const data = document?.getRollData();
+    if (item?.type !== 'weapon') return data;
+    const ability = activity?.ability || item?.abilityMod;
+    if (ability) data.mod = data.abilities[ability]?.mod ?? 0;
+    return data;
+}
 function formula(wrapped) {
     const parent = this.parent;
     if (!parent) return wrapped();
@@ -87,35 +94,41 @@ function formula(wrapped) {
         };
     }
     const originalFormula = wrapped();
-    const alternateFormulas = new Set([originalFormula]);
+    const alternateFormulas = new Set();
     const rollModifiers = new Set();
     const {DamageFormula, RollModifier} = constants.alternateAttributes;
-    DamageFormula.getFlagHolders(context.actor).forEach(item => {
+    for (const item of DamageFormula.getFlagHolders(context.actor)) {
         context.sourceItem = item;
         const newFormulas = DamageFormula.evaluate(context);
-        if (newFormulas?.size) newFormulas.forEach(f => alternateFormulas.add(f));
+        if (newFormulas?.size) for (const f of newFormulas) alternateFormulas.add(f);
         const newModifiers = RollModifier.evaluate(context);
-        if (newModifiers?.size) newModifiers.forEach(mod => rollModifiers.add(mod));
-    });
+        if (newModifiers?.size) for (const mod of newModifiers) rollModifiers.add(mod);
+    }
     let bestFormula = originalFormula;
-    if (alternateFormulas.size > 1) {
-        bestFormula = alternateFormulas.reduce((accumulator, currentFormula) => {
-            if (!currentFormula.length) return accumulator;
-            const currentMax = rollUtils.rollDiceSync(currentFormula, {document: context.document, options: {maximize: true}}).total;
-            if (currentMax > accumulator.maxValue) return {best: currentFormula, maxValue: currentMax};
-            return accumulator;
-        }, {best: originalFormula, maxValue: -Infinity}).best;
+    const data = rollData(context);
+    if (alternateFormulas.size) {
+        let max = originalFormula?.length ? new Roll(originalFormula, data).evaluateSync({maximize: true}).total : -Infinity;
+        for (const formula of alternateFormulas) {
+            if (!formula.length) continue;
+            const value = new Roll(formula, data).evaluateSync({maximize: true}).total;
+            if (value > max) {
+                bestFormula = formula;
+                max = value;
+            }
+        }
     }
     if (rollModifiers.size) {
-        const terms = Roll.parse(bestFormula, context.document.getRollData());
-        terms.forEach(term => {
-            if (term.modifiers) {
-                rollModifiers.forEach(mod => {
-                    if (!term.modifiers.includes(mod)) term.modifiers.push(mod);
-                });
+        const terms = Roll.parse(bestFormula, data);
+        let changed = false;
+        for (const term of terms) {
+            if (!term.modifiers) continue;
+            for (const mod of rollModifiers) {
+                if (term.modifiers.includes(mod)) continue;
+                term.modifiers.push(mod);
+                changed = true;
             }
-        });
-        bestFormula = Roll.getFormula(terms);
+        }
+        if (changed) bestFormula = Roll.getFormula(terms);
     }
     return bestFormula;
 }
@@ -132,33 +145,32 @@ function armorClass(wrapped, rollData) {
     if (!actor) return;
     const cfg = CONFIG.DND5E.armorClasses[ac.calc];
     const originalFormula = cfg?.formula ?? ac.formula;
-    const formulas = new Map([[originalFormula]]);
+    const formulas = new Map();
     const abilities = new Set(['dex']);
     const context = {actor};
     const {ACAbility, ACFormula} = constants.alternateAttributes;
-    ACFormula.getFlagHolders(actor).forEach(item => {
+    for (const item of ACFormula.getFlagHolders(actor)) {
         context.sourceItem = item;
         const newFormulas = ACFormula.evaluate(context);
-        if (newFormulas?.size) newFormulas.forEach(f => formulas.set(f, item));
+        if (newFormulas?.size) for (const f of newFormulas) formulas.set(f, item);
         const newAbilities = ACAbility.evaluate(context);
-        if (newAbilities?.size) newAbilities.forEach(mod => abilities.add(mod));
-    });
-    const bestAbility = actorUtils.getBestAbility(actor, Array.from(abilities));
+        if (newAbilities?.size) for (const ability of newAbilities) abilities.add(ability);
+    }
+    const bestAbility = abilities.size > 1 ? actorUtils.getBestAbility(actor, [...abilities]) : 'dex';
     const property = _loc('DND5E.ArmorClass');
-    const bestFormula = formulas.entries().reduce((acc, [formula, source]) => {
-        if (!formula.length) return acc;
+    let bestFormula = {formula: originalFormula, value: ac.base};
+    for (const [formula, source] of formulas) {
+        if (!formula) continue;
         try {
             const replaced = dnd5e.utils.replaceFormulaData(formula, rollData, {actor, property, item: source, missing: null});
-            const value = rollUtils.rollDiceSync(replaced, {document: actor, options: {strict: true}}).total;
-            if (value > acc.value) return {formula, value, source};
+            const value = rollUtils.rollDiceSync(replaced, {options: {strict: true}}).total;
+            if (value > bestFormula.value) bestFormula = {formula, value, source};
         } catch (e) {
             const prepWarning = actor._preparationWarnings.find(w => w.link === source?.uuid);
             if (prepWarning) Logging.addAttributeError(source, formula, new foundry.data.validation.DataModelValidationError(prepWarning.message));
             else Logging.addAttributeError(source, formula, e);
         }
-        return acc;
-    
-    }, {formula: originalFormula, value: ac.base});
+    }
     ac.catModified = true;
     ac.base = bestFormula.value;
     if (bestFormula.source?.name) {
@@ -200,7 +212,6 @@ function patch(enabled) {
         libWrapper.register('cat', 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass', armorClass, 'MIXED');
         Logging.addEntry('DEBUG', 'Patching: dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', {force: true});
         libWrapper.register('cat', 'dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', acLabel, 'MIXED');
-        
     } else {
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.shared.DamageData.prototype.formula');
         libWrapper.unregister('cat', 'dnd5e.dataModels.shared.DamageData.prototype.formula');
