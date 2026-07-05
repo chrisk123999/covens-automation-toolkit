@@ -18,8 +18,8 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
             });
         });
     }
-    if (createAnimation) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, ...createAnimationOptions}));
-    if (deleteAnimation) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, ...deleteAnimationOptions}));
+    if (createAnimation) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, config: createAnimationOptions}));
+    if (deleteAnimation) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions}));
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
     if (hasPermission && !forceGM) {
