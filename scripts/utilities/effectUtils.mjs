@@ -2,7 +2,7 @@ import {genericUtils, queryUtils} from './_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
-async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, animation, animationOptions} = {}) {
+async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}} = {}) {
     if (macros?.length) {
         effectDatas.forEach(effectData => {
             const targetIdentifier = effectData.flags?.cat?.identifier ?? effectData.name?.slugify();
@@ -18,6 +18,8 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
             });
         });
     }
+    if (createAnimation) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, ...createAnimationOptions}));
+    if (deleteAnimation) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, ...deleteAnimationOptions}));
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
     if (hasPermission && !forceGM) {
@@ -76,11 +78,17 @@ function getOriginActivitySync(effect) {
 function getConcentrationEffect(actor, item) {
     return MidiQOL.getConcentrationEffect(actor, item);
 }
+function getActor(effect) {
+    if (!effect.parent) return;
+    if (effect.parent instanceof Actor) return effect.parent;
+    if (effect.parent instanceof Item) return effect.parent.actor;
+}
 export default {
     getCastData,
     createEffects,
     getConditions,
     getOriginActivity,
     getOriginActivitySync,
-    getConcentrationEffect
+    getConcentrationEffect,
+    getActor
 };

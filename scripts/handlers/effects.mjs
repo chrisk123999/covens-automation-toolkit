@@ -1,4 +1,4 @@
-import {actorUtils, documentUtils, effectUtils, genericUtils, workflowUtils} from '../utilities/_module.mjs';
+import {actorUtils, animationUtils, documentUtils, effectUtils, genericUtils, workflowUtils} from '../utilities/_module.mjs';
 async function addConditions(effect) {
     const conditions = effect.flags.cat?.conditions;
     if (!conditions) return;
@@ -61,10 +61,26 @@ function effectDescription(effect, updates) {
     if (description) effect.updateSource({description});
 }
 async function createAnimations(effect) {
-    
+    const actor = effectUtils.getActor(effect);
+    if (!actor) return;
+    const token = actorUtils.getFirstToken(actor);
+    if (!token) return;
+    const animationData = effect.flags.cat?.animation?.create;
+    if (!animationData) return;
+    const animation = animationUtils.getAnimation(animationData);
+    if (!animation) return;
+    await animation.macros.create?.(effect, token);
 }
 async function deleteAnimations(effect) {
-
+    const actor = effectUtils.getActor(effect);
+    if (!actor) return;
+    const token = actorUtils.getFirstToken(actor);
+    if (!token) return;
+    const animationData = effect.flags.cat?.animation?.delete;
+    if (!animationData) return;
+    const animation = animationUtils.getAnimation(animationData);
+    if (!animation) return;
+    await animation.macros.delete?.(effect, token);
 }
 async function specialDuration(workflow) {
     if (!workflow.token) return;
@@ -218,5 +234,7 @@ export default {
     specialDurationToolCheck,
     specialDurationHitPoints,
     specialDurationMove,
-    specialDurationZeroSpeed
+    specialDurationZeroSpeed,
+    createAnimations,
+    deleteAnimations
 };

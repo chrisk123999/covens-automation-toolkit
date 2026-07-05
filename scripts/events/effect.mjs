@@ -14,16 +14,18 @@ async function createActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     if (effect.parent instanceof Actor) await effects.addConditions(effect);
-    await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
-    await auraEvents.effect(effect, options);
     if (effect.statuses.size) await effects.specialDurationConditions(effect);
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await effects.specialDurationZeroSpeed(effect.parent);
+    effects.createAnimations(effect);
+    await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
+    await auraEvents.effect(effect, options);
 }
 async function deleteActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     if (effect.parent instanceof Actor) await effects.removeConditions(effect);
     if (effect.statuses.size) await effects.specialDurationRemovedConditions(effect);
+    effects.deleteAnimations(effect);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
     await auraEvents.effect(effect, options);
 }
