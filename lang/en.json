@@ -452,6 +452,14 @@
         "NoAnimation": {
           "Label": "Disable Animation",
           "Hint": "Suppress effect apply/remove animations for this effect."
+        },
+        "AnimationCreate": {
+          "Label": "Apply Animation",
+          "Tooltip": "Animation played when this effect is applied."
+        },
+        "AnimationDelete": {
+          "Label": "Remove Animation",
+          "Tooltip": "Animation played when this effect is removed."
         }
       },
       "Generic": {

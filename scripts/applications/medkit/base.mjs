@@ -572,9 +572,14 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     #animationSubOptions(source, identifier, selection) {
         if (!selection?.source || !selection?.identifier) return [];
+        const stored = this.#flags.animationGenericConfig?.[source]?.[identifier]?.[selection.source]?.[selection.identifier] ?? {};
+        return this.#animationConfigOptions(selection, stored, `animationGenericConfig.${source}.${identifier}.${selection.source}.${selection.identifier}`);
+    }
+
+    #animationConfigOptions(selection, stored, prefix) {
+        if (!selection?.source || !selection?.identifier) return [];
         const animation = constants.animations?.getAnimation(selection.source, selection.identifier);
         if (!animation?.config) return [];
-        const stored = this.#flags.animationGenericConfig?.[source]?.[identifier]?.[selection.source]?.[selection.identifier] ?? {};
         return Object.entries(animation.config).map(([key, desc]) => {
             const normalized = {key, type: desc.type, label: desc.label, default: desc.default, fileType: desc.fileType, sequencer: desc.sequencer};
             if (desc.type === 'select') {
@@ -583,9 +588,28 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                     .map(([value, opt]) => ({value, label: opt?.label ? _loc(opt.label) : value}));
             }
             const value = stored[key] ?? desc.default;
-            const name = `flags.cat.animationGenericConfig.${source}.${identifier}.${selection.source}.${selection.identifier}.${key}`;
-            return this.#buildOption(normalized, {name, value});
+            return this.#buildOption(normalized, {name: `flags.cat.${prefix}.${key}`, value});
         });
+    }
+
+    _animationFlagOption({key, label, tooltip, path, macroKey}) {
+        const stored = foundry.utils.getProperty(this.#flags, path);
+        const selection = stored && typeof stored === 'object' ? stored : undefined;
+        const animations = (constants.animations?.animations ?? []).filter(a => a.macros?.[macroKey]);
+        return {
+            key,
+            name: `flags.cat.${path}`,
+            label,
+            tooltip,
+            isAnimationSelect: true,
+            choices: [
+                {value: 'none|none', label: _loc('DND5E.None')},
+                ...animations.map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ? _loc(a.name) : a.identifier}))
+            ],
+            value: selection?.source ? `${selection.source}|${selection.identifier}` : '',
+            animationOptions: this.#animationConfigOptions(selection, selection?.config ?? {}, `${path}.config`),
+            animationCredits: this.#animationCredits(selection)
+        };
     }
 
     #partitionMacroEntries(macrosMap) {
