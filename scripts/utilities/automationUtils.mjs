@@ -150,6 +150,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     const documentData = sourceDocument.toObject();
     documentData._id = item.id;
     delete documentData.ownership;
+    delete documentData.flags.cat?.automation?.hash;
     const keepPaths = constants.getItemKeepPaths({spell: item.type === 'spell'});
     const oldDocumentData = item.toObject();
     keepPaths.forEach(field => {
@@ -232,7 +233,10 @@ function getDocumentHash(document) {
     const documentData = document.toObject();
     const deleteFields = ['_stats', '_id', 'folder', 'sort', 'ownership', 'img'];
     for (let field of deleteFields) delete documentData[field];
-    if (documentData.effects) documentData.effects.forEach(effect => delete effect.img);
+    if (documentData.effects) documentData.effects.forEach(effect => {
+        delete effect.img;
+        delete effect._stats;
+    });
     const keepPaths = constants.getItemKeepPaths({spell: document.type === 'spell'});
     const deletions = {};
     for (const path of keepPaths) {
