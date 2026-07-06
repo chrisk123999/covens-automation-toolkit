@@ -2,7 +2,7 @@ import {genericUtils, queryUtils} from './_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
-async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, vae, unhideActivities} = {}) {
+function buildEffectData(effectDatas, {macros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, vae, unhideActivities} = {}) {
     if (macros?.length) {
         effectDatas.forEach(effectData => {
             const targetIdentifier = effectData.flags?.cat?.identifier ?? effectData.name?.slugify();
@@ -22,12 +22,16 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
     if (deleteAnimation) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions}));
     if (vae) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.vae.buttons', vae));
     if (unhideActivities) effectDatas.forEach(effectData => genericUtils.setProperty(effectData, 'flags.cat.unhideActivities', unhideActivities));
+    return effectDatas;
+}
+async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, vae, unhideActivities} = {}) {
+    const data = buildEffectData(effectDatas, {macros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, vae, unhideActivities});
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
     if (hasPermission && !forceGM) {
-        effects = await document.createEmbeddedDocuments('ActiveEffect', effectDatas);
+        effects = await document.createEmbeddedDocuments('ActiveEffect', data);
     } else {
-        const uuids = await queryUtils.query('createEffects', queryUtils.gmUser(), {uuid: document.uuid, effectDatas, effectOptions});
+        const uuids = await queryUtils.query('createEffects', queryUtils.gmUser(), {uuid: document.uuid, effectDatas: data, effectOptions});
         if (!uuids) return;
         effects = (await Promise.all(uuids.map(async uuid => fromUuid(uuid)))).filter(i => i);
     }
@@ -87,6 +91,7 @@ function getActor(effect) {
 }
 export default {
     getCastData,
+    buildEffectData,
     createEffects,
     getConditions,
     getOriginActivity,
