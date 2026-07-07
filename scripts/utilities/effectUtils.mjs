@@ -1,23 +1,6 @@
-import {genericUtils, queryUtils} from './_module.mjs';
+import {dataUtils, queryUtils} from './_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
-}
-function buildEffectData(effectData, {macros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, vae, unhideActivities} = {}) {
-    if (macros?.length) {
-        macros.forEach(macroGroup => {
-            if (!macroGroup.macros.length) return;
-            const existingMacros = effectData.flags?.cat?.macros?.[macroGroup.type] ?? [];
-            const combinedMacros = [...existingMacros, ...macroGroup.macros];
-            const uniqueMacros = new Map();
-            combinedMacros.forEach(macro => uniqueMacros.set(macro.source + '|' + macro.identifier + '|' + macro.rules, macro));
-            genericUtils.setProperty(effectData, 'flags.cat.macros.' + macroGroup.type, Array.from(uniqueMacros.values()));
-        });
-    }
-    if (vae) genericUtils.setProperty(effectData, 'flags.cat.vae.buttons', vae);
-    if (unhideActivities) genericUtils.setProperty(effectData, 'flags.cat.unhideActivities', unhideActivities);
-    if (createAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, config: createAnimationOptions});
-    if (deleteAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions});
-    return effectData;
 }
 async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, vae, unhideActivities} = {}) {
     const data = effectDatas.map(e => {
@@ -30,7 +13,7 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
                 thisMacros.push({type: macroGroup.type, macros: applicableMacros});
             });
         }
-        return buildEffectData(e, {macros: thisMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, vae, unhideActivities});
+        return dataUtils.buildEffectData(e, {macros: thisMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, vae, unhideActivities});
     });
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
