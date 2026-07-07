@@ -80,7 +80,6 @@ function getActor(effect) {
 }
 export default {
     getCastData,
-    buildEffectData,
     createEffects,
     getConditions,
     getOriginActivity,
