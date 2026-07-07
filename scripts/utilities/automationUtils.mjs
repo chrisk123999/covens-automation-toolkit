@@ -28,7 +28,6 @@ function getActorAutomationStatus(actor) {
     }, -2);
 }
 function getItemAutomationStatus(item) {
-    if (item.flags.cat?.genericConfig) return constants.automationStatus.GENERIC;
     const isApplied = getStoredHash(item) || getCurrentAutomation(item);
     if (isApplied) {
         if (!isUpToDate(item)) return constants.automationStatus.OUTDATED;
@@ -37,18 +36,19 @@ function getItemAutomationStatus(item) {
         return constants.automationStatus.UP_TO_DATE;
     }
     if (getAvailableAutomations(item).length) return constants.automationStatus.AVAILABLE;
+    if (item.flags.cat?.genericConfig) return constants.automationStatus.GENERIC;
     return constants.automationStatus.UNAVAILABLE;
 }
 function isUpToDate(item) {
+    const currentAutomation = getCurrentAutomation(item);
+    if (currentAutomation) {
+        if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) return false;
+        return true;
+    }
     const storedHash = getStoredHash(item);
     if (storedHash) {
         const hash = getDocumentHash(item);
         if (hash != storedHash) return false;
-        return true;
-    }
-    const currentAutomation = getCurrentAutomation(item);
-    if (currentAutomation) {
-        if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) return false;
         return true;
     }
     return true;
