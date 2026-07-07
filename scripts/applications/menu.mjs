@@ -193,7 +193,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 kind: isPack ? 'pack' : 'source', 
                 kindLabel: isPack ? packTag : sourceTag, 
                 name: isPack ? game.packs.get(id).metadata.label : this.#sourceName(id), 
-                enabled: cfg.enabled ?? true, 
+                enabled: cfg.enabled ?? false, 
                 priority: cfg.priority ?? 50
             });
         }

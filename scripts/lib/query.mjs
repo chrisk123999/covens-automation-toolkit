@@ -101,7 +101,6 @@ function registerQueries() {
         modifyBatch,
         moveToken
     };
-    globalThis.CONFIG.queries.cat = handlers;
     for (const [name, fn] of Object.entries(handlers)) {
         globalThis.CONFIG.queries['cat.' + name] = fn;
     }
