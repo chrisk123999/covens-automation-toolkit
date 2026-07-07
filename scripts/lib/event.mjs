@@ -727,11 +727,12 @@ class RestEvent extends CatEvent {
     }
 }
 class BaseRollEvent extends CatEvent {
-    constructor(actor, pass, {config, dialog, message, roll} = {}) {
+    constructor(actor, pass, {config, dialog, message, options, roll} = {}) {
         super(pass);
         this.config = config;
         this.dialog = dialog;
         this.message = message;
+        this.options = options;
         this.roll = roll;
         this.setContext(actor);
     }
@@ -741,6 +742,7 @@ class BaseRollEvent extends CatEvent {
             config: this.config,
             dialog: this.dialog,
             message: this.message,
+            options: this.options,
             roll: this.roll
         };
     }
@@ -750,6 +752,13 @@ class CheckEvent extends BaseRollEvent {
         super(actor, pass, data);
         this.name = 'Check';
         this.trigger = Triggers.CheckTrigger;
+        this.checkId = data.checkId;
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            checkId: this.checkId
+        };
     }
 }
 class SkillEvent extends BaseRollEvent {
@@ -757,21 +766,42 @@ class SkillEvent extends BaseRollEvent {
         super(actor, pass, data);
         this.name = 'Skill';
         this.trigger = Triggers.SkillTrigger;
-    } 
+        this.skillId = data.skillId;
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            skillId: this.skillId
+        };
+    }
 }
 class SaveEvent extends BaseRollEvent {
     constructor(actor, pass, data) {
         super(actor, pass, data);
         this.name = 'Save';
         this.trigger = Triggers.SaveTrigger;
-    } 
+        this.saveId = data.saveId;
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            saveId: this.saveId
+        };
+    }
 }
 class ToolEvent extends BaseRollEvent {
     constructor(actor, pass, data) {
         super(actor, pass, data);
         this.name = 'Tool';
         this.trigger = Triggers.ToolTrigger;
-    } 
+        this.toolId = data.toolId;
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            toolId: this.toolId
+        };
+    }
 }
 class TimeEvent extends CatEvent {
     constructor(actor, pass, {worldTime, diff, options} = {}) {

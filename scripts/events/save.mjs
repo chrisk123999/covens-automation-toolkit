@@ -9,8 +9,7 @@ async function targetSituational(actor, data) {
 async function context(actor, data) {
     const selections = await new Events.SaveEvent(actor, constants.rollPasses.context, data).run({multiResult: true});
     if (selections.length) {
-        const advantages = selections.filter(i => i.type === 'advantage').map(j => ({label: j.label, name: 'advantage'}));
-        const disadvantages = selections.filter(i => i.type === 'disadvantage').map(j => ({label: j.label, name: 'disadvantage'}));
+        const disadvantages = selections.filter(i => i.type === 'disadvantage').map(j => ({label: _loc(j.label), name: 'disadvantage'}));
         const inputs = [];
         if (advantages.length) inputs.push(['checkbox', advantages, {displayAsRows: true}]);
         if (disadvantages.length) inputs.push(['checkbox', disadvantages, {displayAsRows: true}]);

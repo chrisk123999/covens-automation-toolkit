@@ -57,8 +57,8 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     const event = config.event;
     const skillId = config.skill;
     const options = {};
-    await skillEvents.situational(this, {config, dialog, message, skillId});
-    await skillEvents.context(this, {config, dialog, message, skillId});
+    await skillEvents.situational(this, {config, dialog, message, options, skillId});
+    await skillEvents.context(this, {config, dialog, message, options, skillId});
     let overtimeActorUuid;
     if (event) {
         let target = event.target?.closest('.roll-link, [data-action="rollRequest"], [data-action="concentration"]');
@@ -90,7 +90,7 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     roll = roll?.[0];
     if (!roll) return;
     const oldOptions = roll.options;
-    await skillEvents.bonus(this, {config, dialog, message, skillId, roll});
+    await skillEvents.bonus(this, {config, dialog, message, options, skillId, roll});
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
@@ -98,7 +98,7 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
         if (messageId) genericUtils.mergeObject(messageData, {'flags.dnd5e.originatingMessage': messageId});
         await roll.toMessage(messageData, {rollMode: roll.options?.rollMode ?? rollMode});
     }
-    await skillEvents.post(this, {config, dialog, message, skillId, roll});
+    await skillEvents.post(this, {config, dialog, message, options, skillId, roll});
     return [roll];
 }
 async function save(wrapped, config, dialog = {}, message = {}) {
@@ -112,10 +112,10 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     }
     const options = {};
     await conditionResistanceAndVulnerability(this, config, options);
-    await saveEvents.situational(this, {config, dialog, message, saveId});
+    await saveEvents.situational(this, {config, dialog, message, options, saveId});
     if (activityUuid) activity = await fromUuid(activityUuid);
-    if (activity) await saveEvents.targetSituational(this, {config, dialog, message, saveId});
-    await saveEvents.context(this, {config, dialog, message});
+    if (activity) await saveEvents.targetSituational(this, {config, dialog, message, options, saveId});
+    await saveEvents.context(this, {config, dialog, message, options, saveId});
     let overtimeActorUuid;
     if (event) {
         let target = event.target?.closest('.roll-link, [data-action="rollRequest"], [data-action="concentration"]');
@@ -147,7 +147,7 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     roll = roll?.[0];
     if (!roll) return;
     const oldOptions = roll.options;
-    await saveEvents.bonus(this, {config, dialog, message, saveId, roll});
+    await saveEvents.bonus(this, {config, dialog, message, options, saveId, roll});
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
@@ -158,7 +158,8 @@ async function save(wrapped, config, dialog = {}, message = {}) {
         messageData.template = 'modules/midi-qol/templates/roll-base.html';
         await roll.toMessage(messageData, {rollMode: roll.options?.rollMode ?? rollMode});
     }
-    await saveEvents.post(this, {config, dialog, message, saveId, roll});
+    await saveEvents.post(this, {config, dialog, message, options, saveId, roll});
+    console.log('SAVE DATA', {config, dialog, message, options, saveId, roll});
     return [roll];
 }
 async function tool(wrapped, config, dialog, message) {

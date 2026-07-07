@@ -278,7 +278,7 @@ export class RegisteredAutomations {
      * @param {Record<string, string>} [options.versions={}]                An object with identifiers as keys and versions as values
      * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
      */
-    async registerAutomationModule(id, {ignoredPackIds = [], configs2014 = {}, configs2024 = {}, configsAll = {}, versions = {}, rules = {}, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
+    async registerAutomationModule(id, {ignoredPackIds = [], configs2014 = {}, configs2024 = {}, configsAll = {}, versions2014 = {}, versions2024 = {}, versionsAll = {}, rules = {}, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
         const module = game.modules.get(id);
         if (!module?.active) return false;
         Logging.group('Automation Module Registered: ' + module.title);
@@ -287,7 +287,7 @@ export class RegisteredAutomations {
         const results = await Promise.all(itemPacks.map(async data => {
             const pack = game.packs.get(data.id);
             if (!pack) return false;
-            return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions, rules, source: id, notes2014, notes2024, notesAll, scales2014, scales2024, scalesAll, types2014, types2024, typesAll});
+            return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions2014, versions2024, versionsAll, rules, source: id, notes2014, notes2024, notesAll, scales2014, scales2024, scalesAll, types2014, types2024, typesAll});
         }));
         Logging.groupEnd();
         return results;
