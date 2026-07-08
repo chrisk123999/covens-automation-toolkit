@@ -1,4 +1,4 @@
-import {documentUtils, genericUtils} from './_module.mjs';
+import {documentUtils, genericUtils, itemUtils} from './_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {itemEvents} from '../events/_module.mjs';
 function getCurrentAutomation(item) {
@@ -6,14 +6,16 @@ function getCurrentAutomation(item) {
     const rules = documentUtils.getRules(item);
     const source = documentUtils.getSource(item);
     const type = item.type;
+    const sourceClass = itemUtils.getSourceClass(item, {subclass: true});
+    const sourceType = sourceClass ? sourceClass.system.type?.value ?? sourceClass.type : undefined;
     const actorType = type === 'spell' ? 'character' : item.actor?.type ?? 'character';
     const monsterIdentifier = actorType === 'npc' ? documentUtils.getIdentifier(item.actor) : undefined;
     if (!identifier || !rules) return;
     if (!source) {
-        const allAutomations = constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, monsterIdentifier});
+        const allAutomations = constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, monsterIdentifier, sourceType});
         return allAutomations.find(automation => automation.uuid === item.uuid);
     }
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type});
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type, sourceType});
 }
 function getAutomationStatus(document) {
     if (document.documentName === 'Item') return getItemAutomationStatus(document);
@@ -57,7 +59,9 @@ function getAvailableAutomations(item, {excludeSources = []} = {}) {
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item) ?? 'all';
     const type = item.type;
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, excludeSources});
+    const sourceClass = itemUtils.getSourceClass(item, {subclass: true});
+    const sourceType = sourceClass ? sourceClass.system.type?.value ?? sourceClass.type : undefined;
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, excludeSources, sourceType});
 }
 function getConfigValue(item, key) {
     return constants.automations.getConfigValue(item, key);
@@ -140,7 +144,9 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item);
     if (source) {
-        automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier});
+        const sourceClass = itemUtils.getSourceClass(item, {subclass: true});
+        const sourceType = sourceClass ? sourceClass.system.type?.value ?? sourceClass.type : undefined;
+        automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type: item.type, sourceType});
     } else {
         automation = getAppliedOrPreferredAutomation(item);
     }

@@ -152,6 +152,7 @@ export class RegisteredAutomations {
             if (excludeSources.includes(automation.source)) return false;
             if (monsterIdentifier && monsterIdentifier !== automation.monsterIdentifier) return false;
             if (type && type !== automation.type) return false;
+            if (automation.sourceType && automation.sourceType !== sourceType) return false;
             return true;
         };
         return multiple ? this.automations.filter(predicate) : this.automations.find(predicate);
