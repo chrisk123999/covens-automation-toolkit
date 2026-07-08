@@ -160,6 +160,40 @@ function getDependencies(item) {
     item.system.activities.forEach(activity => activityUtils.getDependencies(activity).forEach(depId => dependencies.add(depId)));
     return dependencies;
 }
+function canCast(item) {
+    if (item.type !== 'spell') return false;
+    const actor = item.actor;
+    if (!actor) return false;
+    const system = item.system;
+    const linkedActivity = system.linkedActivity;
+    const effectiveMethod = linkedActivity ? 'innate' : system.method;
+    if (effectiveMethod === 'spell' && system.level !== 0 && !system.prepared) return false;
+    if (system.hasLimitedUses && !system.uses.value) return false;
+    if (!['atwill', 'innate'].includes(effectiveMethod)) {
+        const maxSlot = Math.max(...Object.values(actor.system.spells).filter(i => i.value).map(j => j.level), 0);
+        if (maxSlot < system.level) return false;
+    }
+    if (!linkedActivity) return true;
+    const targets = linkedActivity.consumption?.targets ?? [];
+    for (const target of targets) {
+        if (target.type === 'itemUses') {
+            let targetItem;
+            if (!target.target || !target.target.length) {
+                targetItem = linkedActivity.item;
+            } else {
+                targetItem = actor.items.get(target.target);
+            }
+            if (Number(targetItem?.system.uses.value ?? 0) < Number(target.value ?? 0)) return false;
+            
+        } else if (target.type === 'activityUses') {
+            if (Number(linkedActivity.uses.value ?? 0) < Number(target.value ?? 0)) return false;
+            
+        } else if (target.type === 'material') {
+            if (Number(actor.items.get(target.target)?.system.quantity ?? 0) < Number(target.value ?? 0)) return false;
+        }
+    }
+    return true;
+}
 export default {
     getSaveDC,
     getSavedCastData,
@@ -171,5 +205,6 @@ export default {
     getSourceClassIdentifier,
     getEquipmentState,
     getSourceClass,
-    getDependencies
+    getDependencies,
+    canCast
 };

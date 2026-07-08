@@ -1,5 +1,5 @@
 /** @import Actor5e from '../../dnd5e/module/documents/actor/actor.mjs'; */
-import {documentUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
+import {documentUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
 
 /**
  * Get all applicable effects on an actor, optionally including item-applied enchantments (not by default).
@@ -193,33 +193,9 @@ function getEquivalentSpellSlotName(actor, level, {canCast = false} = {}) {
  * @returns {Item[]}
  */
 function getCastableSpells(actor, {identifiers = []} = {}) {
-    const maxSlot = Math.max(...Object.values(actor.system.spells).filter(i => i.value).map(j => j.level), 0);
     let validSpells = actor.items.filter(i => i.type === 'spell');
     if (identifiers.length) validSpells = validSpells.filter(i => identifiers.includes(documentUtils.getIdentifier(i)));
-    validSpells = validSpells.filter(i => i.system.method != 'spell' || i.system.level === 0 || i.system.prepared);
-    validSpells = validSpells.filter(i => !i.system.hasLimitedUses || i.system.uses.value);
-    validSpells = validSpells.filter(i => ['atwill', 'innate'].includes(i.system.method) || maxSlot >= i.system.level);
-    validSpells = validSpells.filter(i => {
-        const linkedActivity = i.system.linkedActivity;
-        if (!linkedActivity) return true;
-        for (const target of linkedActivity.consumption.targets ?? []) {
-            if (target.type === 'itemUses') {
-                let targetItem;
-                if (!target.target?.length) {
-                    targetItem = linkedActivity.item;
-                } else {
-                    targetItem = actor.items.get(target.target);
-                }
-                if (Number(targetItem?.system.uses.value ?? 0) < Number(target.value ?? 0)) return false;
-            } else if (target.type === 'activityUses') {
-                if (Number(linkedActivity.uses.value ?? 0) < Number(target.value ?? 0)) return false;
-            } else if (target.type === 'material') {
-                if (Number(actor.items.get(target.target)?.system.quantity ?? 0) < Number(target.value ?? 0)) return false;
-            }
-            return true;
-        }
-    });
-    return validSpells;
+    return validSpells.filter(i => itemUtils.canCast(i));
 }
 
 /**
@@ -229,6 +205,15 @@ function getCastableSpells(actor, {identifiers = []} = {}) {
  */
 function hasUsedReaction(actor) {
     return MidiQOL.hasUsedReaction(actor);
+}
+
+/**
+ * Return whether this actor has used their bonus action.
+ * @param {Actor5e} actor 
+ * @returns {boolean}
+ */
+function hasUsedBonusAction(actor) {
+    return MidiQOL.hasUsedBonusAction(actor);
 }
 
 /**
@@ -273,5 +258,6 @@ export default {
     getCastableSpells,
     hasUsedReaction,
     getEquippedWeapons,
-    createActor
+    createActor,
+    hasUsedBonusAction
 };
