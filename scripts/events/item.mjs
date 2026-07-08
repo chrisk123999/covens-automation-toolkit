@@ -26,9 +26,11 @@ async function updateItem(item, updates, options, userId) {
     const previouslyEquipped = genericUtils.getProperty(options, 'cat.previous.equipped');
     if (currentlyEquipped && !previouslyEquipped) {
         await effects.specialDurationEquipment(item);
+        await effects.disableConditionEquipment(item);
         await new Events.ItemEvent(item, constants.itemPasses.equipped, {options, updates}).run();
     } else if (!currentlyEquipped && previouslyEquipped) {
         await effects.specialDurationEquipment(item, {removed: true});
+        await effects.disableConditionEquipment(item);
         await new Events.ItemEvent(item, constants.itemPasses.unequipped, {options, updates}).run();
     }
     const currentlyAttuned = updates.system?.attuned ?? item.system.attuned;

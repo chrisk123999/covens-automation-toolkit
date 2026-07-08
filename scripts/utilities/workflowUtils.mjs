@@ -171,6 +171,10 @@ function getCastLevel(workflow) {
     if (!castData) return;
     return Math.max(castData.castLevel ?? -1, castData.baseLevel ?? -1);
 }
+function setActivity(workflow, activityData) {
+    workflow.item = workflow.item.clone({['system.activities.' + workflow.activity.id]: activityData}, {keepId: true});
+    workflow.activity = workflow.item.system.activities.get(workflow.activity.id);
+}
 export default {
     getActionType,
     isAttackType,
@@ -185,5 +189,6 @@ export default {
     getWorkflowProperty,
     bonusDamage,
     getDamageTypes,
-    getCastLevel
+    getCastLevel,
+    setActivity
 };

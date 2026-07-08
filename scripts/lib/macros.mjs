@@ -36,7 +36,7 @@ export class RegisteredMacros {
         const predicate = macro => macro.source === source && macro.identifier === identifier && (macro.rules === rules || macro.rules === 'all');
         let fnMacro = this.overwriteMacros.find(predicate) ?? this.fnMacros.find(predicate);
         if (!fnMacro) return;
-        if (!fnMacro.macros[type]?.length) return;
+        if (!fnMacro.macros[type].length) return;
         let macros = fnMacro.macros[type].filter(i => i.pass === pass);
         if (!macros.length) return;
         return {

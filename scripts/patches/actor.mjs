@@ -162,7 +162,6 @@ async function save(wrapped, config, dialog = {}, message = {}) {
         await roll.toMessage(messageData, {rollMode: roll.options?.rollMode ?? rollMode});
     }
     await saveEvents.post(this, {config, dialog, message, options, saveId, roll});
-    console.log('SAVE DATA', {config, dialog, message, options, saveId, roll});
     return [roll];
 }
 async function tool(wrapped, config, dialog, message) {
