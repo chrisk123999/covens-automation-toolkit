@@ -13,9 +13,11 @@ export class RegisteredMacros {
             identifier: new fields.StringField({required: true, nullable: false}),
             generic: new fields.BooleanField({required: false, nullable: false}),
             aura: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            called: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             check: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             combat: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             effect: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            item: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             move: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             region: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
             rest: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
@@ -34,7 +36,7 @@ export class RegisteredMacros {
         const predicate = macro => macro.source === source && macro.identifier === identifier && (macro.rules === rules || macro.rules === 'all');
         let fnMacro = this.overwriteMacros.find(predicate) ?? this.fnMacros.find(predicate);
         if (!fnMacro) return;
-        if (!fnMacro.macros[type].length) return;
+        if (!fnMacro.macros[type]?.length) return;
         let macros = fnMacro.macros[type].filter(i => i.pass === pass);
         if (!macros.length) return;
         return {
@@ -65,9 +67,11 @@ export class RegisteredMacros {
         const fnArray = !overwrite ? this.fnMacros : this.overwriteMacros;
         fnArray.push(new FnMacro(data.source, data.identifier, data.rules, {
             aura: data.aura ?? [],
+            called: data.called ?? [],
             check: data.check ?? [],
             combat: data.combat ?? [],
             effect: data.effect ?? [],
+            item: data.item ?? [],
             move: data.move ?? [],
             region: data.region ?? [],
             rest: data.rest ?? [],
@@ -100,7 +104,7 @@ export class RegisteredMacros {
     }
 }
 class FnMacro {
-    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], aura = [], check = [], region = [], rest = [], save = [], skill = [], time = [], tool = [], summon = [], generic, genericConfig, documents} = {}) {
+    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], item = [], aura = [], called = [], check = [], region = [], rest = [], save = [], skill = [], time = [], tool = [], summon = [], generic, genericConfig, documents} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
@@ -109,9 +113,11 @@ class FnMacro {
         this.documents = documents;
         this.macros = {
             aura,
+            called,
             check,
             combat,
             effect,
+            item,
             move,
             region,
             rest,

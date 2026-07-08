@@ -416,6 +416,7 @@ class PreTargetingWorkflowEvent extends BaseWorkflowEvent {
     appendData(data) {
         return {
             ...super.appendData(data),
+            activity: this.activity,
             config: this.config,
             dialog: this.dialog,
             message: this.message
@@ -727,23 +728,20 @@ class RestEvent extends CatEvent {
     }
 }
 class BaseRollEvent extends CatEvent {
-    constructor(actor, pass, {config, dialog, message, options, roll} = {}) {
+    constructor(actor, pass, data = {}) {
         super(pass);
-        this.config = config;
-        this.dialog = dialog;
-        this.message = message;
-        this.options = options;
-        this.roll = roll;
+        this.data = data;
+        this.config = data.config;
+        this.dialog = data.dialog;
+        this.message = data.message;
+        this.options = data.options;
+        this.roll = data.roll;
         this.setContext(actor);
     }
     appendData(data) {
         return {
             ...super.appendData(data),
-            config: this.config,
-            dialog: this.dialog,
-            message: this.message,
-            options: this.options,
-            roll: this.roll
+            ...this.data
         };
     }
 }

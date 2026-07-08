@@ -49,7 +49,7 @@ async function getOriginActivity(effect) {
     if (activityUuid) return await fromUuid(activityUuid);
     if (!effect.origin) return;
     const origin = await fromUuid(effect.origin);
-    if (origin.documentName !== 'ActiveEffect') return;
+    if (!origin || origin.documentName !== 'ActiveEffect') return;
     const originActivityUuid = origin.flags.dnd5e?.activity?.uuid;
     if (originActivityUuid) return await fromUuid(originActivityUuid);
     if (origin.parent?.documentName === 'Item') {
@@ -63,7 +63,7 @@ function getOriginActivitySync(effect) {
     if (activityUuid) return fromUuidSync(activityUuid, {strict: false});
     if (!effect.origin) return;
     const origin = fromUuidSync(effect.origin, {strict: false});
-    if (origin.documentName !== 'ActiveEffect') return;
+    if (!origin || origin.documentName !== 'ActiveEffect') return;
     const originActivityUuid = origin.flags.dnd5e?.activity?.uuid;
     if (originActivityUuid) return fromUuidSync(originActivityUuid, {strict: false});
     if (origin.parent?.documentName === 'Item') {

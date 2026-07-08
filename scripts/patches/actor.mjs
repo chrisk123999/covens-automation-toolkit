@@ -39,7 +39,8 @@ async function check(wrapped, config, dialog = {}, message = {}) {
     roll = roll?.[0];
     if (!roll) return;
     const oldOptions = roll.options;
-    await checkEvents.bonus(this, {config, dialog, message, options, checkId, roll});
+    const bonusRoll = await checkEvents.bonus(this, {config, dialog, message, options, checkId, roll});
+    if (bonusRoll instanceof Roll) roll = bonusRoll;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
@@ -90,7 +91,8 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     roll = roll?.[0];
     if (!roll) return;
     const oldOptions = roll.options;
-    await skillEvents.bonus(this, {config, dialog, message, options, skillId, roll});
+    const bonusRoll = await skillEvents.bonus(this, {config, dialog, message, options, skillId, roll});
+    if (bonusRoll instanceof Roll) roll = bonusRoll;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
@@ -147,7 +149,8 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     roll = roll?.[0];
     if (!roll) return;
     const oldOptions = roll.options;
-    await saveEvents.bonus(this, {config, dialog, message, options, saveId, roll});
+    const bonusRoll = await saveEvents.bonus(this, {config, dialog, message, options, saveId, roll});
+    if (bonusRoll instanceof Roll) roll = bonusRoll;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
@@ -171,7 +174,8 @@ async function tool(wrapped, config, dialog, message) {
     roll = roll?.[0];
     if (!roll) return;
     let oldOptions = roll.options;
-    await toolEvents.bonus(this, {config, options, dialog, message, roll, toolId});
+    const bonusRoll = await toolEvents.bonus(this, {config, options, dialog, message, roll, toolId});
+    if (bonusRoll instanceof Roll) roll = bonusRoll;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     await toolEvents.post(this, {config, options, dialog, message, roll, toolId});
     return [roll];
