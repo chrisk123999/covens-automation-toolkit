@@ -25,7 +25,7 @@ const fields = foundry.data.fields;
  */
 
 class Automation {
-    constructor(source, rules, identifier, uuid, version, {config = {}, notes, monsterIdentifier, scales, type} = {}) {
+    constructor(source, rules, identifier, uuid, version, {config = {}, notes, monsterIdentifier, scales, type, sourceType} = {}) {
         this.source = source;
         this.rules = rules;
         this.identifier = identifier;
@@ -36,6 +36,7 @@ class Automation {
         this.monsterIdentifier = monsterIdentifier;
         this.scales = scales;
         this.type = type;
+        this.sourceType = sourceType;
     }
 
     /**
@@ -87,6 +88,11 @@ class Automation {
      * @type {string}
      */
     type;
+
+    /**
+     * @type {string}
+     */
+    sourceType;
     
     async getDocument() {
         return await fromUuid(this.uuid);
@@ -106,7 +112,8 @@ export class RegisteredAutomations {
         notes: new fields.StringField({required: false, nullable: false}),
         monsterIdentifier: new fields.StringField({required: false, nullable: false}),
         scales: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-        type: new fields.StringField({required: false, nullable: false})
+        type: new fields.StringField({required: false, nullable: false}),
+        sourceType: new fields.StringField({required: false, nullable: false})
     });
     #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 
@@ -137,7 +144,7 @@ export class RegisteredAutomations {
      * @param {string[]} [options.excludeSources]           Which sources to exclude from consideration, if any
      * @returns {Automation[]|Automation|undefined}
      */
-    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type, excludeSources = []} = {}) {
+    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type, sourceType, excludeSources = []} = {}) {
         const predicate = automation => {
             if (automation.identifier !== identifier) return false;
             if (rules !== 'all' && automation.rules !== 'all' && automation.rules !== rules) return false;
@@ -165,7 +172,8 @@ export class RegisteredAutomations {
             notes: data.notes,
             monsterIdentifier: data.monsterIdentifier,
             scales: data.scales,
-            type: data.type
+            type: data.type,
+            sourceType: data.sourceType
         }));
         this.sources.add(data.source);
         Logging.addEntry('DEBUG', 'Automation Registered: ' + data.identifier + ' from ' + data.source + ' with version ' + data.version);
