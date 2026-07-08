@@ -119,7 +119,7 @@ async function modifyBatch(operations) {
 }
 function getEffectData(document, id, {duration, concentrationItem} = {}) {
     const sourceEffect = document.item ? document.item.effects.get(id) : document.effects.get(id);
-    if (sourceEffect) return;
+    if (!sourceEffect) return;
     const effectData = sourceEffect.toObject();
     delete effectData._id;
     effectData.origin = !concentrationItem ? sourceEffect.uuid : effectUtils.getConcentrationEffect(document.actor, document.item ?? document)?.uuid;
