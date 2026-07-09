@@ -163,6 +163,18 @@ async function bonusDamage(workflow, formula, {ignoreCrit = false, damageType = 
     workflow.damageRolls.push(roll);
     await workflow.setDamageRolls(workflow.damageRolls);
 }
+function getDamageTypes(damageRolls) {
+    return new Set(damageRolls.map(i => i.options.type));
+}
+function getCastLevel(workflow) {
+    const castData = workflow.castData ?? itemUtils.getSavedCastData(workflow.item);
+    if (!castData) return;
+    return Math.max(castData.castLevel ?? -1, castData.baseLevel ?? -1);
+}
+function setActivity(workflow, activityData) {
+    workflow.item = workflow.item.clone({['system.activities.' + workflow.activity.id]: activityData}, {keepId: true});
+    workflow.activity = workflow.item.system.activities.get(workflow.activity.id);
+}
 export default {
     getActionType,
     isAttackType,
@@ -175,5 +187,8 @@ export default {
     negateDamageItemDamage,
     setWorkflowProperty,
     getWorkflowProperty,
-    bonusDamage
+    bonusDamage,
+    getDamageTypes,
+    getCastLevel,
+    setActivity
 };

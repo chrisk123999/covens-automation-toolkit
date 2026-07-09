@@ -289,6 +289,9 @@ const massApplyExcludeSources = [
     'dnd5e',
     'dnd-players-handbook'
 ];
+const abilityOptions = () => Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
+const damageTypeOptions = () => Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
+const statusOptions = () => CONFIG.statusEffects.map(i => ({label: _loc(i.name ?? i.label ?? i.id), value: i.id, image: i.img ?? i.icon}));
 export default {
     /** @type {RegisteredMacros} */
     macros: undefined,
@@ -339,5 +342,8 @@ export default {
     getItemKeepPaths,
     summonPasses,
     tokenHookNames,
-    massApplyExcludeSources
+    massApplyExcludeSources,
+    abilityOptions,
+    damageTypeOptions,
+    statusOptions
 };

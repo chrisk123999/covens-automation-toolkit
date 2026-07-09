@@ -14,7 +14,14 @@ function addTurnStamp(stamps, tokenId, combatData) {
     });
     return newStamps;
 }
+function isOwnTurn(token) {
+    const tokenDocument = token.document ?? token;
+    const combat = tokenDocument.combatant?.combat;
+    if (!combat) return true;
+    return tokenDocument.id === combat.current.tokenId;
+}
 export default {
     isStampedThisTurn,
-    addTurnStamp
+    addTurnStamp,
+    isOwnTurn
 };

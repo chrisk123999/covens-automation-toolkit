@@ -284,6 +284,38 @@
         "general": {
           "Label": "General",
           "Tooltip": "General settings."
+        },
+        "homebrew": {
+          "Label": "Homebrew",
+          "Tooltip": "Optional homebrew adjustments to the automation."
+        },
+        "mechanics": {
+          "Label": "Mechanics",
+          "Tooltip": "How the automation behaves mechanically."
+        },
+        "utility": {
+          "Label": "Utility",
+          "Tooltip": "General-purpose utility automation."
+        },
+        "targeting": {
+          "Label": "Targeting",
+          "Tooltip": "How the automation selects targets."
+        },
+        "damage": {
+          "Label": "Damage",
+          "Tooltip": "Damage adjustments applied by the automation."
+        },
+        "movement": {
+          "Label": "Movement",
+          "Tooltip": "Movement effects applied by the automation."
+        },
+        "summons": {
+          "Label": "Summons",
+          "Tooltip": "Summoned creatures and their configuration."
+        },
+        "animations": {
+          "Label": "Animations",
+          "Tooltip": "Visual animations played by the automation."
         }
       },
       "Documents": {
@@ -497,6 +529,18 @@
     },
     "Common": {
       "Cover": "{amount} {cover}"
+    },
+    "Skill": {
+      "Title": "Skill Check"
+    },
+    "Check": {
+      "Title": "Ability Check"
+    },
+    "Save": {
+      "Title": "Saving Throw"
+    },
+    "Tool": {
+      "Title": "Tool Check"
     },
     "Manual": {
       "MethodLabel": "Coven's Automation Toolkit",

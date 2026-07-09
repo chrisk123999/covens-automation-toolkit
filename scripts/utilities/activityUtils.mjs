@@ -87,10 +87,12 @@ function getDamageModifiedActivityData(activity, formulaOrObj, {types = [], spec
     } else {
         if (activityData.damage.includeBase && !activityData.damage.parts[specificIndex]) {
             activityData.damage.includeBase = false;
+            const base = activity.item?.system?.damage?.base ?? {};
+            const baseBonus = isFormula ? (base.bonus ?? '') : (bonus ?? '');
             activityData.damage.parts[specificIndex] = {
-                number: number,
-                denomination: denomination,
-                bonus: bonus + ' + @mod ' + (magicalBonus ? '+ ' + magicalBonus : '')
+                number: number ?? base.number,
+                denomination: denomination ?? base.denomination,
+                bonus: [baseBonus, '@mod', magicalBonus].filter(Boolean).join(' + ')
             };
         }
         else if (activityData.damage.parts[specificIndex]) {

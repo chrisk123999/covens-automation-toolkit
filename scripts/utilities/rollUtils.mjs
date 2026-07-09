@@ -10,9 +10,16 @@ function getRollsTotal(rolls) {
 function getCriticalFormula(formula, document) {
     return new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {isCritical: true}).formula;
 }
+async function addToRoll(roll, formula, {rollData} = {}) {
+    const bonusRoll = await new Roll(String(formula), rollData).evaluate();
+    const newRoll = MidiQOL.addRollTo(roll, bonusRoll);
+    newRoll.data = roll.data;
+    return newRoll;
+}
 export default {
     rollDiceSync,
     rollDice,
     getRollsTotal,
-    getCriticalFormula
+    getCriticalFormula,
+    addToRoll
 };
