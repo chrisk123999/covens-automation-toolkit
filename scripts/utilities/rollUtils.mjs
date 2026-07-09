@@ -16,10 +16,24 @@ async function addToRoll(roll, formula, {rollData} = {}) {
     newRoll.data = roll.data;
     return newRoll;
 }
+function hasDuplicateDie(rolls) {
+    function hasDuplicate(arr) {
+        let seen = new Set();
+        for (let num of arr) {
+            if (seen.has(num)) {
+                return true;
+            }
+            seen.add(num);
+        }
+        return false;
+    }
+    return hasDuplicate(rolls.flatMap(i => i.dice.flatMap(j => j.results.filter(k => k.active).flatMap(l => l.result))));
+}
 export default {
     rollDiceSync,
     rollDice,
     getRollsTotal,
     getCriticalFormula,
-    addToRoll
+    addToRoll,
+    hasDuplicateDie
 };

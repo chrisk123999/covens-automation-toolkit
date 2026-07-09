@@ -839,6 +839,12 @@
     },
     "Movement": {
       "Forced": "Forced Movement"
+    },
+    "Error": {
+      "OutdatedSequencer": "Sequencer is out of date! In order to use animations, CAT requires a minimum of version {minSequencerVersion}"
+    },
+    "Troubleshooter": {
+      "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version."
     }
   }
 }

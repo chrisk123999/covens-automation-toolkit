@@ -36,6 +36,9 @@ function decimalToFraction(decimal) {
 function notify(message, {type = 'info', localize = true} = {}) {
     ui.notifications[type](message, {localize});
 }
+function isNewerVersion(v1, v0) {
+    return foundry.utils.isNewerVersion(v1, v0);
+}
 export default {
     setProperty,
     getProperty,
@@ -47,5 +50,6 @@ export default {
     decimalToFraction,
     isEmpty,
     expandObject,
-    notify
+    notify,
+    isNewerVersion
 };

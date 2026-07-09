@@ -18,9 +18,9 @@ const workflowPasses = {
     smite: 'smite', // Smite spells.
     damageRollBonuses: 'damageRollBonuses', // Add bonuses to damage rolls.
     damageRollComplete: 'damageRollComplete', // Finalized damage rolls, no adjustments should be made here.
-    utilityRoll: 'utilityRoll', // Regular adjusments to utility rolls, such as re-rolling them or editing the formula. Do not re-roll an attack after this pass.
+    utilityRoll: 'utilityRoll', // Regular adjustments to utility rolls, such as re-rolling them or editing the formula. Do not re-roll after this pass.
     utilityRollBonuses: 'utilityRollBonuses', // Add bonuses to utility rolls.
-    utilityRollComplete: 'utilityRollComplete', // Finalized utility rolls, not adjustments should be made here.
+    utilityRollComplete: 'utilityRollComplete', // Finalized utility rolls, no adjustments should be made here.
     damage: 'damage', // Regular adjustments to target damage item.
     damageBonuses: 'damageBonuses', // Bonus damage to specific targets.
     damageFlatReductions: 'damageFlatReductions', // Flat reductions of damage to specific targets.
