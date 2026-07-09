@@ -39,7 +39,7 @@ async function updateRegionEffects(token, currentRegions = []) {
             const {region, castData} = info;
             const identifier = documentUtils.getIdentifier(region);
             const effectIds = region.flags.cat?.effects;
-            if (effectIds?.length) return [];
+            if (!effectIds?.length) return [];
             const originUuid = region.flags.dnd5e?.origin;
             if (!originUuid) return [];
             const activity = await fromUuid(originUuid);
