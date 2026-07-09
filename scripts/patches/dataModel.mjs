@@ -1,5 +1,6 @@
 import {constants, Logging} from '../lib/_module.mjs';
-import {actorUtils, rollUtils} from '../utilities/_module.mjs';
+import {actorUtils} from '../utilities/_module.mjs';
+const Roll = foundry.dice.Roll;
 /*
 item.flags.cat.alternateAttributes = {
     RollModifier: [
@@ -58,7 +59,7 @@ item.flags.cat.alternateAttributes = {
 */
 function rollData({activity, document, item}) {
     const data = document?.getRollData();
-    if (item?.type !== 'weapon') return data;
+    if (!data) return;
     const ability = activity?.ability || item?.abilityMod;
     if (ability) data.mod = data.abilities[ability]?.mod ?? 0;
     return data;
@@ -104,23 +105,24 @@ function formula(wrapped) {
         const newModifiers = RollModifier.evaluate(context);
         if (newModifiers?.size) for (const mod of newModifiers) rollModifiers.add(mod);
     }
-    let bestFormula = originalFormula;
+    let maxRoll;
     const data = rollData(context);
+    if (originalFormula?.length) maxRoll = new Roll(originalFormula, data).evaluateSync({maximize: true});
     if (alternateFormulas.size) {
-        let max = originalFormula?.length ? new Roll(originalFormula, data).evaluateSync({maximize: true}).total : -Infinity;
+        let max = maxRoll?.total ?? -Infinity;
         for (const formula of alternateFormulas) {
             if (!formula.length) continue;
-            const value = new Roll(formula, data).evaluateSync({maximize: true}).total;
-            if (value > max) {
-                bestFormula = formula;
-                max = value;
+            const parsed = new Roll(formula, data).evaluateSync({maximize: true});
+            if (parsed.total > max) {
+                maxRoll = parsed;
+                max = parsed.total;
             }
         }
     }
+    if (maxRoll?.formula === originalFormula) return originalFormula;
     if (rollModifiers.size) {
-        const terms = Roll.parse(bestFormula, data);
         let changed = false;
-        for (const term of terms) {
+        for (const term of maxRoll.terms) {
             if (!term.modifiers) continue;
             for (const mod of rollModifiers) {
                 if (term.modifiers.includes(mod)) continue;
@@ -128,9 +130,11 @@ function formula(wrapped) {
                 changed = true;
             }
         }
-        if (changed) bestFormula = Roll.getFormula(terms);
+        if (changed) maxRoll.resetFormula();
     }
-    return bestFormula;
+    this.custom.enabled = true;
+    this.custom.formula = maxRoll.formula;
+    return maxRoll.formula;
 }
 function defineSchema(wrapped, ...args) {
     const schema = wrapped(...args);
@@ -163,7 +167,7 @@ function armorClass(wrapped, rollData) {
         if (!formula) continue;
         try {
             const replaced = dnd5e.utils.replaceFormulaData(formula, rollData, {actor, property, item: source, missing: null});
-            const value = rollUtils.rollDiceSync(replaced, {options: {strict: true}}).total;
+            const value = replaced ? new Roll(replaced).evaluateSync().total : 0;
             if (value > bestFormula.value) bestFormula = {formula, value, source};
         } catch (e) {
             const prepWarning = actor._preparationWarnings.find(w => w.link === source?.uuid);
@@ -200,6 +204,30 @@ function acLabel(wrapped, property) {
     if (!replaceDex) return wrapped(property);
     return CONFIG.DND5E.abilities[replaceDex]?.label ?? replaceDex;
 }
+// this is a near identical copy of the wrapped function, except this.formula is always accessed
+function scaledFormula(increase) {
+    if ( increase instanceof dnd5e.documents.Scaling ) increase = increase.increase;
+    switch ( this.scaling.mode ) {
+        case 'whole': break;
+        case 'half': increase = Math.floor(increase * .5); break;
+        default: increase = 0; break;
+    }
+    let formula = this.formula;
+    if (!increase) return formula;
+    const dieIncrease = (this.scaling.number ?? 0) * increase;
+    if (this.custom.enabled) {
+        formula = this.custom.formula;
+        formula = formula.replace(/^(\d+)d/, (match, number) => `${Number(number) + dieIncrease}d`);
+    } else {
+        formula = this._automaticFormula(dieIncrease);
+    }
+    if (this.scaling.formula) {
+        let roll = new Roll(this.scaling.formula);
+        roll = roll.alter(increase, 0, {multiplyNumeric: true});
+        formula = formula ? `${formula} + ${roll.formula}` : roll.formula;
+    }
+    return formula;
+}
 function patch(enabled) {
     if (enabled) {
         Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.shared.DamageData.prototype.formula', {force: true});
@@ -212,6 +240,8 @@ function patch(enabled) {
         libWrapper.register('cat', 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass', armorClass, 'MIXED');
         Logging.addEntry('DEBUG', 'Patching: dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', {force: true});
         libWrapper.register('cat', 'dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', acLabel, 'MIXED');
+        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.shared.DamageData.prototype.scaledFormula', {force: true});
+        libWrapper.register('cat', 'dnd5e.dataModels.shared.DamageData.prototype.scaledFormula', scaledFormula, 'OVERRIDE');
     } else {
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.shared.DamageData.prototype.formula');
         libWrapper.unregister('cat', 'dnd5e.dataModels.shared.DamageData.prototype.formula');
@@ -223,6 +253,8 @@ function patch(enabled) {
         libWrapper.unregister('cat', 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass');
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel');
         libWrapper.unregister('cat', 'dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel');
+        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.shared.DamageData.prototype.scaledFormula');
+        libWrapper.unregister('cat', 'dnd5e.dataModels.shared.DamageData.prototype.scaledFormula');
     }
 }
 export default {

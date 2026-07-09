@@ -332,7 +332,6 @@ class BaseWorkflowEvent extends CatEvent {
         if (workflow?.targets) this.targets = workflow.targets.map(token => token.document);
     }
     get unsortedTriggers() {
-        console.log(this.castData);
         let triggers = [];
         const passName = this.pass.capitalize();
         if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new this.trigger(this.activity, 'activity' + passName, {castData: this.castData}));
