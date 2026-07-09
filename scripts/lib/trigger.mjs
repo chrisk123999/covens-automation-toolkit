@@ -10,6 +10,7 @@ class Trigger {
         this.embeddedMacros = [];
         if (data && typeof data === 'object') Object.entries(data).forEach(([key, value]) => this[key] = value);
         if (!this.castData) this.castData = documentUtils.getSavedCastData(document);
+        console.log(this);
     }
     processFnMacros(data, type, pass) {
         this.fnMacros = data.map(i => constants.macros.getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);

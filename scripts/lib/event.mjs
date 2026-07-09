@@ -317,7 +317,7 @@ class CatEvent {
                 macroConfig: {pass: this.pass, priority: 50},
                 document: null,
                 macro: function() {},
-                castData: {castLevel: 10, saveDC: 10},
+                castData: this.castData ?? {castLevel: 3, saveDC: 10},
                 macroClass: null
             });
         }
@@ -329,10 +329,10 @@ class BaseWorkflowEvent extends CatEvent {
         super(pass);
         this.name = 'Workflow';
         this.trigger = Triggers.RollTrigger;
-        this.castData = workflow?.castData;
         if (workflow?.targets) this.targets = workflow.targets.map(token => token.document);
     }
     get unsortedTriggers() {
+        console.log(this.castData);
         let triggers = [];
         const passName = this.pass.capitalize();
         if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new this.trigger(this.activity, 'activity' + passName, {castData: this.castData}));
@@ -395,6 +395,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         this.activity = workflow.activity;
         this.item = workflow.item;
         this.setContext(workflow.actor, {token: workflow.token?.document});
+        this.castData = workflow.castData;
     }
     appendData(data) {
         return {
