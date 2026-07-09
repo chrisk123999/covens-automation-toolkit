@@ -329,42 +329,43 @@ class BaseWorkflowEvent extends CatEvent {
         super(pass);
         this.name = 'Workflow';
         this.trigger = Triggers.RollTrigger;
+        this.castData = workflow?.castData;
         if (workflow?.targets) this.targets = workflow.targets.map(token => token.document);
     }
     get unsortedTriggers() {
         let triggers = [];
         const passName = this.pass.capitalize();
-        if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new this.trigger(this.activity, 'activity' + passName));
+        if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new this.trigger(this.activity, 'activity' + passName, {castData: this.castData}));
         if (this.item) {
-            if (CatEvent.hasCatFlag(this.item)) triggers.push(new this.trigger(this.item, 'item' + passName));
+            if (CatEvent.hasCatFlag(this.item)) triggers.push(new this.trigger(this.item, 'item' + passName, {castData: this.castData}));
             this.item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
-                triggers.push(new this.trigger(effect, 'enchantment' + passName));
+                triggers.push(new this.trigger(effect, 'enchantment' + passName, {castData: this.castData}));
             });
             const cachedForUuid = this.item.flags.dnd5e?.cachedFor;
             if (cachedForUuid && this.actor) {
                 const castActivity = fromUuidSync(cachedForUuid, {relative: this.actor});
-                if (castActivity && CatEvent.hasCatFlag(castActivity)) triggers.push(new this.trigger(castActivity, 'castEnchantment' + passName, {sourceItem: this.item}));
+                if (castActivity && CatEvent.hasCatFlag(castActivity)) triggers.push(new this.trigger(castActivity, 'castEnchantment' + passName, {sourceItem: this.item, castData: this.castData}));
             }
         }
         if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + passName));
-        if (this.token && CatEvent.hasCatFlag(this.token)) triggers.push(new this.trigger(this.token, 'token' + passName));
+        if (this.token && CatEvent.hasCatFlag(this.token)) triggers.push(new this.trigger(this.token, 'token' + passName, {castData: this.castData}));
         if (this.scene) {
             triggers.push(...this.getSceneTriggers(this.scene, 'scene' + passName));
             triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + passName));
         }
         if (this.regions) {
             this.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-                triggers.push(new this.trigger(region, 'region' + passName));
+                triggers.push(new this.trigger(region, 'region' + passName, {castData: this.castData}));
             });
         }
         if (this.level) triggers.push(...this.getLevelTriggers(this.level, 'level' + passName));
         if (this.targets?.size) {
             this.targets.forEach(token => {
                 if (!token.actor) return;
-                if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, 'target' + passName, {sourceToken: token, distances: this.distances}));
+                if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, 'target' + passName, {sourceToken: token, distances: this.distances, castData: this.castData}));
                 triggers.push(...this.getActorTriggers(token.actor, 'target' + passName, {sourceToken: token, distances: this.distances}));
                 token.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
-                    triggers.push(new this.trigger(region, 'target' + passName, {sourceToken: token, distances: this.distances}));
+                    triggers.push(new this.trigger(region, 'target' + passName, {sourceToken: token, distances: this.distances, castData: this.castData}));
                 });
             });
         }

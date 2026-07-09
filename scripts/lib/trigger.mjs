@@ -5,11 +5,11 @@ class Trigger {
         this.document = document;
         this.identifier = documentUtils.getIdentifier(document);
         this.name = this.document.name.slugify();
-        this.castData = documentUtils.getSavedCastData(document);
         this.pass = pass;
         this.fnMacros = [];
         this.embeddedMacros = [];
         if (data && typeof data === 'object') Object.entries(data).forEach(([key, value]) => this[key] = value);
+        if (!this.castData) this.castData = documentUtils.getSavedCastData(document);
     }
     processFnMacros(data, type, pass) {
         this.fnMacros = data.map(i => constants.macros.getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);
