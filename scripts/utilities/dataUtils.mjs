@@ -61,7 +61,7 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
                 !macroGroup.macros.some(m => {
                     if (m.source && m.source !== e.source) return;
                     if (m.identifier && m.identifier !== e.identifier) return;
-                    if (m.rules !== 'all' && e.rules !== 'all' && m.rules !== e.rules) return;
+                    if (m.rules && m.rules !== 'all' && e.rules !== 'all' && m.rules !== e.rules) return;
                     return true;
                 })
             );

@@ -1,4 +1,4 @@
-import {activityUtils, actorUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
+import {activityUtils, actorUtils, dataUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
 function getRules(document, {documentType = document.documentName} = {}) {
     return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
@@ -117,7 +117,7 @@ async function modifyBatch(operations) {
         }));
     }
 }
-function getEffectData(document, id, {duration, concentrationItem} = {}) {
+function getEffectData(document, id, {duration, concentrationItem, macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities} = {}) {
     const sourceEffect = document.item ? document.item.effects.get(id) : document.effects.get(id);
     if (!sourceEffect) return;
     const effectData = sourceEffect.toObject();
@@ -125,7 +125,7 @@ function getEffectData(document, id, {duration, concentrationItem} = {}) {
     effectData.origin = !concentrationItem ? sourceEffect.uuid : effectUtils.getConcentrationEffect(document.actor, document.item ?? document)?.uuid;
     if (document.documentName === 'Activity' && !duration) effectData.duration = activityUtils.getEffectDuration(document);
     if (duration) effectData.duration = duration;
-    return effectData;
+    return dataUtils.buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities});
 }
 export default {
     getRules,
