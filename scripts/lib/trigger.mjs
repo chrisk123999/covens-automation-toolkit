@@ -1,7 +1,9 @@
 import {automationUtils, documentUtils, tokenUtils} from '../utilities/_module.mjs';
 import {constants, EmbeddedMacros} from '../lib/_module.mjs';
 class Trigger {
+    static get type() { throw new Error (`${this.name} must define a type!`); }
     constructor(document, pass, data) {
+        this.type = this.constructor.type;
         this.document = document;
         this.identifier = documentUtils.getIdentifier(document);
         this.name = this.document.name.slugify();
@@ -11,12 +13,16 @@ class Trigger {
         if (data && typeof data === 'object') Object.entries(data).forEach(([key, value]) => this[key] = value);
         if (!this.castData) this.castData = documentUtils.getSavedCastData(document);
         if (!this.castData.saveDC) this.castData.saveDC = documentUtils.getSavedCastData(document).saveDC;
+        const fnMacroData = this.document.flags.cat?.macros?.[this.constructor.type] ?? [];
+        this.processFnMacros(fnMacroData, pass);
+        this.processEmbeddedMacro();
+        if (this.distances) this.processDistanceMacros();
     }
-    processFnMacros(data, type, pass) {
-        this.fnMacros = data.map(i => constants.macros.getFnMacros(i.source, i.rules, i.identifier, type, pass)).filter(i => i);
+    processFnMacros(data, pass) {
+        this.fnMacros = data.map(i => constants.macros.getFnMacros(i.source, i.rules, i.identifier, this.constructor.type, pass)).filter(i => i);
     }
     processEmbeddedMacro() {
-        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros(this.type, this.pass);
+        this.embeddedMacros = new EmbeddedMacros(this.document).getMacros(this.constructor.type, this.pass);
     }
     processDistanceMacros() {
         const filterFn = (macro) => {
@@ -51,153 +57,49 @@ class Trigger {
     }
 }
 class RollTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.roll ?? [];
-        this.processFnMacros(fnMacroData, 'roll', pass);
-        this.type = 'roll';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'roll'; }
 }
 class MoveTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.move ?? [];
-        this.processFnMacros(fnMacroData, 'move', pass);
-        this.type = 'move';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'move'; }
 }
 class RegionTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.region ?? [];
-        this.processFnMacros(fnMacroData, 'region', pass);
-        this.type = 'region';
-        this.processEmbeddedMacro();
-    }
+    static get type() { return 'region'; }
 }
 class EffectTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.effect ?? [];
-        this.processFnMacros(fnMacroData, 'effect', pass);
-        this.type = 'effect';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'effect'; }
 }
 class CombatTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.combat ?? [];
-        this.processFnMacros(fnMacroData, 'combat', pass);
-        this.type = 'combat';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'combat'; }
 }
 class AuraTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.aura ?? [];
-        this.processFnMacros(fnMacroData, 'aura', pass);
-        this.type = 'aura';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'aura'; }
 }
 class ItemTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.item ?? [];
-        this.processFnMacros(fnMacroData, 'item', pass);
-        this.type = 'item';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'item'; }
 }
 class RestTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.rest ?? [];
-        this.processFnMacros(fnMacroData, 'rest', pass);
-        this.type = 'rest';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'rest'; }
 }
 class CheckTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.check ?? [];
-        this.processFnMacros(fnMacroData, 'check', pass);
-        this.type = 'check';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'check'; }
 }
 class SkillTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.skill ?? [];
-        this.processFnMacros(fnMacroData, 'skill', pass);
-        this.type = 'skill';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'skill'; }
 }
 class SaveTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.save ?? [];
-        this.processFnMacros(fnMacroData, 'save', pass);
-        this.type = 'save';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'save'; }
 }
 class ToolTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.tool ?? [];
-        this.processFnMacros(fnMacroData, 'tool', pass);
-        this.type = 'tool';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'tool'; }
 }
 class TimeTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.time ?? [];
-        this.processFnMacros(fnMacroData, 'time', pass);
-        this.type = 'time';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'time'; }
 }
 class SummonTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.summon ?? [];
-        this.processFnMacros(fnMacroData, 'summon', pass);
-        this.type = 'summon';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'summon'; }
 }
 class CalledTrigger extends Trigger {
-    constructor(document, pass, data) {
-        super(document, pass, data);
-        const fnMacroData = this.document.flags.cat?.macros?.called ?? [];
-        this.processFnMacros(fnMacroData, 'called', pass);
-        this.type = 'called';
-        this.processEmbeddedMacro();
-        if (this.distances) this.processDistanceMacros();
-    }
+    static get type() { return 'called'; }
 }
 export default {
     Trigger,

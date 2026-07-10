@@ -3,6 +3,12 @@ import {RegisteredAutomations} from './automations.mjs';
 import {RegisteredScales} from './scales.mjs';
 import {RegisteredAnimations} from './animation.mjs';
 import {SummonsManager} from './summons.mjs';
+import {default as Triggers} from './trigger.mjs';
+const rules = {
+    all: 'all',
+    2014: '2014',
+    2024: '2024'
+};
 const workflowPasses = {
     preTargeting: 'preTargeting',
     preItemRoll: 'preItemRoll',
@@ -292,6 +298,19 @@ const massApplyExcludeSources = [
 const abilityOptions = () => Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
 const damageTypeOptions = () => Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
 const statusOptions = () => CONFIG.statusEffects.map(i => ({label: _loc(i.name ?? i.label ?? i.id), value: i.id, image: i.img ?? i.icon}));
+const cachedTypes = new Set();
+function triggerTypes() {
+    if (cachedTypes.size) return cachedTypes;
+    for (const cls of Object.values(Triggers)) {
+        try {
+            const type = cls.type;
+            if (!type) continue;
+            cachedTypes.add(type);
+        }
+        catch { continue; }
+    }
+    return cachedTypes;
+}
 export default {
     /** @type {RegisteredMacros} */
     macros: undefined,
@@ -305,6 +324,7 @@ export default {
     summons: undefined,
     alternateAttributes: undefined,
     gameReady: false,
+    rules,
     workflowPasses,
     workflowHookNames,
     movementPasses,
@@ -345,5 +365,6 @@ export default {
     massApplyExcludeSources,
     abilityOptions,
     damageTypeOptions,
-    statusOptions
+    statusOptions,
+    triggerTypes
 };
