@@ -1,6 +1,5 @@
-import {constants} from '../lib/_module.mjs';
+import {constants, ColorMatrix} from '../lib/_module.mjs';
 import {genericUtils} from './_module.mjs';
-import {ColorMatrix} from '../lib/_module.js';
 const minSequencerVersion = '3.6.0';
 let shownSequencerWarning = false;
 function getAnimation({source, identifier}) {
