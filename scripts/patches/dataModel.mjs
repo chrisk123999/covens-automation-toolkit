@@ -105,9 +105,10 @@ function formula(wrapped) {
         const newModifiers = RollModifier.evaluate(context);
         if (newModifiers?.size) for (const mod of newModifiers) rollModifiers.add(mod);
     }
-    let maxRoll;
+    let originalParsed;
     const data = rollData(context);
-    if (originalFormula?.length) maxRoll = new Roll(originalFormula, data).evaluateSync({maximize: true});
+    if (originalFormula?.length) originalParsed = new Roll(originalFormula, data).evaluateSync({maximize: true});
+    let maxRoll = originalParsed;
     if (alternateFormulas.size) {
         let max = maxRoll?.total ?? -Infinity;
         for (const formula of alternateFormulas) {
@@ -119,7 +120,7 @@ function formula(wrapped) {
             }
         }
     }
-    if (maxRoll?.formula === originalFormula) return originalFormula;
+    if (maxRoll?.formula === originalParsed?.formula) return originalFormula;
     if (rollModifiers.size) {
         let changed = false;
         for (const term of maxRoll.terms) {

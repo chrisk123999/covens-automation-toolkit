@@ -15,10 +15,62 @@ function setRules(documentData, rules) {
 function setIdentifier(documentData, identifier) {
     genericUtils.setProperty(documentData, 'flags.cat.identifier', identifier);
 }
-function buildEffectData(effectData, {macros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities} = {}) {
+/**
+ * @typedef {object} MacroEntry
+ * @property {string} identifier
+ * @property {string} rules
+ * @property {string} source
+ */
+/**
+ * @typedef {object} MacroGroup
+ * @property {string} type
+ * @property {MacroEntry[]} macros
+ */
+/**
+ * @typedef {object} AnimationEntry
+ * @property {string} identifier
+ * @property {string} source
+ */
+/**
+ * @typedef {object} VaeEntry
+ * @property {'use'} type 
+ * @property {string} name
+ * @property {string} itemIdentifier
+ * @property {string} [activityIdentifier]
+ */
+/**
+ * Attach CAT data to an effect before creation.
+ * @param {*} effectData 
+ * @param {object} [options]
+ * @param {MacroGroup[]} [options.macros] Merge the list into existing macros.
+ * @param {MacroGroup[]} [options.removeMacros] Remove macros that match all provided {@link MacroEntry} properties.
+ * @param {AnimationEntry} [options.createAnimation]
+ * @param {AnimationEntry} [options.deleteAnimation]
+ * @param {string[]} [options.specialDuration]
+ * @param {string[]} [options.unhideActivities]
+ * @param {VaeEntry[]} [options.vae]
+ * @param {'2014'|'2024'|'all'} [options.rules]
+ * @returns 
+ */
+function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities} = {}) {
+    if (removeMacros?.length) {
+        removeMacros.forEach(macroGroup => {
+            if (!macroGroup.macros?.length) return;
+            const existingMacros = effectData.flags?.cat?.macros?.[macroGroup.type] ?? [];
+            const removed = existingMacros.filter(e =>
+                !macroGroup.macros.some(m => {
+                    if (m.source && m.source !== e.source) return;
+                    if (m.identifier && m.identifier !== e.identifier) return;
+                    if (m.rules !== 'all' && e.rules !== 'all' && m.rules !== e.rules) return;
+                    return true;
+                })
+            );
+            genericUtils.setProperty(effectData, 'flags.cat.macros.' + macroGroup.type, removed);
+        });
+    }
     if (macros?.length) {
         macros.forEach(macroGroup => {
-            if (!macroGroup.macros.length) return;
+            if (!macroGroup.macros?.length) return;
             const existingMacros = effectData.flags?.cat?.macros?.[macroGroup.type] ?? [];
             const combinedMacros = [...existingMacros, ...macroGroup.macros];
             const uniqueMacros = new Map();

@@ -166,6 +166,7 @@ function buildAttributes() {
     registerAttribute({
         type: 'ACFormula',
         valueSchema: new dndFields.FormulaField({
+            placeholder: '13 + @abilities.dex.mod',
             deterministic: true,
             required: true
         }),

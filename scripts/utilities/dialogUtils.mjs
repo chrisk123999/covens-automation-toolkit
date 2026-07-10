@@ -232,7 +232,11 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
 }
 async function confirmUseItem(item, {userId = game.user.id, buttons = 'yesNo'} = {}) {
     let content = _loc('CAT.Dialog.Use', {itemName: item.name});
-    return await confirm('Confirm', content, {userId, buttons});
+    return await confirm('COMMON.Confirm', content, {userId, buttons});
+}
+async function confirmRecoverUses(document, documentWithUses, {spent, userId = game.user.id, buttons = 'yesNo'} = {}) {
+    const uses = (documentWithUses.system ?? documentWithUses).uses;
+    return await confirm('COMMON.Confirm', _loc('CAT.Dialog.UseRecover', {document: document.name, spent: spent ?? uses?.spent ?? 0, max: uses?.max ?? 0, resource: documentWithUses.name}), {userId, buttons});
 }
 async function queuedConfirmDialog(title, content, {actor, reason, userId = game.user.id} = {}) {
     let selection = await runQueuedDialog(userId, title, content, [], 'yesNo', undefined, reason);
@@ -317,6 +321,7 @@ export default {
     selectDamageType,
     selectHitDie,
     confirmUseItem,
+    confirmRecoverUses,
     queuedConfirmDialog,
     selectTargetDialog,
     selectDie

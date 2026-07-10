@@ -522,10 +522,11 @@
         "NoMatches": "No matches"
       },
       "HitDieLabel": "{className}: {remaining}/{max} {denomination}",
-      "Use": "Use {itemName}?",
+      "SkipDeadAndUnconscious": "Skip Dead and Unconscious",
       "Total": "Total",
       "UnknownTarget": "Unknown Target",
-      "SkipDeadAndUnconscious": "Skip Dead and Unconscious"
+      "Use": "Use {itemName}?",
+      "UseRecover": "Use {document} to recover {spent}/{max} {resource}?"
     },
     "Common": {
       "Cover": "{amount} {cover}"
