@@ -1,4 +1,4 @@
-import {activityUtils, actorUtils, dataUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
+import {activityUtils, actorUtils, dataUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
 function getRules(document, {documentType = document.documentName} = {}) {
     return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
@@ -123,7 +123,10 @@ function getEffectData(document, id, {duration, concentrationItem, macros, remov
     const effectData = sourceEffect.toObject();
     delete effectData._id;
     effectData.origin = !concentrationItem ? sourceEffect.uuid : effectUtils.getConcentrationEffect(document.actor, document.item ?? document)?.uuid;
-    if (document.documentName === 'Activity' && !duration) effectData.duration = activityUtils.getEffectDuration(document);
+    if (document.documentName === 'Activity') {
+        if (!duration) effectData.duration = activityUtils.getEffectDuration(document);
+        genericUtils.setProperty(effectData, 'flags.cat.activityUuid', document.uuid);
+    }
     if (duration) effectData.duration = duration;
     return dataUtils.buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities});
 }
