@@ -43,7 +43,6 @@ function getConditions(effect) {
     return conditions;
 }
 async function getOriginActivity(effect) {
-    if (typeof effect === 'string') effect = await fromUuid(effect);
     if (!effect) return;
     const activityUuid = effect.flags.dae?.activity ?? effect.flags.cat?.activityUuid;
     if (activityUuid) return await fromUuid(activityUuid);

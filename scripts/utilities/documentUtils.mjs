@@ -123,10 +123,7 @@ function getEffectData(document, id, {duration, concentrationItem, macros, remov
     const effectData = sourceEffect.toObject();
     delete effectData._id;
     effectData.origin = !concentrationItem ? sourceEffect.uuid : effectUtils.getConcentrationEffect(document.actor, document.item ?? document)?.uuid;
-    if (document.documentName === 'Activity') {
-        if (!duration) effectData.duration = activityUtils.getEffectDuration(document);
-        genericUtils.setProperty(effectData, 'flags.cat.activityUuid', document.uuid);
-    }
+    if (document.documentName === 'Activity' && !duration) effectData.duration = activityUtils.getEffectDuration(document);  
     if (duration) effectData.duration = duration;
     return dataUtils.buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities});
 }
