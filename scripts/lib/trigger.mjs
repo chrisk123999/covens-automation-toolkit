@@ -1,7 +1,10 @@
 import {automationUtils, documentUtils, tokenUtils} from '../utilities/_module.mjs';
 import {constants, EmbeddedMacros} from '../lib/_module.mjs';
 class Trigger {
-    static get type() { throw new Error (`${this.name} must define a type!`); }
+    static get type() {
+        if (this === Trigger) return null;
+        throw new Error (`${this.name} must define a type!`); 
+    }
     constructor(document, pass, data) {
         this.type = this.constructor.type;
         this.document = document;

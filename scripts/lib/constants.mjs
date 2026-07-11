@@ -302,12 +302,9 @@ const cachedTypes = new Set();
 function triggerTypes() {
     if (cachedTypes.size) return cachedTypes;
     for (const cls of Object.values(Triggers)) {
-        try {
-            const type = cls.type;
-            if (!type) continue;
-            cachedTypes.add(type);
-        }
-        catch { continue; }
+        const type = cls.type;
+        if (!type) continue;
+        cachedTypes.add(type);
     }
     return cachedTypes;
 }
