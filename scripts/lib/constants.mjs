@@ -257,6 +257,25 @@ const statusEffectKeys = [
     'macro.StatusEffect',
     'StatusEffect'
 ];
+const weaponTypes = [
+    'martialM',
+    'simpleM',
+    'martialR',
+    'simpleR'
+];
+const meleeWeaponTypes = [
+    'martialM',
+    'simpleM'
+];
+const rangedWeaponTypes = [
+    'martialR',
+    'simpleR'
+];
+const armorTypes = [
+    'light',
+    'medium',
+    'heavy'
+];
 function getItemKeepPaths({spell = false} = {}) {
     const paths = [
         '_stats.compendiumSource',
@@ -295,9 +314,57 @@ const massApplyExcludeSources = [
     'dnd5e',
     'dnd-players-handbook'
 ];
+const itemIconOverrides = {
+    feat: 'systems/dnd5e/icons/svg/items/feature.svg'
+};
+const methodIconOverrides = {
+    atwill: 'icons/magic/unholy/hands-cloud-light-pink.webp',
+    innate: 'icons/magic/light/hand-sparks-glow-yellow.webp',
+    ritual: 'systems/dnd5e/icons/svg/items/spell.svg',
+    spell: 'systems/dnd5e/icons/spell-tiers/spell9.webp'
+};
 const abilityOptions = () => Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
+const armorOptions = () => Object.entries(CONFIG.DND5E.armorTypes).map(i => ({label: i[1], value: i[0]}));
+const creatureTypeOptions = () => Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
 const damageTypeOptions = () => Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
+const diceSizeOptions = () => [4, 6, 8, 10, 12, 20].map(i => ({label: `d${i}`, value: `d${i}`, image: `systems/dnd5e/icons/svg/dice/d${i}.svg`}));
+const healingTypeOptions = () => Object.entries(CONFIG.DND5E.healingTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: i[0] === 'vitality'}));
+const itemProperties = () => Object.entries(CONFIG.DND5E.itemProperties).map(i => ({label: i[1].label, value: i[0]}));
+const physicalItemTypes = () => Object.entries(Item.implementation.compendiumBrowserTypes().physical.children)
+    .map(i => ({label: _loc(i[1].label), value: i[0], image: `systems/dnd5e/icons/svg/items/${i[0]}.svg`}));
+const skillOptions = () => Object.entries(CONFIG.DND5E.skills).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
+const spellMethodOptions = () => Object.entries(CONFIG.DND5E.spellcasting).map(i => ({label: i[1].label, value: i[0], image: methodIconOverrides[i[0]] ?? i[1].img}));
+const spellSchoolOptions = () => Object.entries(CONFIG.DND5E.spellSchools).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: true}));
+const spellSlotOptions = () => Object.entries(CONFIG.DND5E.spellLevels).map(i => i[0] == 0 ? 
+    {label: _loc('None'), value: i[0]} : 
+    {label: i[1], value: i[0], image: `systems/dnd5e/icons/spell-tiers/${CONFIG.DND5E.spellcasting.spell.getSpellSlotKey(i[0])}.webp`}
+);
 const statusOptions = () => CONFIG.statusEffects.map(i => ({label: _loc(i.name ?? i.label ?? i.id), value: i.id, image: i.img ?? i.icon}));
+const usableItemTypes = () => ['consumable', 'equipment' ,'feat', 'loot', 'spell', 'tool', 'weapon']
+    .map(i => ({label: _loc(CONFIG.Item.typeLabels[i]), value: i, image: itemIconOverrides[i] ?? `systems/dnd5e/icons/svg/items/${i}.svg`}));
+const meleeWeapons = [];
+const rangedWeapons = [];
+const tools = [];
+const weapons = [];
+const meleeWeaponOptions = () => meleeWeapons;
+const rangedWeaponOptions = () => rangedWeapons;
+const toolOptions = () => tools;
+const weaponOptions = () => weapons;
+export async function getPackConstants() {
+    for (const [id, uuid] of Object.entries(CONFIG.DND5E.weaponIds)) {
+        const weapon = await fromUuid(uuid);
+        if (!weapon) continue;
+        const entry = {value: id, label: weapon.name, image: weapon.img};
+        weapons.push(entry);
+        if (meleeWeaponTypes.includes(weapon.system.type.value)) meleeWeapons.push(entry);
+        else if (rangedWeaponTypes.includes(weapon.system.type.value)) rangedWeapons.push(entry);
+    }
+    for (const [id, {id: uuid}] of Object.entries(CONFIG.DND5E.tools)) {
+        const tool = await fromUuid(uuid);
+        if (!tool) continue;
+        tools.push({value: id, label: tool.name, image: tool.img});
+    }
+}
 const cachedTypes = new Set();
 function triggerTypes() {
     if (cachedTypes.size) return cachedTypes;
@@ -360,8 +427,23 @@ export default {
     summonPasses,
     tokenHookNames,
     massApplyExcludeSources,
+    armorOptions,
     abilityOptions,
+    creatureTypeOptions,
     damageTypeOptions,
+    diceSizeOptions,
+    healingTypeOptions,
+    itemProperties,
+    meleeWeaponOptions,
+    physicalItemTypes,
+    rangedWeaponOptions,
     statusOptions,
-    triggerTypes
+    skillOptions,
+    spellMethodOptions,
+    spellSchoolOptions,
+    spellSlotOptions,
+    toolOptions,
+    triggerTypes,
+    usableItemTypes,
+    weaponOptions
 };

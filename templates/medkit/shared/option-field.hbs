@@ -7,7 +7,7 @@
             <cat-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
                 {{#if allowBlank}}<option value=""></option>{{/if}}
                 {{#each choices}}
-                    <option value="{{value}}" data-image="{{image}}">{{label}}</option>
+                    <option value="{{value}}" data-image="{{image}}"{{#if invert}} data-invert="true"{{/if}}>{{label}}</option>
                 {{/each}}
             </cat-combobox>
             {{#if compendiumPicker}}
@@ -28,7 +28,7 @@
         <div class="form-fields">
             <cat-multi-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}">
                 {{#each choices}}
-                    <option value="{{value}}" data-image="{{image}}" data-tag="{{tag}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                    <option value="{{value}}" data-image="{{image}}"{{#if invert}} data-invert="true"{{/if}} data-tag="{{tag}}"{{#if selected}} selected{{/if}}>{{label}}</option>
                 {{/each}}
             </cat-multi-combobox>
         </div>

@@ -283,7 +283,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 const sorted = sortedOptions();
                 if (sorted.length > COMBOBOX_THRESHOLD) {
                     option.isCombobox = true;
-                    option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image}));
+                    option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, invert: o.invertColor}));
                 } else {
                     const choices = sorted.reduce((acc, o) => { acc[o.value] = o.label; return acc; }, {});
                     option.field = new fields.StringField({label, choices, required: true, blank: false});
@@ -294,7 +294,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 const sorted = sortedOptions();
                 const selectedValues = Array.isArray(value) ? value : [];
                 option.isMultiCombobox = true;
-                option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, selected: selectedValues.includes(o.value)}));
+                option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, invert: o.invertColor, selected: selectedValues.includes(o.value)}));
                 option.value = selectedValues;
                 break;
             }

@@ -34,6 +34,7 @@ export default class CatMultiCombobox extends HTMLElement {
                 value: o.value,
                 label: o.textContent ?? '',
                 image: o.dataset.image ?? '',
+                invert: !!o.dataset.invert,
                 tag: o.dataset.tag ?? '',
                 group: o.closest('optgroup')?.getAttribute('label') ?? '',
                 weight: Number(o.dataset.weight) || 1,
@@ -130,6 +131,7 @@ export default class CatMultiCombobox extends HTMLElement {
             if (!isSelected && wouldExceed) li.classList.add('cat-combobox-disabled');
             if (o.image) {
                 const img = document.createElement('img');
+                if (o.invert) img.classList.add('cat-svg-color-invert');
                 img.src = o.image;
                 li.append(img);
             } else {
