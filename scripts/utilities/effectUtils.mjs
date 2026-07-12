@@ -53,7 +53,7 @@ async function getOriginActivity(effect) {
     if (originActivityUuid) return await fromUuid(originActivityUuid);
     if (origin.parent?.documentName === 'Item') {
         return origin.parent.system.activities?.find(activity => 
-            activity.effects.some(aEffect => aEffect.id === effect.id)
+            activity.effects.some(aEffect => aEffect._id === origin.id)
         );
     }
 }
@@ -67,7 +67,7 @@ function getOriginActivitySync(effect) {
     if (originActivityUuid) return fromUuidSync(originActivityUuid, {strict: false});
     if (origin.parent?.documentName === 'Item') {
         return origin.parent.system.activities?.find(activity => 
-            activity.effects.some(aEffect => aEffect.id === effect.id)
+            activity.effects.some(aEffect => aEffect._id === origin.id)
         );
     }
 }
