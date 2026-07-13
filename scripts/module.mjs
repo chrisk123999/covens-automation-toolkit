@@ -9,6 +9,7 @@ import CatMultiCombobox from './applications/elements/multi-combobox.mjs';
 import * as patches from './patches/_module.mjs';
 import * as integration from './integration/_modules.mjs';
 import * as handlers from './handlers/_module.mjs';
+import {getPackConstants} from './lib/constants.mjs';
 customElements.define(CatCombobox.tagName, CatCombobox);
 customElements.define(CatMultiCombobox.tagName, CatMultiCombobox);
 Hooks.once('i18nInit', () => {
@@ -49,6 +50,7 @@ const ddbInitGate = new Promise(resolve => {
 });
 Hooks.once('ready', async () => {
     lib.constants.summons = lib.SummonsManager.create();
+    getPackConstants();
     readyHooks();
     if (game.settings.get('cat', 'manualRollsEnabled')) patches.dicePatching.force(true);
     integration.dae.injectFlags();
