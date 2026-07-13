@@ -1,4 +1,4 @@
-import {Logging} from '../lib/_module.mjs';
+import {constants, Logging} from '../lib/_module.mjs';
 import {documentUtils} from '../utilities/_module.mjs';
 const fields = foundry.data.fields;
 export class RegisteredMacros {
@@ -7,30 +7,17 @@ export class RegisteredMacros {
     constructor() {
         this.fnMacros = [];
         this.overwriteMacros = [];
+        const makeEventGroup = () => new fields.ArrayField(new fields.ObjectField(), {required: false, nullable: true});
         this.#macrosSchema = new fields.SchemaField({
             source: new fields.StringField({required: true, nullable: false}),
-            rules: new fields.StringField({required: true, nullable: false}),
+            rules: new RulesField({required: true}),
             identifier: new fields.StringField({required: true, nullable: false}),
             generic: new fields.BooleanField({required: false, nullable: false}),
-            aura: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            called: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            check: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            combat: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            effect: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            item: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            move: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            region: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            rest: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            save: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            skill: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            time: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            tool: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            roll: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
-            summon: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
+            ...constants.triggerTypes().reduce((schema, trigger) => (schema[trigger] = makeEventGroup(), schema), {}),
             genericConfig: new fields.ObjectField({required: false, nullable: false}),
             documents: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: false})
         });
-        this.#multiMacrosSchema = new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}));
+        this.#multiMacrosSchema = new fields.ArrayField(this.#macrosSchema);
     }
     getFnMacros(source, rules, identifier, type, pass) {
         const predicate = macro => macro.source === source && macro.identifier === identifier && (macro.rules === rules || macro.rules === 'all');
@@ -59,32 +46,16 @@ export class RegisteredMacros {
         return Array.from(uniqueMacros.values());
     }
     registerFnMacro(data, overwrite = false) {
-        const validationError = this.#macrosSchema.validate(data);
+        const cleaned = this.#macrosSchema.clean(data, {migrate: true, prune: false});
+        const validationError = this.#macrosSchema.validate(cleaned);
         if (validationError) {
-            Logging.addRegistrationError(data, 'macro', validationError.asError());
+            Logging.addRegistrationError(cleaned, 'macro', validationError.asError());
             return false;
         }
         const fnArray = !overwrite ? this.fnMacros : this.overwriteMacros;
-        fnArray.push(new FnMacro(data.source, data.identifier, data.rules, {
-            aura: data.aura ?? [],
-            called: data.called ?? [],
-            check: data.check ?? [],
-            combat: data.combat ?? [],
-            effect: data.effect ?? [],
-            item: data.item ?? [],
-            move: data.move ?? [],
-            region: data.region ?? [],
-            rest: data.rest ?? [],
-            save: data.save ?? [],
-            skill: data.skill ?? [],
-            time: data.time ?? [],
-            tool: data.tool ?? [],
-            roll: data.roll ?? [],
-            summon: data.summon ?? [],
-            generic: data.generic,
-            genericConfig: data.genericConfig,
-            documents: data.documents
-        }));
+        const fnMacro = new FnMacro(cleaned.source, cleaned.identifier, cleaned.rules, cleaned);
+        fnArray.push(fnMacro);
+        return fnMacro;
     }
     registerFnMacros(data = [], overwrite = false) {
         const validationError = this.#multiMacrosSchema.validate(data);
@@ -104,30 +75,19 @@ export class RegisteredMacros {
     }
 }
 class FnMacro {
-    constructor(source, identifier, rules, {roll = [], move = [], combat = [], effect = [], item = [], aura = [], called = [], check = [], region = [], rest = [], save = [], skill = [], time = [], tool = [], summon = [], generic, genericConfig, documents} = {}) {
+    constructor(source, identifier, rules, {generic, genericConfig, documents, ...triggers} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
         this.generic = generic;
         this.genericConfig = genericConfig;
         this.documents = documents;
-        this.macros = {
-            aura,
-            called,
-            check,
-            combat,
-            effect,
-            item,
-            move,
-            region,
-            rest,
-            save,
-            skill,
-            time,
-            tool,
-            roll,
-            summon
-        };
+        this.macros = {};
+        for (const [key, list] of Object.entries(triggers)) {
+            if (!list?.length) continue;
+            if (!constants.triggerTypes().has(key)) continue;
+            this.macros[key] = list;
+        }
     }
     get flagData() {
         const entry = {
@@ -142,6 +102,28 @@ class FnMacro {
             }
         }
         return flags;
+    }
+}
+class RulesField extends fields.StringField {
+    static get _defaults() {
+        return Object.assign(super._defaults, {
+            choices: constants.rules,
+            validationError: `is not a valid ruleset. Use one of: ${Object.values(constants.rules).join(', ')}`
+        });
+    }
+    _validateType(value, _options) {
+        if (!this._isValidChoice(value)) throw new Error(`${value} ${this.validationError}`);
+    }
+    _isValidChoice(value){
+        return !!this.choices[value];
+    }
+    _migrate(value, _options, _state) {
+        if (this._isValidChoice(value)) return value;
+        switch(value) {
+            case 'modern': return '2024';
+            case 'legacy': return '2014';
+            default: return 'all';
+        }
     }
 }
 export default {
