@@ -5,8 +5,8 @@ export class RegisteredMacros {
     #macrosSchema;
     #multiMacrosSchema;
     constructor() {
-        this.fnMacros = [];
-        this.overwriteMacros = [];
+        this.fnMacros = new Map();
+        this.overwriteMacros = new Map();
         const makeEventGroup = () => new fields.ArrayField(new fields.ObjectField(), {required: false, nullable: true});
         this.#macrosSchema = new fields.SchemaField({
             source: new fields.StringField({required: true, nullable: false}),
@@ -19,12 +19,15 @@ export class RegisteredMacros {
         });
         this.#multiMacrosSchema = new fields.ArrayField(this.#macrosSchema);
     }
+    #getMacroKey(source, identifier, rules) {
+        return source + '|' + identifier + '|' + rules;
+    }
     getFnMacros(source, rules, identifier, type, pass) {
-        const predicate = macro => macro.source === source && macro.identifier === identifier && (macro.rules === rules || macro.rules === 'all');
-        let fnMacro = this.overwriteMacros.find(predicate) ?? this.fnMacros.find(predicate);
+        const key = this.#getMacroKey(source, identifier, rules);
+        const fnMacro = this.overwriteMacros.get(key) ?? this.fnMacros.get(key);
         if (!fnMacro) return;
-        if (!fnMacro.macros[type].length) return;
-        let macros = fnMacro.macros[type].filter(i => i.pass === pass);
+        if (!fnMacro.macros[type]?.length) return;
+        const macros = fnMacro.macros[type].filter(i => i.pass === pass);
         if (!macros.length) return;
         return {
             source,
@@ -34,16 +37,17 @@ export class RegisteredMacros {
         };
     }
     getAllMacros({genericOnly = false, documentType} = {}) {
-        const allMacros = [...this.fnMacros, ...this.overwriteMacros];
         const uniqueMacros = new Map();
-        allMacros.forEach(macro => {
+        this.fnMacros.forEach((macro, key) => uniqueMacros.set(key, macro));
+        this.overwriteMacros.forEach((macro, key) => uniqueMacros.set(key, macro));
+        const result = [];
+        uniqueMacros.forEach(macro => {
             if (!!macro.generic === genericOnly) {
                 if (documentType && !macro.documents?.includes(documentType)) return;
-                const compositeKey = macro.source + '|' + macro.identifier + '|' + macro.rules;
-                uniqueMacros.set(compositeKey, macro);
+                result.push(macro);
             }
         });
-        return Array.from(uniqueMacros.values());
+        return result;
     }
     registerFnMacro(data, overwrite = false) {
         const cleaned = this.#macrosSchema.clean(data, {migrate: true, prune: false});
@@ -52,9 +56,10 @@ export class RegisteredMacros {
             Logging.addRegistrationError(cleaned, 'macro', validationError.asError());
             return false;
         }
-        const fnArray = !overwrite ? this.fnMacros : this.overwriteMacros;
+        const fnMap = !overwrite ? this.fnMacros : this.overwriteMacros;
         const fnMacro = new FnMacro(cleaned.source, cleaned.identifier, cleaned.rules, cleaned);
-        fnArray.push(fnMacro);
+        const key = this.#getMacroKey(cleaned.source, cleaned.identifier, cleaned.rules);
+        fnMap.set(key, fnMacro);
         return fnMacro;
     }
     registerFnMacros(data = [], overwrite = false) {
@@ -69,8 +74,8 @@ export class RegisteredMacros {
         const value = document.flags.cat?.genericConfig?.[source]?.[identifier]?.[key];
         if (value != undefined) return value;
         const rules = documentUtils.getRules(document);
-        const predicate = macro => macro.source === source && macro.rules === rules && macro.identifier === identifier;
-        const macro = this.overwriteMacros.find(predicate) ?? this.fnMacros.find(predicate);
+        const macroKey = this.#getMacroKey(source, identifier, rules);
+        const macro = this.overwriteMacros.get(macroKey) ?? this.fnMacros.get(macroKey);
         return macro?.genericConfig?.[key]?.default;
     }
 }
@@ -108,11 +113,11 @@ class RulesField extends fields.StringField {
     static get _defaults() {
         return Object.assign(super._defaults, {
             choices: constants.rules,
-            validationError: `is not a valid ruleset. Use one of: ${Object.values(constants.rules).join(', ')}`
+            validationError: 'is not a valid ruleset. Use one of: ' + Object.values(constants.rules).join(', ')
         });
     }
     _validateType(value, _options) {
-        if (!this._isValidChoice(value)) throw new Error(`${value} ${this.validationError}`);
+        if (!this._isValidChoice(value)) throw new Error(value + ' ' + this.validationError);
     }
     _isValidChoice(value){
         return !!this.choices[value];

@@ -661,31 +661,29 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     _prepareRegisteredMacros(flagPath = 'macros') {
         if (!constants.macros) return {choices: []};
-        const all = [...(constants.macros.fnMacros ?? []), ...(constants.macros.overwriteMacros ?? [])].filter(m => !m.generic);
+        const all = constants.macros.getAllMacros({genericOnly: false});
         const sourceLabel = src => constants.automations?.getSourceName?.(src) ?? src;
-        const seen = new Map();
-        for (const m of all) {
-            const key = `${m.source}|${m.identifier}|${m.rules}`;
-            if (seen.has(key)) continue;
+        const choicesData = all.map(m => {
+            const key = m.source + '|' + m.identifier + '|' + m.rules;
             const events = Object.entries(m.macros ?? {}).filter(([, arr]) => arr?.length).map(([event]) => event);
-            seen.set(key, {
+            return {
                 value: key,
                 source: m.source,
                 identifier: m.identifier,
                 rules: m.rules,
-                label: `${m.identifier}  [${sourceLabel(m.source)} · ${m.rules}]`,
+                label: m.identifier + '  [' + sourceLabel(m.source) + ' · ' + m.rules + ']',
                 events
-            });
-        }
+            };
+        });
         const flagsMacros = foundry.utils.getProperty(this.#flags, flagPath) ?? {};
         const pickedKeys = new Set();
         for (const arr of Object.values(flagsMacros)) {
             if (!Array.isArray(arr)) continue;
-            for (const entry of arr) pickedKeys.add(`${entry.source}|${entry.identifier}|${entry.rules ?? 'all'}`);
+            for (const entry of arr) {
+                pickedKeys.add(entry.source + '|' + entry.identifier + '|' + (entry.rules ?? 'all'));
+            }
         }
-        const choices = Array.from(seen.values())
-            .map(c => ({...c, selected: pickedKeys.has(c.value)}))
-            .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+        const choices = choicesData.map(c => ({...c, selected: pickedKeys.has(c.value)})).sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
         return {choices};
     }
 
