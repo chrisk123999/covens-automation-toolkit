@@ -257,25 +257,6 @@ const statusEffectKeys = [
     'macro.StatusEffect',
     'StatusEffect'
 ];
-const weaponTypes = [
-    'martialM',
-    'simpleM',
-    'martialR',
-    'simpleR'
-];
-const meleeWeaponTypes = [
-    'martialM',
-    'simpleM'
-];
-const rangedWeaponTypes = [
-    'martialR',
-    'simpleR'
-];
-const armorTypes = [
-    'light',
-    'medium',
-    'heavy'
-];
 function getItemKeepPaths({spell = false} = {}) {
     const paths = [
         '_stats.compendiumSource',
@@ -314,6 +295,23 @@ const massApplyExcludeSources = [
     'dnd5e',
     'dnd-players-handbook'
 ];
+const damageIcons = {
+    acid: 'icons/magic/acid/projectile-faceted-glob.webp',
+    bludgeoning: 'icons/magic/earth/projectiles-stone-salvo-gray.webp',
+    cold: 'icons/magic/air/wind-tornado-wall-blue.webp',
+    fire: 'icons/magic/fire/beam-jet-stream-embers.webp',
+    force: 'icons/magic/sonic/projectile-sound-rings-wave.webp',
+    lightning: 'icons/magic/lightning/bolt-blue.webp',
+    necrotic: 'icons/magic/unholy/projectile-bolts-salvo-pink.webp',
+    piercing: 'icons/skills/melee/strike-polearm-light-orange.webp',
+    poison: 'icons/magic/death/skull-poison-green.webp',
+    psychic: 'icons/magic/control/fear-fright-monster-grin-red-orange.webp',
+    radiant: 'icons/magic/holy/projectiles-blades-salvo-yellow.webp',
+    slashing: 'icons/skills/melee/strike-sword-gray.webp',
+    thunder: 'icons/magic/sonic/explosion-shock-wave-teal.webp',
+    no: 'icons/svg/cancel.svg'
+};
+const tempConditionIcon = 'icons/magic/time/arrows-circling-green.webp';
 const itemIconOverrides = {
     feat: 'systems/dnd5e/icons/svg/items/feature.svg'
 };
@@ -326,7 +324,7 @@ const methodIconOverrides = {
 const abilityOptions = () => Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
 const armorOptions = () => Object.entries(CONFIG.DND5E.armorTypes).map(i => ({label: i[1], value: i[0]}));
 const creatureTypeOptions = () => Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
-const damageTypeOptions = () => Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
+const damageTypeOptions = () => Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: damageIcons[i[1]] ?? i[1].icon}));
 const diceSizeOptions = () => [4, 6, 8, 10, 12, 20].map(i => ({label: `d${i}`, value: `d${i}`, image: `systems/dnd5e/icons/svg/dice/d${i}.svg`}));
 const healingTypeOptions = () => Object.entries(CONFIG.DND5E.healingTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: i[0] === 'vitality'}));
 const itemProperties = () => Object.entries(CONFIG.DND5E.itemProperties).map(i => ({label: i[1].label, value: i[0]}));
@@ -351,13 +349,14 @@ const rangedWeaponOptions = () => rangedWeapons;
 const toolOptions = () => tools;
 const weaponOptions = () => weapons;
 export async function getPackConstants() {
+    const weaponMap = CONFIG.DND5E.weaponTypeMap;
     for (const [id, uuid] of Object.entries(CONFIG.DND5E.weaponIds)) {
         const weapon = await fromUuid(uuid);
         if (!weapon) continue;
         const entry = {value: id, label: weapon.name, image: weapon.img};
         weapons.push(entry);
-        if (meleeWeaponTypes.includes(weapon.system.type.value)) meleeWeapons.push(entry);
-        else if (rangedWeaponTypes.includes(weapon.system.type.value)) rangedWeapons.push(entry);
+        if (weaponMap[weapon.system.type.value] === 'melee') meleeWeapons.push(entry);
+        else if (weaponMap[weapon.system.type.value] === 'ranged') rangedWeapons.push(entry);
     }
     for (const [id, {id: uuid}] of Object.entries(CONFIG.DND5E.tools)) {
         const tool = await fromUuid(uuid);
@@ -427,6 +426,8 @@ export default {
     summonPasses,
     tokenHookNames,
     massApplyExcludeSources,
+    damageIcons,
+    tempConditionIcon,
     armorOptions,
     abilityOptions,
     creatureTypeOptions,
