@@ -846,6 +846,10 @@
     },
     "Troubleshooter": {
       "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version."
+    },
+    "Smite": {
+      "Title": "Smite",
+      "Context": "Cast a spell?"
     }
   }
 }
