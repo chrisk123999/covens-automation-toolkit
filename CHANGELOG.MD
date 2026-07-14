@@ -1,3 +1,27 @@
+# 0.0.5 Release:
+## Update Notes:
+ - Added equipment special durations to the Effect CatKit.
+ - More alternate attribute system additions added, such as AC handling.
+ - The effect CatKit can now assign animations to effects theat will play then they're created or deleted.
+ - Many util functions have been ported from CPR.
+## Bug Fixes:
+ - Fixed query registration.
+ - Fixed up to date checks on automations.
+ - Fixed cast data not being correctly used for roll events.
+ - Fixed region effects being correctly handled.
+ - Quick Conditions no longer breaks other menus.
+## API Update Notes:
+ - Added VAE support to the create effects helper.
+ - Added unhide activity support to the create effects helper.
+ - Added a dataUtil for preparing effectData.
+ - Automations can now require their source to be a specific type.
+ - Added a smite pass to the roll event to more easily handle automations that act like the smite spell.
+## API Bug Fixes:
+ - Item and called event macros can now properly be registered.
+ - Skill, check, save, and tool events properly pass their hook data.
+ - Bonuses to skill, check, save, and tool macros no longer get thrown out.
+ - Fixed doCreate effect event to catch all effect creation methods.
+
 # 0.0.4 Release:
 ## Update Notes:
 - Added more fields to document alternate attributes.
