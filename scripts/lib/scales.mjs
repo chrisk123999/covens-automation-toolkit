@@ -23,11 +23,12 @@ export class RegisteredScales {
         //data: new fields.SchemaField(dnd5e.dataModels.advancement.scaleValue.ScaleValueConfigurationData.defineSchema(), {required: true, nullable: false})
     });
     #multiScalesSchema = new fields.ArrayField(this.#scaleSchema);
-    scales = [];
+    scales = new Map();
     sources = new Set();
     getScaleByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, classIdentifier} = {}) {
-        const predicate = scale => scale.identifier === identifier && (rules === 'all' || scale.rules === rules) && (source === 'all' || scale.source === source) && (!classIdentifier || scale.classIdentifier === classIdentifier);
-        return multiple ? this.scales.filter(predicate) : this.scales.find(predicate);
+        const predicate = scale => (rules === 'all' || scale.rules === rules) && (source === 'all' || scale.source === source) && (!classIdentifier || scale.classIdentifier === classIdentifier);
+        const list = this.scales.get(identifier) ?? [];
+        return multiple ? list.filter(predicate) : list.find(predicate);
     }
     registerScale(data) {
         const validationError = this.#scaleSchema.validate(data);
@@ -35,7 +36,10 @@ export class RegisteredScales {
             Logging.addAutomationError(data, validationError.asError());
             return false;
         }
-        this.scales.push(new Scale(data.source, data.rules, data.identifier, data.data, {classIdentifier: data.classIdentifier}));
+        const scale = new Scale(data.source, data.rules, data.identifier, data.data, {classIdentifier: data.classIdentifier});
+        const list = this.scales.get(data.identifier);
+        if (list) list.push(scale);
+        else this.scales.set(data.identifier, [scale]);
         this.sources.add(data.source);
         Logging.addEntry('DEBUG', 'Scale Registered: ' + data.identifier + ' from ' + data.source);
     }
@@ -48,9 +52,17 @@ export class RegisteredScales {
         return data.map(i => this.registerScale(i));
     }
     unregisterScalesBySource(sourceId) {
-        this.scales = this.scales.filter(scale => scale.source !== sourceId);
+        let i = 0;
+        for (const [identifier, list] of this.scales.entries()) {
+            const filtered = list.filter(a => a.source !== sourceId);
+            if (filtered.length === list.length) continue;
+            i += list.length - filtered.length;
+            if (!filtered.length) this.scales.delete(identifier);
+            else this.scales.set(identifier, filtered);
+        }
+        if (i === 0) return;
         this.sources.delete(sourceId);
-        Logging.addEntry('DEBUG', 'Scales Unregistered from source: ' + sourceId);
+        Logging.addEntry('DEBUG', 'All ' + i + ' scales unregistered from source: ' + sourceId);
     }
 }
 export default {

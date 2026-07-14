@@ -154,8 +154,7 @@ export class RegisteredAutomations {
             if (automation.sourceType && automation.sourceType !== sourceType) return false;
             return true;
         };
-        const list = this.automations.get(identifier);
-        if (!list) return multiple ? [] : undefined;
+        const list = this.automations.get(identifier) ?? [];
         return multiple ? list.filter(predicate) : list.find(predicate);
     }
 
