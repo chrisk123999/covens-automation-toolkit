@@ -23,6 +23,7 @@ export default class CatCombobox extends HTMLElement {
             value: o.value,
             label: o.textContent ?? '',
             image: o.dataset.image ?? '',
+            invert: !!o.dataset.invert,
             tag: o.dataset.tag ?? ''
         }));
         this.replaceChildren();
@@ -127,6 +128,7 @@ export default class CatCombobox extends HTMLElement {
             li.dataset.value = o.value;
             if (o.image) {
                 const img = document.createElement('img');
+                if (o.invert) img.classList.add('cat-svg-color-invert');
                 img.src = o.image;
                 li.append(img);
             } else {

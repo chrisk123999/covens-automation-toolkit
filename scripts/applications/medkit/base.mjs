@@ -283,7 +283,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 const sorted = sortedOptions();
                 if (sorted.length > COMBOBOX_THRESHOLD) {
                     option.isCombobox = true;
-                    option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image}));
+                    option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, invert: o.invertColor}));
                 } else {
                     const choices = sorted.reduce((acc, o) => { acc[o.value] = o.label; return acc; }, {});
                     option.field = new fields.StringField({label, choices, required: true, blank: false});
@@ -294,7 +294,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 const sorted = sortedOptions();
                 const selectedValues = Array.isArray(value) ? value : [];
                 option.isMultiCombobox = true;
-                option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, selected: selectedValues.includes(o.value)}));
+                option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, invert: o.invertColor, selected: selectedValues.includes(o.value)}));
                 option.value = selectedValues;
                 break;
             }
@@ -550,7 +550,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #animationChoices(requiredInputs) {
-        let animations = constants.animations?.animations ?? [];
+        let animations = Array.from(constants.animations.animations.values());
         if (Array.isArray(requiredInputs)) {
             const required = [...requiredInputs].sort();
             animations = animations.filter(a => {
@@ -595,7 +595,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     _animationFlagOption({key, label, tooltip, path, macroKey}) {
         const stored = foundry.utils.getProperty(this.#flags, path);
         const selection = stored && typeof stored === 'object' ? stored : undefined;
-        const animations = (constants.animations?.animations ?? []).filter(a => a.macros?.[macroKey]);
+        const animations = Array.from(constants.animations.animations.values()).filter(a => a.macros?.[macroKey]);
         return {
             key,
             name: `flags.cat.${path}`,

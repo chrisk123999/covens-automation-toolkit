@@ -965,6 +965,10 @@ cat-combobox {
     border-radius: var(--cat-radius-sm);
 }
 
+.cat-svg-color-invert {
+    filter: invert(100%);
+}
+
 .cat-combobox-fallback-icon {
     display: inline-flex;
     flex-shrink: 0;
