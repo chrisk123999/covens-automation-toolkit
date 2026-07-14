@@ -9,7 +9,11 @@
 
 /**
  * @typedef {object} DamageOptions
+ * @property {string} [flavor]
  * @property {boolean} [isCritical] Treat the roll as critical by applying {@link CritOptions}.
+ * @property {string[]} [properties] Mark relevant properties, such as 'mwak', 'mgc', 'sil'.
+ * @property {string} [type]
+ * @property {CritOptions} [critOptions]
  */
 
 /**
@@ -58,12 +62,15 @@ function getCriticalFormula(formula, document, {bonusDamage, bonusDice, multipli
 /** 
  * @param {string} formula 
  * @param {foundry.abstract.Document} document 
- * @param {DamageOptions & CritOptions} [options]
+ * @param {DamageOptions} [options]
  * @param {EvaluateOptions} [evaluateOptions]
  * @returns {Promise<dnd5e.dice.DamageRoll>}
  * */
-async function damageRoll(formula, document, {bonusDamage, bonusDice, isCritical, multiplier = 2, multiplyNumeric, powerfulCritical} = {}, {maximize, minimize} = {}) {
-    return await new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical}, isCritical}).evaluate({maximize, minimize});
+async function damageRoll(formula, document, {critOptions: {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical}, flavor, isCritical, properties, type} = {}, {maximize, minimize} = {}) {
+    return await new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {
+        critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical},
+        flavor, isCritical, properties, type
+    }).evaluate({maximize, minimize});
 }
 async function addToRoll(roll, formula, {rollData} = {}) {
     const bonusRoll = await new roll.constructor(String(formula), rollData).evaluate();
