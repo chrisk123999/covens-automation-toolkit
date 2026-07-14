@@ -118,9 +118,9 @@ export class RegisteredAutomations {
     #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 
     /**
-     * @type {Automation[]}
+     * @type {Map<string, Automation[]>}
      */
-    automations = [];
+    automations = new Map();
 
     /**
      * @type {Set<string>}
@@ -146,7 +146,6 @@ export class RegisteredAutomations {
      */
     getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type, sourceType, excludeSources = []} = {}) {
         const predicate = automation => {
-            if (automation.identifier !== identifier) return false;
             if (rules !== 'all' && automation.rules !== 'all' && automation.rules !== rules) return false;
             if (source !== 'all' && automation.source !== source) return false;
             if (excludeSources.includes(automation.source)) return false;
@@ -155,7 +154,9 @@ export class RegisteredAutomations {
             if (automation.sourceType && automation.sourceType !== sourceType) return false;
             return true;
         };
-        return multiple ? this.automations.filter(predicate) : this.automations.find(predicate);
+        const list = this.automations.get(identifier);
+        if (!list) return multiple ? [] : undefined;
+        return multiple ? list.filter(predicate) : list.find(predicate);
     }
 
     /**
@@ -168,14 +169,17 @@ export class RegisteredAutomations {
             Logging.addRegistrationError(data, 'automation', validationError.asError());
             return false;
         }
-        this.automations.push(new Automation(data.source, data.rules, data.identifier, data.uuid, data.version, {
+        const automation = new Automation(data.source, data.rules, data.identifier, data.uuid, data.version, {
             config: data.config,
             notes: data.notes,
             monsterIdentifier: data.monsterIdentifier,
             scales: data.scales,
             type: data.type,
             sourceType: data.sourceType
-        }));
+        });
+        const list = this.automations.get(data.identifier);
+        if (list) list.push(automation);
+        else this.automations.set(data.identifier, [automation]);
         this.sources.add(data.source);
         Logging.addEntry('DEBUG', 'Automation Registered: ' + data.identifier + ' from ' + data.source + ' with version ' + data.version);
         return true;
@@ -312,24 +316,38 @@ export class RegisteredAutomations {
     }
 
     unregisterAutomationsBySource(source) {
-        const initialLength = this.automations.length;
-        this.automations = this.automations.filter(automation => automation.source !== source);
-        if (this.automations.length !== initialLength) {
-            this.sources.delete(source);
-            Logging.addEntry('DEBUG', 'Unregistered all automations from source: ' + source);
+        let i = 0;
+        for (const [identifier, list] of this.automations.entries()) {
+            const filtered = list.filter(a => a.source !== source);
+            if (filtered.length === list.length) continue;
+            i += list.length - filtered.length;
+            if (!filtered.length) this.automations.delete(identifier);
+            else this.automations.set(identifier, filtered);
         }
+        if (i === 0) return;
+        this.sources.delete(source);
+        Logging.addEntry('DEBUG', 'Unregistered all ' + i + ' automations from source: ' + source);
     }
 
     unregisterAutomation(source, identifier, rules) {
-        const initialLength = this.automations.length;
-        this.automations = this.automations.filter(automation => !(automation.source === source && automation.identifier === identifier && automation.rules === rules));
-        if (this.automations.length !== initialLength) Logging.addEntry('DEBUG', 'Unregistered automation: ' + identifier + ' from ' + source + ' (' + rules + ')');
+        const list = this.automations.get(identifier);
+        if (!list?.length) return;
+        const filtered = list.filter(a => !(a.source === source && a.rules === rules));
+        if (filtered.length === list.length) return;
+        if (!filtered.length) this.automations.delete(identifier);
+        else this.automations.set(identifier, filtered);
+        Logging.addEntry('DEBUG', 'Unregistered automation: ' + identifier + ' from ' + source + ' (' + rules + ')');
     }
 
     unregisterUuid(uuid) {
-        const initialLength = this.automations.length;
-        this.automations = this.automations.filter(automation => automation.uuid !== uuid);
-        if (this.automations.length !== initialLength) Logging.addEntry('DEBUG', 'Unregistered automation with uuid: ' + uuid);
+        for (const [identifier, list] of this.automations.entries()) {
+            const index = list.findIndex(a => a.uuid === uuid);
+            if (index === -1) continue;
+            list.splice(index, 1);
+            if (!list.length) this.automations.delete(identifier);
+            Logging.addEntry('DEBUG', 'Unregistered automation with uuid: ' + uuid);
+            break;
+        }
     }
 }
 export default {
