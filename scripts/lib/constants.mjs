@@ -22,6 +22,7 @@ const workflowPasses = {
     savesComplete: 'savesComplete', // Can adjust the hitTargets and failedSaves set here (not often used).
     damageRoll: 'damageRoll', // Regular adjustments to damage rolls, such as re-rolling them or editing the formula. Do not re-roll damage after this pass.
     smite: 'smite', // Smite spells.
+    optionalBonusDamage: 'optionalBonusDamage', // Combined optional bonus damage dialog.
     damageRollBonuses: 'damageRollBonuses', // Add bonuses to damage rolls.
     damageRollComplete: 'damageRollComplete', // Finalized damage rolls, no adjustments should be made here.
     utilityRoll: 'utilityRoll', // Regular adjustments to utility rolls, such as re-rolling them or editing the formula. Do not re-roll after this pass.
