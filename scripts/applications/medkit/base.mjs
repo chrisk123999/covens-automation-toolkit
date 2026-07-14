@@ -550,7 +550,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #animationChoices(requiredInputs) {
-        let animations = constants.animations?.animations ?? [];
+        let animations = Array.from(constants.animations.animations.values());
         if (Array.isArray(requiredInputs)) {
             const required = [...requiredInputs].sort();
             animations = animations.filter(a => {
@@ -595,7 +595,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     _animationFlagOption({key, label, tooltip, path, macroKey}) {
         const stored = foundry.utils.getProperty(this.#flags, path);
         const selection = stored && typeof stored === 'object' ? stored : undefined;
-        const animations = (constants.animations?.animations ?? []).filter(a => a.macros?.[macroKey]);
+        const animations = Array.from(constants.animations.animations.values()).filter(a => a.macros?.[macroKey]);
         return {
             key,
             name: `flags.cat.${path}`,
