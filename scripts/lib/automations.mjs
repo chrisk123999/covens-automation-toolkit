@@ -311,16 +311,13 @@ export class RegisteredAutomations {
         Logging.groupEnd();
         return results;
     }
-
     registerSourceName(id, name) {
         if (!id || !name) return;
         this.sourceNames[id] = name;
     }
-
     getSourceName(id) {
         return this.sourceNames[id] ?? id;
     }
-
     unregisterAutomationsBySource(source) {
         const initialSize = this.automations.size;
         for (const [uuid, automation] of this.automations.entries()) {
