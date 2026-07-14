@@ -90,7 +90,15 @@ function numberInput(input) {
     html += `>`;
     return html;
 }
-const helpers = {button, selectDetailed, selectMultiple, contentP, textInput, labelP, numberInput};
+const helpers = {
+    'cat-button': button,
+    'cat-selectDetailed': selectDetailed,
+    'cat-selectMultiple': selectMultiple,
+    'cat-contentP': contentP,
+    'cat-textInput': textInput,
+    'cat-labelP': labelP,
+    'cat-numberInput': numberInput
+};
 function onClick(event) {
     const data = this;
     data.fieldId = event.target.id;
