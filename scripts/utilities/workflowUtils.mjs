@@ -4,6 +4,11 @@ function getActionType(workflow) {
     if (!workflow.activity) return;
     return workflow.activity.getActionType(workflow.attackMode);
 }
+/**
+ * @param {MidiQOL.Workflow} workflow 
+ * @param {'attack'|'meleeAttack'|'rangedAttack'|'weaponAttack'|'spellAttack'|'rangedWeaponAttack'|'meleeWeaponAttack'|'rangedSpellAttack'|'meleeSpellAttack'} type 
+ * @returns {boolean}
+ */
 function isAttackType(workflow, type = 'attack') {
     if (!workflow.activity) return;
     let field;
