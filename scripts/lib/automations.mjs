@@ -101,6 +101,7 @@ class Automation {
         return this.config?.[key]?.default;
     }
 }
+
 export class RegisteredAutomations {
     #automationsSchema = new fields.SchemaField({
         source: new fields.StringField({required: true, nullable: false}),
@@ -118,7 +119,7 @@ export class RegisteredAutomations {
     #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 
     /**
-     * @type {Map<string, Automation[]>}
+     * @type {Map<string, Automation>}
      */
     automations = new Map();
 
@@ -146,6 +147,7 @@ export class RegisteredAutomations {
      */
     getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type, sourceType, excludeSources = []} = {}) {
         const predicate = automation => {
+            if (automation.identifier !== identifier) return false;
             if (rules !== 'all' && automation.rules !== 'all' && automation.rules !== rules) return false;
             if (source !== 'all' && automation.source !== source) return false;
             if (excludeSources.includes(automation.source)) return false;
@@ -154,8 +156,16 @@ export class RegisteredAutomations {
             if (automation.sourceType && automation.sourceType !== sourceType) return false;
             return true;
         };
-        const list = this.automations.get(identifier) ?? [];
-        return multiple ? list.filter(predicate) : list.find(predicate);
+        if (multiple) {
+            const results = [];
+            for (const automation of this.automations.values()) {
+                if (predicate(automation)) results.push(automation);
+            }
+            return results;
+        }
+        for (const automation of this.automations.values()) {
+            if (predicate(automation)) return automation;
+        }
     }
 
     /**
@@ -176,9 +186,7 @@ export class RegisteredAutomations {
             type: data.type,
             sourceType: data.sourceType
         });
-        const list = this.automations.get(data.identifier);
-        if (list) list.push(automation);
-        else this.automations.set(data.identifier, [automation]);
+        this.automations.set(data.uuid, automation);
         this.sources.add(data.source);
         Logging.addEntry('DEBUG', 'Automation Registered: ' + data.identifier + ' from ' + data.source + ' with version ' + data.version);
         return true;
@@ -230,7 +238,6 @@ export class RegisteredAutomations {
         source ??= pack.metadata.packageName;
         const documentType = pack.metadata.type;
         Logging.group('Automation Compendium Registered: ' + pack.metadata.label + ' (' + pack.metadata.packageName + ')');
-        //Logging.addEntry('DEBUG', 'Automation Compendium Registered: ' + pack.metadata.label + ' from ' + pack.metadata.packageName);
         const results = index.map(document => {
             const identifier = documentUtils.getIdentifier(document, {documentType});
             const rule = rules[identifier] ?? documentUtils.getRules(document, {documentType});
@@ -315,37 +322,29 @@ export class RegisteredAutomations {
     }
 
     unregisterAutomationsBySource(source) {
-        let i = 0;
-        for (const [identifier, list] of this.automations.entries()) {
-            const filtered = list.filter(a => a.source !== source);
-            if (filtered.length === list.length) continue;
-            i += list.length - filtered.length;
-            if (!filtered.length) this.automations.delete(identifier);
-            else this.automations.set(identifier, filtered);
+        const initialSize = this.automations.size;
+        for (const [uuid, automation] of this.automations.entries()) {
+            if (automation.source === source) this.automations.delete(uuid);
         }
-        if (i === 0) return;
-        this.sources.delete(source);
-        Logging.addEntry('DEBUG', 'Unregistered all ' + i + ' automations from source: ' + source);
+        if (this.automations.size !== initialSize) {
+            this.sources.delete(source);
+            Logging.addEntry('DEBUG', 'Unregistered all automations from source: ' + source);
+        }
     }
-
     unregisterAutomation(source, identifier, rules) {
-        const list = this.automations.get(identifier);
-        if (!list?.length) return;
-        const filtered = list.filter(a => !(a.source === source && a.rules === rules));
-        if (filtered.length === list.length) return;
-        if (!filtered.length) this.automations.delete(identifier);
-        else this.automations.set(identifier, filtered);
-        Logging.addEntry('DEBUG', 'Unregistered automation: ' + identifier + ' from ' + source + ' (' + rules + ')');
+        const initialSize = this.automations.size;
+        for (const [uuid, automation] of this.automations.entries()) {
+            if (automation.source === source && automation.identifier === identifier && automation.rules === rules) {
+                this.automations.delete(uuid);
+            }
+        }
+        if (this.automations.size !== initialSize) {
+            Logging.addEntry('DEBUG', 'Unregistered automation: ' + identifier + ' from ' + source + ' (' + rules + ')');
+        }
     }
-
     unregisterUuid(uuid) {
-        for (const [identifier, list] of this.automations.entries()) {
-            const index = list.findIndex(a => a.uuid === uuid);
-            if (index === -1) continue;
-            list.splice(index, 1);
-            if (!list.length) this.automations.delete(identifier);
+        if (this.automations.delete(uuid)) {
             Logging.addEntry('DEBUG', 'Unregistered automation with uuid: ' + uuid);
-            break;
         }
     }
 }
