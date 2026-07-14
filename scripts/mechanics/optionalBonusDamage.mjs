@@ -1,5 +1,5 @@
 import {constants, Events} from '../lib/_module.mjs';
-export async function bonusDamage(workflow) {
+export async function optionalBonusDamage(workflow) {
     const optionalBonusDamage = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
     const contextualBonusDamage = (await new Events.WorkflowEvent(constants.workflowPasses.contextualBonusDamage, workflow).run({multiResult: true})).filter(i => i.document);
     if (!optionalBonusDamage.length) return;
