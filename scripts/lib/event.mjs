@@ -389,7 +389,7 @@ class BaseWorkflowEvent extends CatEvent {
 }
 class WorkflowEvent extends BaseWorkflowEvent {
     constructor(pass, workflow) {
-        super(pass);
+        super(pass, workflow);
         this.workflow = workflow;
         this.activity = workflow.activity;
         this.item = workflow.item;

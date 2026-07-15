@@ -180,6 +180,10 @@ function setActivity(workflow, activityData) {
     workflow.item = workflow.item.clone({['system.activities.' + workflow.activity.id]: activityData}, {keepId: true});
     workflow.activity = workflow.item.system.activities.get(workflow.activity.id);
 }
+async function bonusAttack(workflow, formula) {
+    let roll = await rollUtils.addToRoll(workflow.attackRoll, formula, {rollData: workflow.activity.getRollData()});
+    await workflow.setAttackRoll(roll);
+}
 export default {
     getActionType,
     isAttackType,
@@ -195,5 +199,6 @@ export default {
     bonusDamage,
     getDamageTypes,
     getCastLevel,
-    setActivity
+    setActivity,
+    bonusAttack
 };
