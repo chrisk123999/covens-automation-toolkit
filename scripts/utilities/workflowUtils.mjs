@@ -184,6 +184,17 @@ async function bonusAttack(workflow, formula) {
     let roll = await rollUtils.addToRoll(workflow.attackRoll, formula, {rollData: workflow.activity.getRollData()});
     await workflow.setAttackRoll(roll);
 }
+function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flavor, itemCardId = 'new', sourceItem} = {}) {
+    let itemData = {};
+    if (sourceItem) {
+        itemData = {
+            name: sourceItem.name,
+            img: sourceItem.img,
+            type: sourceItem.type
+        };
+    }
+    return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, targets.map(t => t.object), damageRoll, {flavor, itemCardId, itemData});
+}
 export default {
     getActionType,
     isAttackType,
@@ -200,5 +211,6 @@ export default {
     getDamageTypes,
     getCastLevel,
     setActivity,
-    bonusAttack
+    bonusAttack,
+    applyWorkflowDamage
 };
