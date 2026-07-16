@@ -325,11 +325,10 @@ class CatEvent {
     }
 }
 class BaseWorkflowEvent extends CatEvent {
-    constructor(pass, workflow) {
+    constructor(pass) {
         super(pass);
         this.name = 'Workflow';
         this.trigger = Triggers.RollTrigger;
-        if (workflow?.targets) this.targets = workflow.targets.map(token => token.document);
     }
     get unsortedTriggers() {
         let triggers = [];
@@ -389,10 +388,11 @@ class BaseWorkflowEvent extends CatEvent {
 }
 class WorkflowEvent extends BaseWorkflowEvent {
     constructor(pass, workflow) {
-        super(pass, workflow);
+        super(pass);
         this.workflow = workflow;
         this.activity = workflow.activity;
         this.item = workflow.item;
+        this.targets = workflow.targets.map(token => token.document);
         this.setContext(workflow.actor, {token: workflow.token?.document});
         this.castData = workflow.castData;
     }

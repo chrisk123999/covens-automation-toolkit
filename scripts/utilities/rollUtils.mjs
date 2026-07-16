@@ -73,7 +73,7 @@ async function damageRoll(formula, document, {critOptions: {bonusDamage, bonusDi
     }).evaluate({maximize, minimize});
 }
 async function addToRoll(roll, formula, {rollData} = {}) {
-    const bonusRoll = await new roll.constructor(String(formula), rollData).evaluate();
+    const bonusRoll = await new Roll(String(formula), rollData).evaluate();
     const newRoll = MidiQOL.addRollTo(roll, bonusRoll);
     newRoll.data = roll.data;
     return newRoll;
