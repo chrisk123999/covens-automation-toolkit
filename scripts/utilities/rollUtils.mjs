@@ -67,7 +67,7 @@ function getCriticalFormula(formula, document, {bonusDamage, bonusDice, multipli
  * @returns {Promise<dnd5e.dice.DamageRoll>}
  * */
 async function damageRoll(formula, document, {critOptions: {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}, flavor, isCritical, properties, type} = {}, {maximize, minimize} = {}) {
-    return await new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {
+    return await new CONFIG.Dice.DamageRoll(String(formula), document.getRollData(), {
         critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical},
         flavor, isCritical, properties, type
     }).evaluate({maximize, minimize});
