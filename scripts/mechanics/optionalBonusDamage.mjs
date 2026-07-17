@@ -3,37 +3,58 @@ import {dialogUtils, workflowUtils} from '../utilities/_module.mjs';
 import manualRolls from '../handlers/manualRolls.mjs';
 
 export async function optionalBonusDamage(workflow) {
-    const bonuses = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
+    const optional = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
+    const contextual = (await new Events.WorkflowEvent(constants.workflowPasses.contextualBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document).map(b => ({...b, contextual: true}));
+    const bonuses = [...optional, ...contextual];
     if (!bonuses.length) return;
-    const key = doc => doc.id ?? doc._id;
-    const byId = new Map(bonuses.map(b => [key(b.document), b]));
+    const keys = bonuses.map((b, i) => 'b' + i);
+    const byId = new Map(bonuses.map((b, i) => [keys[i], b]));
     const targets = [...workflow.targets].map(token => token.document);
     const multiTarget = targets.length > 1;
     const isPerTarget = bonus => bonus.targets === 'one';
+    const locked = new Set(keys.filter(k => byId.get(k).contextual));
     const selects = {};
     if (multiTarget) {
         const choices = Object.fromEntries(targets.map(t => [t.uuid, t.name]));
-        for (const bonus of bonuses) {
-            if (isPerTarget(bonus)) selects[key(bonus.document)] = {choices, value: targets[0].uuid};
-        }
+        bonuses.forEach((bonus, i) => {
+            if (isPerTarget(bonus)) selects[keys[i]] = {choices, value: targets[0].uuid};
+        });
     }
     const scopeOf = (id, selections) => isPerTarget(byId.get(id)) ? (selections[id] ?? targets[0]?.uuid) : 'all';
-    const applicableRolls = (id, checked, selections) => {
+    const passesWith = (id, active, selections) => {
+        const bonus = byId.get(id);
+        if (!bonus?.predicate) return true;
         const scope = scopeOf(id, selections);
-        const shared = checked.filter(i => i !== id).filter(i => {
+        const rolls = [...active].filter(i => i !== id).filter(i => {
             const other = scopeOf(i, selections);
             return other === 'all' || scope === 'all' || other === scope;
-        });
-        return [...workflow.damageRolls, ...shared.flatMap(i => byId.get(i)?.rolls ?? [])];
+        }).flatMap(i => byId.get(i)?.rolls ?? []);
+        return bonus.predicate(workflow, [...workflow.damageRolls, ...rolls]);
     };
-    const validate = (checked, selections) => checked.filter(id => {
-        const bonus = byId.get(id);
-        return bonus?.predicate && !bonus.predicate(workflow, applicableRolls(id, checked, selections));
-    });
-    const tags = Object.fromEntries(bonuses.map(b => [key(b.document), (b.rolls ?? []).map(r => r.formula).join(' + ')]).filter(([, formula]) => formula));
-    const selection = await dialogUtils.selectDocumentDialog('CAT.OptionalBonusDamage.Title', 'CAT.OptionalBonusDamage.Context', bonuses.map(b => b.document), {max: null, checkbox: true, displayTooltips: true, sort: 'alphabetical', showUses: true, validate, tags, selects});
-    if (!selection) return;
-    const chosen = selection.filter(i => i.amount).map(i => ({bonus: byId.get(key(i.document)), target: targets.find(t => t.uuid === i.select) ?? targets[0]})).filter(i => i.bonus);
+    const contextualIds = [...locked];
+    const resolveActive = (checkedOptional, selections) => {
+        const active = new Set([...checkedOptional, ...contextualIds]);
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const id of [...active]) if (!passesWith(id, active, selections)) { active.delete(id); changed = true; }
+        }
+        return active;
+    };
+    const validate = (checked, selections) => [...new Set([...checked, ...contextualIds])].filter(id => !passesWith(id, new Set([...checked, ...contextualIds]), selections));
+    const tags = Object.fromEntries(bonuses.map((b, i) => [keys[i], (b.rolls ?? []).map(r => r.formula).join(' + ')]).filter(([, formula]) => formula));
+    const labels = Object.fromEntries(bonuses.map((b, i) => [keys[i], b.macroName]).filter(([, name]) => name));
+    const needsDialog = optional.length > 0 || (multiTarget && contextual.some(isPerTarget));
+    let checkedOptional = [];
+    const selections = {};
+    if (needsDialog) {
+        const selection = await dialogUtils.selectDocumentDialog('CAT.OptionalBonusDamage.Title', 'CAT.OptionalBonusDamage.Context', bonuses.map(b => b.document), {max: null, checkbox: true, displayTooltips: true, sort: 'alphabetical', showUses: true, validate, tags, selects, locked, keys, labels});
+        if (selection) {
+            selection.forEach(i => { if (i.select) selections[i.key] = i.select; });
+            checkedOptional = selection.filter(i => i.amount && !byId.get(i.key)?.contextual).map(i => i.key);
+        }
+    }
+    const chosen = [...resolveActive(checkedOptional, selections)].map(id => ({bonus: byId.get(id), target: targets.find(t => t.uuid === selections[id]) ?? targets[0]})).filter(i => i.bonus);
     if (!chosen.length) return;
     const wholeRoll = chosen.filter(i => !isPerTarget(i.bonus));
     const perTarget = chosen.filter(i => isPerTarget(i.bonus));

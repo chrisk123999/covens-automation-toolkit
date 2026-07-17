@@ -30,7 +30,7 @@
                 <div class="cat-budget-counter{{#if (gte currentNum totalMax)}} at-max{{/if}}">{{currentNum}}/{{totalMax}}</div>
             {{/if}}
             {{#each options}}
-                <div class="form-group inline">
+                <div class="form-group inline{{#if locked}} cat-locked{{/if}}">
                     <label for="i{{@../index}}j{{@index}}">
                         {{#if image}}<img class="label-image" src="{{image}}" data-token-id="{{name}}">{{/if}}
                         <span class="cat-label-text">{{{localize label}}}</span>
@@ -39,7 +39,7 @@
                         {{#if select}}
                             <select name="sel-{{name}}" id="i{{@../index}}j{{@index}}s">{{selectOptions select.choices selected=select.value}}</select>
                         {{/if}}
-                        <input type="checkbox" {{#if (gte ../currentNum ../totalMax)}}{{#unless isChecked}}disabled{{/unless}}{{/if}} id="i{{@../index}}j{{@index}}" name="{{name}}" {{#if isChecked}}checked{{/if}}>
+                        <input type="checkbox" {{#if locked}}disabled{{else if (gte ../currentNum ../totalMax)}}{{#unless isChecked}}disabled{{/unless}}{{/if}} id="i{{@../index}}j{{@index}}" name="{{name}}" {{#if isChecked}}checked{{/if}}>
                     </div>
                     {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                 </div>

@@ -252,6 +252,7 @@ class CatEvent {
                 }
             }
             if (result) {
+                if (trigger.macroName && typeof result === 'object' && Object.isExtensible(result)) result.macroName ??= trigger.macroName;
                 if (!this.multiResult) {
                     return result;
                 } else {
@@ -281,6 +282,7 @@ class CatEvent {
                 }
             }
             if (result) {
+                if (trigger.macroName && typeof result === 'object' && Object.isExtensible(result)) result.macroName ??= trigger.macroName;
                 if (!this.multiResult) {
                     return result;
                 } else {

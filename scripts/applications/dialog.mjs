@@ -103,7 +103,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {DialogApp} */
     static async #formHandler(event, form, formData) {
-        this.#resolveResults(foundry.utils.expandObject(formData.object));
+        const results = foundry.utils.expandObject(formData.object);
+        this.#context?.inputs?.forEach(inp => inp.options?.forEach(o => {
+            if (o.locked && o.isChecked && !(o.name in results)) results[o.name] = true;
+        }));
+        this.#resolveResults(results);
     }
 
     /** @this {DialogApp} */
@@ -239,7 +243,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isChecked: f.options?.isChecked ?? false,
             image: f.options?.image,
             hint: f.options?.hint,
-            select: f.options?.select
+            select: f.options?.select,
+            locked: f.options?.locked ?? false
         }));
         return {
             isCheckbox: true,
@@ -400,7 +405,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
-        if (!this.#context) this.#formatInputs();
+        if (!this.#context) {
+            this.#formatInputs();
+            if (this.validate) this.#applyValidation(this.#context);
+        }
         const detached = options.window?.attach ? false : options.window?.detach ? true : !!this.window.windowId;
         return {...context, ...this.#context, title: this.windowTitle, detached};
     }
@@ -428,7 +436,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             }));
             const invalid = this.validate(checked, selections) ?? [];
             ctx.inputs.forEach(inp => inp.options?.forEach(o => {
-                if (invalid.includes(o.name)) o.isChecked = false;
+                if (o.locked) o.isChecked = !invalid.includes(o.name);
+                else if (invalid.includes(o.name)) o.isChecked = false;
             }));
         }
         ctx.inputs.forEach(inp => {

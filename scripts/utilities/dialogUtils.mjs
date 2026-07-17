@@ -63,10 +63,16 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
     let result = await runDialog(userId, title, content, inputs, buttons);
     return result?.[input.name];
 }
-async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}, validate = null, tags = {}, selects = {}} = {}) {
-    if (sort === 'alphabetical') documents = [...documents].sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
-    else if (sort === 'cr') documents = [...documents].sort((a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0));
-    else if (sort === 'level') documents = [...documents].sort((a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
+async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}, validate = null, tags = {}, selects = {}, locked = new Set(), keys = null, labels = {}} = {}) {
+    let sortCmp = sort === 'alphabetical' ? (a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
+        : sort === 'cr' ? (a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0)
+        : sort === 'level' ? (a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
+        : null;
+    if (sortCmp) {
+        let order = documents.map((d, i) => i).sort((a, b) => sortCmp(documents[a], documents[b]));
+        documents = order.map(i => documents[i]);
+        if (keys) keys = order.map(i => keys[i]);
+    }
     let isCompendiumDoc = !documents[0]?.id;
     let docKey = d => isCompendiumDoc ? (d.uuid ?? d.actor?.uuid) : (d.id ?? d._id ?? d.actor?.id);
     let resolveDoc = async key => isCompendiumDoc ? await fromUuid(key) : documents.find(d => docKey(d) === key);
@@ -75,15 +81,15 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
         let s = ['th', 'st', 'nd', 'rd'], v = n % 100;
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
-    let buildEntry = doc => {
+    let buildEntry = (doc, id) => {
         let tagList = [];
         if (showCR) tagList.push(_loc('DND5E.CRLabel', {cr: dnd5e.utils.formatCR(doc.system?.details?.cr ?? 0, {narrow: false})}));
         if (showSpellLevel) tagList.push(ordinal(doc.system?.level ?? 0));
         let uses = doc.system?.uses ?? doc.uses;
         if (showUses && uses?.max) tagList.push(`${uses.value ?? '?'}/${uses.max}`);
-        let extraTag = tags[doc.id ?? doc._id ?? doc.uuid];
+        let extraTag = tags[id ?? doc.id ?? doc._id ?? doc.uuid];
         if (extraTag) tagList.push(extraTag);
-        let label = doc.name + (doc.system?.linkedActivity ? ' (' + doc.system.linkedActivity.item.name + ')' : '');
+        let label = (labels?.[id] ?? doc.name) + (doc.system?.linkedActivity ? ' (' + doc.system.linkedActivity.item.name + ')' : '');
         return {label, tag: tagList.join(' · ')};
     };
     let buildLabel = doc => {
@@ -144,30 +150,36 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
             amount: Number(amount)
         }));
     }
-    let inputFields = documents.map(d => {
-        let {label, tag} = buildEntry(d);
+    let idOf = i => keys ? keys[i] : multiKey(documents[i]);
+    let inputFields = documents.map((d, i) => {
+        let id = idOf(i);
+        let {label, tag} = buildEntry(d, id);
+        let isLocked = locked.has(id);
         return {
             label: checkbox ? label : buildLabel(d),
-            name: multiKey(d),
+            name: id,
             options: {
                 image: d.img,
                 tooltip: displayTooltips ? d.system?.description?.value?.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
                 hint: checkbox ? tag : undefined,
-                select: checkbox ? selects?.[multiKey(d)] : undefined,
+                select: checkbox ? selects?.[id] : undefined,
+                locked: isLocked,
+                isChecked: isLocked,
                 minAmount: 0,
-                maxAmount: maxes?.[multiKey(d)] ?? max,
-                weight: weights?.[multiKey(d)] ?? 1
+                maxAmount: maxes?.[id] ?? max,
+                weight: weights?.[id] ?? 1
             }
         };
     });
+    let keyToDoc = new Map(documents.map((d, i) => [idOf(i), d]));
     inputs = [[checkbox ? 'checkbox' : 'selectAmount', inputFields, {displayAsRows: true, totalMax: max}]];
     result = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto', validate});
     if (!result?.buttons) return false;
     delete result.buttons;
     return Object.entries(result).map(([key, value]) => {
-        let document = documents.find(d => multiKey(d) === key);
+        let document = keyToDoc.get(key);
         if (!document) return null;
-        return {document, amount: Number(value), select: result['sel-' + key]};
+        return {document, key, amount: Number(value), select: result['sel-' + key]};
     }).filter(i => i);
 }
 async function selectSpellSlot(actor, title, content, {maxLevel = 9, minLevel = 0, userId = game.user.id, no = false} = {}) {
