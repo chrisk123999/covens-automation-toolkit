@@ -1,5 +1,6 @@
 <div class="cat-embedded-macros-shell">
     <header class="cat-embedded-macros-header">
+        <i class="fa-solid fa-shield-cat cat-dialog-icon" aria-hidden="true"></i>
         <span class="cat-embedded-macros-title">{{title}}</span>
         <button type="button" class="cat-app-header-button cat-medkit-header-button" data-action="close" data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
             <i class="fas fa-xmark" aria-hidden="true"></i>
@@ -9,7 +10,18 @@
     <div class="cat-embedded-macros-body">
         <div class="standard-form">
             {{#each inputs as |input key|}}
-                {{#if input.combobox}}
+                {{#if input.singleCombobox}}
+                    <div class="form-group">
+                        <label>{{input.label}}</label>
+                        <div class="form-fields">
+                            <cat-combobox name="{{key}}" value="{{input.value}}">
+                                {{#each input.options}}
+                                    <option value="{{value}}"{{#if group}} data-group="{{group}}"{{/if}}{{#if selected}} selected{{/if}}>{{label}}</option>
+                                {{/each}}
+                            </cat-combobox>
+                        </div>
+                    </div>
+                {{else if input.combobox}}
                     <div class="form-group">
                         <label>{{input.label}}</label>
                         <div class="form-fields">

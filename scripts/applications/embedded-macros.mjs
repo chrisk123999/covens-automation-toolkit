@@ -167,8 +167,10 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
             if (this.#macro.event === 'called') {
                 inputs.pass = {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Pass')}), value: this.#macro.pass};
             } else {
-                const passChoices = (map[this.#macro.event] ?? []).reduce((acc, pass) => (acc[pass.value] = pass, acc), {});
-                inputs.pass = {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Pass'), choices: passChoices, blank: true}), value: this.#macro.pass};
+                const passOptions = (map[this.#macro.event] ?? [])
+                    .map(pass => ({value: pass.value, label: pass.label, group: pass.group ?? '', selected: pass.value === this.#macro.pass}))
+                    .sort((a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label));
+                inputs.pass = {singleCombobox: true, label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Pass'), value: this.#macro.pass ?? '', options: passOptions};
             }
             if (this.#macro.pass) {
                 const {required, optional} = getPassFields(this.#documentType, this.#macro.event, this.#macro.pass);
@@ -201,7 +203,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
             if (!getDocumentPasses(this.#documentType, target.value).some(p => p.value === this.#macro.pass)) this.#macro.pass = undefined;
             this.render();
         } else if (name === 'pass') {
-            this.#macro.pass = target.value;
+            this.#macro.pass = (target.querySelector?.('input[type="hidden"]')?.value ?? target.value) || undefined;
             this.render();
         } else {
             this.#macro[name] = target.value;

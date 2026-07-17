@@ -1,34 +1,71 @@
 import {constants, Events} from '../lib/_module.mjs';
+import {dialogUtils, workflowUtils} from '../utilities/_module.mjs';
+import manualRolls from '../handlers/manualRolls.mjs';
+
 export async function optionalBonusDamage(workflow) {
-    const optionalBonusDamage = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    const contextualBonusDamage = (await new Events.WorkflowEvent(constants.workflowPasses.contextualBonusDamage, workflow).run({multiResult: true})).filter(i => i.document);
-    if (!optionalBonusDamage.length) return;
-    /*
-    optionalBonusDamage = {
-        document,
-        predicate,
-        use (function),
-        rolls,
-        targets: 'one' || 'multiple'
+    const bonuses = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
+    if (!bonuses.length) return;
+    const key = doc => doc.id ?? doc._id;
+    const byId = new Map(bonuses.map(b => [key(b.document), b]));
+    const targets = [...workflow.targets].map(token => token.document);
+    const multiTarget = targets.length > 1;
+    const isPerTarget = bonus => bonus.targets === 'one';
+    const selects = {};
+    if (multiTarget) {
+        const choices = Object.fromEntries(targets.map(t => [t.uuid, t.name]));
+        for (const bonus of bonuses) {
+            if (isPerTarget(bonus)) selects[key(bonus.document)] = {choices, value: targets[0].uuid};
+        }
     }
-
-    contextualBonusDamage = {
-        document,
-        predicate,
-        use (function),
-        rolls,
-        targets: 'one' || 'multiple'
+    const scopeOf = (id, selections) => isPerTarget(byId.get(id)) ? (selections[id] ?? targets[0]?.uuid) : 'all';
+    const applicableRolls = (id, checked, selections) => {
+        const scope = scopeOf(id, selections);
+        const shared = checked.filter(i => i !== id).filter(i => {
+            const other = scopeOf(i, selections);
+            return other === 'all' || scope === 'all' || other === scope;
+        });
+        return [...workflow.damageRolls, ...shared.flatMap(i => byId.get(i)?.rolls ?? [])];
+    };
+    const validate = (checked, selections) => checked.filter(id => {
+        const bonus = byId.get(id);
+        return bonus?.predicate && !bonus.predicate(workflow, applicableRolls(id, checked, selections));
+    });
+    const tags = Object.fromEntries(bonuses.map(b => [key(b.document), (b.rolls ?? []).map(r => r.formula).join(' + ')]).filter(([, formula]) => formula));
+    const selection = await dialogUtils.selectDocumentDialog('CAT.OptionalBonusDamage.Title', 'CAT.OptionalBonusDamage.Context', bonuses.map(b => b.document), {max: null, checkbox: true, displayTooltips: true, sort: 'alphabetical', showUses: true, validate, tags, selects});
+    if (!selection) return;
+    const chosen = selection.filter(i => i.amount).map(i => ({bonus: byId.get(key(i.document)), target: targets.find(t => t.uuid === i.select) ?? targets[0]})).filter(i => i.bonus);
+    if (!chosen.length) return;
+    const wholeRoll = chosen.filter(i => !isPerTarget(i.bonus));
+    const perTarget = chosen.filter(i => isPerTarget(i.bonus));
+    const newRolls = wholeRoll.flatMap(i => i.bonus.rolls ?? []);
+    if (newRolls.length) {
+        workflow.damageRolls.push(...newRolls);
+        await workflow.setDamageRolls(workflow.damageRolls);
     }
+    for (const {bonus, target} of wholeRoll) {
+        if (bonus.use) await bonus.use({workflow, rolls: bonus.rolls, target});
+    }
+    const stash = {};
+    const label = _loc('CAT.OptionalBonusDamage.Title');
+    for (const {bonus, target} of perTarget) {
+        if (bonus.rolls?.length && target) {
+            const resolved = await manualRolls.resolveManualRolls(bonus.rolls, workflow.actor, label);
+            (stash[target.uuid] ??= []).push(...resolved);
+        }
+        if (bonus.use) await bonus.use({workflow, rolls: bonus.rolls, target});
+    }
+    if (Object.keys(stash).length) workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', stash);
+}
 
-    Some sort of combined dialog which uses the above information. When a document is checked in the dialog it runs every predicate against the workflow and combined new rolls to see if it's valid. If found to be invalid it is unchecked before the new render.
-    If targets one it should have a target selection per document. In this case the predicate would want to make sure it's only including rolls that apply to that target.
-    Note that if the workflow only has one target, the target selection isn't needed.
-
-    An example is the species feature "Celestial Revelation", which adds radiant damage on hit. The player then also has the "Radiant Soul" feature from Celestial Warlock, which adds extra damage to attacks with radiant or fire damage.
-    Sneak attack and cunning strike may also be possible via this dialog.
-    
-    contextualBonusDamage is for stuff that adds bonus damage but doesn't need to be explicitly checked. For example hex. This will still have a predicate. This should show up in the same dialog to help the player see what damage bonuses they get as they check stuff on and off.
-    Target selection may still be needed for these.
-
-    */
+export async function applyOptionalBonusDamage(workflow) {
+    const stash = workflowUtils.getWorkflowProperty(workflow, 'optionalBonusDamage');
+    if (!stash) return;
+    workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', undefined);
+    for (const [uuid, rolls] of Object.entries(stash)) {
+        const token = fromUuidSync(uuid)?.object;
+        if (!token || !rolls.length) continue;
+        const damageDetail = rolls.map(roll => ({value: roll.total, type: roll.options.type, properties: new Set(roll.options.properties ?? [])}));
+        const totalDamage = damageDetail.reduce((total, d) => total + d.value, 0);
+        await MidiQOL.applyTokenDamage(damageDetail, totalDamage, new Set([token]), workflow.item, workflow.saves, {workflow, superSavers: workflow.superSavers, semiSuperSavers: workflow.semiSuperSavers});
+    }
 }

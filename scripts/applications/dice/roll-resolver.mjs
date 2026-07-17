@@ -436,8 +436,17 @@ export default class CatRollResolver extends RollResolver {
 
     async _onSubmitForm(formConfig, event) {
         this._typedValues = {};
+        this._blankResults = {};
+        const mode = CatRollResolver.#entryMode();
         for (const input of this.element.querySelectorAll('input')) {
-            if (Number.isNaN(input.valueAsNumber) && input.value.trim() !== '') this._typedValues[input.name] = input.value;
+            const blank = input.value.trim() === '';
+            if (blank && mode !== 'perDie') {
+                const term = this.fulfillable.get(input.name)?.term;
+                if (!term) continue;
+                this._blankResults[input.name] = Array.from({length: Math.max(term.number ?? 1, 1)}, () => ({result: term.randomFace(), active: true}));
+            } else if (!blank && Number.isNaN(input.valueAsNumber)) {
+                this._typedValues[input.name] = input.value;
+            }
         }
         return super._onSubmitForm(formConfig, event);
     }
@@ -450,6 +459,10 @@ export default class CatRollResolver extends RollResolver {
         const mode = CatRollResolver.#entryMode();
         for (let [id, value] of Object.entries(formData.object)) {
             const {term} = this.fulfillable.get(id);
+            if (this._blankResults?.[id]) {
+                for (const result of this._blankResults[id]) term.results.push(result);
+                continue;
+            }
             value = this._typedValues?.[id] ?? value;
             if (mode === 'perDie') {
                 const results = Array.isArray(value) ? value : [value];

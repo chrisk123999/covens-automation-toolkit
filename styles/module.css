@@ -96,6 +96,10 @@
     font-size: 1rem;
 }
 
+.cat-dialog-icon {
+    color: var(--cat-text-accent);
+}
+
 .cat-app-header-button {
     display: inline-flex;
     justify-content: center;
@@ -181,11 +185,13 @@
     background: rgb(0 0 0 / 18%);
 }
 
-.cat-dialog-footer button {
+.cat-dialog-footer button,
+.cat-embedded-macros-footer button {
     flex: 1;
 }
 
 .cat-dialog-footer button,
+.cat-embedded-macros-footer button,
 .cat-settings-priority .cat-priority-toggle {
     gap: var(--cat-space-xs);
     display: inline-flex;
@@ -203,6 +209,7 @@
 }
 
 .cat-dialog-footer button:hover,
+.cat-embedded-macros-footer button:hover,
 .cat-settings-priority .cat-priority-toggle:hover {
     border-color: var(--cat-border-focus);
     background: var(--cat-bg-hover);
@@ -543,6 +550,13 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+}
+
+.cat-dialog .form-group > label > .cat-label-text {
+    max-width: 32ch;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .cat-dialog .standard-form.scrollable > .form-group:first-child {
@@ -955,6 +969,21 @@ cat-combobox {
 .cat-combobox-options li.highlighted,
 .cat-combobox-options li:hover {
     background: var(--cat-bg-input);
+}
+
+.cat-combobox-options li.cat-combobox-group {
+    padding: var(--cat-space-xs) var(--cat-space-sm);
+    color: var(--cat-text-muted);
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: default;
+    background: rgb(0 0 0 / 18%);
+}
+
+.cat-combobox-options li.cat-combobox-group:hover {
+    background: rgb(0 0 0 / 18%);
 }
 
 .cat-combobox-options li img {
@@ -1455,12 +1484,7 @@ cat-combobox {
 .cat-medkit .hint,
 .cat-dialog .hint,
 .cat-embedded-macros-body .hint {
-    opacity: 0.85;
-    margin: var(--cat-space-xs) 0 0;
     color: var(--cat-text-muted);
-    font-size: 12px;
-    line-height: 1.35;
-    font-weight: normal;
 }
 
 .cat-medkit button {

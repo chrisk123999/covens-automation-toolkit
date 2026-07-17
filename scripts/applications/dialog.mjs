@@ -23,6 +23,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.content = content;
         this.inputs = inputs;
         this.buttons = buttons;
+        this.validate = config?.validate;
     }
 
     static DEFAULT_OPTIONS = {
@@ -236,7 +237,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             label: f.label,
             name: f.name,
             isChecked: f.options?.isChecked ?? false,
-            image: f.options?.image
+            image: f.options?.image,
+            hint: f.options?.hint,
+            select: f.options?.select
         }));
         return {
             isCheckbox: true,
@@ -415,6 +418,24 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         return clone;
     }
 
+    #applyValidation(ctx) {
+        if (this.validate) {
+            const checked = [];
+            const selections = {};
+            ctx.inputs.forEach(inp => inp.options?.forEach(o => {
+                if (o.isChecked) checked.push(o.name);
+                if (o.select) selections[o.name] = o.select.value;
+            }));
+            const invalid = this.validate(checked, selections) ?? [];
+            ctx.inputs.forEach(inp => inp.options?.forEach(o => {
+                if (invalid.includes(o.name)) o.isChecked = false;
+            }));
+        }
+        ctx.inputs.forEach(inp => {
+            if (inp.isCheckbox) inp.currentNum = inp.options.reduce((acc, c) => c.isChecked ? acc + 1 : acc, 0);
+        });
+    }
+
     async _onChangeForm(formConfig, event) {
         super._onChangeForm(formConfig, event);
         const targetInput = event.target;
@@ -441,7 +462,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         switch (targetInput.type) {
             case 'checkbox': {
                 ctx.inputs[i].options[j].isChecked = targetInput.checked;
-                ctx.inputs[i].currentNum = ctx.inputs[i].options.reduce((acc, c) => c.isChecked ? acc + 1 : acc, 0);
+                this.#applyValidation(ctx);
                 this.render(true);
                 break;
             }
@@ -449,6 +470,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 if (ctx.inputs[i].isSelectAmount) {
                     ctx.inputs[i].options[j].currentAmount = Number(targetInput.value);
                     if (ctx.inputs[i].options[j]?.weight) ctx.inputs[i] = this.#currentMaxAmounts(ctx.inputs[i]);
+                    this.render(true);
+                } else if (ctx.inputs[i].isCheckbox && ctx.inputs[i].options[j]?.select) {
+                    ctx.inputs[i].options[j].select.value = targetInput.value;
+                    this.#applyValidation(ctx);
                     this.render(true);
                 }
                 break;

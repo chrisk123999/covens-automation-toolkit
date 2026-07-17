@@ -63,7 +63,7 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
     let result = await runDialog(userId, title, content, inputs, buttons);
     return result?.[input.name];
 }
-async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}} = {}) {
+async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}, validate = null, tags = {}, selects = {}} = {}) {
     if (sort === 'alphabetical') documents = [...documents].sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     else if (sort === 'cr') documents = [...documents].sort((a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0));
     else if (sort === 'level') documents = [...documents].sort((a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
@@ -76,19 +76,21 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
     let buildEntry = doc => {
-        let tags = [];
-        if (showCR) tags.push(_loc('DND5E.CRLabel', {cr: dnd5e.utils.formatCR(doc.system?.details?.cr ?? 0, {narrow: false})}));
-        if (showSpellLevel) tags.push(ordinal(doc.system?.level ?? 0));
+        let tagList = [];
+        if (showCR) tagList.push(_loc('DND5E.CRLabel', {cr: dnd5e.utils.formatCR(doc.system?.details?.cr ?? 0, {narrow: false})}));
+        if (showSpellLevel) tagList.push(ordinal(doc.system?.level ?? 0));
         let uses = doc.system?.uses ?? doc.uses;
-        if (showUses && uses?.max) tags.push(`${uses.value ?? '?'}/${uses.max}`);
+        if (showUses && uses?.max) tagList.push(`${uses.value ?? '?'}/${uses.max}`);
+        let extraTag = tags[doc.id ?? doc._id ?? doc.uuid];
+        if (extraTag) tagList.push(extraTag);
         let label = doc.name + (doc.system?.linkedActivity ? ' (' + doc.system.linkedActivity.item.name + ')' : '');
-        return {label, tag: tags.join(' · ')};
+        return {label, tag: tagList.join(' · ')};
     };
     let buildLabel = doc => {
         let {label, tag} = buildEntry(doc);
         return tag ? `${label} [${tag}]` : label;
     };
-    let hasTag = showCR || showSpellLevel || showUses;
+    let hasTag = showCR || showSpellLevel || showUses || Object.keys(tags).length > 0;
     let widthCfg = hasTag ? {width: 440} : undefined;
     let inputs, result;
     if (max === 1) {
@@ -108,7 +110,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
             name: docKey(d),
             options: {
                 image: d.img,
-                tooltip: displayTooltips ? d.system.description.value.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
+                tooltip: displayTooltips ? d.system?.description?.value?.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
                 reference: (displayReference && d.reference) ? d.reference : undefined
             }
         }));
@@ -142,25 +144,31 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
             amount: Number(amount)
         }));
     }
-    let inputFields = documents.map(d => ({
-        label: buildLabel(d),
-        name: multiKey(d),
-        options: {
-            image: d.img,
-            tooltip: displayTooltips ? d.system.description.value.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
-            minAmount: 0,
-            maxAmount: maxes?.[multiKey(d)] ?? max,
-            weight: weights?.[multiKey(d)] ?? 1
-        }
-    }));
+    let inputFields = documents.map(d => {
+        let {label, tag} = buildEntry(d);
+        return {
+            label: checkbox ? label : buildLabel(d),
+            name: multiKey(d),
+            options: {
+                image: d.img,
+                tooltip: displayTooltips ? d.system?.description?.value?.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
+                hint: checkbox ? tag : undefined,
+                select: checkbox ? selects?.[multiKey(d)] : undefined,
+                minAmount: 0,
+                maxAmount: maxes?.[multiKey(d)] ?? max,
+                weight: weights?.[multiKey(d)] ?? 1
+            }
+        };
+    });
     inputs = [[checkbox ? 'checkbox' : 'selectAmount', inputFields, {displayAsRows: true, totalMax: max}]];
-    result = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto'});
+    result = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto', validate});
     if (!result?.buttons) return false;
     delete result.buttons;
-    return Object.entries(result).map(([key, value]) => ({
-        document: documents.find(d => multiKey(d) === key),
-        amount: Number(value)
-    }));
+    return Object.entries(result).map(([key, value]) => {
+        let document = documents.find(d => multiKey(d) === key);
+        if (!document) return null;
+        return {document, amount: Number(value), select: result['sel-' + key]};
+    }).filter(i => i);
 }
 async function selectSpellSlot(actor, title, content, {maxLevel = 9, minLevel = 0, userId = game.user.id, no = false} = {}) {
     let buttons = Object.entries(actor.system.spells).filter(([k, v]) => {

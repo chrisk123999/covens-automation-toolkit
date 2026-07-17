@@ -850,6 +850,10 @@
     "Smite": {
       "Title": "Smite",
       "Context": "Cast a spell?"
+    },
+    "OptionalBonusDamage": {
+      "Title": "Bonus Damage",
+      "Context": "Apply optional bonus damage?"
     }
   }
 }
