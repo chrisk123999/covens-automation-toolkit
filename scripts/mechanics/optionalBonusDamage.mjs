@@ -43,7 +43,7 @@ export async function optionalBonusDamage(workflow) {
     };
     const validate = (checked, selections) => [...new Set([...checked, ...contextualIds])].filter(id => !passesWith(id, new Set([...checked, ...contextualIds]), selections));
     const tags = Object.fromEntries(bonuses.map((b, i) => [keys[i], (b.rolls ?? []).map(r => r.formula).join(' + ')]).filter(([, formula]) => formula));
-    const labels = Object.fromEntries(bonuses.map((b, i) => [keys[i], b.macroName]).filter(([, name]) => name));
+    const labels = Object.fromEntries(bonuses.map((b, i) => [keys[i], b.name]).filter(([, name]) => name));
     const needsDialog = optional.length > 0 || (multiTarget && contextual.some(isPerTarget));
     let checkedOptional = [];
     const selections = {};
@@ -71,22 +71,16 @@ export async function optionalBonusDamage(workflow) {
     for (const {bonus, target} of perTarget) {
         if (bonus.rolls?.length && target) {
             const resolved = await manualRolls.resolveManualRolls(bonus.rolls, workflow.actor, label);
-            (stash[target.uuid] ??= []).push(...resolved);
+            (stash[target.uuid] ??= []).push(...resolved.map(roll => ({total: roll.total, type: roll.options.type})));
         }
         if (bonus.use) await bonus.use({workflow, rolls: bonus.rolls, target});
     }
     if (Object.keys(stash).length) workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', stash);
 }
 
-export async function applyOptionalBonusDamage(workflow) {
+export function applyOptionalBonusDamage(workflow, token, ditem) {
     const stash = workflowUtils.getWorkflowProperty(workflow, 'optionalBonusDamage');
-    if (!stash) return;
-    workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', undefined);
-    for (const [uuid, rolls] of Object.entries(stash)) {
-        const token = fromUuidSync(uuid)?.object;
-        if (!token || !rolls.length) continue;
-        const damageDetail = rolls.map(roll => ({value: roll.total, type: roll.options.type, properties: new Set(roll.options.properties ?? [])}));
-        const totalDamage = damageDetail.reduce((total, d) => total + d.value, 0);
-        await MidiQOL.applyTokenDamage(damageDetail, totalDamage, new Set([token]), workflow.item, workflow.saves, {workflow, superSavers: workflow.superSavers, semiSuperSavers: workflow.semiSuperSavers});
-    }
+    const bonuses = stash?.[token.document?.uuid ?? token.uuid];
+    if (!bonuses?.length) return;
+    for (const {total, type} of bonuses) workflowUtils.modifyDamageAppliedFlat(ditem, total, {type, multiplier: 'auto'});
 }

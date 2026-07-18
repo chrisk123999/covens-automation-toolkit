@@ -47,6 +47,7 @@ async function utilityRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.utilityRollComplete, workflow).run();
 }
 async function preTargetDamageApplication(token, {workflow, ditem}) {
+    applyOptionalBonusDamage(workflow, token, ditem);
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damage, workflow, token, ditem).run();
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageBonuses, workflow, token, ditem).run();
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageFlatReductions, workflow, token, ditem).run();
@@ -54,7 +55,6 @@ async function preTargetDamageApplication(token, {workflow, ditem}) {
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageComplete, workflow, token, ditem).run();
 }
 async function rollFinished(workflow) {
-    await applyOptionalBonusDamage(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.rollFinished, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
     await effects.specialDuration(workflow);
