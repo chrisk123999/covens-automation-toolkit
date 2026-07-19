@@ -59,7 +59,7 @@ item.flags.cat.alternateAttributes = {
 */
 function rollData({activity, document, item}) {
     const data = document?.getRollData();
-    if (!data) return;
+    if (!data || !data.abilities) return;
     const ability = activity?.ability || item?.abilityMod;
     if (ability) data.mod = data.abilities[ability]?.mod ?? 0;
     return data;
