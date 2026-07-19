@@ -19,7 +19,8 @@ function getSavedCastData(activity) {
     return {
         castLevel: activity.flags.cat?.castData?.castLevel ?? -1,
         baseLevel: activity.flags.cat?.castData?.baseLevel ?? -1,
-        saveDC: getSaveDC(activity)
+        saveDC: getSaveDC(activity),
+        school: activity.flags.cat?.castData?.school
     };
 }
 

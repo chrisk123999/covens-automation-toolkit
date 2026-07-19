@@ -2,7 +2,7 @@ import MedkitApp from './base.mjs';
 const {fields} = foundry.data;
 
 const SPECIAL_DURATION_GROUPS = {
-    Workflow: ['endOfWorkflow', 'forceSave', 'attackMissed', 'damagedByAlly', 'damagedByEnemy', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource'],
+    Workflow: ['endOfWorkflow', 'forceSave', 'attackMissed', 'damagedByAlly', 'damagedByEnemy', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource', 'spellCast'],
     Movement: ['moveFinished', 'zeroSpeed'],
     HitPoints: ['tempHP', 'tempMaxHP']
 };

@@ -26,7 +26,16 @@ async function getDocumentByIdentifier(packId, identifier) {
     if (!found) return;
     return await fromUuid(found.uuid);
 }
+async function getDocumentByName(packId, name) {
+    const pack = game.packs.get(packId);
+    if (!pack) return;
+    const index = await pack.getIndex();
+    const found = index.find(i => i.name === name);
+    if (!found) return;
+    return await fromUuid(found.uuid);
+}
 export default {
     selectFromCompendiumBrowser,
-    getDocumentByIdentifier
+    getDocumentByIdentifier,
+    getDocumentByName
 };

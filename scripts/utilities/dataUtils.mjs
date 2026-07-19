@@ -48,11 +48,12 @@ function setIdentifier(documentData, identifier) {
  * @param {AnimationEntry} [options.deleteAnimation]
  * @param {string[]} [options.specialDuration]
  * @param {string[]} [options.unhideActivities]
+ * @param {boolean} [options.unhideActivitiesFavorite]
  * @param {VaeEntry[]} [options.vae]
  * @param {'2014'|'2024'|'all'} [options.rules]
  * @returns 
  */
-function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities} = {}) {
+function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities, unhideActivitiesFavorite} = {}) {
     if (removeMacros?.length) {
         removeMacros.forEach(macroGroup => {
             if (!macroGroup.macros?.length) return;
@@ -82,6 +83,7 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
     if (specialDuration?.length) genericUtils.setProperty(effectData, 'flags.cat.specialDuration', specialDuration);
     if (vae) genericUtils.setProperty(effectData, 'flags.cat.vae.buttons', vae);
     if (unhideActivities) genericUtils.setProperty(effectData, 'flags.cat.unhideActivities', unhideActivities);
+    if (unhideActivitiesFavorite) genericUtils.setProperty(effectData, 'flags.cat.unhideActivitiesFavorite', unhideActivitiesFavorite);
     if (createAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, config: createAnimationOptions});
     if (deleteAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions});
     return effectData;

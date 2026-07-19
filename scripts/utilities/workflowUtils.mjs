@@ -168,6 +168,27 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
     MidiQOL.modifyDamageBy({damageItem: ditem, value: modificationAmount, multiplier, type});
     ditem.rawDamageDetail.push({value: modificationAmount, type});
 }
+function isSustainedRoll(workflow) {
+    const identifier = workflow.activity?.identifier;
+    if (!identifier) return ['workflowOptions.isOverTime', 'activity.isOverTimeFlag', 'activity.midiProperties.automationOnly'].some(p => genericUtils.getProperty(workflow, p));
+    const spellActivities = itemUtils.getSpellActivities(workflow.item) ?? [];
+    return spellActivities.includes(identifier);
+}
+function setDamageItemDamage(ditem, damageAmount, adjustRaw = true) {
+    const tempDamage = damageAmount > 0 ? Math.min(ditem.oldTempHP ?? 0, damageAmount) : 0;
+    const hpDamage = damageAmount - tempDamage;
+    ditem.totalDamage = damageAmount;
+    ditem.hpDamage = hpDamage;
+    ditem.tempDamage = tempDamage;
+    ditem.newHP = ditem.oldHP - hpDamage;
+    ditem.newTempHP = (ditem.oldTempHP ?? 0) - tempDamage;
+    ditem.damageDetail.forEach(i => i.value = 0);
+    ditem.damageDetail[0].value = damageAmount;
+    if (adjustRaw) {
+        ditem.rawDamageDetail.forEach(i => i.value = 0);
+        ditem.rawDamageDetail[0].value = damageAmount;
+    }
+}
 function setWorkflowProperty(workflow, path, value) {
     genericUtils.setProperty(workflow, 'cat.' + path, value);
 }
@@ -219,6 +240,8 @@ export default {
     syntheticItemDataRoll,
     negateDamageItemDamage,
     modifyDamageAppliedFlat,
+    setDamageItemDamage,
+    isSustainedRoll,
     setWorkflowProperty,
     getWorkflowProperty,
     bonusDamage,

@@ -72,6 +72,9 @@ async function damageRoll(formula, document, {critOptions: {bonusDamage, bonusDi
         flavor, isCritical, properties, type
     }).evaluate({maximize, minimize});
 }
+async function getChangedDamageRoll(origRoll, newType) {
+    return await new CONFIG.Dice.DamageRoll(origRoll.terms.map(i => i.expression + (i.flavor?.length ? '[' + newType + ']' : '')).join(''), origRoll.data, foundry.utils.mergeObject(origRoll.options, {type: newType}, {inplace: false})).evaluate();
+}
 async function addToRoll(roll, formula, {rollData} = {}) {
     const bonusRoll = await new Roll(String(formula), rollData).evaluate();
     const newRoll = MidiQOL.addRollTo(roll, bonusRoll);
@@ -97,6 +100,7 @@ export default {
     getRollsTotal,
     getCriticalFormula,
     addToRoll,
-    hasDuplicateDie,
-    damageRoll
+    damageRoll,
+    getChangedDamageRoll,
+    hasDuplicateDie
 };

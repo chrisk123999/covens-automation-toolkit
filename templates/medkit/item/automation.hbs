@@ -10,7 +10,7 @@
                 <div class="cat-medkit-hero-controls">
                     <select name="heroSourcePick">
                         {{#each hero.sources}}
-                            <option value="{{value}}">{{label}}</option>
+                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
                         {{/each}}
                     </select>
                     <button type="button" class="cat-medkit-hero-cta" data-action="applyAvailable" data-tooltip="{{localize 'CAT.MEDKIT.Hero.Available.CTA'}}" aria-label="{{localize 'CAT.MEDKIT.Hero.Available.CTA'}}">

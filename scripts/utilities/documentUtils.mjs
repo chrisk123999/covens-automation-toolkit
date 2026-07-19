@@ -117,7 +117,7 @@ async function modifyBatch(operations) {
         }));
     }
 }
-function getEffectData(document, id, {duration, concentrationItem, macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities} = {}) {
+function getEffectData(document, id, {duration, concentrationItem, macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities, unhideActivitiesFavorite} = {}) {
     const sourceEffect = document.item ? document.item.effects.get(id) : document.effects.get(id);
     if (!sourceEffect) return;
     const effectData = sourceEffect.toObject();
@@ -125,9 +125,49 @@ function getEffectData(document, id, {duration, concentrationItem, macros, remov
     effectData.origin = !concentrationItem ? sourceEffect.uuid : effectUtils.getConcentrationEffect(document.actor, document.item ?? document)?.uuid;
     if (document.documentName === 'Activity' && !duration) effectData.duration = activityUtils.getEffectDuration(document);  
     if (duration) effectData.duration = duration;
-    return dataUtils.buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities});
+    return dataUtils.buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities, unhideActivitiesFavorite});
+}
+function getBaseEffectData(document, {name, img, origin, identifier, activityUuid, changes = [], duration, ...buildOptions} = {}) {
+    const effectData = {
+        name,
+        img,
+        origin,
+        changes
+    };
+    if (duration) {
+        effectData.duration = duration;
+    } else if (document?.documentName === 'Activity') {
+        effectData.duration = activityUtils.getEffectDuration(document);
+    }
+    if (identifier) dataUtils.setIdentifier(effectData, identifier);
+    if (activityUuid) genericUtils.setProperty(effectData, 'flags.cat.activityUuid', activityUuid);
+    return dataUtils.buildEffectData(effectData, buildOptions);
+}
+function stripDescriptionBlock(html) {
+    if (!html?.includes('cat-description')) return html;
+    const wrapper = globalThis.document.createElement('div');
+    wrapper.innerHTML = html;
+    wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
+    return wrapper.innerHTML;
+}
+async function setDescriptionBlock(item, content) {
+    const current = item.system.description?.value ?? '';
+    const wrapper = globalThis.document.createElement('div');
+    wrapper.innerHTML = current;
+    wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
+    if (content) {
+        const block = globalThis.document.createElement('div');
+        block.className = 'cat-description';
+        block.innerHTML = content;
+        wrapper.append(block);
+    }
+    const updated = wrapper.innerHTML;
+    if (updated === current) return;
+    await update(item, {'system.description.value': updated});
 }
 export default {
+    stripDescriptionBlock,
+    setDescriptionBlock,
     getRules,
     getSource,
     getIdentifier,
@@ -142,5 +182,6 @@ export default {
     getEffectByIdentifier,
     makeDependent,
     modifyBatch,
-    getEffectData
+    getEffectData,
+    getBaseEffectData
 };

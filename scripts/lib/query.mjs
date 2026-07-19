@@ -3,11 +3,8 @@ import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 async function dialog({title, content, inputs, buttons, config}) {
     return await DialogApp.dialog(title, content, inputs, buttons, config);
 }
-async function queuedDialog({title, content, inputs, buttons, config, reason}) {
-    return await dialogQueue.showDialog(async (...args) => {
-        if (reason) ui.notifications.info(reason);
-        return await DialogApp.dialog(...args);
-    }, title, content, inputs, buttons, config);
+async function queuedDialog({title, content, inputs, buttons, config}) {
+    return await dialogQueue.showDialog(async (...args) => await DialogApp.dialog(...args), title, content, inputs, buttons, config);
 }
 async function createEffects({uuid, effectDatas, effectOptions}) {
     const document = await fromUuid(uuid);
