@@ -167,12 +167,6 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
     if (modificationAmount < 0) modificationAmount = Math.max(modificationAmount, -ditem.hpDamage - ditem.tempDamage);
     MidiQOL.modifyDamageBy({damageItem: ditem, value: modificationAmount, multiplier, type});
     ditem.rawDamageDetail.push({value: modificationAmount, type});
-    const actualTotal = ditem.totalDamage + modificationAmount;
-    ditem.totalDamage = actualTotal;
-    const newTempHP = ditem.oldTempHP - actualTotal;
-    ditem.newTempHP = Math.max(newTempHP, 0);
-    ditem.newHP = Math.clamp(ditem.oldHP + Math.min(0, newTempHP), 0, ditem.oldHP);
-    ditem.hpDamage = ditem.oldHP - ditem.newHP;
 }
 function setWorkflowProperty(workflow, path, value) {
     genericUtils.setProperty(workflow, 'cat.' + path, value);
