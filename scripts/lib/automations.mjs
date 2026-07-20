@@ -252,14 +252,14 @@ export class RegisteredAutomations {
                     notes = notes2014[identifier] ?? notesAll[identifier];
                     scales = scales2014[identifier] ?? scalesAll[identifier];
                     type = types2014[identifier] ?? typesAll[identifier];
-                    version = versions2014[identifier] ?? versionsAll[identifier] ?? documentUtils.getVersion(document) ?? '0';
+                    version = versions2014[identifier] ?? documentUtils.getVersion(document) ?? '0';
                     break;
                 case '2024':
                     config = configs2024[identifier] ?? configsAll[identifier];
                     notes = notes2024[identifier] ?? notesAll[identifier];
                     scales = scales2024[identifier] ?? scalesAll[identifier];
                     type = types2024[identifier] ?? typesAll[identifier];
-                    version = versions2024[identifier] ?? versionsAll[identifier] ?? documentUtils.getVersion(document) ?? '0';
+                    version = versions2024[identifier] ?? documentUtils.getVersion(document) ?? '0';
                     break;
                 default:
                     config = configsAll[identifier];

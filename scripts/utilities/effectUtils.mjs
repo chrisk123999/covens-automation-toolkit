@@ -2,7 +2,7 @@ import {dataUtils, queryUtils} from './_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
-async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities, unhideActivitiesFavorite} = {}) {
+async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities} = {}) {
     const data = effectDatas.map(e => {
         const targetIdentifier = e.flags?.cat?.identifier ?? e.name?.slugify();
         let thisMacros = [];
@@ -13,7 +13,7 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
                 thisMacros.push({type: macroGroup.type, macros: applicableMacros});
             });
         }
-        return dataUtils.buildEffectData(e, {macros: thisMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities, unhideActivitiesFavorite});
+        return dataUtils.buildEffectData(e, {macros: thisMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities});
     });
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;

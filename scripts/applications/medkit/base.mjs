@@ -772,7 +772,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 const updateData = sourceData?.toObject?.() ?? {};
                 genericUtils.setProperty(updateData, 'flags.cat', _del);
                 const currentDescription = genericUtils.getProperty(updateData, 'system.description.value') ?? this.#document.system?.description?.value;
-                if (currentDescription) genericUtils.setProperty(updateData, 'system.description.value', documentUtils.stripDescriptionBlock(currentDescription));
+                if (currentDescription) genericUtils.setProperty(updateData, 'system.description.value', itemUtils.stripDescriptionBlock(currentDescription));
                 await documentUtils.update(this.#document, updateData, {diff: false});
             } else {
                 await automationUtils.updateItem(this.#document, {source: this.#selectedSource});

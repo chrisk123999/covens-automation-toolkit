@@ -157,13 +157,6 @@ async function specialDuration(workflow) {
                     remove = true;
                     break outerLoop;
                 }
-                case 'spellCast': {
-                    if (workflow.item?.type !== 'spell') break;
-                    const origin = await effectUtils.getOriginActivity(effect);
-                    if (origin?.uuid === workflow.activity?.uuid) break;
-                    remove = true;
-                    break outerLoop;
-                }
             }
         }
         if (remove) await documentUtils.deleteDocument(effect);
@@ -246,14 +239,14 @@ async function unhideActivities(effect) {
     if (!identifiers?.length) return;
     const originActivity = await effectUtils.getOriginActivity(effect);
     if (!originActivity) return;
-    await itemUtils.unhideActivities(originActivity.item, identifiers, {favorite: !!effect.flags.cat?.unhideActivitiesFavorite});
+    await itemUtils.unhideActivities(originActivity.item, identifiers);
 }
 async function rehideActivities(effect) {
     const identifiers = effect.flags.cat?.unhideActivities;
     if (!identifiers?.length) return;
     const originActivity = await effectUtils.getOriginActivity(effect);
     if (!originActivity) return;
-    await itemUtils.rehideActivities(originActivity.item, identifiers, {favorite: !!effect.flags.cat?.unhideActivitiesFavorite});
+    await itemUtils.rehideActivities(originActivity.item, identifiers);
 }
 export default {
     addConditions,

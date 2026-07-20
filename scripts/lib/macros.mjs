@@ -24,8 +24,7 @@ export class RegisteredMacros {
     }
     getFnMacros(source, rules, identifier, type, pass) {
         const key = this.#getMacroKey(source, identifier, rules);
-        const allKey = this.#getMacroKey(source, identifier, 'all');
-        const fnMacro = this.overwriteMacros.get(key) ?? this.fnMacros.get(key) ?? this.overwriteMacros.get(allKey) ?? this.fnMacros.get(allKey);
+        const fnMacro = this.overwriteMacros.get(key) ?? this.fnMacros.get(key);
         if (!fnMacro) return;
         if (!fnMacro.macros[type]?.length) return;
         const macros = fnMacro.macros[type].filter(i => i.pass === pass);

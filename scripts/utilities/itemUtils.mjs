@@ -21,9 +21,6 @@ function getSavedCastData(item) {
         school: item.flags.cat?.castData?.school
     };
 }
-function getSpellActivities(item) {
-    return item.flags.cat?.spellActivities;
-}
 function getActivityByIdentifier(item, identifier) {
     return item.system.activities.find(activity => activity.identifier === identifier);
 }
@@ -53,29 +50,48 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
     });
     return await effectUtils.createEffects(item, [effectData], {effectOptions, forceGM});
 }
-async function setActivitiesHidden(item, identifiers, hidden, {favorite = false} = {}) {
+async function unhideActivities(item, identifiers) {
     const uuid = item.uuid;
     const currentPromise = activityVisibilityLocks.get(uuid) ?? Promise.resolve();
     const nextPromise = (async () => {
         await currentPromise.catch(() => {});
-        const updates = {};
-        const activities = [];
+        let effect = documentUtils.getEffectByIdentifier(item, 'catHiddenActivities');
+        const changes = [];
         identifiers.forEach(identifier => {
             const activity = getActivityByIdentifier(item, identifier);
-            if (!activity) return;
-            updates['system.activities.' + activity.id + '.flags.cat.hidden'] = hidden;
-            activities.push(activity);
-        });
-        if (!activities.length) return;
-        const result = await documentUtils.update(item, updates);
-        if (favorite && item.actor) {
-            for (const activity of activities) {
-                const favoriteId = foundry.utils.buildRelativeUuid(item, item.actor) + '.Activity.' + activity.id;
-                if (!hidden && !item.actor.system.hasFavorite?.(favoriteId)) await item.actor.system.addFavorite?.({type: 'activity', id: favoriteId});
-                else if (hidden && item.actor.system.hasFavorite?.(favoriteId)) await item.actor.system.removeFavorite?.(favoriteId);
+            if (activity) {
+                changes.push({
+                    key: 'system.activities.' + activity.id + '.flags.cat.hidden',
+                    type: 'override',
+                    value: false
+                });
             }
+        });
+        if (!changes.length) return;
+        if (effect) {
+            const currentChanges = effect.toObject().system.changes;
+            let needsUpdate = false;
+            changes.forEach(newChange => {
+                const exists = currentChanges.some(c => c.key === newChange.key);
+                if (!exists) {
+                    currentChanges.push(newChange);
+                    needsUpdate = true;
+                }
+            });
+            if (needsUpdate) await documentUtils.update(effect, {'system.changes': currentChanges});
+        } else {
+            const effectData = {
+                name: 'Unhidden Activities',
+                img: item.img,
+                origin: item.actor.uuid,
+                system: {
+                    changes
+                }
+            };
+            genericUtils.setProperty(effectData, 'flags.cat.identifier', 'catHiddenActivities');
+            effect = (await enchantItem(item, effectData))?.[0];
         }
-        return result;
+        return effect;
     })();
     activityVisibilityLocks.set(uuid, nextPromise);
     try {
@@ -84,11 +100,40 @@ async function setActivitiesHidden(item, identifiers, hidden, {favorite = false}
         if (activityVisibilityLocks.get(uuid) === nextPromise) activityVisibilityLocks.delete(uuid);
     }
 }
-async function unhideActivities(item, identifiers, {favorite = false} = {}) {
-    return await setActivitiesHidden(item, identifiers, false, {favorite});
-}
-async function rehideActivities(item, identifiers = [], {favorite = false} = {}) {
-    return await setActivitiesHidden(item, identifiers, true, {favorite});
+async function rehideActivities(item, identifiers = [], {all = false} = {}) {
+    const uuid = item.uuid;
+    const currentPromise = activityVisibilityLocks.get(uuid) ?? Promise.resolve();
+    const nextPromise = (async () => {
+        await currentPromise.catch(() => {});
+        const effect = documentUtils.getEffectByIdentifier(item, 'catHiddenActivities');
+        if (!effect) return;
+        if (all) {
+            await documentUtils.deleteDocument(effect);
+            return;
+        }
+        if (!identifiers.length) return effect;
+        const keysToRemove = [];
+        identifiers.forEach(identifier => {
+            const activity = getActivityByIdentifier(item, identifier);
+            if (activity) keysToRemove.push('system.activities.' + activity.id + '.flags.cat.hidden');
+        });
+        if (!keysToRemove.length) return effect;
+        const currentChanges = effect.toObject().system.changes;
+        const remainingChanges = currentChanges.filter(c => !keysToRemove.includes(c.key));
+        if (remainingChanges.length === currentChanges.length) return effect;
+        if (!remainingChanges.length) {
+            await documentUtils.deleteDocument(effect);
+            return;
+        }
+        await documentUtils.update(effect, {'system.changes': remainingChanges});
+        return effect;
+    })();
+    activityVisibilityLocks.set(uuid, nextPromise);
+    try {
+        return await nextPromise;
+    } finally {
+        if (activityVisibilityLocks.get(uuid) === nextPromise) activityVisibilityLocks.delete(uuid);
+    }
 }
 function getSourceClassIdentifier(item, {subclass = false} = {}) {
     if (!item?.actor?.classes) return;
@@ -120,6 +165,28 @@ function getItemDamageTypes(item) {
     const flavorTypes = new Set(activities.flatMap(activity => activity.damage.parts.flatMap(part => new Roll(part.formula).terms.map(term => term.flavor).filter(flavor => flavor))));
     const declaredTypes = new Set(activities.flatMap(activity => activity.damage.parts.flatMap(part => Array.from(part.types))));
     return flavorTypes.union(declaredTypes);
+}
+function stripDescriptionBlock(html) {
+    if (!html?.includes('cat-description')) return html;
+    const wrapper = globalThis.document.createElement('div');
+    wrapper.innerHTML = html;
+    wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
+    return wrapper.innerHTML;
+}
+async function setDescriptionBlock(item, content) {
+    const current = item.system.description?.value ?? '';
+    const wrapper = globalThis.document.createElement('div');
+    wrapper.innerHTML = current;
+    wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
+    if (content) {
+        const block = globalThis.document.createElement('div');
+        block.className = 'cat-description';
+        block.innerHTML = content;
+        wrapper.append(block);
+    }
+    const updated = wrapper.innerHTML;
+    if (updated === current) return;
+    await documentUtils.update(item, {'system.description.value': updated});
 }
 function getDependencies(item) {
     const dependencies = new Set();
@@ -165,7 +232,6 @@ export default {
     getSaveDC,
     getSavedCastData,
     getActivityByIdentifier,
-    getSpellActivities,
     syntheticItem,
     enchantItem,
     unhideActivities,
@@ -174,6 +240,8 @@ export default {
     getEquipmentState,
     getSourceClass,
     getItemDamageTypes,
+    stripDescriptionBlock,
+    setDescriptionBlock,
     getDependencies,
     canCast
 };

@@ -169,10 +169,8 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
     ditem.rawDamageDetail.push({value: modificationAmount, type});
 }
 function isSustainedRoll(workflow) {
-    const identifier = workflow.activity?.identifier;
-    if (!identifier) return ['workflowOptions.isOverTime', 'activity.isOverTimeFlag', 'activity.midiProperties.automationOnly'].some(p => genericUtils.getProperty(workflow, p));
-    const spellActivities = itemUtils.getSpellActivities(workflow.item) ?? [];
-    return spellActivities.includes(identifier);
+    if (['workflowOptions.isOverTime', 'activity.isOverTimeFlag', 'activity.midiProperties.automationOnly'].some(p => genericUtils.getProperty(workflow, p))) return true;
+    return workflow.item?.type === 'spell' && (workflow.activity?.consumption?.spellSlot ?? false);
 }
 function setDamageItemDamage(ditem, damageAmount, adjustRaw = true) {
     const tempDamage = damageAmount > 0 ? Math.min(ditem.oldTempHP ?? 0, damageAmount) : 0;

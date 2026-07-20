@@ -463,7 +463,6 @@
           "attackedByAnotherCreature": "Attacked by another creature",
           "hitBySource": "Hit by effect source",
           "attackedBySource": "Attacked by effect source",
-          "spellCast": "Casts a spell",
           "moveFinished": "Movement finished",
           "zeroSpeed": "Speed reduced to zero",
           "tempHP": "Temporary HP lost",

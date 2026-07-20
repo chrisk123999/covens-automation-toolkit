@@ -162,8 +162,8 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
         const fieldValue = genericUtils.getProperty(oldDocumentData, field);
         if (fieldValue) genericUtils.setProperty(documentData, field, fieldValue);
     });
-    const keptDescription = genericUtils.getProperty(documentData, 'system.description.value');
-    if (keptDescription) genericUtils.setProperty(documentData, 'system.description.value', documentUtils.stripDescriptionBlock(keptDescription));
+    const existingDescription = genericUtils.getProperty(documentData, 'system.description.value');
+    if (existingDescription) genericUtils.setProperty(documentData, 'system.description.value', itemUtils.stripDescriptionBlock(existingDescription));
     genericUtils.setProperty(documentData, 'flags.cat.automation.source', automation.source);
     genericUtils.setProperty(documentData, 'flags.cat.automation.version', automation.version);
     const defaultImages = Object.values(CONFIG.DND5E.defaultArtwork.Item);
