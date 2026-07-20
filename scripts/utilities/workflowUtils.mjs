@@ -155,6 +155,25 @@ function negateDamageItemDamage(ditem) {
     ditem.damageDetail.forEach(i => i.value = 0);
     ditem.rawDamageDetail.forEach(i => i.value = 0);
 }
+function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', multiplier = 1} = {}) {
+    if (multiplier === 'auto') {
+        multiplier = ditem.damageDetail[0].active.multiplier;
+        const actor = fromUuidSync(ditem.actorUuid);
+        if (actor) {
+            if (actorUtils.checkTrait(actor, 'di', type)) modificationAmount = 0;
+            if (actorUtils.checkTrait(actor, 'dr', type)) modificationAmount = Math.floor(modificationAmount / 2);
+        }
+    }
+    if (modificationAmount < 0) modificationAmount = Math.max(modificationAmount, -ditem.hpDamage - ditem.tempDamage);
+    MidiQOL.modifyDamageBy({damageItem: ditem, value: modificationAmount, multiplier, type});
+    ditem.rawDamageDetail.push({value: modificationAmount, type});
+    const actualTotal = ditem.totalDamage + modificationAmount;
+    ditem.totalDamage = actualTotal;
+    const newTempHP = ditem.oldTempHP - actualTotal;
+    ditem.newTempHP = Math.max(newTempHP, 0);
+    ditem.newHP = Math.clamp(ditem.oldHP + Math.min(0, newTempHP), 0, ditem.oldHP);
+    ditem.hpDamage = ditem.oldHP - ditem.newHP;
+}
 function setWorkflowProperty(workflow, path, value) {
     genericUtils.setProperty(workflow, 'cat.' + path, value);
 }
@@ -205,6 +224,7 @@ export default {
     syntheticItemRoll,
     syntheticItemDataRoll,
     negateDamageItemDamage,
+    modifyDamageAppliedFlat,
     setWorkflowProperty,
     getWorkflowProperty,
     bonusDamage,

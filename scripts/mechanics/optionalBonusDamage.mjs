@@ -1,34 +1,86 @@
 import {constants, Events} from '../lib/_module.mjs';
+import {dialogUtils, workflowUtils} from '../utilities/_module.mjs';
+import manualRolls from '../handlers/manualRolls.mjs';
+
 export async function optionalBonusDamage(workflow) {
-    const optionalBonusDamage = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    const contextualBonusDamage = (await new Events.WorkflowEvent(constants.workflowPasses.contextualBonusDamage, workflow).run({multiResult: true})).filter(i => i.document);
-    if (!optionalBonusDamage.length) return;
-    /*
-    optionalBonusDamage = {
-        document,
-        predicate,
-        use (function),
-        rolls,
-        targets: 'one' || 'multiple'
+    const optional = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
+    const contextual = (await new Events.WorkflowEvent(constants.workflowPasses.contextualBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document).map(b => ({...b, contextual: true}));
+    const bonuses = [...optional, ...contextual];
+    if (!bonuses.length) return;
+    const keys = bonuses.map((b, i) => 'b' + i);
+    const byId = new Map(bonuses.map((b, i) => [keys[i], b]));
+    const targets = [...workflow.targets].map(token => token.document);
+    const multiTarget = targets.length > 1;
+    const isPerTarget = bonus => bonus.targets === 'one';
+    const locked = new Set(keys.filter(k => byId.get(k).contextual));
+    const selects = {};
+    if (multiTarget) {
+        const choices = Object.fromEntries(targets.map(t => [t.uuid, t.name]));
+        bonuses.forEach((bonus, i) => {
+            if (isPerTarget(bonus)) selects[keys[i]] = {choices, value: targets[0].uuid};
+        });
     }
-
-    contextualBonusDamage = {
-        document,
-        predicate,
-        use (function),
-        rolls,
-        targets: 'one' || 'multiple'
+    const scopeOf = (id, selections) => isPerTarget(byId.get(id)) ? (selections[id] ?? targets[0]?.uuid) : 'all';
+    const passesWith = (id, active, selections) => {
+        const bonus = byId.get(id);
+        if (!bonus?.predicate) return true;
+        const scope = scopeOf(id, selections);
+        const rolls = [...active].filter(i => i !== id).filter(i => {
+            const other = scopeOf(i, selections);
+            return other === 'all' || scope === 'all' || other === scope;
+        }).flatMap(i => byId.get(i)?.rolls ?? []);
+        return bonus.predicate(workflow, [...workflow.damageRolls, ...rolls]);
+    };
+    const contextualIds = [...locked];
+    const resolveActive = (checkedOptional, selections) => {
+        const active = new Set([...checkedOptional, ...contextualIds]);
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const id of [...active]) if (!passesWith(id, active, selections)) { active.delete(id); changed = true; }
+        }
+        return active;
+    };
+    const validate = (checked, selections) => [...new Set([...checked, ...contextualIds])].filter(id => !passesWith(id, new Set([...checked, ...contextualIds]), selections));
+    const tags = Object.fromEntries(bonuses.map((b, i) => [keys[i], (b.rolls ?? []).map(r => r.formula).join(' + ')]).filter(([, formula]) => formula));
+    const labels = Object.fromEntries(bonuses.map((b, i) => [keys[i], b.name]).filter(([, name]) => name));
+    const needsDialog = optional.length > 0 || (multiTarget && contextual.some(isPerTarget));
+    let checkedOptional = [];
+    const selections = {};
+    if (needsDialog) {
+        const selection = await dialogUtils.selectDocumentDialog('CAT.OptionalBonusDamage.Title', 'CAT.OptionalBonusDamage.Context', bonuses.map(b => b.document), {max: null, checkbox: true, displayTooltips: true, sort: 'alphabetical', showUses: true, validate, tags, selects, locked, keys, labels});
+        if (selection) {
+            selection.forEach(i => { if (i.select) selections[i.key] = i.select; });
+            checkedOptional = selection.filter(i => i.amount && !byId.get(i.key)?.contextual).map(i => i.key);
+        }
     }
+    const chosen = [...resolveActive(checkedOptional, selections)].map(id => ({bonus: byId.get(id), target: targets.find(t => t.uuid === selections[id]) ?? targets[0]})).filter(i => i.bonus);
+    if (!chosen.length) return;
+    const wholeRoll = chosen.filter(i => !isPerTarget(i.bonus));
+    const perTarget = chosen.filter(i => isPerTarget(i.bonus));
+    const newRolls = wholeRoll.flatMap(i => i.bonus.rolls ?? []);
+    if (newRolls.length) {
+        workflow.damageRolls.push(...newRolls);
+        await workflow.setDamageRolls(workflow.damageRolls);
+    }
+    for (const {bonus, target} of wholeRoll) {
+        if (bonus.use) await bonus.use({workflow, rolls: bonus.rolls, target});
+    }
+    const stash = {};
+    const label = _loc('CAT.OptionalBonusDamage.Title');
+    for (const {bonus, target} of perTarget) {
+        if (bonus.rolls?.length && target) {
+            const resolved = await manualRolls.resolveManualRolls(bonus.rolls, workflow.actor, label);
+            (stash[target.uuid] ??= []).push(...resolved.map(roll => ({total: roll.total, type: roll.options.type})));
+        }
+        if (bonus.use) await bonus.use({workflow, rolls: bonus.rolls, target});
+    }
+    if (Object.keys(stash).length) workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', stash);
+}
 
-    Some sort of combined dialog which uses the above information. When a document is checked in the dialog it runs every predicate against the workflow and combined new rolls to see if it's valid. If found to be invalid it is unchecked before the new render.
-    If targets one it should have a target selection per document. In this case the predicate would want to make sure it's only including rolls that apply to that target.
-    Note that if the workflow only has one target, the target selection isn't needed.
-
-    An example is the species feature "Celestial Revelation", which adds radiant damage on hit. The player then also has the "Radiant Soul" feature from Celestial Warlock, which adds extra damage to attacks with radiant or fire damage.
-    Sneak attack and cunning strike may also be possible via this dialog.
-    
-    contextualBonusDamage is for stuff that adds bonus damage but doesn't need to be explicitly checked. For example hex. This will still have a predicate. This should show up in the same dialog to help the player see what damage bonuses they get as they check stuff on and off.
-    Target selection may still be needed for these.
-
-    */
+export function applyOptionalBonusDamage(workflow, token, ditem) {
+    const stash = workflowUtils.getWorkflowProperty(workflow, 'optionalBonusDamage');
+    const bonuses = stash?.[token.document.uuid];
+    if (!bonuses?.length) return;
+    for (const {total, type} of bonuses) workflowUtils.modifyDamageAppliedFlat(ditem, total, {type, multiplier: 'auto'});
 }

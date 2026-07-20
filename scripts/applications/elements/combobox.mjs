@@ -24,7 +24,8 @@ export default class CatCombobox extends HTMLElement {
             label: o.textContent ?? '',
             image: o.dataset.image ?? '',
             invert: !!o.dataset.invert,
-            tag: o.dataset.tag ?? ''
+            tag: o.dataset.tag ?? '',
+            group: o.dataset.group ?? o.closest('optgroup')?.label ?? ''
         }));
         this.replaceChildren();
 
@@ -123,7 +124,15 @@ export default class CatCombobox extends HTMLElement {
         const currentValue = this.#hidden?.value;
         let highlightIdx = matches.findIndex(o => o.value === currentValue);
         if (highlightIdx < 0) highlightIdx = 0;
+        let lastGroup = null;
         matches.forEach((o, i) => {
+            if (o.group && o.group !== lastGroup) {
+                const header = document.createElement('li');
+                header.className = 'cat-combobox-group';
+                header.textContent = o.group;
+                this.#list.append(header);
+            }
+            lastGroup = o.group;
             const li = document.createElement('li');
             li.dataset.value = o.value;
             if (o.image) {

@@ -23,6 +23,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.content = content;
         this.inputs = inputs;
         this.buttons = buttons;
+        this.validate = config?.validate;
     }
 
     static DEFAULT_OPTIONS = {
@@ -102,7 +103,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {DialogApp} */
     static async #formHandler(event, form, formData) {
-        this.#resolveResults(foundry.utils.expandObject(formData.object));
+        const results = foundry.utils.expandObject(formData.object);
+        this.#context?.inputs?.forEach(inp => inp.options?.forEach(o => {
+            if (o.locked && o.isChecked && !(o.name in results)) results[o.name] = true;
+        }));
+        this.#resolveResults(results);
     }
 
     /** @this {DialogApp} */
@@ -236,7 +241,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             label: f.label,
             name: f.name,
             isChecked: f.options?.isChecked ?? false,
-            image: f.options?.image
+            image: f.options?.image,
+            hint: f.options?.hint,
+            select: f.options?.select,
+            locked: f.options?.locked ?? false
         }));
         return {
             isCheckbox: true,
@@ -397,7 +405,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
-        if (!this.#context) this.#formatInputs();
+        if (!this.#context) {
+            this.#formatInputs();
+            if (this.validate) this.#applyValidation(this.#context);
+        }
         const detached = options.window?.attach ? false : options.window?.detach ? true : !!this.window.windowId;
         return {...context, ...this.#context, title: this.windowTitle, detached};
     }
@@ -413,6 +424,25 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         clone.currentSpent = (clone.totalMax ?? 0) - max;
         clone.atMax = clone.totalMax != null && clone.currentSpent >= clone.totalMax;
         return clone;
+    }
+
+    #applyValidation(ctx) {
+        if (this.validate) {
+            const checked = [];
+            const selections = {};
+            ctx.inputs.forEach(inp => inp.options?.forEach(o => {
+                if (o.isChecked) checked.push(o.name);
+                if (o.select) selections[o.name] = o.select.value;
+            }));
+            const invalid = this.validate(checked, selections) ?? [];
+            ctx.inputs.forEach(inp => inp.options?.forEach(o => {
+                if (o.locked) o.isChecked = !invalid.includes(o.name);
+                else if (invalid.includes(o.name)) o.isChecked = false;
+            }));
+        }
+        ctx.inputs.forEach(inp => {
+            if (inp.isCheckbox) inp.currentNum = inp.options.reduce((acc, c) => c.isChecked ? acc + 1 : acc, 0);
+        });
     }
 
     async _onChangeForm(formConfig, event) {
@@ -441,7 +471,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         switch (targetInput.type) {
             case 'checkbox': {
                 ctx.inputs[i].options[j].isChecked = targetInput.checked;
-                ctx.inputs[i].currentNum = ctx.inputs[i].options.reduce((acc, c) => c.isChecked ? acc + 1 : acc, 0);
+                this.#applyValidation(ctx);
                 this.render(true);
                 break;
             }
@@ -449,6 +479,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 if (ctx.inputs[i].isSelectAmount) {
                     ctx.inputs[i].options[j].currentAmount = Number(targetInput.value);
                     if (ctx.inputs[i].options[j]?.weight) ctx.inputs[i] = this.#currentMaxAmounts(ctx.inputs[i]);
+                    this.render(true);
+                } else if (ctx.inputs[i].isCheckbox && ctx.inputs[i].options[j]?.select) {
+                    ctx.inputs[i].options[j].select.value = targetInput.value;
+                    this.#applyValidation(ctx);
                     this.render(true);
                 }
                 break;
