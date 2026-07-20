@@ -165,7 +165,7 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
         }
     }
     if (modificationAmount < 0) modificationAmount = Math.max(modificationAmount, -ditem.hpDamage - ditem.tempDamage);
-    ditem.damageDetail.push({value: modificationAmount, active: {multiplier}, type});
+    MidiQOL.modifyDamageBy({damageItem: ditem, value: modificationAmount, multiplier, type});
     ditem.rawDamageDetail.push({value: modificationAmount, type});
     const actualTotal = ditem.totalDamage + modificationAmount;
     ditem.totalDamage = actualTotal;

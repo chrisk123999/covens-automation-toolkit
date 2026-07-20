@@ -80,7 +80,7 @@ export async function optionalBonusDamage(workflow) {
 
 export function applyOptionalBonusDamage(workflow, token, ditem) {
     const stash = workflowUtils.getWorkflowProperty(workflow, 'optionalBonusDamage');
-    const bonuses = stash?.[token.document?.uuid ?? token.uuid];
+    const bonuses = stash?.[token.document.uuid];
     if (!bonuses?.length) return;
     for (const {total, type} of bonuses) workflowUtils.modifyDamageAppliedFlat(ditem, total, {type, multiplier: 'auto'});
 }
