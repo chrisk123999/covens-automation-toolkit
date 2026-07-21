@@ -5,14 +5,11 @@ async function runDialog(userId, title, content, inputs, buttons, config) {
     if (userId === game.user.id) return await DialogApp.dialog(title, content, inputs, buttons, config);
     return await queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
 }
-async function runQueuedDialog(userId, title, content, inputs, buttons, config, reason) {
+async function runQueuedDialog(userId, title, content, inputs, buttons, config) {
     if (userId === game.user.id) {
-        return await dialogQueue.showDialog(async (...args) => {
-            if (reason) ui.notifications.info(reason);
-            return await DialogApp.dialog(...args);
-        }, title, content, inputs, buttons, config);
+        return await dialogQueue.showDialog(async (...args) => await DialogApp.dialog(...args), title, content, inputs, buttons, config);
     }
-    return await queryUtils.query('queuedDialog', game.users.get(userId), {title, content, inputs, buttons, config, reason}, 300000);
+    return await queryUtils.query('queuedDialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
 }
 async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
     let selection = await runDialog(userId, title, content, [], buttons);
@@ -66,8 +63,8 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
 async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}, validate = null, tags = {}, selects = {}, locked = new Set(), keys = null, labels = {}} = {}) {
     let sortCmp = sort === 'alphabetical' ? (a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
         : sort === 'cr' ? (a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0)
-        : sort === 'level' ? (a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
-        : null;
+            : sort === 'level' ? (a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
+                : null;
     if (sortCmp) {
         let order = documents.map((d, i) => i).sort((a, b) => sortCmp(documents[a], documents[b]));
         documents = order.map(i => documents[i]);
@@ -182,6 +179,13 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
         return {document, key, amount: Number(value), select: result['sel-' + key]};
     }).filter(i => i);
 }
+async function selectAmounts(title, content, fields, {totalMax, displayAsRows = true, userId = game.user.id, buttons = 'okCancel'} = {}) {
+    let inputs = [['selectAmount', fields, {displayAsRows, totalMax}]];
+    let result = await runDialog(userId, title, content, inputs, buttons, {height: 'auto'});
+    if (!result?.buttons) return false;
+    delete result.buttons;
+    return Object.fromEntries(Object.entries(result).map(([key, value]) => [key, Number(value)]));
+}
 async function selectSpellSlot(actor, title, content, {maxLevel = 9, minLevel = 0, userId = game.user.id, no = false} = {}) {
     let buttons = Object.entries(actor.system.spells).filter(([k, v]) => {
         if (v.level > maxLevel || v.level < minLevel) return false;
@@ -194,12 +198,13 @@ async function selectSpellSlot(actor, title, content, {maxLevel = 9, minLevel = 
     if (no) buttons.push(['No', false]);
     return await buttonDialog(title, content, buttons, {displayAsRows: true, userId});
 }
-async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id} = {}) {
+async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id, sort = null} = {}) {
     let buttons = damageTypes.map(t => [
         CONFIG.DND5E.damageTypes[t]?.label ?? t,
         t,
         {image: CONFIG.DND5E.damageTypes[t]?.icon, imageClass: 'cat-dmg-icon'}
     ]);
+    if (sort === 'alphabetical') buttons.sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'en', {sensitivity: 'base'}));
     if (addNo) buttons.push(['No', false, {image: 'icons/svg/cancel.svg'}]);
     return await buttonDialog(title, content, buttons, {userId});
 }
@@ -258,8 +263,8 @@ async function confirmRecoverUses(document, documentWithUses, {spent, userId = g
     const uses = (documentWithUses.system ?? documentWithUses).uses;
     return await confirm('COMMON.Confirm', _loc('CAT.Dialog.UseRecover', {document: document.name, spent: spent ?? uses?.spent ?? 0, max: uses?.max ?? 0, resource: documentWithUses.name}), {userId, buttons});
 }
-async function queuedConfirmDialog(title, content, {actor, reason, userId = game.user.id} = {}) {
-    let selection = await runQueuedDialog(userId, title, content, [], 'yesNo', undefined, reason);
+async function queuedConfirmDialog(title, content, {userId = game.user.id} = {}) {
+    let selection = await runQueuedDialog(userId, title, content, [], 'yesNo');
     return selection?.buttons;
 }
 async function selectTargetDialog(title, content, targets, {type = 'one', selectOptions = [], skipDeadAndUnconscious = true, coverToken = undefined, reverseCover = false, displayDistance = true, maxAmount = 1, minAmount = 0, userId = game.user.id, buttons = 'okCancel', maxes = {}} = {}) {
@@ -282,7 +287,7 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
         targetInputs.push({
             label,
             name: i.id,
-            options: {image: i.texture.src, isChecked: targetInputs.length === 0, options: selectOptions, maxAmount: maxes[i.id] ?? maxAmount, minAmount}
+            options: {image: i.texture.src, isChecked: type !== 'multiple' && targetInputs.length === 0, options: selectOptions, maxAmount: maxes[i.id] ?? maxAmount, minAmount}
         });
     }
     inputs[0].push(targetInputs);
@@ -337,6 +342,7 @@ export default {
     numberDialog,
     selectDialog,
     selectDocumentDialog,
+    selectAmounts,
     selectSpellSlot,
     selectDamageType,
     selectHitDie,

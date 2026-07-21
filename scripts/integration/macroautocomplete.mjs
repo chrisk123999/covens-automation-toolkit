@@ -263,7 +263,8 @@ function inContext(config, context, docType) {
             children: {
                 castLevel: property('number', 'Spell upcast level.'),
                 baseLevel: property('number', 'Spell level.'),
-                saveDC: property('number', 'Spell DC')
+                saveDC: property('number', 'Spell DC'),
+                school: property('string', 'Spell school.')
             }
         }
     };

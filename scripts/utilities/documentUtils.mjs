@@ -127,6 +127,22 @@ function getEffectData(document, id, {duration, concentrationItem, macros, remov
     if (duration) effectData.duration = duration;
     return dataUtils.buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities});
 }
+function getBaseEffectData(document, {name, img, origin, identifier, activityUuid, changes = [], duration, ...buildOptions} = {}) {
+    const effectData = {
+        name,
+        img,
+        origin,
+        changes
+    };
+    if (duration) {
+        effectData.duration = duration;
+    } else if (document?.documentName === 'Activity') {
+        effectData.duration = activityUtils.getEffectDuration(document);
+    }
+    if (identifier) dataUtils.setIdentifier(effectData, identifier);
+    if (activityUuid) genericUtils.setProperty(effectData, 'flags.cat.activityUuid', activityUuid);
+    return dataUtils.buildEffectData(effectData, buildOptions);
+}
 export default {
     getRules,
     getSource,
@@ -142,5 +158,6 @@ export default {
     getEffectByIdentifier,
     makeDependent,
     modifyBatch,
-    getEffectData
+    getEffectData,
+    getBaseEffectData
 };

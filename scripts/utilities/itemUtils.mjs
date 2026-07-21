@@ -17,7 +17,8 @@ function getSavedCastData(item) {
     return {
         castLevel: item.flags.cat?.castData?.castLevel ?? -1,
         baseLevel: item.flags.cat?.castData?.baseLevel ?? -1,
-        saveDC: getSaveDC(item)
+        saveDC: getSaveDC(item),
+        school: item.flags.cat?.castData?.school
     };
 }
 function getActivityByIdentifier(item, identifier) {
@@ -82,7 +83,7 @@ async function unhideActivities(item, identifiers) {
             const effectData = {
                 name: 'Unhidden Activities',
                 img: item.img,
-                origin: item.actor.uuid, 
+                origin: item.actor.uuid,
                 system: {
                     changes
                 }
@@ -105,7 +106,7 @@ async function rehideActivities(item, identifiers = [], {all = false} = {}) {
     const nextPromise = (async () => {
         await currentPromise.catch(() => {});
         const effect = documentUtils.getEffectByIdentifier(item, 'catHiddenActivities');
-        if (!effect) return; 
+        if (!effect) return;
         if (all) {
             await documentUtils.deleteDocument(effect);
             return;
@@ -119,10 +120,10 @@ async function rehideActivities(item, identifiers = [], {all = false} = {}) {
         if (!keysToRemove.length) return effect;
         const currentChanges = effect.toObject().system.changes;
         const remainingChanges = currentChanges.filter(c => !keysToRemove.includes(c.key));
-        if (remainingChanges.length === currentChanges.length) return effect; 
+        if (remainingChanges.length === currentChanges.length) return effect;
         if (!remainingChanges.length) {
             await documentUtils.deleteDocument(effect);
-            return; 
+            return;
         }
         await documentUtils.update(effect, {'system.changes': remainingChanges});
         return effect;
@@ -153,6 +154,39 @@ function getSourceClass(item, {subclass = false} = {}) {
     const sourceClassIdentifier = getSourceClassIdentifier(item, {subclass});
     if (!sourceClassIdentifier) return;
     return item.actor.classes[sourceClassIdentifier];
+}
+/**
+ * Get every damage type an item can deal across its attack, damage and save activities, including flavor-declared types.
+ * @param {Item5e} item
+ * @returns {Set<string>}
+ */
+function getItemDamageTypes(item) {
+    const activities = Array.from(item.system.activities?.getByTypes('attack', 'damage', 'save') ?? []);
+    const flavorTypes = new Set(activities.flatMap(activity => activity.damage.parts.flatMap(part => new Roll(part.formula).terms.map(term => term.flavor).filter(flavor => flavor))));
+    const declaredTypes = new Set(activities.flatMap(activity => activity.damage.parts.flatMap(part => Array.from(part.types))));
+    return flavorTypes.union(declaredTypes);
+}
+function stripDescriptionBlock(html) {
+    if (!html?.includes('cat-description')) return html;
+    const wrapper = globalThis.document.createElement('div');
+    wrapper.innerHTML = html;
+    wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
+    return wrapper.innerHTML;
+}
+async function setDescriptionBlock(item, content) {
+    const current = item.system.description?.value ?? '';
+    const wrapper = globalThis.document.createElement('div');
+    wrapper.innerHTML = current;
+    wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
+    if (content) {
+        const block = globalThis.document.createElement('div');
+        block.className = 'cat-description';
+        block.innerHTML = content;
+        wrapper.append(block);
+    }
+    const updated = wrapper.innerHTML;
+    if (updated === current) return;
+    await documentUtils.update(item, {'system.description.value': updated});
 }
 function getDependencies(item) {
     const dependencies = new Set();
@@ -205,6 +239,9 @@ export default {
     getSourceClassIdentifier,
     getEquipmentState,
     getSourceClass,
+    getItemDamageTypes,
+    stripDescriptionBlock,
+    setDescriptionBlock,
     getDependencies,
     canCast
 };

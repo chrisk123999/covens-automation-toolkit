@@ -11,7 +11,8 @@ function placed(region) {
                 castData: {
                     castLevel: region.flags.dnd5e.spellLevel,
                     baseLevel: activity.item.system.level,
-                    saveDC: activityUtils.getSaveDC(activity)
+                    saveDC: activityUtils.getSaveDC(activity),
+                    school: activity.item.system.school
                 }
             }
         }

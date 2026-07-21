@@ -52,6 +52,11 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
     return MidiQOL.findNearby(dispositions[disposition], token.object, range, {includeIncapacitated, includeToken}).map(placeable => placeable.document).filter(token => !token.hidden);
 }
 async function moveToken(token, waypoints, options = {}) {
+    if (token.object && options.constrainOptions?.ignoreWalls !== true) {
+        const origin = {x: token.x, y: token.y, elevation: token.elevation};
+        const [path] = token.object.constrainMovementPath([origin, ...waypoints], {...options.constrainOptions, preview: false});
+        if (!path.some(waypoint => !waypoint.intermediate && (waypoint.x !== token.x || waypoint.y !== token.y))) return;
+    }
     const hasPermission = queryUtils.hasPermission(token, game.user.id);
     if (hasPermission) {
         return await token.move(waypoints, options);

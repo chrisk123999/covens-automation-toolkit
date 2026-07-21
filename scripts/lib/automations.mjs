@@ -213,7 +213,7 @@ export class RegisteredAutomations {
     getConfigValue(document, key) {
         /** @type {AutomationConfig['default']|undefined} */
         const value = document.flags.cat?.config?.[key];
-        if (value) return value;
+        if (value != undefined) return value;
         /** @type {Automation|undefined} */
         const automation = this.getAutomationByIdentifier(documentUtils.getIdentifier(document), {
             rules: documentUtils.getRules(document),

@@ -369,7 +369,7 @@
     opacity: 0.6;
 }
 
-#cat-dialog-app #dialog-app > .form-group:last-child:has(input[type="checkbox"]) {
+#cat-dialog-app #dialog-app > .form-group:has(input[name="skip"]) {
     margin-top: var(--cat-space-sm);
     padding-top: var(--cat-space-md);
     border-top: 1px solid var(--cat-border-light);
@@ -1701,6 +1701,10 @@ cat-combobox {
     border: 1px solid var(--cat-border-light);
     border-radius: var(--cat-radius-sm);
     background: var(--cat-bg-input);
+}
+
+.cat-medkit-document-list li:last-child {
+    margin-bottom: var(--cat-space-xs);
 }
 
 .cat-medkit-document-list img {

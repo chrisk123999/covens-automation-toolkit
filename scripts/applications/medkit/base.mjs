@@ -28,6 +28,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     #document;
     /** In-memory mutable copy of document.flags.cat; flushed on Save. */
     #flags;
+    #listValues = {};
     /** In-memory mutable source selection; flushed on Save. */
     #selectedSource;
     /** In-memory mutable system.source.rules; flushed on Save. */
@@ -197,6 +198,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
+        this.#listValues = {};
         context.document = this.#document;
         context.label = this.#document.metadata?.label ?? this.#document.name ?? '';
         context.medkitStatus = undefined;
@@ -254,6 +256,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         } catch (err) {
             console.warn(`CAT | Skipping malformed medkit option "${key}".`, err);
         }
+        if (option.isList && configPath) this.#listValues[configPath] = Array.isArray(value) ? value : [];
         return option;
     }
 
@@ -741,7 +744,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             const sources = [...availableAutomations]
                 .sort((a, b) => rank(a.source) - rank(b.source))
                 .filter(a => !seen.has(a.source) && seen.add(a.source))
-                .map(a => ({value: a.source, label: labelFor(a.source)}));
+                .map(a => ({value: a.source, label: labelFor(a.source), selected: a.source === this.#selectedSource}));
             return {
                 variant: 'available',
                 isAvailable: true,
@@ -768,6 +771,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 const sourceData = this.#document._stats?.compendiumSource ? (await fromUuid(this.#document._stats.compendiumSource)) : null;
                 const updateData = sourceData?.toObject?.() ?? {};
                 genericUtils.setProperty(updateData, 'flags.cat', _del);
+                const currentDescription = genericUtils.getProperty(updateData, 'system.description.value') ?? this.#document.system?.description?.value;
+                if (currentDescription) genericUtils.setProperty(updateData, 'system.description.value', itemUtils.stripDescriptionBlock(currentDescription));
                 await documentUtils.update(this.#document, updateData, {diff: false});
             } else {
                 await automationUtils.updateItem(this.#document, {source: this.#selectedSource});
@@ -1058,7 +1063,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
             return;
         }
-        const current = foundry.utils.getProperty(this.#flags, path) ?? [];
+        const current = foundry.utils.getProperty(this.#flags, path) ?? this.#listValues[path] ?? [];
         if (current.includes(entry)) return;
         foundry.utils.setProperty(this.#flags, path, [...current, entry]);
         this.render();
@@ -1069,7 +1074,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         const group = target.closest('[data-flag-path]');
         const path = group?.dataset.flagPath;
         if (!path) return;
-        const current = foundry.utils.getProperty(this.#flags, path) ?? [];
+        const current = foundry.utils.getProperty(this.#flags, path) ?? this.#listValues[path] ?? [];
         foundry.utils.setProperty(this.#flags, path, current.filter(v => v !== target.dataset.value));
         this.render();
     }
@@ -1103,7 +1108,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         else value = target.value;
         if (name === 'system.source.rules') {
             this.#rulesValue = value;
-        } else if (name === 'selectedSource') {
+        } else if (name === 'selectedSource' || name === 'heroSourcePick') {
             this.#selectedSource = value;
         } else if (inMultiCombobox && name === 'flags.cat.macros') {
             this._writeMacroSelection(Array.isArray(value) ? value : []);
