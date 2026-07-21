@@ -1,4 +1,4 @@
-import {checkEvents, saveEvents, skillEvents, toolEvents} from '../events/_module.mjs';
+import {checkEvents, hitDieEvents, saveEvents, skillEvents, toolEvents} from '../events/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 import {genericUtils} from '../utilities/_module.mjs';
 import {conditionResistanceAndVulnerability} from '../mechanics/conditionResistanceAndVulnerability.mjs';
@@ -179,6 +179,17 @@ async function tool(wrapped, config, dialog, message) {
     await toolEvents.post(this, {config, options, dialog, message, roll, toolId});
     return [roll];
 }
+async function rollHitDie(wrapped, config, dialog, message) {
+    
+
+
+
+    await hitDieEvents.situational(this, {config, dialog, message});
+    await hitDieEvents.context(this, {config, dialog, message});
+    let hookId;
+    
+}
+
 function patch(enabled) {
     if (enabled) {
         Logging.addEntry('DEBUG', 'Patching: CONFIG.Actor.documentClass.prototype.rollAbilityCheck');

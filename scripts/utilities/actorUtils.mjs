@@ -239,6 +239,14 @@ async function createActor(actorData) {
         return await fromUuid(uuid);
     }
 }
+function getMaxCastLevel(actor) {
+    const spells = actor.system.spells;
+    const pactLevel = (spells.pact && spells.pact.max > 0) ? (spells.pact.level || 0) : 0;
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((currentMax, i) => {
+        const slot = spells['spell' + i];
+        return (slot && slot.max > 0) ? Math.max(currentMax, i) : currentMax;
+    }, pactLevel);
+}
 export default {
     getEffects,
     getGroups,
@@ -259,5 +267,6 @@ export default {
     hasUsedReaction,
     getEquippedWeapons,
     createActor,
-    hasUsedBonusAction
+    hasUsedBonusAction,
+    getMaxCastLevel
 };
