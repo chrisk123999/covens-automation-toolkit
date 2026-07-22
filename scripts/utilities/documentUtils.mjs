@@ -126,7 +126,7 @@ async function modifyBatch(operations) {
  * @param {object} [options]
  * @param {EffectDurationData} [options.duration] Effect duration, fetched from {@link document} if absent.
  * @param {foundry.documents.Item} [options.concentrationItem] An item used to fetch a concentration effect, which is assigned as the origin for this effect.
- * @param {CatEffectData} [options.catData]
+ * @param {CatEffectData} [options.catData] See {@link CatEffectData}
  * @returns 
  */
 function getEffectData(document, id, {duration, concentrationItem, ...catData} = {}) {

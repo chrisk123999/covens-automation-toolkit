@@ -44,6 +44,8 @@ function setIdentifier(documentData, identifier) {
  * @property {MacroGroup[]} removeMacros Remove macros that match all provided {@link MacroEntry} properties.
  * @property {AnimationEntry} createAnimation
  * @property {AnimationEntry} deleteAnimation
+ * @property {object} createAnimationOptions Options specific to a particular animation, such as color. If absent, defaults are fetched from the registered animation.
+ * @property {object} deleteAnimationOptions Options specific to a particular animation, such as color. If absent, defaults are fetched from the registered animation.
  * @property {string[]} specialDuration Deletes effect.
  * @property {string[]} disableCondition Disables effect.
  * @property {string[]} unhideActivities
