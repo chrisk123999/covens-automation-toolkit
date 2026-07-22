@@ -177,10 +177,10 @@ const VARS = {
 
 const OVERRIDES = {
     options: (_, {event}) => ({info: makeInfo(INFO.options[event])}),
-    actor: () => ({info: makeInfo('The trigger actor.')}),
+    actor: (_, {event}) => ({info: makeInfo(INFO.actor[event] || INFO.actor.none)}),
     item: () => ({info: makeInfo('The item for this workflow.')}),
     activity: () => ({info: makeInfo('The activity for this workflow.')}),
-    token: (api) => classInstance(api, CONFIG.Token.documentClass, 'The trigger token.')
+    token: (api, {event}) => classInstance(api, CONFIG.Token.documentClass, INFO.token[event] || INFO.token.none)
 };
 
 const INFO = {
@@ -193,6 +193,14 @@ const INFO = {
         item: 'Item event options.',
         time: 'Time event options.'
     },
+    actor: {
+        none: 'The trigger actor.',
+        aura: 'The actor on which to apply an aura.'
+    },
+    token: {
+        none: 'The trigger token.',
+        aura: 'The token on which to apply an aura.'
+    },
     updates: {
         none: 'Updates.',
         region: 'Region updates.',
@@ -202,8 +210,7 @@ const INFO = {
     },
     targetToken: {
         none: 'Target Token.',
-        roll: 'The token taking damage.',
-        aura: 'The token on which to apply an aura.'
+        roll: 'The token taking damage.'
     },
     config:{
         none: 'Configuration.',

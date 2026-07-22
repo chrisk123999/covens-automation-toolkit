@@ -60,6 +60,7 @@ async function updateActiveEffect(effect, updates, options, userId) {
     if (effect.active !== prevActive) {
         effectAnimations(effect, effect.active);
         if (effect.statuses.size) await effects.disableConditionStatuses(effect, effect.active);
+        if (effect.flags.cat?.macros?.aura) await auraEvents.effect(effect, options);
     }
     await new Events.EffectEvent(effect, constants.effectPasses.updated, {options, updates}).run();
 }

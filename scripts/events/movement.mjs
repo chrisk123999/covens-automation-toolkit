@@ -45,12 +45,13 @@ async function moveToken(token, movement, options, user) {
     let previousRegions = token.parent.regions.filter(region => token.testInsideRegion(region, movement.origin));
     await movementPromise;
     if (!ignore) {
-        const teleport = CONFIG.Token.movement.actions[movement.passed.waypoints.at(-1).action]?.teleport;
         const action = movement.passed.waypoints.at(-1).action;
+        const teleport = CONFIG.Token.movement.actions[action]?.teleport;
         genericUtils.setProperty(options, 'cat.movement.teleport', teleport);
         genericUtils.setProperty(options, 'cat.movement.action', action);
+        genericUtils.setProperty(options, 'cat.eventSource', 'move');
         if (!skipMove) {
-            if (isFinalMovement) await auraEvents.updateAuras(token.parent.tokens, {options, targetToken: token});
+            if (isFinalMovement) await auraEvents.updateAuras(token.parent.tokens, options);
             await new Events.MovementEvent(token, constants.movementPasses.moved, {options}).run();
         }
         const moveRay = new foundry.canvas.geometry.Ray(previousCoords, coords);
