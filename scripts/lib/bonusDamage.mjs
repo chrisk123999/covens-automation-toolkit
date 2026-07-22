@@ -11,7 +11,8 @@ class BonusDamage {
     #scalingHint;
     #maxTargetsHint;
     #validateHint;
-    constructor(document, {maxTargets, validate, scaling, use, scalingHint, maxTargetsHint, validateHint, maxScaling, roll} = {}) {
+    #optional;
+    constructor(document, {maxTargets, validate, scaling, use, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true} = {}) {
         this.#document = document;
         this.#maxTargets = maxTargets;
         this.#validate = validate ?? BonusDamage.defaultValidate;
@@ -23,6 +24,7 @@ class BonusDamage {
         this.#validateHint = validateHint;
         this.maxScaling = maxScaling ?? (this.#document.documentName === 'Item' ? this.#document.system.uses.max : this.#document.uses.max);
         this.#roll = roll ?? new CONFIG.Dice.DamageRoll('1d4', this.#document.getRollData());
+        this.#optional = optional;
     }
     get roll() {
         return this.#roll;
@@ -96,5 +98,8 @@ class BonusDamage {
         } else {
             await workflowUtils.completeActivityUse(bonusDamage.document, Array.from(bonusDamage.targets));
         }
+    }
+    get optional() {
+        return this.#optional;
     }
 }
