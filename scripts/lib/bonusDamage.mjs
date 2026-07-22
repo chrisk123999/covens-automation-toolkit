@@ -12,7 +12,8 @@ class BonusDamage {
     #maxTargetsHint;
     #validateHint;
     #optional;
-    constructor(document, {maxTargets, validate, scaling, use, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true} = {}) {
+    #bonusAction;
+    constructor(document, {maxTargets, validate, scaling, use, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, bonusAction} = {}) {
         this.#document = document;
         this.#maxTargets = maxTargets;
         this.#validate = validate ?? BonusDamage.defaultValidate;
@@ -101,5 +102,8 @@ class BonusDamage {
     }
     get optional() {
         return this.#optional;
+    }
+    get bonusAction() {
+        return this.#bonusAction;
     }
 }
