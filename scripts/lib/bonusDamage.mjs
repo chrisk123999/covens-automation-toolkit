@@ -11,7 +11,7 @@ class BonusDamage {
     #scalingHint;   // String   | Text for the UI scaling hint.
     #maxTargetsHint;// String   | Text for the UI max targets hint.    
     #validateHint;  // String   | Text for the UI that explains the validity of bonus damage.
-    #optional;      // Boolean  | Whether this bonus damage is optional or not.
+    #optional;      // Boolean  | Whether this bonus damage is optional or not. If there are only static bonus damages and no optional ones, the dialog shouldn't be shown.
     #bonusAction;   // Boolean  | Whether this bonus damage takes a bonus action to use. If true only one bonus action bonus damage may be selected. Additionally requires the attack to be on your own turn.
     #active;        // Boolean  | Weether this bonus damage is active or not.
     constructor(document, {maxTargets, validate, scaling, use, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, bonusAction} = {}) {
