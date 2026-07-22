@@ -1,4 +1,6 @@
 import {activityUtils, actorUtils, dataUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
+/** @import {CatEffectData} from './dataUtils.mjs' */
+/** @import {EffectDurationData} from '@client/documents/_types.mjs' */
 function getRules(document, {documentType = document.documentName} = {}) {
     return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
@@ -117,7 +119,17 @@ async function modifyBatch(operations) {
         }));
     }
 }
-function getEffectData(document, id, {duration, concentrationItem, macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities} = {}) {
+/**
+ * Build an effect based on one attached to an item.
+ * @param {foundry.documents.Item|dnd5e.dataModels.activity.BaseActivityData} document An item or activity from which to fetch an effect by {@link id}.
+ * @param {string} id 
+ * @param {object} [options]
+ * @param {EffectDurationData} [options.duration] Effect duration, fetched from {@link document} if absent.
+ * @param {foundry.documents.Item} [options.concentrationItem] An item used to fetch a concentration effect, which is assigned as the origin for this effect.
+ * @param {CatEffectData} [options.catData]
+ * @returns 
+ */
+function getEffectData(document, id, {duration, concentrationItem, ...catData} = {}) {
     const sourceEffect = document.item ? document.item.effects.get(id) : document.effects.get(id);
     if (!sourceEffect) return;
     const effectData = sourceEffect.toObject();
@@ -125,7 +137,7 @@ function getEffectData(document, id, {duration, concentrationItem, macros, remov
     effectData.origin = !concentrationItem ? sourceEffect.uuid : effectUtils.getConcentrationEffect(document.actor, document.item ?? document)?.uuid;
     if (document.documentName === 'Activity' && !duration) effectData.duration = activityUtils.getEffectDuration(document);  
     if (duration) effectData.duration = duration;
-    return dataUtils.buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities});
+    return dataUtils.buildEffectData(effectData, catData);
 }
 function getBaseEffectData(document, {name, img, origin, identifier, activityUuid, changes = [], duration, ...buildOptions} = {}) {
     const effectData = {

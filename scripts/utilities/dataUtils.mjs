@@ -39,25 +39,30 @@ function setIdentifier(documentData, identifier) {
  * @property {string} [activityIdentifier]
  */
 /**
- * Attach CAT data to an effect before creation.
- * @param {*} effectData 
- * @param {object} [options]
- * @param {MacroGroup[]} [options.macros] Merge the list into existing macros.
- * @param {MacroGroup[]} [options.removeMacros] Remove macros that match all provided {@link MacroEntry} properties.
- * @param {AnimationEntry} [options.createAnimation]
- * @param {AnimationEntry} [options.deleteAnimation]
- * @param {string[]} [options.specialDuration]
- * @param {string[]} [options.unhideActivities]
- * @param {VaeEntry[]} [options.vae]
- * @param {'2014'|'2024'|'all'} [options.rules]
- * @returns 
+ * @typedef {object} CatEffectData
+ * @property {MacroGroup[]} macros Merge the list into existing macros.
+ * @property {MacroGroup[]} removeMacros Remove macros that match all provided {@link MacroEntry} properties.
+ * @property {AnimationEntry} createAnimation
+ * @property {AnimationEntry} deleteAnimation
+ * @property {string[]} specialDuration Deletes effect.
+ * @property {string[]} disableCondition Disables effect.
+ * @property {string[]} unhideActivities
+ * @property {VaeEntry[]} vae
+ * @property {'2014'|'2024'|'all'} rules
+ * @property {object} copyConfigs Duplicate macro configurations from another document onto this effect.
  */
-function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities} = {}) {
+/**
+ * Attach CAT data to an effect before creation.
+ * @param {object} effectData 
+ * @param {CatEffectData} [options]
+ * @returns {object} Modified effectData.
+ */
+function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, copyConfigs} = {}) {
     if (removeMacros?.length) {
         removeMacros.forEach(macroGroup => {
             if (!macroGroup.macros?.length) return;
             const existingMacros = effectData.flags?.cat?.macros?.[macroGroup.type] ?? [];
-            const removed = existingMacros.filter(e =>
+            const remaining = existingMacros.filter(e =>
                 !macroGroup.macros.some(m => {
                     if (m.source && m.source !== e.source) return;
                     if (m.identifier && m.identifier !== e.identifier) return;
@@ -65,7 +70,8 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
                     return true;
                 })
             );
-            genericUtils.setProperty(effectData, 'flags.cat.macros.' + macroGroup.type, removed);
+            if (existingMacros.length > 0 && remaining.length === 0) delete effectData.flags.cat.macros[macroGroup.type];
+            else genericUtils.setProperty(effectData, 'flags.cat.macros.' + macroGroup.type, remaining);
         });
     }
     if (macros?.length) {
@@ -79,11 +85,13 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
         });
     }
     if (rules) setRules(effectData, rules);
-    if (specialDuration?.length) genericUtils.setProperty(effectData, 'flags.cat.specialDuration', specialDuration);
+    if (specialDuration) genericUtils.setProperty(effectData, 'flags.cat.specialDuration', specialDuration);
+    if (disableCondition) genericUtils.setProperty(effectData, 'flags.cat.disableCondition', disableCondition);
     if (vae) genericUtils.setProperty(effectData, 'flags.cat.vae.buttons', vae);
     if (unhideActivities) genericUtils.setProperty(effectData, 'flags.cat.unhideActivities', unhideActivities);
     if (createAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, config: createAnimationOptions});
     if (deleteAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions});
+    if (copyConfigs) genericUtils.setProperty(effectData, 'flags.cat.config', genericUtils.mergeObject(effectData.flags.cat?.config ?? {}, copyConfigs));
     return effectData;
 }
 export default {
