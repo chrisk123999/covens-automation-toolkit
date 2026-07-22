@@ -1,19 +1,19 @@
 import {workflowUtils} from '../utilities/_module.mjs';
 class BonusDamage {
-    #targets;
-    #roll;
-    #maxTargets;
-    #document;
-    #validate;
-    #scaling;
-    #maxScaling;
-    #use;
-    #scalingHint;
-    #maxTargetsHint;
-    #validateHint;
-    #optional;
-    #bonusAction;
-    #active;
+    #targets;       // Set      | Target(s) of the bonus damage.
+    #roll;          // Roll     | The unevaluated roll.
+    #maxTargets;    // Number   | Max targets, if any.
+    #document;      // Document | Item, Activity, and possibly the effect providing this bonus damage.
+    #validate;      // Function | Callback function that returns true if the bonus damage may apply. 
+    #scaling;       // Function | Callback function that gets called when a slider is moved in the UI to update values of the bonus damage, such as the roll, max targets, etc.
+    #maxScaling;    // Number   | Max value of the scaling slider.
+    #use;           // Function | Callback function that will be called after the selection is confirmed.
+    #scalingHint;   // String   | Text for the UI scaling hint.
+    #maxTargetsHint;// String   | Text for the UI max targets hint.    
+    #validateHint;  // String   | Text for the UI that explains the validity of bonus damage.
+    #optional;      // Boolean  | Whether this bonus damage is optional or not.
+    #bonusAction;   // Boolean  | Whether this bonus damage takes a bonus action to use. If true only one bonus action bonus damage may be selected. Additionally requires the attack to be on your own turn.
+    #active;        // Boolean  | Weether this bonus damage is active or not.
     constructor(document, {maxTargets, validate, scaling, use, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, bonusAction} = {}) {
         this.#document = document;
         this.#maxTargets = maxTargets;
