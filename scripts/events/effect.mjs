@@ -32,7 +32,10 @@ async function createActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     if (effect.parent instanceof Actor) await effects.addConditions(effect);
-    if (effect.statuses.size) await effects.specialDurationConditions(effect);
+    if (effect.statuses.size) {
+        await effects.specialDurationConditions(effect);
+        await effects.disableConditionStatuses(effect, true);
+    }
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await effects.specialDurationZeroSpeed(effect.parent);
     effectAnimations(effect, true);
     await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
@@ -42,7 +45,10 @@ async function deleteActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     if (effect.parent instanceof Actor) await effects.removeConditions(effect);
-    if (effect.statuses.size) await effects.specialDurationRemovedConditions(effect);
+    if (effect.statuses.size) {
+        await effects.specialDurationRemovedConditions(effect);
+        await effects.disableConditionStatuses(effect, false);
+    }
     effectAnimations(effect, false);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
     await auraEvents.effect(effect, options);
@@ -51,7 +57,10 @@ async function updateActiveEffect(effect, updates, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     const prevActive = genericUtils.getProperty(options, 'cat.previous.active');
-    if (effect.active !== prevActive) effectAnimations(effect, effect.active);
+    if (effect.active !== prevActive) {
+        effectAnimations(effect, effect.active);
+        if (effect.statuses.size) await effects.disableConditionStatuses(effect, effect.active);
+    }
     await new Events.EffectEvent(effect, constants.effectPasses.updated, {options, updates}).run();
 }
 function preCreateActiveEffect(effect, updates, options, userId) {

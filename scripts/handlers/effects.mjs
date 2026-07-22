@@ -197,6 +197,14 @@ async function disableConditionEquipment(item) {
         if (!!effect.disabled !== shouldDisable) await documentUtils.update(effect, {disabled: shouldDisable});
     }));
 }
+async function disableConditionStatuses(effect, gainedStatus) {
+    await Promise.all(actorUtils.getEffects(effect.parent, {includeItemEffects: true}).filter(i => i.id != effect.id).map(async eff => {
+        const disableConditions = eff.flags.cat?.disableCondition;
+        if (!disableConditions?.length) return;
+        const shouldDisable = effect.statuses.some(k => disableConditions.includes(k)) & gainedStatus;
+        if (!!effect.disabled !== shouldDisable) await documentUtils.update(eff, {disabled: shouldDisable});
+    }));
+}
 async function specialDurationHitPoints(actor, updates) {
     const validTypes = [];
     if (updates.system?.attributes?.hp?.temp === 0) validTypes.push('tempHP');
@@ -259,6 +267,7 @@ export default {
     specialDurationRemovedConditions,
     specialDurationEquipment,
     disableConditionEquipment,
+    disableConditionStatuses,
     specialDurationToolCheck,
     specialDurationHitPoints,
     specialDurationMove,
