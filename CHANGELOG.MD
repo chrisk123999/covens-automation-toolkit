@@ -1,6 +1,4 @@
 # 0.0.6 Release:
-## Update Notes:
-- Added a combined opt-in dialog for damage bonuses. Choose to apply to single or multiple targets and review other contextual bonuses.
 ## API Update Notes:
 - Added utils: `compendiumUtils.getDocumentByName`, `workflowUtils.applyWorkflowDamage`, `workflowUtils.bonusAttack`, `workflowUtils.modifyDamageAppliedFlat`.
 - Added disable conditions for active effects, stored in an array at `effect.flags.cat.disableCondition`. Statuses or equipped armor can disable effects. Not yet available in the Effect CatKit.
