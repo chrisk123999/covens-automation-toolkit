@@ -1,3 +1,16 @@
+# 0.0.6 Release:
+## Update Notes:
+- Added a combined opt-in dialog for damage bonuses. Choose to apply to single or multiple targets and review other contexual bonuses.
+## API Update Notes:
+- Added utils: `compendiumUtils.getDocumentByName`, `workflowUtils.applyWorkflowDamage`, `workflowUtils.bonusAttack`, `workflowUtils.modifyDamageAppliedFlat`.
+- Added disable conditions for active effects, stored in an array at `effect.flags.cat.disableCondition`. Statuses or equipped armor can disable effects. Not yet available in the Effect CatKit.
+## Bug Fixes:
+- Target passes in workflow events are now triggered properly.
+- The manual roll resolver auto-rolls blank inputs rather than taking the minimum.
+- The short and long rest buttons on group actors no longer crash if items are present on the sheet.
+- Aura events correctly track the source and targets for the aura.
+- Aura events correctly evaluate blocking statuses and respond to changes.
+
 # 0.0.5 Release:
 ## Update Notes:
  - Added equipment special durations to the Effect CatKit.
