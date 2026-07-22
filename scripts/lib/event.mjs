@@ -450,8 +450,8 @@ class MovementEvent extends CatEvent {
         this.range = range;
         this.sourceToken = sourceToken;
         this.setContext(token.actor, {token});
-        this.action = action ?? options?.cat?.movement?.action;
-        this.teleport = teleport ?? options?.cat?.movement?.teleport;
+        this.action = action;
+        this.teleport = teleport;
     }
     appendData(data) {
         return {
@@ -584,12 +584,13 @@ class CombatEvent extends CatEvent {
     }
 }
 class AuraEvent extends CatEvent {
-    constructor(targetToken, pass, {options} = {}) {
+    constructor(targetToken, pass, {options, eventSource} = {}) {
         super(pass);
         this.name = 'Aura';
         this.trigger = Triggers.AuraTrigger;
         this.multiResult = true;
         this.options = options;
+        this.eventSource = eventSource;
         this.setContext(targetToken.actor, {token: targetToken});
     }
     async run() {
@@ -659,7 +660,8 @@ class AuraEvent extends CatEvent {
     appendData(data) {
         return {
             ...super.appendData(data),
-            options: this.options
+            options: this.options,
+            eventSource: this.eventSource
         };
     }
 }

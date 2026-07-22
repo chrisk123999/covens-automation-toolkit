@@ -95,6 +95,9 @@ const VARS = {
         return variable('object', 'DDBI is not installed!');
     },
 
+    //Aura
+    eventSource: () => variable('string', 'The hook from which `options` originated.'),
+
     // Rest
     result: () => variable('object', 'Changes to apply from rest.'),
 

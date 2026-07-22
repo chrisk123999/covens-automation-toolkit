@@ -1,25 +1,23 @@
 import {constants, Events} from '../lib/_module.mjs';
-import {actorUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
-async function updateAuras(tokens, options) {
+import {actorUtils, queryUtils} from '../utilities/_module.mjs';
+async function updateAuras(tokens, {options, eventSource} = {}) {
     await Promise.all(tokens.map(async token =>
-        new Events.AuraEvent(token, constants.auraPasses.update, {options}).run()
+        new Events.AuraEvent(token, constants.auraPasses.update, {options, eventSource}).run()
     ));
 }
 async function createToken(token, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!token.actor) return;
-    genericUtils.setProperty(options, 'cat.eventSource', 'createToken');
-    await updateAuras(token.parent.tokens, options);
+    await updateAuras(token.parent.tokens, {options, eventSource: 'createToken'});
 }
 async function deleteToken(token, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!token.actor) return;
-    genericUtils.setProperty(options, 'cat.eventSource', 'deleteToken');
-    await updateAuras(token.parent.tokens.filter(t => t.id != token.id), options);
+    await updateAuras(token.parent.tokens.filter(t => t.id != token.id), {options, eventSource: 'deleteToken'});
 }
 async function canvasReady(canvas) {
     if (!queryUtils.isTheGM() || !canvas.scene) return;
-    await updateAuras(canvas.scene.tokens, {cat: {eventSource: 'canvasReady'}});
+    await updateAuras(canvas.scene.tokens, {eventSource: 'canvasReady'});
 }
 async function effect(effect, options) {
     if (!effect.parent) return;
@@ -31,8 +29,7 @@ async function effect(effect, options) {
         token = actorUtils.getFirstToken(effect.parent.actor);
     }
     if (!token) return;
-    genericUtils.setProperty(options, 'cat.eventSource', options.action + 'ActiveEffect');
-    await updateAuras(token.parent.tokens, options);
+    await updateAuras(token.parent.tokens, {options, eventSource: options.action + 'ActiveEffect'});
 }
 export default {
     updateAuras,
