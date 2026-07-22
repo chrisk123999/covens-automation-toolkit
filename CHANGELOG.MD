@@ -1,3 +1,7 @@
+# 0.0.7 Release:
+## API Update Notes:
+- Added utils: `effectUtils.resetDuration`.
+
 # 0.0.6 Release:
 ## API Update Notes:
 - Added utils: `compendiumUtils.getDocumentByName`, `workflowUtils.applyWorkflowDamage`, `workflowUtils.bonusAttack`, `workflowUtils.modifyDamageAppliedFlat`.

@@ -1,4 +1,4 @@
-import {dataUtils, queryUtils} from './_module.mjs';
+import {dataUtils, documentUtils, queryUtils} from './_module.mjs';
 function getCastData(effect) {
     return effect.flags.cat?.castData ?? effect.flags['midi-qol']?.castData;
 }
@@ -79,6 +79,17 @@ function getActor(effect) {
     if (effect.parent instanceof Actor) return effect.parent;
     if (effect.parent instanceof Item) return effect.parent.actor;
 }
+/**
+ * Set the effect start time to the current world time or combat turn.
+ * @param {foundry.documents.ActiveEffect} effect
+ * @returns {Promise<foundry.documents.ActiveEffect>}
+ */
+async function resetDuration(effect) {
+    return await documentUtils.update(effect, {
+        start: ActiveEffect.implementation.getEffectStart(),
+        'duration.expired': false
+    });
+}
 export default {
     getCastData,
     createEffects,
@@ -86,5 +97,6 @@ export default {
     getOriginActivity,
     getOriginActivitySync,
     getConcentrationEffect,
-    getActor
+    getActor,
+    resetDuration
 };
