@@ -450,8 +450,8 @@ class MovementEvent extends CatEvent {
         this.range = range;
         this.sourceToken = sourceToken;
         this.setContext(token.actor, {token});
-        this.action = action ?? options?.cat?.movement?.action;
-        this.teleport = teleport ?? options?.cat?.movement?.teleport;
+        this.action = action;
+        this.teleport = teleport;
     }
     appendData(data) {
         return {
@@ -501,7 +501,7 @@ class RegionEvent extends CatEvent {
                 try {
                     await trigger.macro(trigger);
                 } catch (error) {
-                    Logging.addMacroError(error);
+                    Logging.addMacroError(trigger, error);
                 }
             }
         }
@@ -584,14 +584,14 @@ class CombatEvent extends CatEvent {
     }
 }
 class AuraEvent extends CatEvent {
-    constructor(token, pass, {options, targetToken} = {}) {
+    constructor(targetToken, pass, {options, eventSource} = {}) {
         super(pass);
         this.name = 'Aura';
         this.trigger = Triggers.AuraTrigger;
         this.multiResult = true;
         this.options = options;
-        this.targetToken = targetToken;
-        this.setContext(token.actor, {token});
+        this.eventSource = eventSource;
+        this.setContext(targetToken.actor, {token: targetToken});
     }
     async run() {
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
@@ -635,7 +635,7 @@ class AuraEvent extends CatEvent {
                 try {
                     result = await trigger.macro(trigger);
                 } catch (error) {
-                    Logging.addMacroError(error);
+                    Logging.addMacroError(trigger, error);
                 }
             }
             if (result) {
@@ -653,15 +653,15 @@ class AuraEvent extends CatEvent {
     }
     get unsortedTriggers() {
         if (!this.scene) return [];
-        let triggers = this.getNearbyTriggers(this.scene, this.pass, {targetToken: this.targetToken, options: this.options});
+        let triggers = this.getNearbyTriggers(this.scene, this.pass, {options: this.options});
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }
     appendData(data) {
         return {
             ...super.appendData(data),
-            targetToken: this.targetToken,
-            options: this.options
+            options: this.options,
+            eventSource: this.eventSource
         };
     }
 }

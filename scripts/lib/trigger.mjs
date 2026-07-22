@@ -27,34 +27,34 @@ class Trigger {
     processEmbeddedMacro() {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros(this.constructor.type, this.pass);
     }
+    filterDistance(macro) {
+        const target = this.targetToken || this.sourceToken;
+        if (!this.distances || !target) return false;
+        const disabled = macro.configDisabled ? automationUtils.getConfigValue(this.document, macro.configDisabled) : macro.disabled;
+        if (disabled) {
+            const actor = this.targetToken.actor;
+            if (actor && disabled.some(reason => actor.statuses.has(reason))) return false;
+        }
+        const dispositions = macro.configDispositions ? automationUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
+        if (dispositions) {
+            const isEnemy = tokenUtils.isEnemy(this.token, this.targetToken);
+            const isAlly = !isEnemy;
+            if (!(dispositions.includes('all') || (dispositions.includes('ally') && isAlly) || (dispositions.includes('enemy') && isEnemy))) return false;
+        }
+        const maxDistance = macro.configDistance ? automationUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
+        if (maxDistance !== undefined) {
+            const distance = this.distances[target.id] ?? Infinity;
+            if (distance < 0 || maxDistance < distance) return false;
+        }
+        return macro;
+    }
     processDistanceMacros() {
-        const filterFn = (macro) => {
-            const target = this.targetToken || this.sourceToken;
-            if (!this.distances || !target) return false;
-            const disabled = macro.configDisabled ? automationUtils.getConfigValue(this.document, macro.configDisabled) : macro.disabled;
-            if (disabled) {
-                const actor = this.targetToken.actor;
-                if (actor && disabled.some(reason => actor.statuses.has(reason))) return false;
-            }
-            const dispositions = macro.configDispositions ? automationUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
-            if (dispositions) {
-                const isEnemy = tokenUtils.isEnemy(this.token, this.targetToken);
-                const isAlly = !isEnemy;
-                if (!(dispositions.includes('all') || (dispositions.includes('ally') && isAlly) || (dispositions.includes('enemy') && isEnemy))) return false;
-            }
-            const maxDistance = macro.configDistance ? automationUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
-            if (maxDistance !== undefined) {
-                const distance = this.distances[target.id] ?? Infinity;
-                if (distance < 0 || maxDistance < distance) return false;
-            }
-            return macro;
-        };
         if (this.fnMacros.length) {
-            this.fnMacros.forEach(fnMacro => fnMacro.macros = fnMacro.macros.map(filterFn).filter(Boolean));
+            this.fnMacros.forEach(fnMacro => fnMacro.macros = fnMacro.macros.map(this.filterDistance, this).filter(Boolean));
             this.fnMacros = this.fnMacros.filter(fnMacro => fnMacro.macros.length);
         }
         if (this.embeddedMacros.length) {
-            this.embeddedMacros.forEach(embeddedMacro => embeddedMacro.macros = embeddedMacro.macros.map(filterFn).filter(Boolean));
+            this.embeddedMacros.forEach(embeddedMacro => embeddedMacro.macros = embeddedMacro.macros.map(this.filterDistance, this).filter(Boolean));
             this.embeddedMacros = this.embeddedMacros.filter(embeddedMacro => embeddedMacro.macros.length);
         }
     }
@@ -76,6 +76,27 @@ class CombatTrigger extends Trigger {
 }
 class AuraTrigger extends Trigger {
     static get type() { return 'aura'; }
+    filterDistance(macro) {
+        const auraSourceToken = this.targetToken;
+        if (!this.distances || !auraSourceToken) return false;
+        const disabled = macro.configDisabled ? automationUtils.getConfigValue(this.document, macro.configDisabled) : macro.disabled;
+        if (disabled) {
+            const actor = this.token.actor;
+            if (actor && disabled.some(reason => actor.statuses.has(reason))) return false;
+        }
+        const dispositions = macro.configDispositions ? automationUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
+        if (dispositions) {
+            const isEnemy = tokenUtils.isEnemy(this.token, auraSourceToken);
+            const isAlly = !isEnemy;
+            if (!(dispositions.includes('all') || (dispositions.includes('ally') && isAlly) || (dispositions.includes('enemy') && isEnemy))) return false;
+        }
+        const maxDistance = macro.configDistance ? automationUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
+        if (maxDistance !== undefined) {
+            const distance = this.distances[auraSourceToken.id] ?? Infinity;
+            if (distance < 0 || maxDistance < distance) return false;
+        }
+        return macro;
+    }
 }
 class ItemTrigger extends Trigger {
     static get type() { return 'item'; }
