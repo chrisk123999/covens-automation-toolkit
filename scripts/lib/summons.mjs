@@ -369,4 +369,8 @@ export class Summon {
     async recall() {
         return constants.summons.removeSummon(this);
     }
+    async extendDuration(value) {
+        this.duration += value;
+        await documentUtils.setFlag(this.actor, 'cat', 'summon.duration', this.duration);
+    }
 }
