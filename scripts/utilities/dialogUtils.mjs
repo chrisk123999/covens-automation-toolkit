@@ -11,10 +11,6 @@ async function runQueuedDialog(userId, title, content, inputs, buttons, config) 
     }
     return await queryUtils.query('queuedDialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
 }
-async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
-    let selection = await runDialog(userId, title, content, [], buttons);
-    return selection?.buttons;
-}
 async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sort = null} = {}) {
     let inputs = [
         ['button', [], {displayAsRows: displayAsRows}]
@@ -255,8 +251,24 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
         amount: Number(value)
     }));
 }
-async function confirmUseItem(item, {userId = game.user.id, buttons = 'yesNo'} = {}) {
-    let content = _loc('CAT.Dialog.Use', {itemName: item.name});
+async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
+    let selection = await runDialog(userId, title, content, [], buttons);
+    return selection?.buttons;
+}
+async function confirmUseItem(document, {userId = game.user.id, buttons = 'yesNo'} = {}) {
+    let content = _loc('CAT.Dialog.Use', {document: document.name});
+    return await confirm('COMMON.Confirm', content, {userId, buttons});
+}
+async function confirmUseExtraCost(document, quantity, resource, {userId = game.user.id, buttons = 'yesNo'} = {}) {
+    let content = _loc('CAT.Dialog.UseExtraCost', {document: document.name, quantity, resource});
+    return await confirm('COMMON.Confirm', content, {userId, buttons});
+}
+async function confirmUseRollTotal(document, rollTotal, {userId = game.user.id, buttons = 'yesNo'} = {}) {
+    const content = _loc('CAT.Dialog.UseRollTotal', {document: document.name, rollTotal});
+    return await confirm('COMMON.Confirm', content, {userId, buttons});
+}
+async function confirmUseForRollTotal(document, name, rollTotal, {userId = game.user.id, buttons = 'yesNo'} = {}) {
+    const content = _loc('CAT.Dialog.UseForRollTotal', {document: document.name, name, rollTotal});
     return await confirm('COMMON.Confirm', content, {userId, buttons});
 }
 async function confirmRecoverUses(document, documentWithUses, {spent, userId = game.user.id, buttons = 'yesNo'} = {}) {
@@ -337,7 +349,6 @@ async function selectDie(rolls = [], title, content, {max = 1, userId = game.use
     return Object.entries(result).filter(([, v]) => v).map(([k]) => k);
 }
 export default {
-    confirm,
     buttonDialog,
     numberDialog,
     selectDialog,
@@ -346,7 +357,11 @@ export default {
     selectSpellSlot,
     selectDamageType,
     selectHitDie,
+    confirm,
     confirmUseItem,
+    confirmUseExtraCost,
+    confirmUseRollTotal,
+    confirmUseForRollTotal,
     confirmRecoverUses,
     queuedConfirmDialog,
     selectTargetDialog,

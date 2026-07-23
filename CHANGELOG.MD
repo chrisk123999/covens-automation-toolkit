@@ -1,6 +1,6 @@
 # 0.0.7 Release:
 ## API Update Notes:
-- Added utils: `effectUtils.resetDuration`.
+- Added utils: `effectUtils.resetDuration` and several confirm dialog helpers for different localized prompts.
 
 # 0.0.6 Release:
 ## API Update Notes:

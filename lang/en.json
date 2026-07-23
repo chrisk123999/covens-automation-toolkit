@@ -525,8 +525,11 @@
       "SkipDeadAndUnconscious": "Skip Dead and Unconscious",
       "Total": "Total",
       "UnknownTarget": "Unknown Target",
-      "Use": "Use {itemName}?",
-      "UseRecover": "Use {document} to recover {spent}/{max} {resource}?"
+      "Use": "Use {document}?",
+      "UseExtraCost": "Use {document}? (Costs {quantity} {resource})",
+      "UseRecover": "Use {document} to recover {spent}/{max} {resource}?",
+      "UseRollTotal": "Use {document}? (Roll Total: {rollTotal})",
+      "UseForRollTotal": "Use {document} for {name}? (Roll Total: {rollTotal})"
     },
     "Common": {
       "Cover": "{amount} {cover}"
