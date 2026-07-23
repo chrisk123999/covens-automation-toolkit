@@ -1,3 +1,4 @@
+const {OperatorTerm, NumericTerm} = foundry.dice.terms;
 /**
  * @typedef {object} CritOptions
  * @property {string} [bonusDamage] An extra term in the formula.
@@ -94,6 +95,54 @@ function hasDuplicateDie(rolls) {
     }
     return hasDuplicate(rolls.flatMap(i => i.dice.flatMap(j => j.results.filter(k => k.active).flatMap(l => l.result))));
 }
+/**
+ * Discard all terms in {@link roll}. Use the terms and total from {@link newRoll}.
+ * @param {foundry.dice.Roll} roll 
+ * @param {foundry.dice.Roll} newRoll 
+ * @returns {foundry.dice.Roll}
+ */
+function replaceRollShowDiscarded(roll, newRoll) {
+    for (const term of roll.terms) {
+        if (term.isDeterministic) continue;
+        for (const result of term.results) {
+            result.active = false;
+            result.discarded = true;
+        }
+    }
+    roll.terms.push(
+        new OperatorTerm({operator: '+'}), 
+        ...newRoll.terms
+    );
+    roll._formula = newRoll.formula;
+    roll._total = newRoll.total;
+    return roll;
+}
+/**
+ * Discards rolled terms and brings the total to the given value by adding a bonus.
+ * @param {foundry.dice.Roll} roll 
+ * @param {number} total
+ * @returns {foundry.dice.Roll}
+ */
+function setTotalWithBonus(roll, total) {
+    let number = total;
+    for (const term of roll.terms) {
+        if (term.isDeterministic) {
+            if (Number.isNumeric(term.total)) number -= term.total;
+            continue;
+        }
+        for (const result of term.results) {
+            result.active = false;
+            result.discarded = true;
+        }
+    }
+    roll.terms.push(
+        new OperatorTerm({operator: '+'}),
+        new NumericTerm({number}).evaluate()
+    );
+    roll._total = total;
+    roll.resetFormula();
+    return roll;
+}
 export default {
     rollDiceSync,
     rollDice,
@@ -102,5 +151,7 @@ export default {
     addToRoll,
     damageRoll,
     getChangedDamageRoll,
-    hasDuplicateDie
+    hasDuplicateDie,
+    replaceRollShowDiscarded,
+    setTotalWithBonus
 };
