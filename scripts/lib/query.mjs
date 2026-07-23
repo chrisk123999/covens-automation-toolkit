@@ -81,6 +81,9 @@ async function moveToken({uuid, waypoints, options}) {
     if (!token) return;
     return await token.move(waypoints, options);
 }
+async function updateTargets({ids}) {
+    canvas.tokens?.setTargets(ids);
+}
 function registerQueries() {
     const handlers = {
         createEffects,
@@ -96,7 +99,8 @@ function registerQueries() {
         createFolder,
         manualRoll,
         modifyBatch,
-        moveToken
+        moveToken,
+        updateTargets
     };
     for (const [name, fn] of Object.entries(handlers)) {
         globalThis.CONFIG.queries['cat.' + name] = fn;
@@ -117,5 +121,6 @@ export default {
     createFolder,
     manualRoll,
     modifyBatch,
-    moveToken
+    moveToken,
+    updateTargets
 };

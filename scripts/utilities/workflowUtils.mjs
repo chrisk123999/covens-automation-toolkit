@@ -227,6 +227,17 @@ function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flav
     }
     return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, targets.map(t => t.object), damageRoll, {flavor, itemCardId, itemData});
 }
+/**
+ * @param {MidiQOL.Workflow} workflow 
+ * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} targets 
+ * @param {string} userId 
+ */
+async function updateTargets(workflow, targets, userId = game.user.id) {
+    workflow.targets = new Set(targets);
+    const ids = targets.map(t => t.id);
+    if (userId === game.user.id) canvas.tokens?.setTargets(ids);
+    else await queryUtils.query('updateTargets', userId, {ids});
+}
 export default {
     getActionType,
     isAttackType,
@@ -247,5 +258,6 @@ export default {
     getCastLevel,
     setActivity,
     bonusAttack,
-    applyWorkflowDamage
+    applyWorkflowDamage,
+    updateTargets
 };

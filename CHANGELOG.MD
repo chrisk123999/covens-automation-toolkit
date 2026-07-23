@@ -1,6 +1,6 @@
 # 0.0.7 Release:
 ## API Update Notes:
-- Added utils: `effectUtils.resetDuration`, `rollUtils.replaceRollShowDiscarded`, `rollUtils.setTotalWithBonus` and several confirm dialog helpers for different localized prompts.
+- Added utils: `effectUtils.resetDuration`, `rollUtils.replaceRollShowDiscarded`, `rollUtils.setTotalWithBonus`, `workflowUtils.updateTargets`, and several confirm dialog helpers for different localized prompts.
 ## Bug Fixes:
 - Alternate Attribute for class spellcasting bonuses now displays attacks on the character sheet correctly.
 

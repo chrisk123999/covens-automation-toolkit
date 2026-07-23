@@ -527,6 +527,7 @@
       "UnknownTarget": "Unknown Target",
       "Use": "Use {document}?",
       "UseExtraCost": "Use {document}? (Costs {quantity} {resource})",
+      "UseOn": "Use {document} on {target}?",
       "UseRecover": "Use {document} to recover {spent}/{max} {resource}?",
       "UseRollTotal": "Use {document}? (Roll Total: {rollTotal})",
       "UseForRollTotal": "Use {document} for {name}? (Roll Total: {rollTotal})"
