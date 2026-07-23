@@ -72,18 +72,24 @@ function prepareFinalDataSave(wrapped, ...args) {
     }, 0);
     this.save.dc.value += totalBonus;
 }
-function prepareFinalDataAttack(wrapped, ...args) {
-    wrapped.apply(this, args);
-    if (!this.actor) return;
+function getAttackData(wrapped, ...args) {
+    const exit = () => wrapped(args);
+    if (!this.actor) return exit();
+    if (this.attack.catModified) return exit();
     const sourceClassIdentifier = itemUtils.getSourceClassIdentifier(this.item);
-    if (!sourceClassIdentifier) return;
+    if (!sourceClassIdentifier) return exit();
     const totalBonus = this.actor.items.reduce((acc, item) => {
         if (!itemUtils.getEquipmentState(item)) return acc;
         const bonus = item.flags.cat?.classAttackBonus?.[sourceClassIdentifier]?.value;
         if (bonus) return acc + bonus;
         return acc;
     }, 0);
-    if (totalBonus) this.attack.bonus += ' + ' + totalBonus;
+    this.attack.bonus ||= '';
+    if (totalBonus) {
+        this.attack.bonus += ' + ' + totalBonus;
+        this.attack.catModified = true;
+    }
+    return exit();
 }
 function patch(enabled) {
     if (enabled) {
@@ -91,15 +97,15 @@ function patch(enabled) {
         libWrapper.register('cat', 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities', availableAbilities, 'MIXED');
         Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData', {force: true});
         libWrapper.register('cat', 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData', prepareFinalDataSave, 'WRAPPER');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.AttackActivity.prototype.prepareFinalData', {force: true});
-        libWrapper.register('cat', 'dnd5e.documents.activity.AttackActivity.prototype.prepareFinalData', prepareFinalDataAttack, 'WRAPPER');
+        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData', {force: true});
+        libWrapper.register('cat', 'dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData', getAttackData, 'WRAPPER');
     } else {
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.AttackActivity.prototype.availableAbilities');
         libWrapper.unregister('cat', 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities');
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData');
         libWrapper.unregister('cat', 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.AttackActivity.prototype.prepareFinalData');
-        libWrapper.unregister('cat', 'dnd5e.documents.activity.AttackActivity.prototype.prepareFinalData');
+        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData');
+        libWrapper.unregister('cat', 'dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData');
     }
 }
 export default {

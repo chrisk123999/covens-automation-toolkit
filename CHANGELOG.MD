@@ -1,6 +1,8 @@
 # 0.0.7 Release:
 ## API Update Notes:
 - Added utils: `effectUtils.resetDuration` and several confirm dialog helpers for different localized prompts.
+## Bug Fixes:
+- Alternate Attribute for class spellcasting bonuses now displays attacks on the character sheet correctly.
 
 # 0.0.6 Release:
 ## API Update Notes:
