@@ -1,5 +1,5 @@
 import {summonEvents} from '../events/_module.mjs';
-import {actorUtils, folderUtils, genericUtils, documentUtils, crosshairUtils, animationUtils, itemUtils} from '../utilities/_module.mjs';
+import {actorUtils, folderUtils, genericUtils, documentUtils, crosshairUtils, animationUtils, itemUtils, dialogUtils, queryUtils} from '../utilities/_module.mjs';
 import {constants} from './_module.mjs';
 export class SummonsManager {
     #summons = new Map();
@@ -30,8 +30,9 @@ export class SummonsManager {
             const parent = summonData.parent ? await fromUuid(summonData.parent) : undefined;
             const sounds = summonData.sounds;
             const initiative = summonData.initiative;
+            const dismissAtZero = summonData.dismissAtZero;
             if (!owner || !sourceActor || created === undefined) return;
-            return new Summon(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative});
+            return new Summon(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero});
         }))).filter(Boolean);
         resolvedSummons.forEach(summon => this.#summons.set(summon.actor.id, summon));
     }
@@ -70,7 +71,7 @@ export class SummonsManager {
             this.#creatingOwnerFolders.delete(actor.uuid);
         }
     }
-    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, animation, disposition, sourceDocument, sounds, items = [], initiative} = {}) {
+    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, animation, disposition, sourceDocument, sounds, items = [], initiative, dismissAtZero} = {}) {
         const actorData = (await summon.getSourceActor()).toObject();
         delete actorData._id;
         delete actorData.sort;
@@ -102,7 +103,8 @@ export class SummonsManager {
             parent: summon.parent?.uuid,
             sourceDocument: sourceDocument?.uuid,
             sounds,
-            initiative
+            initiative,
+            dismissAtZero: summon.dismissAtZero
         });
         return await actorUtils.createActor(actorData);
     }
@@ -322,9 +324,14 @@ export class SummonsManager {
         }
         return spawnedTokens;
     }
+    async zeroHP(summon) {
+        const selection = await dialogUtils.confirm('CAT.Summon.DeadTitle', 'CAT.Summon.DeadContext', {userId: queryUtils.gmID()});
+        if (!selection) return;
+        await this.deleteSummon(summon);
+    }
 }
 export class Summon {
-    constructor(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative} = {}) {
+    constructor(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero} = {}) {
         this.sourceActorUuid = sourceActor.uuid;
         this.ownerUuid = owner.uuid;
         this.actor = actor;
@@ -336,6 +343,7 @@ export class Summon {
         this.sourceDocumentUuid = sourceDocument?.uuid;
         this.sounds = sounds ?? {};
         this.initiative = initiative;
+        this.dismissAtZero = dismissAtZero ?? false;
     }
     get token() {
         return actorUtils.getFirstToken(this.actor);
