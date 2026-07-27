@@ -90,6 +90,15 @@ function numberInput(input) {
     html += `>`;
     return html;
 }
+function wrapIf(condition, tagName, options) {
+    if (!options) {
+        options = tagName;
+        tagName = null;
+    }
+    if (!condition) return options.fn(this);
+    const tag = typeof tagName === 'string' ? tagName : 'div';
+    return new Handlebars.SafeString(`<${tag}>${options.fn(this)}</${tag}>`);
+}
 const helpers = {
     'cat-button': button,
     'cat-selectDetailed': selectDetailed,
@@ -97,7 +106,8 @@ const helpers = {
     'cat-contentP': contentP,
     'cat-textInput': textInput,
     'cat-labelP': labelP,
-    'cat-numberInput': numberInput
+    'cat-numberInput': numberInput,
+    'cat-wrapIf': wrapIf
 };
 function onClick(event) {
     const data = this;

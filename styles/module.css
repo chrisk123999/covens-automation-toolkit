@@ -166,6 +166,8 @@
     display: inline-flex;
     justify-content: center;
     align-items: center;
+    border-color: var(--cat-border-light);
+    padding: var(--cat-space-sm);
 }
 
 .cat-dialog .cat-body-button .button-image {
@@ -1210,7 +1212,8 @@ cat-combobox {
     display: block;
 }
 
-.cat-medkit fieldset {
+.cat-medkit fieldset,
+.cat-dialog-body fieldset {
     gap: var(--cat-space-sm);
     display: flex;
     flex-direction: column;
@@ -1221,7 +1224,51 @@ cat-combobox {
     background: rgb(0 0 0 / 12%);
 }
 
-.cat-medkit fieldset > legend {
+.cat-collapsible-icon-placeholder {
+    display: flex;
+    cursor: pointer;
+    flex: 0 0 24px;
+    padding: 8px;
+    width: 24px;
+    margin-left: -5px;
+}
+
+.cat-collapsible-icon {
+    transition: transform 250ms ease;
+}
+
+.cat-collapsible.collapsed .cat-collapsible-icon {
+    transform: rotate(-90deg);
+}
+
+.cat-collapsible .cat-collapsible-content {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: all 250ms ease;
+}
+
+.cat-collapsible.collapsed .cat-collapsible-content {
+    grid-template-rows: 0fr;
+    opacity: 0;
+}
+
+.cat-collapsible .cat-collapsible-content > .cat-collapsible-wrapper {
+  overflow: hidden;
+}
+
+.cat-collapsible.collapsed .cat-collapsible-content > .cat-collapsible-wrapper {
+    padding: 0;
+    margin: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.cat-dialog-body .form-group > label {
+    cursor: pointer;
+}
+
+.cat-medkit fieldset > legend,
+.cat-dialog-body fieldset > legend {
     padding: 0 var(--cat-space-sm);
     color: var(--cat-text-accent);
     font-weight: 600;

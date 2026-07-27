@@ -2,6 +2,15 @@ import {uiUtils} from '../utilities/_module.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundry.data.fields;
 
+const INPUTS_TEMPLATE = 'modules/cat/templates/dialog-fields.hbs';
+Hooks.once('setup', () => {
+    foundry.applications.handlebars.loadTemplates([INPUTS_TEMPLATE]);
+});
+
+const SUBINPUT_SEPARATOR = '-';
+const GROUP_ID = 'g';
+const INPUT_ID = 'i';
+
 // Generic dialog for macros. API matches CPR v13 DialogApp.
 export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2) {
     #context;
@@ -37,7 +46,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         },
         actions: {
             confirm: DialogApp.#confirm,
-            toggleDetach: DialogApp.#onToggleDetach
+            toggleDetach: DialogApp.#onToggleDetach,
+            toggleCollapsed: DialogApp.#toggleCollapsed
         },
         window: {
             frame: false,
@@ -75,6 +85,28 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             width: Math.round(rect.width) + chromeW,
             height: Math.round(rect.height) + chromeH
         }});
+    }
+
+    #expandedSections = new Map();
+
+    /** @this {DialogApp} */
+    static #toggleCollapsed(_event, target) {
+        const collapsible = target.closest('.cat-collapsible');
+        if (!collapsible) return;
+        collapsible.classList.toggle('collapsed');
+        this.#expandedSections.set(
+            target.closest('[data-collapsible-id]')?.dataset.collapsibleId,
+            !collapsible.classList.contains('collapsed')
+        );
+    }
+
+    _replaceHTML(result, content, options) {
+        for (const part of Object.values(result)) {
+            for (const element of part.querySelectorAll('[data-collapsible-id]')) {
+                element.classList.toggle('collapsed', !this.#expandedSections.get(element.dataset.collapsibleId));
+            }
+        }
+        super._replaceHTML(result, content, options);
     }
 
     /**
@@ -139,13 +171,15 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         return arr;
     }
 
+    static #makeID(groupIndex, inputIndex, parentIndex = '') {
+        if (parentIndex) parentIndex += SUBINPUT_SEPARATOR;
+        return parentIndex + GROUP_ID + groupIndex + INPUT_ID + inputIndex;
+    }
+
     // Convert each declarative input tuple into template-ready entry.
     #formatInputs() {
         const context = {content: this.content, inputs: [], buttons: []};
-        for (const [inputType, inputFields, inputOptions] of this.inputs) {
-            const entry = this.#buildInput(inputType, inputFields, inputOptions);
-            if (entry) context.inputs.push(entry);
-        }
+        context.inputs = this.#buildInputs(this.inputs);
         switch (this.buttons) {
             case 'yesNo':
                 context.buttons.push(DialogApp.#makeButton('Yes', 'true'), DialogApp.#makeButton('No', 'false'));
@@ -160,27 +194,44 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 context.buttons.push(DialogApp.#makeButton('Cancel', 'false'));
                 break;
         }
+        context.inputTemplate = INPUTS_TEMPLATE;
         this.#context = context;
     }
 
-    #buildInput(type, fields, opts) {
+    #buildInputs(inputs, parentIndex = '') {
+        if (!inputs?.length) return;
+        const built = [];
+        for (let i = 0; i < inputs.length; i++) {
+            const [inputType, inputFields, inputOptions] = inputs[i];
+            const entry = this.#buildInput(inputType, inputFields, inputOptions, i, parentIndex);
+            if (entry) built.push(entry);
+        }
+        return built;
+    }
+
+    #buildInput(type, ...args) {
         switch (type) {
-            case 'button': return this.#buildButton(fields, opts);
-            case 'checkbox': return this.#buildCheckbox(fields, opts);
-            case 'radio': return this.#buildRadio(fields, opts);
-            case 'selectAmount': return this.#buildSelectAmount(fields, opts);
-            case 'selectMany': return this.#buildSelectMany(fields, opts);
-            case 'selectOption': return this.#buildSelectOption(fields, opts);
-            case 'combobox': return this.#buildCombobox(fields, opts);
-            case 'comboboxMulti': return this.#buildComboboxMulti(fields, opts);
-            case 'text': return this.#buildText(fields);
-            case 'number': return this.#buildNumber(fields);
-            case 'filePicker': return this.#buildFilePicker(fields);
-            case 'dice': return this.#buildDice(fields, opts);
+            case 'text': return this.#buildText(...args);
+            case 'dice': return this.#buildDice(...args);
+            case 'radio': return this.#buildRadio(...args);
+            case 'button': return this.#buildButton(...args);
+            case 'number': return this.#buildNumber(...args);
+            case 'slider': return this.#buildSlider(...args);
+            case 'checkbox': return this.#buildCheckbox(...args);
+            case 'combobox': return this.#buildCombobox(...args);
+            case 'filePicker': return this.#buildFilePicker(...args);
+            case 'selectMany': return this.#buildSelectMany(...args);
+            case 'selectOption': return this.#buildSelectOption(...args);
+            case 'selectAmount': return this.#buildSelectAmount(...args);
+            case 'comboboxMulti': return this.#buildComboboxMulti(...args);
         }
     }
 
-    #buildDice(fields, opts) {
+    #buildSlider(fields, opts, index, parentIndex) {
+
+    }
+
+    #buildDice(fields, opts, _index, _parentIndex) {
         const standardFaces = new Set([4, 6, 8, 10, 12, 20]);
         const groups = new Map();
         for (const f of fields) {
@@ -205,26 +256,30 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             currentNum: 0,
             grandTotal,
             groups: Array.from(groups.values()),
-            options: fields.map(f => ({name: f.name, isChecked: false}))
+            options: fields.map((f, i) => ({name: f.name, isChecked: false})),
+            legend: opts?.legend
         };
     }
 
-    #buildButton(fields, opts) {
+    #buildButton(fields, opts, index, parentIndex) {
         return {
             isButton: true,
             displayAsRows: opts?.displayAsRows ?? false,
-            options: fields.map(f => ({
+            options: fields.map((f, i) => ({
                 label: f.label,
                 name: f.name,
                 image: f.options?.image,
                 imageClass: f.options?.imageClass,
+                invertColor: f.options?.invertColor,
                 tooltip: f.options?.tooltip,
-                reference: f.options?.reference
-            }))
+                reference: f.options?.reference,
+                id: DialogApp.#makeID(index, i, parentIndex)
+            })),
+            legend: opts?.legend
         };
     }
 
-    #buildCheckbox(fields, opts) {
+    #buildCheckbox(fields, opts, index, parentIndex) {
         // Single checkbox with no totalMax / image → helper route (BooleanField).
         if (fields.length === 1 && opts?.totalMax == null && !fields[0].options?.image) {
             const f = fields[0];
@@ -233,46 +288,58 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 options: [{
                     field: new BooleanField({label: f.label}),
                     name: f.name,
-                    value: f.options?.isChecked ?? false
+                    value: f.options?.isChecked ?? false,
+                    id: DialogApp.#makeID(index, 0, parentIndex)
                 }]
             };
         }
-        const options = fields.map(f => ({
+        const options = fields.map((f, i) => ({
             label: f.label,
             name: f.name,
             isChecked: f.options?.isChecked ?? false,
             image: f.options?.image,
+            invertColor: f.options?.invertColor,
             hint: f.options?.hint,
-            select: f.options?.select,
-            locked: f.options?.locked ?? false
+            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+            locked: f.options?.locked ?? false,
+            id: DialogApp.#makeID(index, i, parentIndex)
         }));
         return {
             isCheckbox: true,
             options,
             totalMax: opts?.totalMax ?? 99,
             showCounter: opts?.totalMax != null,
-            currentNum: options.filter(i => i.isChecked).length
+            currentNum: options.filter(i => i.isChecked).length,
+            hasSubinputs: options.some(i => i.subinputs?.length),
+            legend: opts?.legend
         };
     }
 
-    #buildRadio(fields, opts) {
+    #buildRadio(fields, opts, index, parentIndex) {
         return {
             isRadio: true,
-            options: fields.map(f => ({
+            options: fields.map((f, i) => ({
                 label: f.label,
                 name: f.name,
                 isChecked: f.options?.isChecked ?? false,
-                image: f.options?.image
+                image: f.options?.image,
+                invertColor: f.options?.invertColor,
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+                id: DialogApp.#makeID(index, i, parentIndex)
             })),
-            radioName: opts?.radioName ?? 'radio'
+            hasSubinputs: fields.some(f => f.options?.subinputs?.length),
+            radioName: opts?.radioName ?? 'radio',
+            legend: opts?.legend
         };
     }
 
-    #buildSelectAmount(fields, opts) {
-        const options = fields.map(f => {
+    #buildSelectAmount(fields, opts, index, parentIndex) {
+        const options = fields.map((f, i) => {
             const min = f.options?.minAmount ?? 0;
             const max = f.options?.maxAmount ?? 10;
+            const id = DialogApp.#makeID(index, i, parentIndex);
             return {
+                id,
                 label: f.label,
                 name: f.name,
                 minAmount: min,
@@ -280,20 +347,24 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 currentAmount: f.options?.currentAmount ?? 0,
                 weight: f.options?.weight ?? 1,
                 options: DialogApp.#makeRange(min, max),
-                image: f.options?.image
+                image: f.options?.image,
+                invertColor: f.options?.invertColor,
+                subinputs: this.#buildInputs(f.options?.subinputs, id)
             };
         });
         return this.#currentMaxAmounts({
+            hasSubinputs: options.some(o => o.subinputs?.length),
             isSelectAmount: true,
             totalMax: opts?.totalMax,
-            options
+            options,
+            legend: opts?.legend
         });
     }
 
-    #buildSelectMany(fields) {
+    #buildSelectMany(fields, opts, index, parentIndex) {
         return {
             useHelper: true,
-            options: fields.map(f => {
+            options: fields.map((f, i) => {
                 const choices = (f.options?.options ?? []).reduce((acc, i) => {
                     acc[i.value] = i.label;
                     return acc;
@@ -301,13 +372,15 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 return {
                     field: new SetField(new StringField({choices}), {label: f.label}),
                     name: f.name,
-                    value: f.options?.value ?? []
+                    value: f.options?.value ?? [],
+                    id: DialogApp.#makeID(index, i, parentIndex)
                 };
-            })
+            }),
+            legend: opts?.legend
         };
     }
 
-    #buildSelectOption(fields) {
+    #buildSelectOption(fields, opts, _index, _parentIndex) {
         return {
             useHelper: true,
             options: fields.map(f => {
@@ -321,14 +394,15 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     name: f.name,
                     value: f.options?.currentValue ?? ''
                 };
-            })
+            }),
+            legend: opts?.legend
         };
     }
 
-    #buildCombobox(fields) {
+    #buildCombobox(fields, opts, index, parentIndex) {
         return {
             isCombobox: true,
-            options: fields.map(f => ({
+            options: fields.map((f, i) => ({
                 label: f.label,
                 name: f.name,
                 value: f.options?.value ?? '',
@@ -338,15 +412,19 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     label: o.label,
                     image: o.image ?? '',
                     tag: o.tag ?? ''
-                }))
-            }))
+                })),
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+                id: DialogApp.#makeID(index, i, parentIndex)
+            })),
+            hasSubinputs: fields.some(f => f.options?.subinputs?.length),
+            legend: opts?.legend
         };
     }
 
-    #buildComboboxMulti(fields) {
+    #buildComboboxMulti(fields, opts, index, parentIndex) {
         return {
             isComboboxMulti: true,
-            options: fields.map(f => ({
+            options: fields.map((f, i) => ({
                 label: f.label,
                 name: f.name,
                 placeholder: f.options?.placeholder ?? '',
@@ -359,34 +437,40 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     tag: o.tag ?? '',
                     weight: o.weight ?? 1,
                     max: o.max ?? null
-                }))
-            }))
+                })),
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+                id: DialogApp.#makeID(index, i, parentIndex)
+            })),
+            hasSubinputs: fields.some(f => f.options?.subinputs?.length),
+            legend: opts?.legend
         };
     }
 
-    #buildText(fields) {
+    #buildText(fields, opts, _index, _parentIndex) {
         return {
             useHelper: true,
             options: fields.map(f => ({
                 field: new StringField({label: f.label}),
                 name: f.name,
                 value: f.options?.currentValue ?? ''
-            }))
+            })),
+            legend: opts?.legend
         };
     }
 
-    #buildNumber(fields) {
+    #buildNumber(fields, opts, _index, _parentIndex) {
         return {
             useHelper: true,
             options: fields.map(f => ({
                 field: new NumberField({label: f.label}),
                 name: f.name,
                 value: f.options?.currentValue ?? 0
-            }))
+            })),
+            legend: opts?.legend
         };
     }
 
-    #buildFilePicker(fields) {
+    #buildFilePicker(fields, opts, _index, _parentIndex) {
         return {
             useHelper: true,
             options: fields.map(f => {
@@ -399,7 +483,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     name: f.name,
                     value: f.options?.currentValue ?? ''
                 };
-            })
+            }),
+            legend: opts?.legend
         };
     }
 
@@ -464,32 +549,41 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             }
             return;
         }
-        const ctx = this.#context;
-        const idMatch = targetInput.id?.match(/i(\d+)j(\d+)/);
-        if (!idMatch) return;
-        const [i, j] = [parseInt(idMatch[1]), parseInt(idMatch[2])];
+        const matcher = new RegExp(`${GROUP_ID}(\\d+)${INPUT_ID}(\\d+)`);
+        const groups = targetInput.id?.split(SUBINPUT_SEPARATOR);
+        if (!groups?.length) return;
+        let ctx = this.#context;
+        let group, input;
+        for (let i = 0; i < groups.length; i++) {
+            const idx = groups[i].match(matcher);
+            if (!idx) return;
+            group = parseInt(idx[1]);
+            input = parseInt(idx[2]);
+            if (groups.length > 1 && i !== groups.length - 1)
+                ctx = {inputs: ctx.inputs[group].options[input].subinputs};
+        }
         switch (targetInput.type) {
             case 'checkbox': {
-                ctx.inputs[i].options[j].isChecked = targetInput.checked;
+                ctx.inputs[group].options[input].isChecked = targetInput.checked;
                 this.#applyValidation(ctx);
                 this.render(true);
                 break;
             }
             case 'select-one': {
-                if (ctx.inputs[i].isSelectAmount) {
-                    ctx.inputs[i].options[j].currentAmount = Number(targetInput.value);
-                    if (ctx.inputs[i].options[j]?.weight) ctx.inputs[i] = this.#currentMaxAmounts(ctx.inputs[i]);
+                if (ctx.inputs[group].isSelectAmount) {
+                    ctx.inputs[group].options[input].currentAmount = Number(targetInput.value);
+                    if (ctx.inputs[group].options[input]?.weight) ctx.inputs[group] = this.#currentMaxAmounts(ctx.inputs[group]);
                     this.render(true);
-                } else if (ctx.inputs[i].isCheckbox && ctx.inputs[i].options[j]?.select) {
-                    ctx.inputs[i].options[j].select.value = targetInput.value;
+                } else if (ctx.inputs[group].isCheckbox && ctx.inputs[group].options[input]?.select) {
+                    ctx.inputs[group].options[input].select.value = targetInput.value;
                     this.#applyValidation(ctx);
                     this.render(true);
                 }
                 break;
             }
             case 'radio': {
-                ctx.inputs[i].options.forEach(o => o.isChecked = false);
-                ctx.inputs[i].options[j].isChecked = targetInput.checked;
+                ctx.inputs[group].options.forEach(o => o.isChecked = false);
+                ctx.inputs[group].options[input].isChecked = targetInput.checked;
                 this.render(true);
                 break;
             }
