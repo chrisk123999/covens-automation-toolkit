@@ -115,6 +115,35 @@
                 {{/if}}
             </div>
         {{/each}}
+    {{else if isSlider}}
+        {{#each options}}
+            <div class="{{#if subinputs}}cat-collapsible collapsed{{/if}}" data-collapsible-id="{{id}}">
+                <div class="{{#if subinputs}}cat-summary{{/if}}">
+                    <div class="form-group">
+                        {{#if ../hasSubinputs}}
+                        <div class="cat-collapsible-icon-placeholder"{{#if subinputs}} data-action="toggleCollapsed"{{/if}}>
+                            {{#if subinputs}}<i class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                        </div>
+                        {{/if}}
+                        
+                        <label for="{{id}}">
+                            {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}" src="{{image}}" data-token-id="{{name}}">{{/if}}
+                            {{{localize label}}}
+                        </label>
+                        <div class="form-fields">
+                            <range-picker value="{{#if value includeZero=true}}{{value}}{{else}}{{min}}{{/if}}" min="{{min}}" max="{{max}}" step="{{step}}" name="{{name}}" id="{{id}}"></range-picker>
+                        </div>
+                    </div>
+                </div>
+                {{#if subinputs}}
+                <div class="cat-collapsible-content">
+                    <div class="cat-collapsible-wrapper">
+                        {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                    </div>
+                </div>
+                {{/if}}
+            </div>
+        {{/each}}
     {{else if isDice}}
         {{#if showCounter}}
             <div class="cat-budget-counter">{{currentNum}}/{{totalMax}}</div>
