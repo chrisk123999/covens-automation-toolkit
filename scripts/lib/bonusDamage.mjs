@@ -1,4 +1,4 @@
-import {effectUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, effectUtils, workflowUtils} from '../utilities/_module.mjs';
 export default class BonusDamage {
     #targets;       // Set      | Target(s) of the bonus damage.
     #roll;          // Roll     | The unevaluated roll.
@@ -9,13 +9,14 @@ export default class BonusDamage {
     #scaling;       // Function | Callback function that gets called when a slider is moved in the UI to update values of the bonus damage, such as the roll, max targets, etc.
     #maxScaling;    // Number   | Max value of the scaling slider.
     #use;           // Function | Callback function that will be called after the selection is confirmed.
+    #consumeHint;   // String | Text for the UI that lists consumption targets.
     #scalingHint;   // String   | Text for the UI scaling hint.
     #maxTargetsHint;// String   | Text for the UI max targets hint.    
     #validateHint;  // String   | Text for the UI that explains the validity of bonus damage.
     #optional;      // Boolean  | Whether this bonus damage is optional or not. If there are only static bonus damages and no optional ones, the dialog shouldn't be shown.
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus damage is active or not.
-    constructor(document, {maxTargets, validate, scaling, use, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, action} = {}) {
+    constructor(document, {maxTargets, validate, scaling, use, consumeHint, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, action} = {}) {
         this.#document = document;
         if (!scaling) this.#getActivity(document);
         this.#maxTargets = maxTargets;
@@ -23,6 +24,7 @@ export default class BonusDamage {
         this.#scaling = scaling ?? BonusDamage.defaultScaling;
         this.#use = use ?? BonusDamage.defaultUse;
         this.#targets = new Set();
+        this.#consumeHint = consumeHint ?? this.#getConsumption();
         this.#scalingHint = scalingHint;
         this.#maxTargetsHint = maxTargetsHint;
         this.#validateHint = validateHint;
@@ -50,6 +52,17 @@ export default class BonusDamage {
                 this.#activity = effectUtils.getOriginActivitySync(document);
                 return;
         }
+    }
+    #getConsumption() {
+        const consume = this.#activity?.consumption;
+        if (!consume) return '';
+        const targets = new Set();
+        const types = CONFIG.DND5E.activityConsumptionTypes;
+        if (consume.spellSlot && this.#activity.requiresSpellSlot) 
+            targets.add(types.spellSlots.label);
+        consume.targets.forEach(t => targets.add(types[t.type].label));
+        if (!targets.size) return '';
+        return Array.from(targets).join(' · ');
     }
     /** @type {dnd5e.dice.DamageRoll} */
     get roll() {
@@ -89,6 +102,8 @@ export default class BonusDamage {
     }
     /** @type {string} File path to an icon for the bonus source {@link BonusDamage.document|document}. */
     get img() {
+        if (this.#document.documentName === 'Activity' && activityUtils.hasDefaultIcon(this.#document))
+            return this.#document.item.img;
         return this.#document.img;
     }
     /** @type {string} Name of the bonus source {@link BonusDamage.document|document}. */
@@ -97,7 +112,23 @@ export default class BonusDamage {
     }
     /** @type {string} Description of the bonus source {@link BonusDamage.document|document}. */
     get description() {
-        return this.#document.system.description.value;
+        let desc;
+        switch (this.#document.documentName) {
+            case 'Activity':
+                desc = this.#document.description.chatFlavor || this.#document.item.system.description.value;
+                break;
+            case 'Item':
+                desc = this.#document.system?.description.value;
+                break;
+            case 'ActiveEffect':
+                desc = this.#document.description || this.#activity?.description.chatFlavor || this.#activity?.item.system.description.value;
+                break;
+        }
+        return desc ?? '';
+    }
+    /** @type {string} */
+    get consumeHint() {
+        return this.#consumeHint;
     }
     /** @type {string} */
     get scalingHint() {

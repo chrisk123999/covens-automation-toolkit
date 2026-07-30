@@ -855,9 +855,12 @@
       "Title": "Smite",
       "Context": "Cast a spell?"
     },
-    "OptionalBonusDamage": {
-      "Title": "Bonus Damage",
-      "Context": "Apply optional bonus damage?"
+    "OptionalBonus": {
+      "Content": "Choose and configure bonuses for this roll.",
+      "Contextual": "Contextual Bonuses",
+      "Optional": "Optional Bonuses",
+      "Targets": "Targets",
+      "Title": "Optional Bonus"
     }
   }
 }

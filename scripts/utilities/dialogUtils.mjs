@@ -2,6 +2,22 @@ import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import {queryUtils, tokenUtils, automationUtils} from './_module.mjs';
 import constants from '../lib/constants.mjs';
 
+/** @import {BonusDamage} from '../lib/_module.mjs' */
+
+/**
+ * @param {foundry.documents.TokenDocument} token 
+ * @param {object} [options]
+ * @param {boolean} [options.hide]
+ * @param {object} [options.counter]
+ * @param {number} [options.counter.value]
+ * @returns 
+ */
+function getTokenName(token, {hide, counter} = {}) {
+    if (!hide || token.disposition > 0) return token.name;
+    const name = _loc('CAT.Dialog.UnknownTarget');
+    return Number.isNumeric(counter?.value) ? name + '(' + counter.value++ + ')' : name;
+}
+
 async function runDialog(userId, title, content, inputs, buttons, config) {
     if (userId === game.user.id) return await DialogApp.dialog(title, content, inputs, buttons, config);
     return await queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
@@ -176,6 +192,98 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
         return {document, key, amount: Number(value), select: result['sel-' + key]};
     }).filter(i => i);
 }
+/**
+ * 
+ * @param {BonusDamage[]} bonuses 
+ * @param {object} [options]
+ * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets]
+ * @param {string} [options.title]
+ * @param {string} [options.content]
+* @param {string} [options.userId]
+ */
+async function selectScaledDocument(bonuses, {title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content', targets, userId = game.user.id} = {}) {
+    if (!bonuses.length) return false;
+    bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
+    const inputs = [
+        ['checkbox', [], {displayAsRows: true, legend: 'CAT.OptionalBonus.Optional'}],
+        ['checkbox', [], {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]
+    ];
+    const getSubinputs = (bonus, name) => {
+        if (!bonus.optional) return;
+        const subinputs = [];
+        const hide = game.settings.get('cat', 'hideNames');
+        const counter = {value: 1};
+        if (bonus.maxScaling > 0)
+            subinputs.push(['slider', [{
+                name: name + '.scaling',
+                hint: bonus.scalingHint,
+                label: 'DND5E.CONSUMPTION.FIELDS.consumption.scaling.abbr',
+                options: {
+                    min: 0,
+                    max: bonus.maxScaling,
+                    step: 1,
+                    onchange: (...args) => console.log('SLIDER CHANGE: ' + name, {...args[0]})
+                }
+            }]]);
+        if (targets && bonus.maxTargets > 0)
+            subinputs.push(['comboboxMulti', [{
+                name: name + '.targets',
+                hint: bonus.maxTargetsHint,
+                label: 'CAT.OptionalBonus.Targets',
+                options: {
+                    maxTotal: bonus.maxTargets,
+                    onchange: (...args) => console.log('TARGET CHANGE: ' + name, {...args[0]}),
+                    options: targets.map(t => ({
+                        label: getTokenName(t, {hide, counter}),
+                        image: t.texture.src,
+                        value: t.id
+                    }))
+                }
+            }]]);
+        return subinputs;
+    };
+    const getTags = bonus => {
+        const tags = [];
+        if (bonus.roll) tags.push({label: bonus.roll.formula, id: 'formula'});
+        const activation = CONFIG.DND5E.activityActivationTypes[bonus.actionRequired]?.label;
+        if (activation) tags.push({label: activation, id: 'action'});
+        if (bonus.consumeHint) tags.push({label: bonus.consumeHint, id: 'consume'});
+        if (!tags.length) return;
+        return tags;
+    };
+    for (let i = 0; i < bonuses.length; i++) {
+        const bonus = bonuses[i];
+        const fieldset = bonus.optional ? inputs[0][1] : inputs[1][1];
+        fieldset.push({
+            label: bonus.name,
+            name: 'b-' + i + '.active',
+            options: {
+                image: bonus.img,
+                tooltip: bonus.description.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1'),
+                hint: bonus.validateHint,
+                subinputs: getSubinputs(bonus, 'b-' + i),
+                locked: !bonus.optional,
+                isChecked: !bonus.optional,
+                tags: getTags(bonus),
+                onchange: (...args) => { console.log('BONUS CHANGE: b-' + i, {...args[0]}); bonus.validate(); }
+            }
+        });
+    }
+    if (!inputs[0][1].length) inputs.splice(0, 1);
+    if (!inputs[1][1].length) inputs.splice(1, 1);
+    const choices = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto'});
+    if (!choices?.buttons) return false;
+    const results = [];
+    for (const [id, data] of Object.entries(choices)) {
+        if (data === true) continue; // contextual bonus
+        if (!data.active) continue;
+        const bonus = bonuses[id.split('-')[1]];
+        if (data.targets) bonus.targets = JSON.parse(data.targets).map(id => targets.find(t => t.id === id));
+        results.push(bonus);
+    }
+    console.log('SELECT SCALED', {choices, results});
+    return results;
+}
 async function selectAmounts(title, content, fields, {totalMax, displayAsRows = true, userId = game.user.id, buttons = 'okCancel'} = {}) {
     let inputs = [['selectAmount', fields, {displayAsRows, totalMax}]];
     let result = await runDialog(userId, title, content, inputs, buttons, {height: 'auto'});
@@ -284,15 +392,9 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
     const inputs = [[inputType]];
     const targetInputs = [];
     const hideNames = game.settings.get('cat', 'hideNames');
-    let number = 1;
+    const counter = {value: 1};
     for (const i of targets) {
-        let label;
-        if (hideNames && i.disposition <= 0) {
-            label = _loc('CAT.Dialog.UnknownTarget') + ' (' + number + ')';
-            number++;
-        } else {
-            label = i.name;
-        }
+        let label = getTokenName(i, {hide: hideNames, counter});
         if (coverToken && !reverseCover) label += ' [' + tokenUtils.checkCover(coverToken, i, {displayName: true}) + ']';
         else if (coverToken) label += ' [' + tokenUtils.checkCover(i, coverToken, {displayName: true}) + ']';
         if (displayDistance && coverToken) label += ' [' + tokenUtils.getDistance(coverToken, i).toFixed(2) + ' ' + canvas.scene.grid.units + ' ]';
@@ -353,6 +455,7 @@ export default {
     numberDialog,
     selectDialog,
     selectDocumentDialog,
+    selectScaledDocument,
     selectAmounts,
     selectSpellSlot,
     selectDamageType,

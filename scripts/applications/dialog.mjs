@@ -63,7 +63,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     static PARTS = {
         form: {
             template: 'modules/cat/templates/dialog-app.hbs',
-            scrollable: ['']
+            scrollable: ['.scrollable']
         }
     };
 
@@ -449,8 +449,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     value: o.value,
                     label: o.label,
                     image: o.image ?? '',
-                    tag: o.tag ?? '',
-                    selected: o.selected
+                    tag: o.tag ?? ''
                 })),
                 subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
                 id: DialogApp.#makeID(index, i, parentIndex),
@@ -478,7 +477,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     tag: o.tag ?? '',
                     weight: o.weight ?? 1,
                     max: o.max ?? null,
-                    selected: o.selected
+                    selected: o.selected,
+                    amount: o.amount
                 })),
                 subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
                 id: DialogApp.#makeID(index, i, parentIndex),
@@ -648,8 +648,18 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             }
             case 'range-picker':
                 ctx.input.value = targetInput.value;
-                this.render(true);
                 break;
+            case 'cat-combobox':
+                ctx.input.value = targetInput.value;
+                break;
+            case 'cat-multi-combobox': {
+                const selected = targetInput.selected;
+                for (const option of ctx.input.options) {
+                    option.selected = selected.has(option.value);
+                    option.amount = selected.get(option.value);
+                }
+                break;
+            }
         }
     }
 

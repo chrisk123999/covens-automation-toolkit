@@ -16,6 +16,11 @@ export default class CatMultiCombobox extends HTMLElement {
     #amountsMode = false;
     #maxTotal = null;
 
+    get id() { return this.#input.id; }
+    get name () { return this.#hidden.name; }
+    get value() { return this.#hidden.value; }
+    get selected() { return new Map(this.#selected); }
+
     connectedCallback() {
         if (this.#input) return;
         this.#amountsMode = this.hasAttribute('amounts');

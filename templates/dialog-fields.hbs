@@ -209,7 +209,7 @@
                         <div class="form-fields">
                             <cat-combobox input-id="{{id}}" name="{{name}}" value="{{value}}"{{#if placeholder}} placeholder="{{placeholder}}"{{/if}}>
                                 {{#each options}}
-                                    <option value="{{value}}" data-image="{{image}}" data-token-id="{{value}}"{{#if tag}} data-tag="{{tag}}"{{/if}}{{#if selected}} selected{{/if}}>{{label}}</option>
+                                    <option value="{{value}}" data-image="{{image}}" data-token-id="{{value}}"{{#if tag}} data-tag="{{tag}}"{{/if}}>{{label}}</option>
                                 {{/each}}
                             </cat-combobox>
                         </div>
@@ -239,7 +239,7 @@
                         {{#if label}}<label for="{{id}}">{{{localize label}}}</label>{{/if}}
                         <cat-multi-combobox input-id="{{id}}" name="{{name}}"{{#if amounts}} amounts{{/if}}{{#if maxTotal}} max-total="{{maxTotal}}"{{/if}}{{#if placeholder}} placeholder="{{placeholder}}"{{/if}}>
                             {{#each options}}
-                                <option value="{{value}}" data-image="{{image}}" data-token-id="{{value}}" data-weight="{{weight}}"{{#if max}} data-max="{{max}}"{{/if}}{{#if tag}} data-tag="{{tag}}"{{/if}}{{#if selected}} selected{{/if}}>{{label}}</option>
+                                <option value="{{value}}" data-image="{{image}}" data-token-id="{{value}}" data-weight="{{weight}}"{{#if max}} data-max="{{max}}"{{/if}}{{#if tag}} data-tag="{{tag}}"{{/if}}{{#if selected}} selected{{/if}}{{#if amount includeZero=true}} data-amount="{{amount}}"{{/if}}>{{label}}</option>
                             {{/each}}
                         </cat-multi-combobox>
                         {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}

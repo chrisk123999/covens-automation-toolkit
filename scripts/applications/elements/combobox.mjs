@@ -13,6 +13,10 @@ export default class CatCombobox extends HTMLElement {
     #open = false;
     #highlighted = -1;
 
+    get id() { return this.#input.id; }
+    get name () { return this.#hidden.name; }
+    get value() { return this.#hidden.value; }
+
     connectedCallback() {
         if (this.#input) return;
         const name = this.getAttribute('name') ?? '';

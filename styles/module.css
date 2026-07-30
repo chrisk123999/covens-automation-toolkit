@@ -645,6 +645,19 @@
     grid-column: 1;
 }
 
+.cat-dialog .form-group.cat-multi-combobox-group cat-multi-combobox > .cat-multi-combobox-chips {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    min-width: 100%;
+    width: 0;
+}
+
+.cat-dialog .form-group.cat-multi-combobox-group .cat-multi-combobox-chip {
+    flex-shrink: 0;
+    width: auto;
+}
+
 .cat-dialog .form-group.cat-no-label,
 .cat-medkit .form-group.cat-no-label {
     grid-template-columns: 1fr;
@@ -1253,11 +1266,17 @@ cat-combobox {
 }
 
 .cat-collapsible .cat-collapsible-content > .cat-collapsible-wrapper {
-  overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--cat-space-lg);
+    border-left: 1px solid var(--cat-text-accent);
+    padding-left: 20px;
+    margin: 10px;
+    overflow: hidden;
 }
 
 .cat-collapsible.collapsed .cat-collapsible-content > .cat-collapsible-wrapper {
-    padding: 0;
+    padding: 0 0 0 20px;
     margin: 0;
     visibility: hidden;
     pointer-events: none;
