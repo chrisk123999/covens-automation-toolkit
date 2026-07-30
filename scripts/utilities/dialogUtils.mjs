@@ -201,7 +201,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
  * @param {string} [options.content]
 * @param {string} [options.userId]
  */
-async function selectScaledDocument(bonuses, {title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content', targets, userId = game.user.id} = {}) {
+async function selectScaledDocument(bonuses, {targets, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content', userId = game.user.id} = {}) {
     if (!bonuses.length) return false;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     const inputs = [
@@ -217,7 +217,7 @@ async function selectScaledDocument(bonuses, {title = 'CAT.OptionalBonus.Title',
             subinputs.push(['slider', [{
                 name: name + '.scaling',
                 hint: bonus.scalingHint,
-                label: 'DND5E.CONSUMPTION.FIELDS.consumption.scaling.abbr',
+                label: 'CAT.OptionalBonus.Scaling',
                 options: {
                     min: 0,
                     max: bonus.maxScaling,
@@ -247,7 +247,9 @@ async function selectScaledDocument(bonuses, {title = 'CAT.OptionalBonus.Title',
         if (bonus.roll) tags.push({label: bonus.roll.formula, id: 'formula'});
         const activation = CONFIG.DND5E.activityActivationTypes[bonus.actionRequired]?.label;
         if (activation) tags.push({label: activation, id: 'action'});
-        if (bonus.consumeHint) tags.push({label: bonus.consumeHint, id: 'consume'});
+        if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
+        if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
+        if (bonus.consumeLabels?.length) tags.push(...bonus.consumeLabels.map((label, i) => ({label, id: 'consume-' + i})));
         if (!tags.length) return;
         return tags;
     };

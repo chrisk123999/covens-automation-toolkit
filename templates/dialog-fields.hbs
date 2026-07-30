@@ -1,6 +1,7 @@
 {{#each inputs}}
     {{#cat-wrapIf legend "fieldset"}}
     {{#if legend}}<legend>{{localize legend}}</legend>{{/if}}
+    {{#cat-wrapIf hasSubinputs "div" class="cat-has-collapsible"}}
     {{#if useHelper}}
         {{#each options}}
             {{formGroup field name=name value=value}}
@@ -19,8 +20,8 @@
             <div class="cat-budget-counter{{#if (gte currentNum totalMax)}} at-max{{/if}}">{{currentNum}}/{{totalMax}}</div>
         {{/if}}
         {{#each options}}
-            <div class="{{#if subinputs}}cat-collapsible collapsed{{/if}}" data-collapsible-id="{{id}}">
-                <div class="{{#if subinputs}}cat-summary{{/if}}">
+            <div class="cat-form-group"{{#if subinputs}} data-collapsible-id="{{id}}"{{/if}}>
+                <div{{#if subinputs}} class="cat-summary"{{/if}}>
                     <div class="form-group inline{{#if locked}} cat-locked{{/if}}">
                         {{#if ../hasSubinputs}}
                         <div class="cat-collapsible-icon-placeholder"{{#if subinputs}} data-action="toggleCollapsed"{{/if}}>
@@ -33,7 +34,7 @@
                             <span class="cat-label-text">{{{localize label}}}</span>
                         </label>
                         {{#if tags}}
-                            <div class="">
+                            <div class="cat-tags">
                                 {{#each tags}}
                                     <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
                                 {{/each}}
@@ -59,8 +60,8 @@
         {{/each}}
     {{else if isRadio}}
         {{#each options}}
-            <div class="{{#if subinputs}}cat-collapsible collapsed{{/if}}" data-collapsible-id="{{id}}">
-                <div class="{{#if subinputs}}cat-summary{{/if}}">
+            <div class="cat-form-group"{{#if subinputs}} data-collapsible-id="{{id}}"{{/if}}>
+                <div{{#if subinputs}} class="cat-summary"{{/if}}>
                     <div class="form-group">
                         {{#if ../hasSubinputs}}
                         <div class="cat-collapsible-icon-placeholder" {{#if subinputs}}data-action="toggleCollapsed"{{/if}}>
@@ -73,7 +74,7 @@
                             {{localize label}}
                         </label>
                         {{#if tags}}
-                            <div class="">
+                            <div class="cat-tags">
                                 {{#each tags}}
                                     <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
                                 {{/each}}
@@ -99,8 +100,8 @@
             <div class="cat-budget-counter{{#if atMax}} at-max{{/if}}">{{currentSpent}}/{{totalMax}}</div>
         {{/if}}
         {{#each options}}
-            <div class="{{#if subinputs}}cat-collapsible collapsed{{/if}}" data-collapsible-id="{{id}}">
-                <div class="{{#if subinputs}}cat-summary{{/if}}">
+            <div class="cat-form-group"{{#if subinputs}} data-collapsible-id="{{id}}"{{/if}}>
+                <div{{#if subinputs}} class="cat-summary"{{/if}}>
                     <div class="form-group">
                         {{#if ../hasSubinputs}}
                         <div class="cat-collapsible-icon-placeholder"{{#if subinputs}} data-action="toggleCollapsed"{{/if}}>
@@ -113,7 +114,7 @@
                             {{{localize label}}}
                         </label>
                         {{#if tags}}
-                            <div class="">
+                            <div class="cat-tags">
                                 {{#each tags}}
                                     <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
                                 {{/each}}
@@ -140,8 +141,8 @@
         {{/each}}
     {{else if isSlider}}
         {{#each options}}
-            <div class="{{#if subinputs}}cat-collapsible collapsed{{/if}}" data-collapsible-id="{{id}}">
-                <div class="{{#if subinputs}}cat-summary{{/if}}">
+            <div class="cat-form-group"{{#if subinputs}} data-collapsible-id="{{id}}"{{/if}}>
+                <div{{#if subinputs}} class="cat-summary"{{/if}}>
                     <div class="form-group">
                         {{#if ../hasSubinputs}}
                         <div class="cat-collapsible-icon-placeholder"{{#if subinputs}} data-action="toggleCollapsed"{{/if}}>
@@ -196,8 +197,8 @@
         </div>
     {{else if isCombobox}}
         {{#each options}}
-            <div class="{{#if subinputs}}cat-collapsible collapsed{{/if}}" data-collapsible-id="{{id}}">
-                <div class="{{#if subinputs}}cat-summary{{/if}}">
+            <div class="cat-form-group"{{#if subinputs}} data-collapsible-id="{{id}}"{{/if}}>
+                <div{{#if subinputs}} class="cat-summary"{{/if}}>
                     <div class="form-group{{#unless label}} cat-no-label{{/unless}}">
                         {{#if ../hasSubinputs}}
                         <div class="cat-collapsible-icon-placeholder"{{#if subinputs}} data-action="toggleCollapsed"{{/if}}>
@@ -227,8 +228,8 @@
         {{/each}}
     {{else if isComboboxMulti}}
         {{#each options}}
-            <div class="{{#if subinputs}}cat-collapsible collapsed{{/if}}" data-collapsible-id="{{id}}">
-                <div class="{{#if subinputs}}cat-summary{{/if}}">
+            <div class="cat-form-group"{{#if subinputs}} data-collapsible-id="{{id}}"{{/if}}>
+                <div{{#if subinputs}} class="cat-summary"{{/if}}>
                     <div class="form-group cat-multi-combobox-group{{#unless label}} cat-no-label{{/unless}}">
                         {{#if ../hasSubinputs}}
                         <div class="cat-collapsible-icon-placeholder" {{#if subinputs}}data-action="toggleCollapsed"{{/if}}>
@@ -255,5 +256,6 @@
             </div>
         {{/each}}
     {{/if}}
+    {{/cat-wrapIf}}
     {{/cat-wrapIf}}
 {{/each}}

@@ -859,6 +859,9 @@
       "Content": "Choose and configure bonuses for this roll.",
       "Contextual": "Contextual Bonuses",
       "Optional": "Optional Bonuses",
+      "Scaleable": "Scaleable",
+      "Scaling": "Scaling",
+      "Targeted": "Targeted",
       "Targets": "Targets",
       "Title": "Optional Bonus"
     }

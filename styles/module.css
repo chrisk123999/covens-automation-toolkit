@@ -565,6 +565,18 @@
     opacity: 0.65;
 }
 
+.cat-dialog .form-group:has(.cat-tags) > .form-fields {
+    flex: 0;
+}
+
+.cat-tags {
+    width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    min-width: min-content;
+    gap: var(--cat-space-xs);
+}
+
 .cat-dialog .form-group.cat-locked > .form-fields > input[type="checkbox"] {
     cursor: default;
 }
@@ -1250,22 +1262,35 @@ cat-combobox {
     transition: transform 250ms ease;
 }
 
-.cat-collapsible.collapsed .cat-collapsible-icon {
+.cat-form-group.collapsed .cat-collapsible-icon {
     transform: rotate(-90deg);
 }
 
-.cat-collapsible .cat-collapsible-content {
+.cat-has-collapsible .cat-form-group {
+    border-bottom: 1px solid var(--cat-border-light);
+    margin-bottom: var(--cat-space-md);
+    padding-bottom: var(--cat-space-md);
+}
+
+.cat-collapsible-wrapper > .cat-form-group,
+.cat-has-collapsible .cat-form-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.cat-form-group .cat-collapsible-content {
     display: grid;
     grid-template-rows: 1fr;
     transition: all 250ms ease;
 }
 
-.cat-collapsible.collapsed .cat-collapsible-content {
+.cat-form-group.collapsed .cat-collapsible-content {
     grid-template-rows: 0fr;
     opacity: 0;
 }
 
-.cat-collapsible .cat-collapsible-content > .cat-collapsible-wrapper {
+.cat-form-group .cat-collapsible-content > .cat-collapsible-wrapper {
     display: flex;
     flex-direction: column;
     gap: var(--cat-space-lg);
@@ -1275,7 +1300,7 @@ cat-combobox {
     overflow: hidden;
 }
 
-.cat-collapsible.collapsed .cat-collapsible-content > .cat-collapsible-wrapper {
+.cat-form-group.collapsed .cat-collapsible-content > .cat-collapsible-wrapper {
     padding: 0 0 0 20px;
     margin: 0;
     visibility: hidden;

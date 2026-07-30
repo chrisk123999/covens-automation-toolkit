@@ -1,5 +1,4 @@
 import QuickConditions from '../applications/quick-conditions.mjs';
-import {genericUtils} from '../utilities/_module.mjs';
 const {Collection} = foundry.utils;
 function onRender(application, element) {
     const names = ['useConditionText', 'effectConditionText'];
@@ -95,9 +94,11 @@ function wrapIf(condition, tagName, options) {
         options = tagName;
         tagName = null;
     }
-    if (!condition) return options.fn(this);
+    const content = options.fn(this);
+    if (!condition) return content;
     const tag = typeof tagName === 'string' ? tagName : 'div';
-    return new Handlebars.SafeString(`<${tag}>${options.fn(this)}</${tag}>`);
+    const cssClass = options.hash.class ? ` class="${options.hash.class}"` : '';
+    return new Handlebars.SafeString(`<${tag}${cssClass}>${content}</${tag}>`);
 }
 const helpers = {
     'cat-button': button,

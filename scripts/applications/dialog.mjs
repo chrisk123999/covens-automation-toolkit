@@ -91,7 +91,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {DialogApp} */
     static #toggleCollapsed(_event, target) {
-        const collapsible = target.closest('.cat-collapsible');
+        const collapsible = target.closest('.cat-form-group');
         if (!collapsible) return;
         collapsible.classList.toggle('collapsed');
         this.#expandedSections.set(

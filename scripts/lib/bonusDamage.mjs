@@ -8,15 +8,15 @@ export default class BonusDamage {
     #validate;      // Function | Callback function that returns true if the bonus damage may apply. 
     #scaling;       // Function | Callback function that gets called when a slider is moved in the UI to update values of the bonus damage, such as the roll, max targets, etc.
     #maxScaling;    // Number   | Max value of the scaling slider.
-    #use;           // Function | Callback function that will be called after the selection is confirmed.
-    #consumeHint;   // String | Text for the UI that lists consumption targets.
+    #use;           // Function | Asynchronoud callback function that will be called after the selection is confirmed.
+    #consumeLabels; // String   | An array of labels for the UI that lists consumption targets.
     #scalingHint;   // String   | Text for the UI scaling hint.
     #maxTargetsHint;// String   | Text for the UI max targets hint.    
     #validateHint;  // String   | Text for the UI that explains the validity of bonus damage.
     #optional;      // Boolean  | Whether this bonus damage is optional or not. If there are only static bonus damages and no optional ones, the dialog shouldn't be shown.
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus damage is active or not.
-    constructor(document, {maxTargets, validate, scaling, use, consumeHint, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, action} = {}) {
+    constructor(document, {maxTargets, validate, scaling, use, consumeLabels, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, action} = {}) {
         this.#document = document;
         if (!scaling) this.#getActivity(document);
         this.#maxTargets = maxTargets;
@@ -24,7 +24,7 @@ export default class BonusDamage {
         this.#scaling = scaling ?? BonusDamage.defaultScaling;
         this.#use = use ?? BonusDamage.defaultUse;
         this.#targets = new Set();
-        this.#consumeHint = consumeHint ?? this.#getConsumption();
+        this.#consumeLabels = consumeLabels ?? this.#getConsumption();
         this.#scalingHint = scalingHint;
         this.#maxTargetsHint = maxTargetsHint;
         this.#validateHint = validateHint;
@@ -62,7 +62,7 @@ export default class BonusDamage {
             targets.add(types.spellSlots.label);
         consume.targets.forEach(t => targets.add(types[t.type].label));
         if (!targets.size) return '';
-        return Array.from(targets).join(' · ');
+        return Array.from(targets);
     }
     /** @type {dnd5e.dice.DamageRoll} */
     get roll() {
@@ -87,15 +87,15 @@ export default class BonusDamage {
     set maxTargets(value) {
         this.#maxTargets = Number(value);
     }
-    async validate(workflow, otherBonusDamages) {
+    validate(workflow, otherBonusDamages) {
         return this.#validate({bonusDamage: this, workflow, otherBonusDamages});
     }
     /** @type {dnd5e.dataModels.activity.BaseActivityData|foundry.documents.Item|foundry.documents.ActiveEffect} */
     get document() {
         return this.#document;
     }
-    async updateScaling(value, workflow, otherBonusDamages) {
-        return await this.#scaling({value, bonusDamage: this, workflow, otherBonusDamages});
+    updateScaling(value, workflow, otherBonusDamages) {
+        return this.#scaling({value, bonusDamage: this, workflow, otherBonusDamages});
     }
     async use(workflow, otherBonusDamages) {
         return await this.#use({workflow, bonusDamage: this, otherBonusDamages});
@@ -126,9 +126,9 @@ export default class BonusDamage {
         }
         return desc ?? '';
     }
-    /** @type {string} */
-    get consumeHint() {
-        return this.#consumeHint;
+    /** @type {string[]} */
+    get consumeLabels() {
+        return this.#consumeLabels;
     }
     /** @type {string} */
     get scalingHint() {
@@ -149,8 +149,8 @@ export default class BonusDamage {
     set maxScaling(value) {
         this.#maxScaling = Number(value);
     }
-    static async defaultScaling({value, bonusDamage, workflow, otherBonusDamages}) {
-        if (bonusDamage.#activity?.damage.parts.length) {
+    static defaultScaling({value, bonusDamage, workflow, otherBonusDamages}) {
+        if (bonusDamage.#activity?.damage?.parts.length) {
             if (!bonusDamage.#activity.canScaleDamage) return bonusDamage.roll;
             const formula = bonusDamage.#activity.damage.parts.map(part => part.scaledFormula(value)).join(' + ');
             return new CONFIG.Dice.DamageRoll(formula, bonusDamage.roll.data);
@@ -160,7 +160,7 @@ export default class BonusDamage {
         bonusDamage.roll.resetFormula();
         return bonusDamage.roll;
     }
-    static async defaultValidate({bonusDamage, workflow, otherBonusDamages}) {
+    static defaultValidate({bonusDamage, workflow, otherBonusDamages}) {
         return true;
     }
     static async defaultUse({workflow, bonusDamage, otherBonusDamages}) {
