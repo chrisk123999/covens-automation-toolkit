@@ -32,6 +32,13 @@
                             {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}" src="{{image}}" data-token-id="{{name}}">{{/if}}
                             <span class="cat-label-text">{{{localize label}}}</span>
                         </label>
+                        {{#if tags}}
+                            <div class="">
+                                {{#each tags}}
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
+                                {{/each}}
+                            </div>
+                        {{/if}}
                         <div class="form-fields">
                             {{#if select}}
                                 <select name="sel-{{name}}" id="{{id}}s">{{selectOptions select.choices selected=select.value}}</select>
@@ -65,9 +72,17 @@
                             {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}" src="{{image}}" data-token-id="{{name}}">{{/if}}
                             {{localize label}}
                         </label>
+                        {{#if tags}}
+                            <div class="">
+                                {{#each tags}}
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
+                                {{/each}}
+                            </div>
+                        {{/if}}
                         <div class="form-fields">
                             <input type="radio" id="{{id}}" name="{{../radioName}}" value="{{name}}" {{#if isChecked}}checked{{/if}}>
                         </div>
+                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                     </div>
                 </div>
                 {{#if subinputs}}
@@ -97,6 +112,13 @@
                             {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}" src="{{image}}" data-token-id="{{name}}">{{/if}}
                             {{{localize label}}}
                         </label>
+                        {{#if tags}}
+                            <div class="">
+                                {{#each tags}}
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
+                                {{/each}}
+                            </div>
+                        {{/if}}
                         <div class="form-fields">
                             <select id="{{id}}" name="{{name}}">
                                 {{#each options}}
@@ -104,6 +126,7 @@
                                 {{/each}}
                             </select>
                         </div>
+                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                     </div>
                 </div>
                 {{#if subinputs}}
@@ -133,6 +156,7 @@
                         <div class="form-fields">
                             <range-picker value="{{#if value includeZero=true}}{{value}}{{else}}{{min}}{{/if}}" min="{{min}}" max="{{max}}" step="{{step}}" name="{{name}}" id="{{id}}"></range-picker>
                         </div>
+                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                     </div>
                 </div>
                 {{#if subinputs}}
@@ -185,10 +209,11 @@
                         <div class="form-fields">
                             <cat-combobox input-id="{{id}}" name="{{name}}" value="{{value}}"{{#if placeholder}} placeholder="{{placeholder}}"{{/if}}>
                                 {{#each options}}
-                                    <option value="{{value}}" data-image="{{image}}"{{#if tag}} data-tag="{{tag}}"{{/if}}>{{label}}</option>
+                                    <option value="{{value}}" data-image="{{image}}" data-token-id="{{value}}"{{#if tag}} data-tag="{{tag}}"{{/if}}{{#if selected}} selected{{/if}}>{{label}}</option>
                                 {{/each}}
                             </cat-combobox>
                         </div>
+                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                     </div>
                 </div>
                 {{#if subinputs}}
@@ -214,9 +239,10 @@
                         {{#if label}}<label for="{{id}}">{{{localize label}}}</label>{{/if}}
                         <cat-multi-combobox input-id="{{id}}" name="{{name}}"{{#if amounts}} amounts{{/if}}{{#if maxTotal}} max-total="{{maxTotal}}"{{/if}}{{#if placeholder}} placeholder="{{placeholder}}"{{/if}}>
                             {{#each options}}
-                                <option value="{{value}}" data-image="{{image}}" data-weight="{{weight}}"{{#if max}} data-max="{{max}}"{{/if}}{{#if tag}} data-tag="{{tag}}"{{/if}}>{{label}}</option>
+                                <option value="{{value}}" data-image="{{image}}" data-token-id="{{value}}" data-weight="{{weight}}"{{#if max}} data-max="{{max}}"{{/if}}{{#if tag}} data-tag="{{tag}}"{{/if}}{{#if selected}} selected{{/if}}>{{label}}</option>
                             {{/each}}
                         </cat-multi-combobox>
+                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                     </div>
                 </div>
                 {{#if subinputs}}

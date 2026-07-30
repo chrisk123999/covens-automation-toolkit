@@ -22,7 +22,7 @@ function checkCover(sourceToken, targetToken, {activity, displayName}) {
     if (!displayName) return cover;
     const names = {
         0: 'DND5E.COMMON.No',
-        2: 'DND5E.Cover.Half',
+        2: 'DND5E.CoverHalf',
         5: 'DND5E.CoverThreeQuarters',
         999: 'DND5E.CoverTotal'
     };

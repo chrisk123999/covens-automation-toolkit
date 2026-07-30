@@ -158,6 +158,11 @@ function getDependencies(activity) {
     });
     return dependencies;
 }
+
+function hasDefaultIcon(activity) {
+    return activity.img === activity.constructor.metadata.img;
+}
+
 export default {
     getSaveDC,
     getSavedCastData,
@@ -166,5 +171,6 @@ export default {
     syntheticActivity,
     getEffectDuration,
     getDuration,
-    getDependencies
+    getDependencies,
+    hasDefaultIcon
 };

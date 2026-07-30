@@ -233,12 +233,13 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             options: fields.map((f, i) => ({
                 name: f.name,
                 label: f.label,
+                hint: f.hint,
                 value: f.value,
                 min: f.options?.min,
                 max: f.options?.max,
                 step: f.options?.step,
                 image: f.options?.image,
-                invertColor: f.options?.inverColor,
+                invertColor: f.options?.invertColor,
                 onchange: f.options?.onchange,
                 id: DialogApp.#makeID(index, i, parentIndex),
                 subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))
@@ -320,6 +321,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
             locked: f.options?.locked ?? false,
             onchange: f.options?.onchange,
+            tags: f.options?.tags.map(t => ({
+                label: t.label,
+                id: t.id
+            })),
             id: DialogApp.#makeID(index, i, parentIndex)
         }));
         return {
@@ -338,12 +343,17 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isRadio: true,
             options: fields.map((f, i) => ({
                 label: f.label,
+                hint: f.hint,
                 name: f.name,
                 isChecked: f.options?.isChecked ?? false,
                 image: f.options?.image,
                 invertColor: f.options?.invertColor,
                 subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
                 onchange: f.options?.onchange,
+                tags: f.options?.tags.map(t => ({
+                    label: t.label,
+                    id: t.id
+                })),
                 id: DialogApp.#makeID(index, i, parentIndex)
             })),
             hasSubinputs: fields.some(f => f.options?.subinputs?.length),
@@ -360,6 +370,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             return {
                 id,
                 label: f.label,
+                hint: f.hint,
                 name: f.name,
                 minAmount: min,
                 maxAmount: max,
@@ -369,6 +380,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 image: f.options?.image,
                 invertColor: f.options?.invertColor,
                 subinputs: this.#buildInputs(f.options?.subinputs, id),
+                tags: f.options?.tags.map(t => ({
+                    label: t.label,
+                    id: t.id
+                })),
                 onchange: f.options?.onchange
             };
         });
@@ -390,7 +405,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     return acc;
                 }, {});
                 return {
-                    field: new SetField(new StringField({choices}), {label: f.label}),
+                    field: new SetField(new StringField({choices}), {label: f.label, hint: f.hint}),
                     name: f.name,
                     value: f.options?.value ?? [],
                     id: DialogApp.#makeID(index, i, parentIndex),
@@ -411,7 +426,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     return acc;
                 }, {});
                 return {
-                    field: new StringField({label: f.label, choices, required: true, blank: false}),
+                    field: new StringField({label: f.label, hint: f.hint, choices, required: true, blank: false}),
                     name: f.name,
                     value: f.options?.currentValue ?? '',
                     onchange: f.options?.onchange
@@ -426,6 +441,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isCombobox: true,
             options: fields.map((f, i) => ({
                 label: f.label,
+                hint: f.hint,
                 name: f.name,
                 value: f.options?.value ?? '',
                 placeholder: f.options?.placeholder ?? '',
@@ -433,7 +449,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     value: o.value,
                     label: o.label,
                     image: o.image ?? '',
-                    tag: o.tag ?? ''
+                    tag: o.tag ?? '',
+                    selected: o.selected
                 })),
                 subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
                 id: DialogApp.#makeID(index, i, parentIndex),
@@ -449,6 +466,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isComboboxMulti: true,
             options: fields.map((f, i) => ({
                 label: f.label,
+                hint: f.hint,
                 name: f.name,
                 placeholder: f.options?.placeholder ?? '',
                 amounts: !!f.options?.amounts,
@@ -459,7 +477,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     image: o.image ?? '',
                     tag: o.tag ?? '',
                     weight: o.weight ?? 1,
-                    max: o.max ?? null
+                    max: o.max ?? null,
+                    selected: o.selected
                 })),
                 subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
                 id: DialogApp.#makeID(index, i, parentIndex),
@@ -474,7 +493,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         return {
             useHelper: true,
             options: fields.map(f => ({
-                field: new StringField({label: f.label}),
+                field: new StringField({label: f.label, hint: f.hint}),
                 name: f.name,
                 value: f.options?.currentValue ?? '',
                 onchange: f.options?.onchange
@@ -487,7 +506,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         return {
             useHelper: true,
             options: fields.map(f => ({
-                field: new NumberField({label: f.label}),
+                field: new NumberField({label: f.label, hint: f.hint}),
                 name: f.name,
                 value: f.options?.currentValue ?? 0,
                 onchange: f.options?.onchange
@@ -505,7 +524,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     : type === 'IMAGEVIDEO' ? ['IMAGE', 'VIDEO']
                         : type in CONST.FILE_CATEGORIES ? [type] : ['IMAGE'];
                 return {
-                    field: new FilePathField({label: f.label, categories}),
+                    field: new FilePathField({label: f.label, categories, hint: f.hint}),
                     name: f.name,
                     value: f.options?.currentValue ?? '',
                     onchange: f.options?.onchange
