@@ -1,5 +1,5 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
-import {queryUtils, tokenUtils, automationUtils} from './_module.mjs';
+import {queryUtils, tokenUtils, automationUtils, dataUtils} from './_module.mjs';
 import constants from '../lib/constants.mjs';
 
 /** @import {BonusDamage} from '../lib/_module.mjs' */
@@ -259,7 +259,7 @@ async function selectScaledDocument(bonuses, {title = 'CAT.OptionalBonus.Title',
             name: 'b-' + i + '.active',
             options: {
                 image: bonus.img,
-                tooltip: bonus.description.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1'),
+                tooltip: await dataUtils.enrichHTML(bonus.description, bonus.roll.data),
                 hint: bonus.validateHint,
                 subinputs: getSubinputs(bonus, 'b-' + i),
                 locked: !bonus.optional,

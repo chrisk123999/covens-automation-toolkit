@@ -96,8 +96,18 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
     if (copyConfigs) genericUtils.setProperty(effectData, 'flags.cat.config', genericUtils.mergeObject(effectData.flags.cat?.config ?? {}, copyConfigs));
     return effectData;
 }
+
+/**
+ * @param {string} html A description containing enrichers, inline rolls, and so on.
+ * @param {object} [rollData] Data used to replace enrichers within a description.
+ * @returns {Promise<string>} Enriched html content.
+ */
+async function enrichHTML(html, rollData) {
+    return await foundry.applications.ux.TextEditor.enrichHTML(html, {rollData});
+}
 export default {
     setRules,
     setIdentifier,
-    buildEffectData
+    buildEffectData,
+    enrichHTML
 };
