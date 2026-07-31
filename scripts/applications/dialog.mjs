@@ -2,14 +2,17 @@ import {uiUtils} from '../utilities/_module.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundry.data.fields;
 
+/**
+ * @typedef DialogHint
+ * @property {string} label
+ * @property {string} [icon] Font Awesome css class.
+ * @property {string} [tooltip] Tooltip on the icon.
+ */
+
 const INPUTS_TEMPLATE = 'modules/cat/templates/dialog-fields.hbs';
 Hooks.once('setup', () => {
     foundry.applications.handlebars.loadTemplates([INPUTS_TEMPLATE]);
 });
-
-const SUBINPUT_SEPARATOR = '-';
-const GROUP_ID = 'g';
-const INPUT_ID = 'i';
 
 // Generic dialog for macros. API matches CPR v13 DialogApp.
 export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -66,6 +69,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             scrollable: ['.scrollable']
         }
     };
+
+    static get SUBINPUT_SEPARATOR() { return '-'; }
+    static get GROUP_ID() { return 'g'; }
+    static get INPUT_ID() { return 'i'; }
 
     /** @this {DialogApp} */
     async _preClose(options) {
@@ -171,9 +178,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         return arr;
     }
 
+    static #ID_REGEX = new RegExp(`${DialogApp.GROUP_ID}(\\d+)${DialogApp.INPUT_ID}(\\d+)`);
+
     static #makeID(groupIndex, inputIndex, parentIndex = '') {
-        if (parentIndex) parentIndex += SUBINPUT_SEPARATOR;
-        return parentIndex + GROUP_ID + groupIndex + INPUT_ID + inputIndex;
+        if (parentIndex) parentIndex += DialogApp.SUBINPUT_SEPARATOR;
+        return parentIndex + DialogApp.GROUP_ID + groupIndex + DialogApp.INPUT_ID + inputIndex;
     }
 
     // Convert each declarative input tuple into template-ready entry.
@@ -233,7 +242,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             options: fields.map((f, i) => ({
                 name: f.name,
                 label: f.label,
-                hint: f.hint,
+                hints: f.hints?.map(h => ({
+                    label: h.label,
+                    icon: h.icon,
+                    tooltip: h.tooltip
+                })),
                 value: f.value,
                 min: f.options?.min,
                 max: f.options?.max,
@@ -321,7 +334,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             tooltip: f.options?.tooltip,
             reference: f.options?.reference,
             invertColor: f.options?.invertColor,
-            hint: f.options?.hint,
+            hints: f.hints?.map(h => ({
+                label: h.label,
+                icon: h.icon,
+                tooltip: h.tooltip
+            })),
             subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
             locked: f.options?.locked ?? false,
             onchange: f.options?.onchange,
@@ -347,7 +364,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isRadio: true,
             options: fields.map((f, i) => ({
                 label: f.label,
-                hint: f.hint,
+                hints: f.hints?.map(h => ({
+                    label: h.label,
+                    icon: h.icon,
+                    tooltip: h.tooltip
+                })),
                 name: f.name,
                 isChecked: f.options?.isChecked ?? false,
                 image: f.options?.image,
@@ -376,7 +397,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             return {
                 id,
                 label: f.label,
-                hint: f.hint,
+                hints: f.hints?.map(h => ({
+                    label: h.label,
+                    icon: h.icon,
+                    tooltip: h.tooltip
+                })),
                 name: f.name,
                 minAmount: min,
                 maxAmount: max,
@@ -449,7 +474,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isCombobox: true,
             options: fields.map((f, i) => ({
                 label: f.label,
-                hint: f.hint,
+                hints: f.hints?.map(h => ({
+                    label: h.label,
+                    icon: h.icon,
+                    tooltip: h.tooltip
+                })),
                 name: f.name,
                 tooltip: f.options?.tooltip,
                 reference: f.options?.reference,
@@ -475,7 +504,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isComboboxMulti: true,
             options: fields.map((f, i) => ({
                 label: f.label,
-                hint: f.hint,
+                hints: f.hints?.map(h => ({
+                    label: h.label,
+                    icon: h.icon,
+                    tooltip: h.tooltip
+                })),
                 name: f.name,
                 tooltip: f.options?.tooltip,
                 reference: f.options?.reference,
@@ -548,10 +581,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
-        if (!this.#context) {
-            this.#formatInputs();
-            if (this.validate) this.#applyValidation(this.#context);
-        }
+        if (!this.#context) this.#formatInputs();
         const detached = options.window?.attach ? false : options.window?.detach ? true : !!this.window.windowId;
         return {...context, ...this.#context, title: this.windowTitle, detached};
     }
@@ -569,33 +599,13 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         return clone;
     }
 
-    #applyValidation(ctx) {
-        if (this.validate) {
-            const checked = [];
-            const selections = {};
-            ctx.inputs.forEach(inp => inp.options?.forEach(o => {
-                if (o.isChecked) checked.push(o.name);
-                if (o.select) selections[o.name] = o.select.value;
-            }));
-            const invalid = this.validate(checked, selections) ?? [];
-            ctx.inputs.forEach(inp => inp.options?.forEach(o => {
-                if (o.locked) o.isChecked = !invalid.includes(o.name);
-                else if (invalid.includes(o.name)) o.isChecked = false;
-            }));
-        }
-        ctx.inputs.forEach(inp => {
-            if (inp.isCheckbox) inp.currentNum = inp.options.reduce((acc, c) => c.isChecked ? acc + 1 : acc, 0);
-        });
-    }
-
     #getContextByID(id) {
-        const matcher = new RegExp(`${GROUP_ID}(\\d+)${INPUT_ID}(\\d+)`);
-        const groups = id?.split(SUBINPUT_SEPARATOR);
+        const groups = id?.split(DialogApp.SUBINPUT_SEPARATOR);
         if (!groups?.length) return;
         let ctx = this.#context;
         let group, input;
         for (let i = 0; i < groups.length; i++) {
-            const idx = groups[i].match(matcher);
+            const idx = groups[i].match(DialogApp.#ID_REGEX);
             if (!idx) return;
             group = parseInt(idx[1]);
             input = parseInt(idx[2]);
@@ -608,7 +618,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             groupIndex: group,
             inputIndex: input,
             group: ctx.inputs[group],
-            input: ctx.inputs[group].options[input]
+            input: ctx.inputs[group].options[input],
+            getInputById: (id) => this.#getContextByID(id).input
         };
     }
 
@@ -633,31 +644,25 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         }
         const ctx = this.#getContextByID(targetInput.id);
         if (!ctx) return;
+        let changed = false;
         switch (targetInput.type || targetInput.localName) {
-            case 'checkbox': {
+            case 'checkbox':
                 ctx.input.isChecked = targetInput.checked;
-                this.#applyValidation(ctx.thisContext);
-                this.render(true);
+                ctx.group.currentNum = ctx.group.options.reduce((acc, c) => acc += c.isChecked, 0);
+                if (ctx.group.showCounter) changed = true;
                 break;
-            }
-            case 'select-one': {
+            case 'select-one':
                 if (ctx.group.isSelectAmount) {
                     ctx.input.currentAmount = Number(targetInput.value);
                     if (ctx.input?.weight) ctx.group = this.#currentMaxAmounts(ctx.group);
-                    this.render(true);
-                } else if (ctx.group.isCheckbox && ctx.input?.select) {
-                    ctx.input.select.value = targetInput.value;
-                    this.#applyValidation(ctx.thisContext);
-                    this.render(true);
+                    changed = true;
                 }
                 break;
-            }
-            case 'radio': {
+            case 'radio':
                 ctx.group.options.forEach(o => o.isChecked = false);
                 ctx.input.isChecked = targetInput.checked;
-                this.render(true);
+                changed = true;
                 break;
-            }
             case 'range-picker':
                 ctx.input.value = targetInput.value;
                 break;
@@ -673,6 +678,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 break;
             }
         }
+        if (ctx.input.onchange) changed ||= ctx.input.onchange(ctx);
+        if (ctx.input.validate) changed ||= ctx.input.validate(ctx);
+        if (changed) this.render(true);
     }
 
     // dnd5e fills the tooltip on hover via this placeholder.
@@ -681,26 +689,6 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         const uuid = element.dataset.referenceTooltip;
         element.dataset.tooltip = `<section class="loading" data-uuid="${uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
         if (element.dataset.attribution) element.dataset.tooltipClass = 'property-attribution';
-    }
-
-    #hookChangeEvents(inputs, dialog) {
-        for (const group of inputs) {
-            for (const input of group.options) {
-                this.#addChangeEvent(input, dialog);
-                if (input.subinputs?.length) this.#hookChangeEvents(input.subinputs, dialog);
-            }
-        }
-    }
-
-    #addChangeEvent(input, dialog) {
-        if (!input.onchange) return;
-        const elem = dialog.querySelector('#' + input.id);
-        elem?.addEventListener('change', e => input.onchange({
-            input: e.target,
-            form: e.target.closest('form'),
-            inputType: e.target.type || e.target.localName,
-            ...this.#getContextByID(input.id)
-        }));
     }
 
     bringToFront() {
@@ -740,7 +728,6 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             });
         }
         this.element.querySelectorAll('[data-reference-tooltip]').forEach(el => this.#applyTooltip(el));
-        this.#hookChangeEvents(context.inputs, this.element);
     }
 }
 

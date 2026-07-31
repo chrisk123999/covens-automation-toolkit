@@ -46,7 +46,9 @@
                             {{/if}}
                             <input type="checkbox" {{#if locked}}disabled{{else if (gte ../currentNum ../totalMax)}}{{#unless isChecked}}disabled{{/unless}}{{/if}} id="{{id}}" name="{{name}}" {{#if isChecked}}checked{{/if}}>
                         </div>
-                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+                        {{#each hints}}
+                            <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                        {{/each}}
                     </div>
                 </div>
                 {{#if subinputs}}
@@ -83,7 +85,9 @@
                         <div class="form-fields">
                             <input type="radio" id="{{id}}" name="{{../radioName}}" value="{{name}}" {{#if isChecked}}checked{{/if}}>
                         </div>
-                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+                        {{#each hints}}
+                            <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                        {{/each}}
                     </div>
                 </div>
                 {{#if subinputs}}
@@ -127,7 +131,9 @@
                                 {{/each}}
                             </select>
                         </div>
-                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+                        {{#each hints}}
+                            <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                        {{/each}}
                     </div>
                 </div>
                 {{#if subinputs}}
@@ -157,7 +163,9 @@
                         <div class="form-fields">
                             <range-picker value="{{#if value includeZero=true}}{{value}}{{else}}{{min}}{{/if}}" min="{{min}}" max="{{max}}" step="{{step}}" name="{{name}}" id="{{id}}"></range-picker>
                         </div>
-                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+                        {{#each hints}}
+                            <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                        {{/each}}
                     </div>
                 </div>
                 {{#if subinputs}}
@@ -214,8 +222,10 @@
                                 {{/each}}
                             </cat-combobox>
                         </div>
-                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                     </div>
+                    {{#each hints}}
+                        <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                    {{/each}}
                 </div>
                 {{#if subinputs}}
                 <div class="cat-collapsible-content">
@@ -243,8 +253,10 @@
                                 <option value="{{value}}" data-image="{{image}}" data-token-id="{{value}}" data-weight="{{weight}}"{{#if max}} data-max="{{max}}"{{/if}}{{#if tag}} data-tag="{{tag}}"{{/if}}{{#if selected}} selected{{/if}}{{#if amount includeZero=true}} data-amount="{{amount}}"{{/if}}>{{label}}</option>
                             {{/each}}
                         </cat-multi-combobox>
-                        {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
                     </div>
+                    {{#each hints}}
+                        <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                    {{/each}}
                 </div>
                 {{#if subinputs}}
                 <div class="cat-collapsible-content">

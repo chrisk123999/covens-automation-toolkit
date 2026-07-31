@@ -1,8 +1,13 @@
-import {activityUtils, dataUtils, effectUtils, genericUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, dataUtils, effectUtils, genericUtils, workflowUtils} from '../utilities/_module.mjs';
+
+/** @import {DialogHint} from '../applications/dialog.mjs' */
+
 export default class BonusDamage {
     #targets;       // Set      | Target(s) of the bonus damage.
     #roll;          // Roll     | The unevaluated roll.
+    #baseFormula    // string   | The original roll formula before scaling.
     #maxTargets;    // Number   | Max targets, if any.
+    #baseMaxTargets;// Number   | The original max targets before scaling.
     #document;      // Document | Item, Activity, and possibly the effect providing this bonus damage.
     #activity;      // Activity | Used for default consumption and scaling if a `scaling` callback is not provided.
     #validate;      // Function | Callback function that returns true if the bonus damage may apply. 
@@ -10,28 +15,42 @@ export default class BonusDamage {
     #maxScaling;    // Number   | Max value of the scaling slider.
     #use;           // Function | Asynchronoud callback function that will be called after the selection is confirmed.
     #consumeLabels; // String   | An array of labels for the UI that lists consumption targets.
-    #scalingHint;   // String   | Text for the UI scaling hint.
-    #maxTargetsHint;// String   | Text for the UI max targets hint.    
-    #validateHint;  // String   | Text for the UI that explains the validity of bonus damage.
+    #scalingHints;  // String   | Array of {label, icon} for UI scaling hints.
+    #maxTargetsHints;// String  | Array of {label, icon} for UI target hints.    
+    #validateHints; // String   | Array of {label, icon} for explaining the validity of bonus damage.
     #optional;      // Boolean  | Whether this bonus damage is optional or not. If there are only static bonus damages and no optional ones, the dialog shouldn't be shown.
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus damage is active or not.
-    constructor(document, {maxTargets, validate, scaling, use, consumeLabels, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, action} = {}) {
+    constructor(document, {maxTargets, validate, scaling, use, consumeLabels, scalingHints, maxTargetsHints, validateHints, maxScaling, roll, optional = true, action} = {}) {
         this.#document = document;
         if (!scaling) this.#getActivity(document);
         this.#consumeLabels = this.#getConsumption(consumeLabels);
         this.maxScaling = this.#getMaxScaling(maxScaling);
-        this.#maxTargets = maxTargets;
         this.#validate = validate ?? BonusDamage.defaultValidate;
         this.#scaling = scaling ?? BonusDamage.defaultScaling;
         this.#use = use ?? BonusDamage.defaultUse;
+        this.#scalingHints = this.#makeHints(scalingHints);
+        this.#validateHints = this.#makeHints(validateHints);
+        this.#maxTargetsHints = this.#makeHints(maxTargetsHints);
+        this.#baseMaxTargets = maxTargets;
+        this.#maxTargets = maxTargets;
         this.#targets = new Set();
-        this.#scalingHint = scalingHint;
-        this.#maxTargetsHint = maxTargetsHint;
-        this.#validateHint = validateHint;
-        this.#roll = roll ?? new CONFIG.Dice.DamageRoll('1d4', (this.#activity ?? this.#document).getRollData?.());
         this.#optional = optional;
         this.#action = action;
+        this.#roll = roll ?? new CONFIG.Dice.DamageRoll('1d4', (this.#activity ?? this.#document).getRollData?.());
+        this.#baseFormula = this.#roll.formula;
+    }
+    // TODO if no initial hints are provided and scaling is available, a scaling hint needs to be created
+    #makeHints(list) {
+        list = dataUtils.toArray(list);
+        const hints = [];
+        for (const hint of list) {
+            if (typeof hint === 'string')
+                hints.push({label: hint});
+            if (typeof hint.label === 'string')
+                hints.push(hint);
+        }
+        return hints;
     }
     #getActivity(document) {
         switch (document.documentName) {
@@ -118,6 +137,10 @@ export default class BonusDamage {
         if (!(newRoll instanceof CONFIG.Dice.DamageRoll)) return;
         this.#roll = newRoll;
     }
+    /** @type {string} Original bonus formula, before scaling. */
+    get baseFormula() {
+        return this.#baseFormula;
+    }
     /** @type {Set<foundry.documents.TokenDocument>} Targets of the damage. Size truncated to {@link maxTargets}, if present. */
     get targets() {
         return this.#targets;
@@ -133,6 +156,10 @@ export default class BonusDamage {
     set maxTargets(value) {
         this.#maxTargets = Number(value);
     }
+    /** @type {number} Original max targets, before scaling. */
+    get baseMaxTargets() {
+        return this.#baseMaxTargets;
+    }
     validate(workflow, otherBonusDamages) {
         return this.#validate({bonusDamage: this, workflow, otherBonusDamages});
     }
@@ -143,9 +170,9 @@ export default class BonusDamage {
     updateScaling(value, workflow, otherBonusDamages) {
         const updates = this.#scaling({value, bonusDamage: this, workflow, otherBonusDamages}) ?? {};
         if (updates.roll) this.roll = updates.roll;
-        if (updates.scalingHint) this.#scalingHint = updates.scalingHint;
-        if (updates.maxTargetsHint) this.#maxTargetsHint = updates.maxTargetsHint;
-        if (updates.maxTargets !== undefined) this.maxTargets = updates.maxTargets;
+        if (updates.scalingHints) this.#scalingHints = updates.scalingHints;
+        if (updates.maxTargetsHints) this.#maxTargetsHints = updates.maxTargetsHints;
+        if (Number.isNumeric(updates.maxTargets)) this.maxTargets = updates.maxTargets;
     }
     async use(workflow, otherBonusDamages) {
         return await this.#use({workflow, bonusDamage: this, otherBonusDamages});
@@ -180,17 +207,17 @@ export default class BonusDamage {
     get consumeLabels() {
         return this.#consumeLabels;
     }
-    /** @type {string} */
-    get scalingHint() {
-        return this.#scalingHint;
+    /** @type {DialogHint[]} */
+    get scalingHints() {
+        return this.#scalingHints;
     }
-    /** @type {string} */
-    get maxTargetsHint() {
-        return this.#maxTargetsHint;
+    /** @type {DialogHint[]} */
+    get maxTargetsHints() {
+        return this.#maxTargetsHints;
     }
-    /** @type {string} */
-    get validateHint() {
-        return this.#validateHint;
+    /** @type {DialogHint[]} */
+    get validateHints() {
+        return this.#validateHints;
     }
     /** @type {number} */
     get maxScaling() {
@@ -203,8 +230,8 @@ export default class BonusDamage {
         const consumption = BonusDamage.defaultConsumeScaling({value, bonusDamage}) ?? {};
         return {
             maxTargets: consumption.maxTargets,
-            scalingHint: consumption.scalingHint,
-            maxTargetsHint: consumption.maxTargetsHint,
+            scalingHints: consumption.scalingHints,
+            maxTargetsHints: consumption.maxTargetsHints,
             roll: BonusDamage.defaultDamageScaling({value, bonusDamage})
         };
     }
@@ -215,28 +242,40 @@ export default class BonusDamage {
         const consumption = bonusDamage.#activity.consumption;
         const config = {scaling: value};
         let hints = [];
+        const warning = 'fa-solid fa-triangle-exclamation cat-warning-icon';
         for (const target of consumption.targets) {
             const labels = target.getConsumptionLabels(config, {consumed: true});
-            hints.push(labels.hint);
+            hints.push({
+                label: labels.hint,
+                icon: labels.warn ? warning : ''
+            });
         }
+        // TODO add default scaling for other consumption targets - item uses, hit dice etc
         if (consumption.spellSlot && bonusDamage.#activity.requiresSpellSlot) {
             const base = bonusDamage.#activity.item.system.level;
             const levelNumber = Math.clamp(base + value, 1, Object.keys(CONFIG.DND5E.spellLevels).length - 1);
+            const hasSlot = Object.values(bonusDamage.#activity.actor.system.spells).some(s => s.level === levelNumber && s.value > 0);
             const level = CONFIG.DND5E.spellLevels[levelNumber].toLowerCase();
-            hints.push(_loc('DND5E.CONSUMPTION.Type.SpellSlot.one', {level}));
+            hints.push({
+                label: _loc('DND5E.CONSUMPTION.Type.SpellSlot.one', {level}),
+                tooltip: !hasSlot ? _loc('DND5E.CONSUMPTION.Warning.MissingSpellSlot', {level}) : '',
+                icon: !hasSlot ? warning : ''
+            });
         }
-        return {scalingHint: hints.map(h => `<p>${h}</p>`).join('')};
+        return {scalingHints: hints};
     }
     static defaultDamageScaling({value, bonusDamage}) {
+        value = Math.min(value, bonusDamage.maxScaling);
         if (bonusDamage.#activity?.damage?.parts.length) {
             if (!bonusDamage.#activity.canScaleDamage) return;
             const formula = bonusDamage.#activity.damage.parts.map(part => part.scaledFormula(value)).join(' + ');
             return new CONFIG.Dice.DamageRoll(formula, bonusDamage.roll.data);
         }
-        const dieTerm = bonusDamage.roll.terms.find(i => i.faces);
-        if (dieTerm) dieTerm.number = Math.min(value, bonusDamage.maxScaling);
-        bonusDamage.roll.resetFormula();
-        return bonusDamage.roll;
+        const roll = new CONFIG.Dice.DamageRoll(bonusDamage.baseFormula, bonusDamage.roll.data);
+        const dieTerm = roll.terms.find(i => i.faces);
+        if (dieTerm) dieTerm.number += value;
+        roll.resetFormula();
+        return roll;
     }
     static defaultValidate({bonusDamage, workflow, otherBonusDamages}) {
         return true;

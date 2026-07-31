@@ -216,23 +216,37 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         if (bonus.maxScaling > 0)
             subinputs.push(['slider', [{
                 name: name + '.scaling',
-                hint: bonus.scalingHint,
+                hints: bonus.scalingHints,
                 label: 'CAT.OptionalBonus.Scaling',
                 options: {
                     min: 0,
                     max: bonus.maxScaling,
                     step: 1,
-                    onchange: (...args) => console.log('SLIDER CHANGE: ' + name, {...args[0]})
+                    onchange: ({thisContext, input, getInputById}) => {
+                        bonus.updateScaling(input.value, workflow, bonuses);
+                        input.hints = bonus.scalingHints;
+                        const targets = thisContext.inputs.find(i => i.isComboboxMulti)?.options[0];
+                        if (targets) {
+                            targets.maxTotal = bonus.maxTargets;
+                            targets.hints = bonus.maxTargetsHints;
+                            const count = targets.options.reduce((t, o) => t += o.selected, 0);
+                            if (count > targets.maxTotal)
+                                for (let i = 0; i < count - targets.maxTotal; i++)
+                                    targets.options[i].selected = false;
+                        }
+                        const formula = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags.find(t => t.id === 'formula');
+                        if (formula) formula.label = bonus.roll.formula;
+                        return true;
+                    }
                 }
             }]]);
         if (targets && bonus.maxTargets > 0)
             subinputs.push(['comboboxMulti', [{
                 name: name + '.targets',
-                hint: bonus.maxTargetsHint,
+                hints: bonus.maxTargetsHints,
                 label: 'CAT.OptionalBonus.Targets',
                 options: {
                     maxTotal: bonus.maxTargets,
-                    onchange: (...args) => console.log('TARGET CHANGE: ' + name, {...args[0]}),
                     options: targets.map(t => ({
                         label: getTokenName(t, {hide, counter}),
                         image: t.texture.src,
@@ -258,11 +272,11 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         const fieldset = bonus.optional ? inputs[0][1] : inputs[1][1];
         fieldset.push({
             label: bonus.name,
+            hints: bonus.validateHints,
             name: 'b-' + i + '.active',
             options: {
                 image: bonus.img,
                 tooltip: await uiUtils.enrichHTML(bonus.description, bonus.roll.data),
-                hint: bonus.validateHint,
                 subinputs: getSubinputs(bonus, 'b-' + i),
                 locked: !bonus.optional,
                 isChecked: !bonus.optional,
@@ -271,7 +285,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
             }
         });
     }
-    if (!inputs[0][1].length) inputs.splice(0, 1);
+    if (!inputs[0][1].length) return [];
     if (!inputs[1][1].length) inputs.splice(1, 1);
     const choices = await runDialog(game.user.id, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!choices?.buttons) return false;
@@ -285,7 +299,6 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         if (data.targets) bonus.targets = JSON.parse(data.targets).map(id => targets.find(t => t.id === id));
         results.push(bonus);
     }
-    console.log('SELECT SCALED', {choices, results});
     return results;
 }
 async function selectAmounts(title, content, fields, {totalMax, displayAsRows = true, userId = game.user.id, buttons = 'okCancel'} = {}) {

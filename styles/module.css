@@ -96,7 +96,8 @@
     font-size: 1rem;
 }
 
-.cat-dialog-icon {
+.cat-dialog-icon,
+.cat-warning-icon {
     color: var(--cat-text-accent);
 }
 
@@ -1583,7 +1584,13 @@ cat-combobox {
 .cat-medkit .hint,
 .cat-dialog .hint,
 .cat-embedded-macros-body .hint {
+    width: 0;
+    min-width: 100%;
     color: var(--cat-text-muted);
+}
+
+.cat-form-group:has(.cat-multi-combobox-group) .hint {
+    margin-top: var(--cat-space-xs);
 }
 
 .cat-medkit button {
