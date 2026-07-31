@@ -37,10 +37,20 @@ function centerWindow(app, {width = 0, height = 0} = {}) {
     const h = app.element.offsetHeight || height;
     app.setPosition({left: (win.innerWidth - w) / 2, top: (win.innerHeight - h) / 2});
 }
+
+/**
+ * @param {string} html A description containing enrichers, inline rolls, and so on.
+ * @param {object} [rollData] Data used to replace enrichers within a description.
+ * @returns {Promise<string>} Enriched html content.
+ */
+async function enrichHTML(html, rollData) {
+    return await foundry.applications.ux.TextEditor.enrichHTML(html, {rollData});
+}
 export default {
     fallbackIcon,
     fadeOut,
     enableWindowDrag,
     bringToFront,
-    centerWindow
+    centerWindow,
+    enrichHTML
 };

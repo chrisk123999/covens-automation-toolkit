@@ -97,17 +97,19 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
     return effectData;
 }
 
-/**
- * @param {string} html A description containing enrichers, inline rolls, and so on.
- * @param {object} [rollData] Data used to replace enrichers within a description.
- * @returns {Promise<string>} Enriched html content.
- */
-async function enrichHTML(html, rollData) {
-    return await foundry.applications.ux.TextEditor.enrichHTML(html, {rollData});
+function toArray(data) {
+    if (data === undefined || data === null) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'string') {
+        if (data.includes(',')) return data.split(',').map(s => s.trim()).filter(Boolean);
+        else return [data];
+    }
+    if (typeof data[Symbol.iterator] === 'function') return Array.from(data);
+    return [data];
 }
 export default {
     setRules,
     setIdentifier,
     buildEffectData,
-    enrichHTML
+    toArray
 };

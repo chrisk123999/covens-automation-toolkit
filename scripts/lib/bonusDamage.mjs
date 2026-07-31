@@ -1,4 +1,4 @@
-import {activityUtils, effectUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, dataUtils, effectUtils, genericUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
 export default class BonusDamage {
     #targets;       // Set      | Target(s) of the bonus damage.
     #roll;          // Roll     | The unevaluated roll.
@@ -19,16 +19,16 @@ export default class BonusDamage {
     constructor(document, {maxTargets, validate, scaling, use, consumeLabels, scalingHint, maxTargetsHint, validateHint, maxScaling, roll, optional = true, action} = {}) {
         this.#document = document;
         if (!scaling) this.#getActivity(document);
+        this.#consumeLabels = this.#getConsumption(consumeLabels);
+        this.maxScaling = this.#getMaxScaling(maxScaling);
         this.#maxTargets = maxTargets;
         this.#validate = validate ?? BonusDamage.defaultValidate;
         this.#scaling = scaling ?? BonusDamage.defaultScaling;
         this.#use = use ?? BonusDamage.defaultUse;
         this.#targets = new Set();
-        this.#consumeLabels = consumeLabels ?? this.#getConsumption();
         this.#scalingHint = scalingHint;
         this.#maxTargetsHint = maxTargetsHint;
         this.#validateHint = validateHint;
-        this.maxScaling = maxScaling ?? (this.#document.documentName === 'Item' ? this.#document.system.uses.max : this.#document.uses.max);
         this.#roll = roll ?? new CONFIG.Dice.DamageRoll('1d4', (this.#activity ?? this.#document).getRollData?.());
         this.#optional = optional;
         this.#action = action;
@@ -53,17 +53,63 @@ export default class BonusDamage {
                 return;
         }
     }
-    #getConsumption() {
+    #getConsumption(override) {
+        if (override) return dataUtils.toArray(override);
         const consume = this.#activity?.consumption;
-        if (!consume) return '';
+        if (!consume) return [];
         const targets = new Set();
         const types = CONFIG.DND5E.activityConsumptionTypes;
         if (consume.spellSlot && this.#activity.requiresSpellSlot) 
             targets.add(types.spellSlots.label);
         consume.targets.forEach(t => targets.add(types[t.type].label));
-        if (!targets.size) return '';
+        if (!targets.size) return [];
         return Array.from(targets);
     }
+    #getMaxScaling(override) {
+        if (typeof override === 'number') return override;
+        if (!this.#activity) return 0;
+        let value = Infinity;
+        const {system, items} = this.#activity.actor;
+        const slot = () => Math.min(value, Math.max(Object.values(system.spells)
+            .reduce((max, spell) => spell.value ? Math.max(spell.level, max) : max, -1) - this.#activity.item.system.level, 0));
+        if (this.#activity.isSpell) value = slot();
+        for (const target of this.#activity.consumption.targets) {
+            const roll = target.resolveCost({evaluate: false});
+            if (!roll.isDeterministic) continue;
+            const min = new Roll(roll.formula, roll.data).evaluateSync({minimize: true}).total;
+            const max = new Roll(roll.formula, roll.data).evaluateSync({maximize: true}).total;
+            if (max <= 0 || min <= 0) continue;
+            let available = 0;
+            switch (target.type) {
+                case 'activityUses':
+                    available = this.#activity.uses.value;
+                    break;
+                case 'attribute':
+                    available = genericUtils.getProperty(system, target.target);
+                    break;
+                case 'hitDice':
+                    available = system.attributes.hd.value;
+                    break;
+                case 'itemUses': {
+                    const item = items.get(target.target) ?? target.item;
+                    available = item.system.uses.value;
+                    break;
+                }
+                case 'material':
+                    available = items.get(target.target)?.system.quantity ?? 0;
+                    break;
+                case 'spellSlots':
+                    available = slot();
+                    if (min > available + this.#activity.item.system.level) return 0;
+                    value = available;
+                    break;
+            }
+            const limit = Math.floor(available / min);
+            if (limit < value) value = limit;
+        }
+        return value === Infinity ? 0 : value;
+    }
+    
     /** @type {dnd5e.dice.DamageRoll} */
     get roll() {
         return this.#roll;
@@ -95,7 +141,11 @@ export default class BonusDamage {
         return this.#document;
     }
     updateScaling(value, workflow, otherBonusDamages) {
-        return this.#scaling({value, bonusDamage: this, workflow, otherBonusDamages});
+        const updates = this.#scaling({value, bonusDamage: this, workflow, otherBonusDamages}) ?? {};
+        if (updates.roll) this.roll = updates.roll;
+        if (updates.scalingHint) this.#scalingHint = updates.scalingHint;
+        if (updates.maxTargetsHint) this.#maxTargetsHint = updates.maxTargetsHint;
+        if (updates.maxTargets !== undefined) this.maxTargets = updates.maxTargets;
     }
     async use(workflow, otherBonusDamages) {
         return await this.#use({workflow, bonusDamage: this, otherBonusDamages});
@@ -150,8 +200,36 @@ export default class BonusDamage {
         this.#maxScaling = Number(value);
     }
     static defaultScaling({value, bonusDamage, workflow, otherBonusDamages}) {
+        const consumption = BonusDamage.defaultConsumeScaling({value, bonusDamage}) ?? {};
+        return {
+            maxTargets: consumption.maxTargets,
+            scalingHint: consumption.scalingHint,
+            maxTargetsHint: consumption.maxTargetsHint,
+            roll: BonusDamage.defaultDamageScaling({value, bonusDamage})
+        };
+    }
+    // TODO `getConsumptionLabels` provides warn: true if resources are insufficient
+    //       pass this along to validation?
+    static defaultConsumeScaling({value, bonusDamage}) {
+        if (!bonusDamage.#activity?.canScale) return;
+        const consumption = bonusDamage.#activity.consumption;
+        const config = {scaling: value};
+        let hints = [];
+        for (const target of consumption.targets) {
+            const labels = target.getConsumptionLabels(config, {consumed: true});
+            hints.push(labels.hint);
+        }
+        if (consumption.spellSlot && bonusDamage.#activity.requiresSpellSlot) {
+            const base = bonusDamage.#activity.item.system.level;
+            const levelNumber = Math.clamp(base + value, 1, Object.keys(CONFIG.DND5E.spellLevels).length - 1);
+            const level = CONFIG.DND5E.spellLevels[levelNumber].toLowerCase();
+            hints.push(_loc('DND5E.CONSUMPTION.Type.SpellSlot.one', {level}));
+        }
+        return {scalingHint: hints.map(h => `<p>${h}</p>`).join('')};
+    }
+    static defaultDamageScaling({value, bonusDamage}) {
         if (bonusDamage.#activity?.damage?.parts.length) {
-            if (!bonusDamage.#activity.canScaleDamage) return bonusDamage.roll;
+            if (!bonusDamage.#activity.canScaleDamage) return;
             const formula = bonusDamage.#activity.damage.parts.map(part => part.scaledFormula(value)).join(' + ');
             return new CONFIG.Dice.DamageRoll(formula, bonusDamage.roll.data);
         }

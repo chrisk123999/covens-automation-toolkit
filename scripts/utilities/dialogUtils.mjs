@@ -1,5 +1,5 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
-import {queryUtils, tokenUtils, automationUtils, dataUtils} from './_module.mjs';
+import {queryUtils, tokenUtils, automationUtils, uiUtils} from './_module.mjs';
 import constants from '../lib/constants.mjs';
 
 /** @import {BonusDamage} from '../lib/_module.mjs' */
@@ -197,11 +197,11 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
  * @param {BonusDamage[]} bonuses 
  * @param {object} [options]
  * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets]
+ * @param {MidiQOL.Workflow} [options.workflow]
  * @param {string} [options.title]
  * @param {string} [options.content]
-* @param {string} [options.userId]
  */
-async function selectScaledDocument(bonuses, {targets, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content', userId = game.user.id} = {}) {
+async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content'} = {}) {
     if (!bonuses.length) return false;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     const inputs = [
@@ -261,25 +261,27 @@ async function selectScaledDocument(bonuses, {targets, title = 'CAT.OptionalBonu
             name: 'b-' + i + '.active',
             options: {
                 image: bonus.img,
-                tooltip: await dataUtils.enrichHTML(bonus.description, bonus.roll.data),
+                tooltip: await uiUtils.enrichHTML(bonus.description, bonus.roll.data),
                 hint: bonus.validateHint,
                 subinputs: getSubinputs(bonus, 'b-' + i),
                 locked: !bonus.optional,
                 isChecked: !bonus.optional,
                 tags: getTags(bonus),
-                onchange: (...args) => { console.log('BONUS CHANGE: b-' + i, {...args[0]}); bonus.validate(); }
+                onchange: (...args) => { console.log('BONUS CHANGE: b-' + i, {...args[0]}); bonus.validate(workflow, bonuses); }
             }
         });
     }
     if (!inputs[0][1].length) inputs.splice(0, 1);
     if (!inputs[1][1].length) inputs.splice(1, 1);
-    const choices = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto'});
+    const choices = await runDialog(game.user.id, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!choices?.buttons) return false;
     const results = [];
     for (const [id, data] of Object.entries(choices)) {
         if (data === true) continue; // contextual bonus
         if (!data.active) continue;
         const bonus = bonuses[id.split('-')[1]];
+        bonus.active = data.active;
+        if (data.scaling > 0) bonus.updateScaling(data.scaling, workflow, bonuses);
         if (data.targets) bonus.targets = JSON.parse(data.targets).map(id => targets.find(t => t.id === id));
         results.push(bonus);
     }
