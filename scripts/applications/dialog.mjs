@@ -342,7 +342,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
             locked: f.options?.locked ?? false,
             onchange: f.options?.onchange,
-            tags: f.options?.tags.map(t => ({
+            tags: f.options?.tags?.map(t => ({
                 label: t.label,
                 id: t.id
             })),
@@ -377,7 +377,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 invertColor: f.options?.invertColor,
                 subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
                 onchange: f.options?.onchange,
-                tags: f.options?.tags.map(t => ({
+                tags: f.options?.tags?.map(t => ({
                     label: t.label,
                     id: t.id
                 })),
@@ -413,7 +413,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 reference: f.options?.reference,
                 invertColor: f.options?.invertColor,
                 subinputs: this.#buildInputs(f.options?.subinputs, id),
-                tags: f.options?.tags.map(t => ({
+                tags: f.options?.tags?.map(t => ({
                     label: t.label,
                     id: t.id
                 })),
