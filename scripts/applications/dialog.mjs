@@ -5,8 +5,9 @@ const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundr
 /**
  * @typedef DialogHint
  * @property {string} label
+ * @property {string} id Used to fetch the hint and apply updates.
  * @property {string} [icon] Font Awesome css class.
- * @property {string} [tooltip] Tooltip on the icon.
+ * @property {string} [tooltip] Tooltip shown on hover.
  */
 
 const INPUTS_TEMPLATE = 'modules/cat/templates/dialog-fields.hbs';
@@ -245,7 +246,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 hints: f.hints?.map(h => ({
                     label: h.label,
                     icon: h.icon,
-                    tooltip: h.tooltip
+                    tooltip: h.tooltip,
+                    id: h.id
                 })),
                 value: f.value,
                 min: f.options?.min,
@@ -337,13 +339,16 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             hints: f.hints?.map(h => ({
                 label: h.label,
                 icon: h.icon,
-                tooltip: h.tooltip
+                tooltip: h.tooltip,
+                id: h.id
             })),
             subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
             locked: f.options?.locked ?? false,
             onchange: f.options?.onchange,
             tags: f.options?.tags?.map(t => ({
+                tooltip: t.tooltip,
                 label: t.label,
+                icon: t.icon,
                 id: t.id
             })),
             id: DialogApp.#makeID(index, i, parentIndex)
@@ -367,7 +372,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 hints: f.hints?.map(h => ({
                     label: h.label,
                     icon: h.icon,
-                    tooltip: h.tooltip
+                    tooltip: h.tooltip,
+                    id: h.id
                 })),
                 name: f.name,
                 isChecked: f.options?.isChecked ?? false,
@@ -378,7 +384,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
                 onchange: f.options?.onchange,
                 tags: f.options?.tags?.map(t => ({
+                    tooltip: t.tooltip,
                     label: t.label,
+                    icon: t.icon,
                     id: t.id
                 })),
                 id: DialogApp.#makeID(index, i, parentIndex)
@@ -400,7 +408,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 hints: f.hints?.map(h => ({
                     label: h.label,
                     icon: h.icon,
-                    tooltip: h.tooltip
+                    tooltip: h.tooltip,
+                    id: h.id
                 })),
                 name: f.name,
                 minAmount: min,
@@ -414,7 +423,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 invertColor: f.options?.invertColor,
                 subinputs: this.#buildInputs(f.options?.subinputs, id),
                 tags: f.options?.tags?.map(t => ({
+                    tooltip: t.tooltip,
                     label: t.label,
+                    icon: t.icon,
                     id: t.id
                 })),
                 onchange: f.options?.onchange
@@ -477,7 +488,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 hints: f.hints?.map(h => ({
                     label: h.label,
                     icon: h.icon,
-                    tooltip: h.tooltip
+                    tooltip: h.tooltip,
+                    id: h.id
                 })),
                 name: f.name,
                 tooltip: f.options?.tooltip,
@@ -507,7 +519,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 hints: f.hints?.map(h => ({
                     label: h.label,
                     icon: h.icon,
-                    tooltip: h.tooltip
+                    tooltip: h.tooltip,
+                    id: h.id
                 })),
                 name: f.name,
                 tooltip: f.options?.tooltip,

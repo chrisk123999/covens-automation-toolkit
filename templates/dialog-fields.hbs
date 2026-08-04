@@ -36,18 +36,15 @@
                         {{#if tags}}
                             <div class="cat-tags">
                                 {{#each tags}}
-                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}<span class="cat-hint-text">{{localize label}}</span></span>
                                 {{/each}}
                             </div>
                         {{/if}}
                         <div class="form-fields">
-                            {{#if select}}
-                                <select name="sel-{{name}}" id="{{id}}s">{{selectOptions select.choices selected=select.value}}</select>
-                            {{/if}}
                             <input type="checkbox" {{#if locked}}disabled{{else if (gte ../currentNum ../totalMax)}}{{#unless isChecked}}disabled{{/unless}}{{/if}} id="{{id}}" name="{{name}}" {{#if isChecked}}checked{{/if}}>
                         </div>
                         {{#each hints}}
-                            <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                            <p class="hint" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                         {{/each}}
                     </div>
                 </div>
@@ -78,7 +75,7 @@
                         {{#if tags}}
                             <div class="cat-tags">
                                 {{#each tags}}
-                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}<span class="cat-hint-text">{{localize label}}</span></span>
                                 {{/each}}
                             </div>
                         {{/if}}
@@ -86,7 +83,7 @@
                             <input type="radio" id="{{id}}" name="{{../radioName}}" value="{{name}}" {{#if isChecked}}checked{{/if}}>
                         </div>
                         {{#each hints}}
-                            <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                            <p class="hint" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                         {{/each}}
                     </div>
                 </div>
@@ -120,7 +117,7 @@
                         {{#if tags}}
                             <div class="cat-tags">
                                 {{#each tags}}
-                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}">{{localize label}}</span>
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}<span class="cat-hint-text">{{localize label}}</span></span>
                                 {{/each}}
                             </div>
                         {{/if}}
@@ -132,7 +129,7 @@
                             </select>
                         </div>
                         {{#each hints}}
-                            <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                            <p class="hint" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                         {{/each}}
                     </div>
                 </div>
@@ -164,7 +161,7 @@
                             <range-picker value="{{#if value includeZero=true}}{{value}}{{else}}{{min}}{{/if}}" min="{{min}}" max="{{max}}" step="{{step}}" name="{{name}}" id="{{id}}"></range-picker>
                         </div>
                         {{#each hints}}
-                            <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                            <p class="hint" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                         {{/each}}
                     </div>
                 </div>
@@ -224,7 +221,7 @@
                         </div>
                     </div>
                     {{#each hints}}
-                        <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                        <p class="hint" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                     {{/each}}
                 </div>
                 {{#if subinputs}}
@@ -255,7 +252,7 @@
                         </cat-multi-combobox>
                     </div>
                     {{#each hints}}
-                        <p class="hint"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{localize label}}{{#if icon}}<i class="{{icon}}"></i>{{/if}}</p>
+                        <p class="hint" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                     {{/each}}
                 </div>
                 {{#if subinputs}}

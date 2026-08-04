@@ -1593,6 +1593,10 @@ cat-combobox {
     margin-top: var(--cat-space-xs);
 }
 
+.hint > i {
+    margin-right: var(--cat-space-xs);
+}
+
 .cat-medkit button {
     gap: var(--cat-space-xs);
     display: inline-flex;
