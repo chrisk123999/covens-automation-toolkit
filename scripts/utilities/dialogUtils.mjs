@@ -203,114 +203,99 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
 async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content'} = {}) {
     if (!bonuses.length) return false;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
-    const inputs = [
-        ['checkbox', [], {displayAsRows: true, legend: 'CAT.OptionalBonus.Optional'}],
-        ['checkbox', [], {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]
-    ];
-    const getBonusById = id => bonuses[id.split('-')[1]];
-    const getSubinputs = (bonus, name) => {
-        if (!bonus.optional) return;
-        const subinputs = [];
-        const hide = game.settings.get('cat', 'hideNames');
-        const counter = {value: 1};
-        if (bonus.maxScaling > 0)
-            subinputs.push(['slider', [{
-                name: name + '.scaling',
-                hints: bonus.scalingHints,
-                label: 'CAT.OptionalBonus.Scaling',
-                options: {
-                    min: 0,
-                    max: bonus.maxScaling,
-                    step: 1,
-                    onchange: ({thisContext, input, getInputById}) => {
-                        bonus.updateScaling(input.value, workflow, bonuses);
-                        input.hints = bonus.scalingHints;
-                        const targets = thisContext.inputs.find(i => i.isComboboxMulti)?.options[0];
-                        if (targets) {
-                            targets.maxTotal = bonus.maxTargets;
-                            targets.hints = bonus.maxTargetsHints;
-                            const count = targets.options.reduce((t, o) => t += o.selected, 0);
-                            if (count > targets.maxTotal)
-                                for (let i = 0; i < count - targets.maxTotal; i++)
-                                    targets.options[i].selected = false;
-                        }
-                        const tags = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags ?? [];
-                        for (const t of tags) {
-                            if (t.id === 'formula') {
-                                t.label = bonus.roll.formula;
-                                continue;
-                            }
-                            const hint = bonus.scalingHints.find(h => h.id === t.id);
-                            if (!hint) continue;
-                            t.tooltip = hint.tooltip;
-                            t.icon = hint.icon;
-                        }
-                        if (bonus.active) bonus.validate(workflow, bonuses);
-                        return true;
-                    }
-                }
-            }]]);
-        if (targets && bonus.maxTargets > 0)
-            subinputs.push(['comboboxMulti', [{
-                name: name + '.targets',
-                hints: bonus.maxTargetsHints,
-                label: 'CAT.OptionalBonus.Targets',
-                options: {
-                    maxTotal: bonus.maxTargets,
-                    options: targets.map(t => ({
-                        label: getTokenName(t, {hide, counter}),
-                        image: t.texture.src,
-                        value: t.id
-                    })),
-                    onchange: ({input}) => {
-                        const count = input.options.reduce((t, o) => t += o.selected, 0);
-                        if (count === bonus.targets.size) return;
-                        const tgts = [];
-                        for (const o of input.options) {
-                            if (!o.selected) continue;
-                            const tgt = targets.find(t => t.id === o.value);
-                            if (!tgt) continue;
-                            tgts.push(tgt);
-                        }
-                        bonus.targets = tgts;
-                        if (bonus.active) bonus.validate(workflow, bonuses);
-                    }
-                }
-            }]]);
-        return subinputs;
-    };
-    const getTags = bonus => {
-        const tags = [];
-        if (bonus.roll) tags.push({label: bonus.roll.formula, id: 'formula'});
-        const label = key => CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;
-        if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: label(h.id)})));
-        if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
-        if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
-        if (!tags.length) return;
-        return tags;
-    };
     const validateAll = context => {
         BonusDamage.ValidateAll(bonuses, {workflow});
         for (const bonusContext of context) {
-            const bonus = getBonusById(bonusContext.name.split('.')[0]);
+            const index = bonusContext.name.match(/\d+/)[0];
+            const bonus = bonuses[index];
             bonusContext.isChecked = bonus.active;
             bonusContext.hints = bonus.validateHints;
         }
     };
+    const tagLabel = key => CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;
+    const sliderChange = ({bonus, thisContext, input, getInputById}) => {
+        bonus.updateScaling(input.value, workflow, bonuses);
+        input.hints = bonus.scalingHints;
+        const targets = thisContext.inputs.find(i => i.isComboboxMulti)?.options[0];
+        if (targets) {
+            targets.maxTotal = bonus.maxTargets;
+            targets.hints = bonus.maxTargetsHints;
+            const selected = targets.options.filter(o => o.selected);
+            if (selected.length > targets.maxTotal)
+                for (let i = 0; i < selected.length - targets.maxTotal; i++)
+                    selected[i].selected = false;
+        }
+        const tags = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags ?? [];
+        for (const t of tags) {
+            if (t.id === 'formula') {
+                t.label = bonus.roll.formula;
+                continue;
+            }
+            const hint = bonus.scalingHints.find(h => h.id === t.id);
+            if (!hint) continue;
+            t.tooltip = hint.tooltip;
+            t.icon = hint.icon;
+        }
+        return true;
+    };
+    const targetsChange = ({bonus, input}) => {
+        const selected = new Set(input.options.filter(o => o.selected).map(o => o.value));
+        if (selected.size === bonus.targets.size) return;
+        bonus.targets = targets.filter(t => selected.has(t.id));
+    };
+    const hide = game.settings.get('cat', 'hideNames');
+    const optional = [], contextual = [];
     for (let i = 0; i < bonuses.length; i++) {
         const bonus = bonuses[i];
-        const fieldset = bonus.optional ? inputs[0][1] : inputs[1][1];
+        const name = 'b-' + i;
+        const subinputs = [];
+        if (bonus.optional) {
+            if (bonus.maxScaling > 0)
+                subinputs.push(['slider', [{
+                    name: name + '.scaling',
+                    hints: bonus.scalingHints,
+                    label: 'CAT.OptionalBonus.Scaling',
+                    options: {
+                        min: 0,
+                        max: bonus.maxScaling,
+                        step: 1,
+                        onchange: ({thisContext, input, getInputById}) => sliderChange({bonus, thisContext, input, getInputById})
+                    }
+                }]]);
+            const counter = {value: 1};
+            if (targets && bonus.maxTargets > 0)
+                subinputs.push(['comboboxMulti', [{
+                    name: name + '.targets',
+                    hints: bonus.maxTargetsHints,
+                    label: 'CAT.OptionalBonus.Targets',
+                    options: {
+                        maxTotal: bonus.maxTargets,
+                        options: targets.map(t => ({
+                            label: getTokenName(t, {hide, counter}),
+                            image: t.texture.src,
+                            value: t.id
+                        })),
+                        onchange: ({input}) => targetsChange({bonus, input})
+                    }
+                }]]);
+        }
+        const tags = [];
+        if (bonus.roll) tags.push({label: bonus.roll.formula, id: 'formula'});
+        if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id)})));
+        if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
+        if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
+        const fieldset = bonus.optional ? optional : contextual;
         fieldset.push({
             label: bonus.name,
             hints: bonus.validateHints,
-            name: 'b-' + i + '.active',
+            name: name + '.active',
             options: {
                 image: bonus.img,
                 tooltip: await uiUtils.enrichHTML(bonus.description, bonus.roll.data),
-                subinputs: getSubinputs(bonus, 'b-' + i),
+                subinputs,
                 locked: !bonus.optional,
                 isChecked: !bonus.optional,
-                tags: getTags(bonus),
+                tags,
                 onchange: ({input, group}) => {
                     bonus.active = input.isChecked;
                     validateAll(group.options);
@@ -319,17 +304,13 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
             }
         });
     }
-    if (!inputs[0][1].length) return [];
-    if (!inputs[1][1].length) inputs.splice(1, 1);
+    const inputs = [];
+    if (!optional.length) return [];
+    else inputs.push(['checkbox', optional, {displayAsRows: true, legend: contextual.length > 0 ? 'CAT.OptionalBonus.Optional' : ''}]);
+    if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);
     const choices = await runDialog(game.user.id, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!choices?.buttons) return false;
-    const results = [];
-    for (const [id, data] of Object.entries(choices)) {
-        if (data === true) continue; // contextual bonus
-        if (!data.active) continue;
-        results.push(getBonusById(id));
-    }
-    return results;
+    return BonusDamage.ValidateAll(bonuses, {workflow});
 }
 async function selectAmounts(title, content, fields, {totalMax, displayAsRows = true, userId = game.user.id, buttons = 'okCancel'} = {}) {
     let inputs = [['selectAmount', fields, {displayAsRows, totalMax}]];

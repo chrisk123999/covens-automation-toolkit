@@ -36,7 +36,6 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.content = content;
         this.inputs = inputs;
         this.buttons = buttons;
-        this.validate = config?.validate;
     }
 
     static DEFAULT_OPTIONS = {
@@ -692,7 +691,6 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             }
         }
         if (ctx.input.onchange) changed ||= ctx.input.onchange(ctx);
-        if (ctx.input.validate) changed ||= ctx.input.validate(ctx);
         if (changed) this.render(true);
     }
 
