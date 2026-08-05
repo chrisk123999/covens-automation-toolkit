@@ -41,8 +41,7 @@ export default class BonusDamage {
     #maxScaling;    // Number   | Max value of the scaling slider.
     #scalingValue;  // Number   | Current scaling. Base 0.
     #use;           // Function | Async callback runs after the selection is confirmed.
-    #costHints;  //DialogHint[] | Array of {label, icon} for UI cost hints.
-    #scalingHints;  // ...      | Array of {label, icon} for UI scaling hints.
+    #scalingHints;//DialogHint[]| Array of {label, icon} for UI scaling hints.
     #maxTargetsHints;// ...     | Array of {label, icon} for UI target hints. 
     #validateHints; // ...      | Array of {label, icon} for explaining the validity of bonus damage.
     #optional;      // Boolean  | Whether this bonus damage is optional or not. If there are only static bonus damages and no optional ones, the dialog shouldn't be shown.
@@ -197,13 +196,6 @@ export default class BonusDamage {
                 break;
         }
         return desc ?? '';
-    }
-    /** @type {DialogHint[]} */
-    get costHints() {
-        return this.#costHints;
-    }
-    set costHints(value) {
-        this.#costHints = this.#makeHints(value);
     }
     /** @type {DialogHint[]} */
     get scalingHints() {
