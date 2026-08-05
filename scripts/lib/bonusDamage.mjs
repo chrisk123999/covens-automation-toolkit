@@ -302,9 +302,9 @@ export default class BonusDamage {
         let label, tooltip, type;
         const warn = data.cost > data.available;
         const plural = new Intl.PluralRules(game.i18n.lang);
-        const availableRule = plural.select(data.available);
+        const availablePlural = plural.select(data.available);
         const available = formatNumber(data.available);
-        const costRule = plural.select(data.cost);
+        const costPlural = plural.select(data.cost);
         const cost = formatNumber(data.cost);
         switch(target) {
             case 'action':
@@ -319,8 +319,8 @@ export default class BonusDamage {
                     item: activity?.item.name ?? bonus.name
                 });
                 label = _loc('DND5E.CONSUMPTION.Type.ActivityUses.PromptHintDecrease', {
-                    availableUse: _loc(`DND5E.CONSUMPTION.Type.Use.${availableRule}`),
-                    use: _loc(`DND5E.CONSUMPTION.Type.Use.${costRule}`),
+                    availableUse: _loc(`DND5E.CONSUMPTION.Type.Use.${availablePlural}`),
+                    use: _loc(`DND5E.CONSUMPTION.Type.Use.${costPlural}`),
                     available,
                     cost
                 });
@@ -331,8 +331,8 @@ export default class BonusDamage {
                 if (!item) break;
                 type = _loc('DND5E.CONSUMPTION.Type.ItemUses.Warning',  {name: item.name});
                 label = _loc('DND5E.CONSUMPTION.Type.ItemUses.PromptHintDecrease', {
-                    availableUse: _loc(`DND5E.CONSUMPTION.Type.Use.${availableRule}`),
-                    use: _loc(`DND5E.CONSUMPTION.Type.Use.${costRule}`),
+                    availableUse: _loc(`DND5E.CONSUMPTION.Type.Use.${availablePlural}`),
+                    use: _loc(`DND5E.CONSUMPTION.Type.Use.${costPlural}`),
                     item: `<em>${item.name}</em>`,
                     available,
                     cost
@@ -357,7 +357,7 @@ export default class BonusDamage {
                 else denomination = key;
                 type = _loc('DND5E.CONSUMPTION.Type.HitDice.Warning', {denomination});
                 label = _loc('DND5E.CONSUMPTION.Type.HitDice.PromptHintDecrease', {
-                    die: _loc(`DND5E.CONSUMPTION.Type.HitDie.${costRule}`),
+                    die: _loc(`DND5E.CONSUMPTION.Type.HitDie.${costPlural}`),
                     denomination: denomination.toLowerCase(),
                     available,
                     cost
@@ -369,7 +369,7 @@ export default class BonusDamage {
                 const levelLabel = CONFIG.DND5E.spellLevels[level]?.toLowerCase();
                 type = _loc('DND5E.CONSUMPTION.Type.SpellSlots.Warning', {level: levelLabel});
                 label = _loc('DND5E.CONSUMPTION.Type.SpellSlots.PromptHintDecrease', {
-                    slot: _loc(`DND5E.CONSUMPTION.Type.SpellSlot.${costRule}`, {level: levelLabel}),
+                    slot: _loc(`DND5E.CONSUMPTION.Type.SpellSlot.${costPlural}`, {level: levelLabel}),
                     available,
                     cost
                 });
@@ -464,16 +464,36 @@ export default class BonusDamage {
     static ValidateAll(bonuses, {workflow} = {}) {
         const cumulativeCosts = {};
         return bonuses.filter(b => {
+            b.validateHints = [];
             if (!b.active) return false;
-            if (!b.validate(workflow, bonuses)) return false;
+            if (!b.optional) {
+                b.active = b.validate(workflow, bonuses);
+                return b.active;
+            }
+            if (!b.validate(workflow, bonuses)) {
+                b.active = false;
+                return false;
+            }
             let hasEnough = true;
             for (const type of BonusDamage.#resourceTypes) {
-                cumulativeCosts[type] ??= {};
                 for (const [key, data] of Object.entries(b.cost[type] ?? {})) {
-                    BonusDamage.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
-                    if (cumulativeCosts[type][key].cost > cumulativeCosts[type][key].available) hasEnough = false;
+                    const currentCost = cumulativeCosts[type]?.[key]?.cost ?? 0;
+                    if (data.cost + currentCost > data.available) {
+                        hasEnough = false;
+                        break; 
+                    }
                 }
+                if (!hasEnough) break;
             }
+            if (hasEnough) {
+                for (const type of BonusDamage.#resourceTypes) {
+                    cumulativeCosts[type] ??= {};
+                    for (const [key, data] of Object.entries(b.cost[type] ?? {}))
+                        BonusDamage.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
+                }
+                return true;
+            } 
+            b.active = false;b.validateHints = {label: _loc('CAT.OptionalBonus.Invalid', {reason: _loc('CAT.OptionalBonus.InvalidResources')})};
             return hasEnough;
         });
     }

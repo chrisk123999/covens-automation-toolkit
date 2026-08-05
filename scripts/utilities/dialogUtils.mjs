@@ -1,8 +1,7 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import {queryUtils, tokenUtils, automationUtils, uiUtils} from './_module.mjs';
 import constants from '../lib/constants.mjs';
-
-/** @import {BonusDamage} from '../lib/_module.mjs' */
+import {BonusDamage} from '../lib/_module.mjs';
 
 /**
  * @param {foundry.documents.TokenDocument} token 
@@ -208,6 +207,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         ['checkbox', [], {displayAsRows: true, legend: 'CAT.OptionalBonus.Optional'}],
         ['checkbox', [], {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]
     ];
+    const getBonusById = id => bonuses[id.split('-')[1]];
     const getSubinputs = (bonus, name) => {
         if (!bonus.optional) return;
         const subinputs = [];
@@ -289,6 +289,14 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         if (!tags.length) return;
         return tags;
     };
+    const validateAll = context => {
+        BonusDamage.ValidateAll(bonuses, {workflow});
+        for (const bonusContext of context) {
+            const bonus = getBonusById(bonusContext.name.split('.')[0]);
+            bonusContext.isChecked = bonus.active;
+            bonusContext.hints = bonus.validateHints;
+        }
+    };
     for (let i = 0; i < bonuses.length; i++) {
         const bonus = bonuses[i];
         const fieldset = bonus.optional ? inputs[0][1] : inputs[1][1];
@@ -303,9 +311,10 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
                 locked: !bonus.optional,
                 isChecked: !bonus.optional,
                 tags: getTags(bonus),
-                onchange: ({input}) => {
+                onchange: ({input, group}) => {
                     bonus.active = input.isChecked;
-                    if (bonus.active) bonus.validate(workflow, bonuses);
+                    validateAll(group.options);
+                    return true;
                 }
             }
         });
@@ -318,8 +327,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
     for (const [id, data] of Object.entries(choices)) {
         if (data === true) continue; // contextual bonus
         if (!data.active) continue;
-        const bonus = bonuses[id.split('-')[1]];
-        results.push(bonus);
+        results.push(getBonusById(id));
     }
     return results;
 }

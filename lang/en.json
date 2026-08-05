@@ -858,6 +858,8 @@
     "OptionalBonus": {
       "Content": "Choose and configure bonuses for this roll.",
       "Contextual": "Contextual Bonuses",
+      "Invalid": "Bonus disabled: {reason}",
+      "InvalidResources": "not enough resources!",
       "Optional": "Optional Bonuses",
       "Scaleable": "Scalable",
       "Scaling": "Scaling",
