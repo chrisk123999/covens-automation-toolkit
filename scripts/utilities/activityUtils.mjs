@@ -163,6 +163,10 @@ function hasDefaultIcon(activity) {
     return activity.img === activity.constructor.metadata.img;
 }
 
+function hasDefaultName(activity) {
+    return activity.name === _loc(activity.constructor.metadata.title);
+}
+
 export default {
     getSaveDC,
     getSavedCastData,
@@ -172,5 +176,6 @@ export default {
     getEffectDuration,
     getDuration,
     getDependencies,
-    hasDefaultIcon
+    hasDefaultIcon,
+    hasDefaultName
 };

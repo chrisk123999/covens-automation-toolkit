@@ -1,46 +1,80 @@
 import {activityUtils, dataUtils, effectUtils, genericUtils, workflowUtils} from '../utilities/_module.mjs';
+const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
 /** @import {DialogHint} from '../applications/dialog.mjs' */
+
+/** 
+ * @typedef BonusCostEntry
+ * @property {number} cost
+ * @property {number} available
+ */
+
+/** 
+ * @typedef BonusCost 
+ * @property {object} [actions]
+ * @property {BonusCostEntry} [actions.action]
+ * @property {BonusCostEntry} [actions.bonus]
+ * @property {BonusCostEntry} [actions.reaction]
+ * @property {Record<string, BonusCostEntry>} [itemUses]
+ * @property {Record<string, BonusCostEntry>} [activityUses]
+ * @property {Record<string, BonusCostEntry>} [spellSlots]
+ * @property {Record<string, BonusCostEntry>} [attribute]
+ * @property {Record<string, BonusCostEntry>} [material]
+ * @property {Record<string, BonusCostEntry>} [hitDice]
+ */
 
 export default class BonusDamage {
     #targets;       // Set      | Target(s) of the bonus damage.
     #roll;          // Roll     | The unevaluated roll.
-    #baseFormula    // string   | The original roll formula before scaling.
+    #actor;         // Actor    | The actor who will spend resources for this bonus.
+    #baseFormula;   // string   | The original roll formula before scaling.
     #maxTargets;    // Number   | Max targets, if any.
     #baseMaxTargets;// Number   | The original max targets before scaling.
     #document;      // Document | Item, Activity, and possibly the effect providing this bonus damage.
     #activity;      // Activity | Used for default consumption and scaling if a `scaling` callback is not provided.
-    #validate;      // Function | Callback function that returns true if the bonus damage may apply. 
-    #scaling;       // Function | Callback function that gets called when a slider is moved in the UI to update values of the bonus damage, such as the roll, max targets, etc.
+    #validate;      // Function | Callback for any validation beyond resource consumption. 
+    #bonusScaling;  // Function | Callback updates the bonus formula when scaled.
+    #costScaling;   // Function | Callback collects the costs required to use this bonus when scaled.
+    #targetScaling; // Function | Callback adjusts max targets when the bonus is scaled.
+    #getHints;      // Function | Callback creates hints for the UI after all other changes are settled.
+    #cost;          // BonusCost| The costs required to use this bonus.
     #maxScaling;    // Number   | Max value of the scaling slider.
-    #use;           // Function | Asynchronoud callback function that will be called after the selection is confirmed.
-    #consumeLabels; // String   | An array of labels for the UI that lists consumption targets.
-    #scalingHints;  // String   | Array of {label, icon} for UI scaling hints.
-    #maxTargetsHints;// String  | Array of {label, icon} for UI target hints.    
-    #validateHints; // String   | Array of {label, icon} for explaining the validity of bonus damage.
+    #scalingValue;  // Number   | Current scaling. Base 0.
+    #use;           // Function | Async callback runs after the selection is confirmed.
+    #costHints;  //DialogHint[] | Array of {label, icon} for UI cost hints.
+    #scalingHints;  // ...      | Array of {label, icon} for UI scaling hints.
+    #maxTargetsHints;// ...     | Array of {label, icon} for UI target hints. 
+    #validateHints; // ...      | Array of {label, icon} for explaining the validity of bonus damage.
     #optional;      // Boolean  | Whether this bonus damage is optional or not. If there are only static bonus damages and no optional ones, the dialog shouldn't be shown.
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus damage is active or not.
-    constructor(document, {maxTargets, validate, scaling, use, consumeLabels, scalingHints, maxTargetsHints, validateHints, maxScaling, roll, optional = true, action} = {}) {
+    constructor(document, {maxTargets, getHints, getCosts, scaleMaxTargets, validate, scaling, use, scalingHints, maxTargetsHints, validateHints, maxScaling, roll, optional = true, action, actor} = {}) {
         this.#document = document;
-        if (!scaling) this.#getActivity(document);
-        this.#consumeLabels = this.#getConsumption(consumeLabels);
+        this.#getActivity(document);
+        this.#actor = this.#getActor(actor);
+        this.#action = this.#getAction(action);
         this.maxScaling = this.#getMaxScaling(maxScaling);
-        this.#validate = validate ?? BonusDamage.defaultValidate;
-        this.#scaling = scaling ?? BonusDamage.defaultScaling;
+        this.#validate = validate ?? (() => true);
         this.#use = use ?? BonusDamage.defaultUse;
-        this.#scalingHints = this.#makeHints(scalingHints);
-        this.#validateHints = this.#makeHints(validateHints);
-        this.#maxTargetsHints = this.#makeHints(maxTargetsHints);
+        this.#getHints = getHints ?? BonusDamage.defaultGetHints;
+        this.#costScaling = getCosts ?? BonusDamage.defaultCosts;
+        this.#bonusScaling = scaling ?? BonusDamage.defaultBonusScaling;
+        this.#targetScaling = scaleMaxTargets ?? BonusDamage.defaultTargetScaling;
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
         this.#targets = new Set();
         this.#optional = optional;
-        this.#action = action;
+        this.#scalingValue = 0;
         this.#roll = roll ?? new CONFIG.Dice.DamageRoll('1d4', (this.#activity ?? this.#document).getRollData?.());
         this.#baseFormula = this.#roll.formula;
+
+        this.scalingHints = scalingHints;
+        this.validateHints = validateHints;
+        this.maxTargetsHints = maxTargetsHints;
+
+        this.updateScaling(0);
     }
-    // TODO if no initial hints are provided and scaling is available, a scaling hint needs to be created
+
     #makeHints(list) {
         list = dataUtils.toArray(list);
         const hints = [];
@@ -72,63 +106,35 @@ export default class BonusDamage {
                 return;
         }
     }
-    #getConsumption(override) {
-        if (override) return dataUtils.toArray(override);
-        const consume = this.#activity?.consumption;
-        if (!consume) return [];
-        const targets = new Set();
-        const types = CONFIG.DND5E.activityConsumptionTypes;
-        if (consume.spellSlot && this.#activity.requiresSpellSlot) 
-            targets.add(types.spellSlots.label);
-        consume.targets.forEach(t => targets.add(types[t.type].label));
-        if (!targets.size) return [];
-        return Array.from(targets);
-    }
     #getMaxScaling(override) {
         if (typeof override === 'number') return override;
-        if (!this.#activity) return 0;
+        if (!this.activity) return 0;
         let value = Infinity;
-        const {system, items} = this.#activity.actor;
-        const slot = () => Math.min(value, Math.max(Object.values(system.spells)
-            .reduce((max, spell) => spell.value ? Math.max(spell.level, max) : max, -1) - this.#activity.item.system.level, 0));
-        if (this.#activity.isSpell) value = slot();
-        for (const target of this.#activity.consumption.targets) {
-            const roll = target.resolveCost({evaluate: false});
-            if (!roll.isDeterministic) continue;
-            const min = new Roll(roll.formula, roll.data).evaluateSync({minimize: true}).total;
-            const max = new Roll(roll.formula, roll.data).evaluateSync({maximize: true}).total;
-            if (max <= 0 || min <= 0) continue;
-            let available = 0;
-            switch (target.type) {
-                case 'activityUses':
-                    available = this.#activity.uses.value;
-                    break;
-                case 'attribute':
-                    available = genericUtils.getProperty(system, target.target);
-                    break;
-                case 'hitDice':
-                    available = system.attributes.hd.value;
-                    break;
-                case 'itemUses': {
-                    const item = items.get(target.target) ?? target.item;
-                    available = item.system.uses.value;
-                    break;
-                }
-                case 'material':
-                    available = items.get(target.target)?.system.quantity ?? 0;
-                    break;
-                case 'spellSlots':
-                    available = slot();
-                    if (min > available + this.#activity.item.system.level) return 0;
-                    value = available;
-                    break;
-            }
-            const limit = Math.floor(available / min);
+        const actor = this.actor;
+        const slot = () => Math.min(value, Math.max(Object.values(actor.system.spells)
+            .reduce((max, spell) => spell.value ? Math.max(spell.level, max) : max, -1) - this.activity.item.system.level, 0));
+        if (this.activity.isSpell) value = slot();
+        for (const target of this.activity.consumption.targets) {
+            const baseCost = target._resolveHintCost({scaling: 0}).simplifiedCost;
+            const scaledCost = target._resolveHintCost({scaling: 1}).simplifiedCost;
+            const stepCost = scaledCost - baseCost;
+            if (stepCost <= 0) continue;
+            const available = BonusDamage.GetResource({consumption: target, actor, scaling: 0}).available;
+            const limit = Math.max(0, Math.floor((available - baseCost) / stepCost));
+            if (limit === 0) return 0;
             if (limit < value) value = limit;
         }
         return value === Infinity ? 0 : value;
     }
-    
+    #getAction(override) {
+        if (override) return override;
+        return this.activity?.activation.type;
+    }
+    #getActor(override) {
+        if (override) return override;
+        return this.activity?.actor ?? this.document.actor;
+    }
+
     /** @type {dnd5e.dice.DamageRoll} */
     get roll() {
         return this.#roll;
@@ -160,22 +166,9 @@ export default class BonusDamage {
     get baseMaxTargets() {
         return this.#baseMaxTargets;
     }
-    validate(workflow, otherBonusDamages) {
-        return this.#validate({bonusDamage: this, workflow, otherBonusDamages});
-    }
     /** @type {dnd5e.dataModels.activity.BaseActivityData|foundry.documents.Item|foundry.documents.ActiveEffect} */
     get document() {
         return this.#document;
-    }
-    updateScaling(value, workflow, otherBonusDamages) {
-        const updates = this.#scaling({value, bonusDamage: this, workflow, otherBonusDamages}) ?? {};
-        if (updates.roll) this.roll = updates.roll;
-        if (updates.scalingHints) this.#scalingHints = updates.scalingHints;
-        if (updates.maxTargetsHints) this.#maxTargetsHints = updates.maxTargetsHints;
-        if (Number.isNumeric(updates.maxTargets)) this.maxTargets = updates.maxTargets;
-    }
-    async use(workflow, otherBonusDamages) {
-        return await this.#use({workflow, bonusDamage: this, otherBonusDamages});
     }
     /** @type {string} File path to an icon for the bonus source {@link BonusDamage.document|document}. */
     get img() {
@@ -185,6 +178,8 @@ export default class BonusDamage {
     }
     /** @type {string} Name of the bonus source {@link BonusDamage.document|document}. */
     get name() {
+        if (this.#document.documentName === 'Activity' && activityUtils.hasDefaultName(this.#document))
+            return this.#document.item.name;
         return this.#document.name;
     }
     /** @type {string} Description of the bonus source {@link BonusDamage.document|document}. */
@@ -203,21 +198,33 @@ export default class BonusDamage {
         }
         return desc ?? '';
     }
-    /** @type {string[]} */
-    get consumeLabels() {
-        return this.#consumeLabels;
+    /** @type {DialogHint[]} */
+    get costHints() {
+        return this.#costHints;
+    }
+    set costHints(value) {
+        this.#costHints = this.#makeHints(value);
     }
     /** @type {DialogHint[]} */
     get scalingHints() {
         return this.#scalingHints;
     }
+    set scalingHints(value) {
+        this.#scalingHints = this.#makeHints(value);
+    }
     /** @type {DialogHint[]} */
     get maxTargetsHints() {
         return this.#maxTargetsHints;
     }
+    set maxTargetsHints(value) {
+        this.#maxTargetsHints = this.#makeHints(value);
+    }
     /** @type {DialogHint[]} */
     get validateHints() {
         return this.#validateHints;
+    }
+    set validateHints(value) {
+        this.#validateHints = this.#makeHints(value);
     }
     /** @type {number} */
     get maxScaling() {
@@ -226,49 +233,177 @@ export default class BonusDamage {
     set maxScaling(value) {
         this.#maxScaling = Number(value);
     }
-    static defaultScaling({value, bonusDamage, workflow, otherBonusDamages}) {
-        const consumption = BonusDamage.defaultConsumeScaling({value, bonusDamage}) ?? {};
-        return {
-            maxTargets: consumption.maxTargets,
-            scalingHints: consumption.scalingHints,
-            maxTargetsHints: consumption.maxTargetsHints,
-            roll: BonusDamage.defaultDamageScaling({value, bonusDamage})
+    /** @type {number} Current scaling. Base 0. */
+    get scalingValue() {
+        return this.#scalingValue;
+    }
+    set scalingValue(value) {
+        value = Number(value);
+        this.#scalingValue = this.#maxScaling ? Math.min(value, this.#maxScaling) : value;
+    }
+    /** @type {boolean} True if this bonus requires user input. */
+    get optional() {
+        return this.#optional;
+    }
+    /** @type {BonusCost} The costs required to use this bonus. */
+    get cost() {
+        return this.#cost;
+    }
+    /** @type {'action'|'bonus'|'reaction'|undefined} Action economy required. See `CONFIG.DND5E.activityActivationTypes`. */
+    get actionRequired() {
+        return this.#action;
+    }
+    /** @type {foundry.documents.Actor} The actor who will spend resources for this bonus. */
+    get actor() {
+        return this.#actor;
+    }
+    /** @type {dnd5e.dataModels.activity.BaseActivityData} */
+    get activity() {
+        return this.#activity;
+    }
+    /** @type {boolean} True if this bonus will be applied. */
+    get active() {
+        return this.#active;
+    }
+    set active(value) {
+        this.#active = Boolean(value);
+    }
+
+    validate(workflow, otherBonusDamages) {
+        return this.#validate({bonusDamage: this, workflow, otherBonusDamages});
+    }
+    updateScaling(value, workflow, otherBonusDamages) {
+        this.scalingValue = value;
+        const params = {bonusDamage: this, workflow, otherBonusDamages};
+        const updates = {
+            cost: this.#costScaling(params),
+            roll: this.#bonusScaling(params),
+            maxTargets: this.#targetScaling(params)
         };
+        if (updates.cost) this.#cost = updates.cost;
+        if (updates.roll) this.roll = updates.roll;
+        if (Number.isNumeric(updates.maxTargets)) this.maxTargets = updates.maxTargets;
+        this.#getHints(params);
     }
-    // TODO `getConsumptionLabels` provides warn: true if resources are insufficient
-    //       pass this along to validation?
-    static defaultConsumeScaling({value, bonusDamage}) {
-        if (!bonusDamage.#activity?.canScale) return;
-        const consumption = bonusDamage.#activity.consumption;
-        const config = {scaling: value};
-        let hints = [];
-        const warning = 'fa-solid fa-triangle-exclamation cat-warning-icon';
-        for (const target of consumption.targets) {
-            const labels = target.getConsumptionLabels(config, {consumed: true});
-            hints.push({
-                label: labels.hint,
-                icon: labels.warn ? warning : ''
-            });
-        }
-        // TODO add default scaling for other consumption targets - item uses, hit dice etc
-        if (consumption.spellSlot && bonusDamage.#activity.requiresSpellSlot) {
-            const base = bonusDamage.#activity.item.system.level;
-            const levelNumber = Math.clamp(base + value, 1, Object.keys(CONFIG.DND5E.spellLevels).length - 1);
-            const hasSlot = Object.values(bonusDamage.#activity.actor.system.spells).some(s => s.level === levelNumber && s.value > 0);
-            const level = CONFIG.DND5E.spellLevels[levelNumber].toLowerCase();
-            hints.push({
-                label: _loc('DND5E.CONSUMPTION.Type.SpellSlot.one', {level}),
-                tooltip: !hasSlot ? _loc('DND5E.CONSUMPTION.Warning.MissingSpellSlot', {level}) : '',
-                icon: !hasSlot ? warning : ''
-            });
-        }
-        return {scalingHints: hints};
+    async use(workflow, otherBonusDamages) {
+        return await this.#use({workflow, bonusDamage: this, otherBonusDamages});
     }
-    static defaultDamageScaling({value, bonusDamage}) {
-        value = Math.min(value, bonusDamage.maxScaling);
-        if (bonusDamage.#activity?.damage?.parts.length) {
-            if (!bonusDamage.#activity.canScaleDamage) return;
-            const formula = bonusDamage.#activity.damage.parts.map(part => part.scaledFormula(value)).join(' + ');
+
+    static get #warningIcon() { return 'fa-solid fa-triangle-exclamation cat-warning-icon'; }
+    static get #maxSpell() { return Object.keys(CONFIG.DND5E.spellLevels).length - 1; }
+    static get #resourceTypes() { return ['actions', ...Object.keys(CONFIG.DND5E.activityConsumptionTypes)]; }
+    static #lazySetCost(obj, key, cost, available) {
+        if (!key) return;
+        obj[key] ??= {cost: 0, available};
+        obj[key].cost += cost;
+    }
+    /** @returns {DialogHint} */
+    static #getHint({target, data, key, bonus}) {
+        let label, tooltip, type;
+        const warn = data.cost > data.available;
+        const plural = new Intl.PluralRules(game.i18n.lang);
+        const availableRule = plural.select(data.available);
+        const available = formatNumber(data.available);
+        const costRule = plural.select(data.cost);
+        const cost = formatNumber(data.cost);
+        switch(target) {
+            case 'action':
+            case 'bonus':
+            case 'reaction':
+                label = type = CONFIG.DND5E.activityActivationTypes[target]?.label;
+                break;
+            case 'activityUses': {
+                const activity = fromUuidSync(key) ?? bonus.activity;
+                type = _loc('DND5E.CONSUMPTION.Type.ActivityUses.Warning', {
+                    activity: activity?.name ?? bonus.name,
+                    item: activity?.item.name ?? bonus.name
+                });
+                label = _loc('DND5E.CONSUMPTION.Type.ActivityUses.PromptHintDecrease', {
+                    availableUse: _loc(`DND5E.CONSUMPTION.Type.Use.${availableRule}`),
+                    use: _loc(`DND5E.CONSUMPTION.Type.Use.${costRule}`),
+                    available,
+                    cost
+                });
+                break;
+            }
+            case 'itemUses': {
+                const item = fromUuidSync(key);
+                if (!item) break;
+                type = _loc('DND5E.CONSUMPTION.Type.ItemUses.Warning',  {name: item.name});
+                label = _loc('DND5E.CONSUMPTION.Type.ItemUses.PromptHintDecrease', {
+                    availableUse: _loc(`DND5E.CONSUMPTION.Type.Use.${availableRule}`),
+                    use: _loc(`DND5E.CONSUMPTION.Type.Use.${costRule}`),
+                    item: `<em>${item.name}</em>`,
+                    available,
+                    cost
+                });
+            }
+                break;
+            case 'material': {
+                const mat = fromUuidSync(key);
+                if (!mat) break;
+                type = _loc('DND5E.CONSUMPTION.Type.Material.Warning', {name: mat.name});
+                label = _loc('DND5E.CONSUMPTION.Type.Material.PromptHintDecrease', {
+                    item: `<em>${mat.name}</em>`,
+                    quantity: available,
+                    cost
+                });
+            }
+                break;
+            case 'hitDice': {    
+                let denomination;
+                if ( key === 'smallest' ) denomination = _loc('DND5E.ConsumeHitDiceSmallest');
+                else if ( key === 'largest' ) denomination = _loc('DND5E.ConsumeHitDiceLargest');
+                else denomination = key;
+                type = _loc('DND5E.CONSUMPTION.Type.HitDice.Warning', {denomination});
+                label = _loc('DND5E.CONSUMPTION.Type.HitDice.PromptHintDecrease', {
+                    die: _loc(`DND5E.CONSUMPTION.Type.HitDie.${costRule}`),
+                    denomination: denomination.toLowerCase(),
+                    available,
+                    cost
+                });
+                break;
+            }
+            case 'spellSlots':{
+                const level = Number(key.replace(/^spell/, '')) || 1;
+                const levelLabel = CONFIG.DND5E.spellLevels[level]?.toLowerCase();
+                type = _loc('DND5E.CONSUMPTION.Type.SpellSlots.Warning', {level: levelLabel});
+                label = _loc('DND5E.CONSUMPTION.Type.SpellSlots.PromptHintDecrease', {
+                    slot: _loc(`DND5E.CONSUMPTION.Type.SpellSlot.${costRule}`, {level: levelLabel}),
+                    available,
+                    cost
+                });
+                break;
+            }
+            case 'attribute': {
+                const attribute = getHumanReadableAttributeLabel(key, {actor: bonus.actor});
+                type = _loc('DND5E.CONSUMPTION.Type.Attribute.Warning', {attribute});
+                label = _loc('DND5E.CONSUMPTION.Type.Attribute.PromptHintDecrease', {attribute, cost, current: available});
+                break;
+            }
+        }
+        if (warn) {
+            const warning = data.available <= 0 ? 'DND5E.CONSUMPTION.Warning.None' : 'DND5E.CONSUMPTION.Warning.NotEnough';
+            tooltip = _loc(warning, {type, cost: formatNumber(data.cost), available: formatNumber(Math.max(0, data.available ?? 0))});
+        }
+        return {label, tooltip, icon: warn ? BonusDamage.#warningIcon : '', id: target};
+    }
+
+    static defaultGetHints({bonusDamage, workflow, otherBonusDamages}) {
+        const hints = [];
+        for (const type of BonusDamage.#resourceTypes) {
+            for (const [key, data] of Object.entries(bonusDamage.cost[type] ?? {})) {
+                const target = type === 'actions' ? key : type;
+                hints.push(BonusDamage.#getHint({target, data, key, bonus: bonusDamage}));
+            }
+        }
+        bonusDamage.scalingHints = hints;
+    }
+    static defaultBonusScaling({bonusDamage, workflow, otherBonusDamages}) {
+        const value = bonusDamage.scalingValue;
+        if (bonusDamage.activity?.damage?.parts.length) {
+            if (!bonusDamage.activity.canScaleDamage) return;
+            const formula = bonusDamage.activity.damage.parts.map(part => part.scaledFormula(value)).join(' + ');
             return new CONFIG.Dice.DamageRoll(formula, bonusDamage.roll.data);
         }
         const roll = new CONFIG.Dice.DamageRoll(bonusDamage.baseFormula, bonusDamage.roll.data);
@@ -277,8 +412,39 @@ export default class BonusDamage {
         roll.resetFormula();
         return roll;
     }
-    static defaultValidate({bonusDamage, workflow, otherBonusDamages}) {
-        return true;
+    /** 
+     * @param {BonusDamage} bonusDamage
+     * @returns {BonusCost} 
+     * */
+    static defaultCosts({bonusDamage, workflow, otherBonusDamages}) {
+        const costs = {};
+        if (bonusDamage.actionRequired) {
+            const action = BonusDamage.GetAction({action: bonusDamage.actionRequired, actor: bonusDamage.actor});
+            costs.actions ??= {};
+            BonusDamage.#lazySetCost(costs.actions, action.key, 1, action.available);
+        }
+        if (!bonusDamage.activity) return costs;
+        const actor = bonusDamage.actor;
+        const scaling = bonusDamage.scalingValue;
+        const consumption = bonusDamage.activity.consumption;
+        if (consumption.spellSlot && bonusDamage.activity.requiresSpellSlot) {
+            const base = bonusDamage.activity.item.system.level;
+            const key = `spell${Math.clamp(base + scaling, 1, BonusDamage.#maxSpell)}`;
+            const available = actor.system.spells?.[key]?.value ?? 0;
+            costs.spellSlots ??= {};
+            BonusDamage.#lazySetCost(costs.spellSlots, key, 1, available);
+        }
+        for (const target of consumption.targets) {
+            const {simplifiedCost} = target._resolveHintCost({scaling});
+            if (simplifiedCost <= 0) continue;
+            const resources = BonusDamage.GetResource({consumption: target, actor, scaling});
+            costs[target.type] ??= {};
+            BonusDamage.#lazySetCost(costs[target.type], resources.key, simplifiedCost, resources.available);
+        }
+        return costs;
+    }
+    static defaultTargetScaling({bonusDamage, workflow, otherBonusDamages}) { 
+        return;
     }
     static async defaultUse({workflow, bonusDamage, otherBonusDamages}) {
         await workflowUtils.bonusDamage(workflow, bonusDamage.roll.formula, {damageType: workflow.defaultDamageType});
@@ -288,19 +454,99 @@ export default class BonusDamage {
             await workflowUtils.completeActivityUse(bonusDamage.document, Array.from(bonusDamage.targets));
         }
     }
-    /** @type {boolean} True if this bonus requires user input. */
-    get optional() {
-        return this.#optional;
+    /**
+     * Filter valid and applicable {@link bonuses}.
+     * @param {BonusDamage[]|Set<BonusDamage>} bonuses
+     * @param {object} [options]
+     * @param {MidiQOL.Workflow} [options.workflow]
+     * @returns {BonusDamage[]}
+     */
+    static ValidateAll(bonuses, {workflow} = {}) {
+        const cumulativeCosts = {};
+        return bonuses.filter(b => {
+            if (!b.active) return false;
+            if (!b.validate(workflow, bonuses)) return false;
+            let hasEnough = true;
+            for (const type of BonusDamage.#resourceTypes) {
+                cumulativeCosts[type] ??= {};
+                for (const [key, data] of Object.entries(b.cost[type] ?? {})) {
+                    BonusDamage.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
+                    if (cumulativeCosts[type][key].cost > cumulativeCosts[type][key].available) hasEnough = false;
+                }
+            }
+            return hasEnough;
+        });
     }
-    /** @type {'action'|'bonus'|'reaction'|undefined} Action economy required. See `CONFIG.DND5E.activityActivationTypes`. */
-    get actionRequired() {
-        return this.#action;
+    /**
+     * Fetch the available resources for a given consumption target.
+     * @param {object} options 
+     * @param {dnd5e.dataModels.activity.ConsumptionTargetData} options.consumption
+     * @param {foundry.documents.Actor} options.actor
+     * @param {number} options.scaling
+     * @returns {{key: string, available: number}}
+     */
+    static GetResource({consumption, actor, scaling}) {
+        let key, available = 0;
+        switch (consumption.type) {
+            case 'activityUses':
+                key = consumption.activity?.uuid;
+                available = consumption.activity?.uses.value ?? 0;
+                break;
+            case 'attribute':
+                key = consumption.target;
+                available = genericUtils.getProperty(actor.system, consumption.target) ?? 0;
+                break;
+            case 'hitDice':
+                if (['smallest', 'largest'].includes(consumption.target)) {
+                    key = actor.system.attributes?.hd?.[consumption.target + 'Available'];
+                    available = actor.system.attributes?.hd?.value ?? 0;
+                } else {
+                    key = consumption.target;
+                    available = actor.system.attributes?.hd?.bySize?.[key] ?? 0;
+                }
+                break;
+            case 'itemUses': {
+                const item = actor.items.get(consumption.target) ?? consumption.item;
+                available = item?.system.uses?.value ?? 0;
+                if (item) key = item.uuid;
+                break;
+            }
+            case 'material': {
+                const item = actor.items.get(consumption.target);
+                available = item?.system.quantity ?? 0;
+                if (item) key = item.uuid;
+                break;
+            }
+            case 'spellSlots': {
+                const level = Math.clamp(consumption.resolveLevel({config: {scaling}}), 1, this.#maxSpell);
+                key = `spell${level}`;
+                available = actor.system.spells?.[key]?.value ?? 0;
+                break;
+            }
+        }
+        return {key, available};
     }
-    /** @type {boolean} True if this bonus will be applied. */
-    get active() {
-        return this.#active;
+    /**
+     * Fetch the available actions for a given actor.
+     * @param {object} options 
+     * @param {'action'|'bonus'|'reaction'|undefined} options.action
+     * @param {foundry.documents.Actor} options.actor
+     * @returns {{key: string, available: number}}
+     */
+    static GetAction({action, actor}) {
+        const data = {key: action, available: 1};
+        const actions = actor?.flags['midi-qol']?.actions;
+        switch (action) {
+            case 'bonus':
+                data.available = Math.max(0, (actions?.bonusActionsMax ?? 1) - (actions?.bonusActionsUsed ?? 0));
+                break;
+            case 'reaction':
+                data.available = Math.max(0, (actions?.reactionsMax ?? 1) - (actions?.reactionsUsed ?? 0));
+                break;
+            default: 
+                data.available = 999;
+                break;
+        }
+        return data;
     }
-    set active(value) {
-        this.#active = Boolean(value);
-    } 
 }

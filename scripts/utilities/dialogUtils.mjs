@@ -234,8 +234,18 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
                                 for (let i = 0; i < count - targets.maxTotal; i++)
                                     targets.options[i].selected = false;
                         }
-                        const formula = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags.find(t => t.id === 'formula');
-                        if (formula) formula.label = bonus.roll.formula;
+                        const tags = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags ?? [];
+                        for (const t of tags) {
+                            if (t.id === 'formula') {
+                                t.label = bonus.roll.formula;
+                                continue;
+                            }
+                            const hint = bonus.scalingHints.find(h => h.id === t.id);
+                            if (!hint) continue;
+                            t.tooltip = hint.tooltip;
+                            t.icon = hint.icon;
+                        }
+                        if (bonus.active) bonus.validate(workflow, bonuses);
                         return true;
                     }
                 }
@@ -251,7 +261,20 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
                         label: getTokenName(t, {hide, counter}),
                         image: t.texture.src,
                         value: t.id
-                    }))
+                    })),
+                    onchange: ({input}) => {
+                        const count = input.options.reduce((t, o) => t += o.selected, 0);
+                        if (count === bonus.targets.size) return;
+                        const tgts = [];
+                        for (const o of input.options) {
+                            if (!o.selected) continue;
+                            const tgt = targets.find(t => t.id === o.value);
+                            if (!tgt) continue;
+                            tgts.push(tgt);
+                        }
+                        bonus.targets = tgts;
+                        if (bonus.active) bonus.validate(workflow, bonuses);
+                    }
                 }
             }]]);
         return subinputs;
@@ -259,11 +282,10 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
     const getTags = bonus => {
         const tags = [];
         if (bonus.roll) tags.push({label: bonus.roll.formula, id: 'formula'});
-        const activation = CONFIG.DND5E.activityActivationTypes[bonus.actionRequired]?.label;
-        if (activation) tags.push({label: activation, id: 'action'});
+        const label = key => CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;
+        if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: label(h.id)})));
         if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
         if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
-        if (bonus.consumeLabels?.length) tags.push(...bonus.consumeLabels.map((label, i) => ({label, id: 'consume-' + i})));
         if (!tags.length) return;
         return tags;
     };
@@ -281,7 +303,10 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
                 locked: !bonus.optional,
                 isChecked: !bonus.optional,
                 tags: getTags(bonus),
-                onchange: (...args) => { console.log('BONUS CHANGE: b-' + i, {...args[0]}); bonus.validate(workflow, bonuses); }
+                onchange: ({input}) => {
+                    bonus.active = input.isChecked;
+                    if (bonus.active) bonus.validate(workflow, bonuses);
+                }
             }
         });
     }
@@ -294,9 +319,6 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         if (data === true) continue; // contextual bonus
         if (!data.active) continue;
         const bonus = bonuses[id.split('-')[1]];
-        bonus.active = data.active;
-        if (data.scaling > 0) bonus.updateScaling(data.scaling, workflow, bonuses);
-        if (data.targets) bonus.targets = JSON.parse(data.targets).map(id => targets.find(t => t.id === id));
         results.push(bonus);
     }
     return results;

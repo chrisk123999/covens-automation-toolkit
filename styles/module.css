@@ -101,6 +101,11 @@
     color: var(--cat-text-accent);
 }
 
+.hint > .cat-warning-icon,
+.cat-combobox-tag > .cat-warning-icon {
+    margin-right: var(--cat-space-xs);
+}
+
 .cat-app-header-button {
     display: inline-flex;
     justify-content: center;
@@ -1591,10 +1596,6 @@ cat-combobox {
 
 .cat-form-group:has(.cat-multi-combobox-group) .hint {
     margin-top: var(--cat-space-xs);
-}
-
-.hint > i {
-    margin-right: var(--cat-space-xs);
 }
 
 .cat-medkit button {
