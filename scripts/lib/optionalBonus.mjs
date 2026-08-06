@@ -23,7 +23,7 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  * @property {Record<string, BonusCostEntry>} [hitDice]
  */
 
-export default class BonusDamage {
+export default class OptionalBonus {
     #targets;       // Set      | Target(s) of the bonus damage.
     #roll;          // Roll     | The unevaluated roll.
     #actor;         // Actor    | The actor who will spend resources for this bonus.
@@ -54,11 +54,11 @@ export default class BonusDamage {
         this.#action = this.#getAction(action);
         this.maxScaling = this.#getMaxScaling(maxScaling);
         this.#validate = validate ?? (() => true);
-        this.#use = use ?? BonusDamage.defaultUse;
-        this.#getHints = getHints ?? BonusDamage.defaultGetHints;
-        this.#costScaling = getCosts ?? BonusDamage.defaultCosts;
-        this.#bonusScaling = scaling ?? BonusDamage.defaultBonusScaling;
-        this.#targetScaling = scaleMaxTargets ?? BonusDamage.defaultTargetScaling;
+        this.#use = use ?? OptionalBonus.defaultUse;
+        this.#getHints = getHints ?? OptionalBonus.defaultGetHints;
+        this.#costScaling = getCosts ?? OptionalBonus.defaultCosts;
+        this.#bonusScaling = scaling ?? OptionalBonus.defaultBonusScaling;
+        this.#targetScaling = scaleMaxTargets ?? OptionalBonus.defaultTargetScaling;
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
         this.#targets = new Set();
@@ -119,7 +119,7 @@ export default class BonusDamage {
             const scaledCost = target._resolveHintCost({scaling: 1}).simplifiedCost;
             const stepCost = scaledCost - baseCost;
             if (stepCost <= 0) continue;
-            const available = BonusDamage.GetResource({consumption: target, actor, scaling: 0}).available;
+            const available = OptionalBonus.GetResource({consumption: target, actor, scaling: 0}).available;
             const limit = Math.max(0, Math.floor((available - baseCost) / stepCost));
             if (limit === 0) return 0;
             if (limit < value) value = limit;
@@ -170,19 +170,19 @@ export default class BonusDamage {
     get document() {
         return this.#document;
     }
-    /** @type {string} File path to an icon for the bonus source {@link BonusDamage.document|document}. */
+    /** @type {string} File path to an icon for the bonus source {@link OptionalBonus.document|document}. */
     get img() {
         if (this.#document.documentName === 'Activity' && activityUtils.hasDefaultIcon(this.#document))
             return this.#document.item.img;
         return this.#document.img;
     }
-    /** @type {string} Name of the bonus source {@link BonusDamage.document|document}. */
+    /** @type {string} Name of the bonus source {@link OptionalBonus.document|document}. */
     get name() {
         if (this.#document.documentName === 'Activity' && activityUtils.hasDefaultName(this.#document))
             return this.#document.item.name;
         return this.#document.name;
     }
-    /** @type {string} Description of the bonus source {@link BonusDamage.document|document}. */
+    /** @type {string} Description of the bonus source {@link OptionalBonus.document|document}. */
     get description() {
         let desc;
         switch (this.#document.documentName) {
@@ -379,42 +379,43 @@ export default class BonusDamage {
             const warning = data.available <= 0 ? 'DND5E.CONSUMPTION.Warning.None' : 'DND5E.CONSUMPTION.Warning.NotEnough';
             tooltip = _loc(warning, {type, cost: formatNumber(data.cost), available: formatNumber(Math.max(0, data.available ?? 0))});
         }
-        return {label, tooltip, icon: warn ? BonusDamage.#warningIcon : '', id: target};
+        return {label, tooltip, icon: warn ? OptionalBonus.#warningIcon : '', id: target};
     }
 
     static defaultGetHints({bonusDamage, workflow, otherBonusDamages}) {
         const hints = [];
-        for (const type of BonusDamage.#resourceTypes) {
+        for (const type of OptionalBonus.#resourceTypes) {
             for (const [key, data] of Object.entries(bonusDamage.cost[type] ?? {})) {
                 const target = type === 'actions' ? key : type;
-                hints.push(BonusDamage.#getHint({target, data, key, bonus: bonusDamage}));
+                hints.push(OptionalBonus.#getHint({target, data, key, bonus: bonusDamage}));
             }
         }
         bonusDamage.scalingHints = hints;
     }
     static defaultBonusScaling({bonusDamage, workflow, otherBonusDamages}) {
-        const value = bonusDamage.scalingValue;
+        const scaling = bonusDamage.scalingValue;
         if (bonusDamage.activity?.damage?.parts.length) {
-            if (!bonusDamage.activity.canScaleDamage) return;
-            const formula = bonusDamage.activity.damage.parts.map(part => part.scaledFormula(value)).join(' + ');
-            return new CONFIG.Dice.DamageRoll(formula, bonusDamage.roll.data);
+            if (!bonusDamage.activity.canScaleDamage) return bonusDamage.roll;
+            // incompatible with multiple damage types - requires a restructure for allowing several rolls per bonus
+            const rolls = activityUtils.getDefaultDamageRolls(bonusDamage.activity, {scaling});
+            return rolls[0];
         }
         const roll = new CONFIG.Dice.DamageRoll(bonusDamage.baseFormula, bonusDamage.roll.data);
         const dieTerm = roll.terms.find(i => i.faces);
-        if (dieTerm) dieTerm.number += value;
+        if (dieTerm) dieTerm.number += scaling;
         roll.resetFormula();
         return roll;
     }
     /** 
-     * @param {BonusDamage} bonusDamage
+     * @param {OptionalBonus} bonusDamage
      * @returns {BonusCost} 
      * */
     static defaultCosts({bonusDamage, workflow, otherBonusDamages}) {
         const costs = {};
         if (bonusDamage.actionRequired) {
-            const action = BonusDamage.GetAction({action: bonusDamage.actionRequired, actor: bonusDamage.actor});
+            const action = OptionalBonus.GetAction({action: bonusDamage.actionRequired, actor: bonusDamage.actor});
             costs.actions ??= {};
-            BonusDamage.#lazySetCost(costs.actions, action.key, 1, action.available);
+            OptionalBonus.#lazySetCost(costs.actions, action.key, 1, action.available);
         }
         if (!bonusDamage.activity) return costs;
         const actor = bonusDamage.actor;
@@ -422,17 +423,17 @@ export default class BonusDamage {
         const consumption = bonusDamage.activity.consumption;
         if (consumption.spellSlot && bonusDamage.activity.requiresSpellSlot) {
             const base = bonusDamage.activity.item.system.level;
-            const key = `spell${Math.clamp(base + scaling, 1, BonusDamage.#maxSpell)}`;
+            const key = `spell${Math.clamp(base + scaling, 1, OptionalBonus.#maxSpell)}`;
             const available = actor.system.spells?.[key]?.value ?? 0;
             costs.spellSlots ??= {};
-            BonusDamage.#lazySetCost(costs.spellSlots, key, 1, available);
+            OptionalBonus.#lazySetCost(costs.spellSlots, key, 1, available);
         }
         for (const target of consumption.targets) {
             const {simplifiedCost} = target._resolveHintCost({scaling});
             if (simplifiedCost <= 0) continue;
-            const resources = BonusDamage.GetResource({consumption: target, actor, scaling});
+            const resources = OptionalBonus.GetResource({consumption: target, actor, scaling});
             costs[target.type] ??= {};
-            BonusDamage.#lazySetCost(costs[target.type], resources.key, simplifiedCost, resources.available);
+            OptionalBonus.#lazySetCost(costs[target.type], resources.key, simplifiedCost, resources.available);
         }
         return costs;
     }
@@ -449,26 +450,22 @@ export default class BonusDamage {
     }
     /**
      * Filter valid and applicable {@link bonuses}.
-     * @param {BonusDamage[]|Set<BonusDamage>} bonuses
+     * @param {OptionalBonus[]|Set<OptionalBonus>} bonuses
      * @param {object} [options]
      * @param {MidiQOL.Workflow} [options.workflow]
-     * @returns {BonusDamage[]}
+     * @returns {OptionalBonus[]}
      */
     static ValidateAll(bonuses, {workflow} = {}) {
         const cumulativeCosts = {};
         return bonuses.filter(b => {
             b.validateHints = [];
             if (!b.active) return false;
-            if (!b.optional) {
-                b.active = b.validate(workflow, bonuses);
-                return b.active;
-            }
             if (!b.validate(workflow, bonuses)) {
                 b.active = false;
                 return false;
             }
             let hasEnough = true;
-            for (const type of BonusDamage.#resourceTypes) {
+            for (const type of OptionalBonus.#resourceTypes) {
                 for (const [key, data] of Object.entries(b.cost[type] ?? {})) {
                     const currentCost = cumulativeCosts[type]?.[key]?.cost ?? 0;
                     if (data.cost + currentCost > data.available) {
@@ -479,14 +476,15 @@ export default class BonusDamage {
                 if (!hasEnough) break;
             }
             if (hasEnough) {
-                for (const type of BonusDamage.#resourceTypes) {
+                for (const type of OptionalBonus.#resourceTypes) {
                     cumulativeCosts[type] ??= {};
                     for (const [key, data] of Object.entries(b.cost[type] ?? {}))
-                        BonusDamage.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
+                        OptionalBonus.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
                 }
                 return true;
             } 
-            b.active = false;b.validateHints = {label: _loc('CAT.OptionalBonus.Invalid', {reason: _loc('CAT.OptionalBonus.InvalidResources')})};
+            b.active = false;
+            b.validateHints = {label: _loc('CAT.OptionalBonus.Invalid', {reason: _loc('CAT.OptionalBonus.InvalidResources')})};
             return hasEnough;
         });
     }

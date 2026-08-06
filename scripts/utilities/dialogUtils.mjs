@@ -1,7 +1,7 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import {queryUtils, tokenUtils, automationUtils, uiUtils} from './_module.mjs';
 import constants from '../lib/constants.mjs';
-import {BonusDamage} from '../lib/_module.mjs';
+import {OptionalBonus} from '../lib/_module.mjs';
 
 /**
  * @param {foundry.documents.TokenDocument} token 
@@ -193,7 +193,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
 }
 /**
  * 
- * @param {BonusDamage[]} bonuses 
+ * @param {OptionalBonus[]} bonuses 
  * @param {object} [options]
  * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets]
  * @param {MidiQOL.Workflow} [options.workflow]
@@ -204,7 +204,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
     if (!bonuses.length) return false;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     const validateAll = context => {
-        BonusDamage.ValidateAll(bonuses, {workflow});
+        OptionalBonus.ValidateAll(bonuses, {workflow});
         for (const bonusContext of context) {
             const index = bonusContext.name.match(/\d+/)[0];
             const bonus = bonuses[index];
@@ -249,7 +249,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         const bonus = bonuses[i];
         const name = 'b-' + i;
         const subinputs = [];
-        if (bonus.optional && bonus.maxScaling > 0)
+        if (bonus.maxScaling > 0)
             subinputs.push(['slider', [{
                 name: name + '.scaling',
                 hints: bonus.scalingHints,
@@ -308,7 +308,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
     if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);
     const choices = await runDialog(game.user.id, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!choices?.buttons) return false;
-    return BonusDamage.ValidateAll(bonuses, {workflow});
+    return OptionalBonus.ValidateAll(bonuses, {workflow});
 }
 async function selectAmounts(title, content, fields, {totalMax, displayAsRows = true, userId = game.user.id, buttons = 'okCancel'} = {}) {
     let inputs = [['selectAmount', fields, {displayAsRows, totalMax}]];
