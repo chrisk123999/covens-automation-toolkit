@@ -1,4 +1,4 @@
-import {OptionalBonus, constants, Events} from '../lib/_module.mjs';
+import {DamageBonus, constants, Events} from '../lib/_module.mjs';
 import {dialogUtils, workflowUtils} from '../utilities/_module.mjs';
 
 export async function optionalBonusDamage(workflow) {
@@ -7,7 +7,7 @@ export async function optionalBonusDamage(workflow) {
     let needsDialog = false;
     let bonuses = [];
     for (const bonus of inputs) {
-        if (!(bonus instanceof OptionalBonus)) continue;
+        if (!(bonus instanceof DamageBonus)) continue;
         if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0) 
             needsDialog = true;
         bonuses.push(bonus);

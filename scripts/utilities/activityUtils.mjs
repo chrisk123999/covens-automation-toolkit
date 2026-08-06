@@ -178,10 +178,17 @@ function hasDefaultName(activity) {
 function getDefaultDamageRolls(activity, {attackMode, scaling = 0, simplify = true} = {}) {
     const data = activity.getDamageConfig({attackMode, scaling}).rolls;
     if (!simplify) return data.map(d => CONFIG.Dice.DamageRoll.fromConfig(d, {}));
-    return dnd5e.dice.aggregateDamageRolls(data.map(d => {
+    const rolls = dnd5e.dice.aggregateDamageRolls(data.map(d => {
         const formula = dnd5e.dice.simplifyRollFormula(d.parts.join(' + '));
         return new CONFIG.Dice.DamageRoll(formula, d.data, d.options);
     }), {respectProperties: true});
+    rolls.forEach(r => {
+        if (!(r.terms[0] instanceof foundry.dice.terms.OperatorTerm)) return;
+        if (r.terms[0].operator !== '+') return;
+        r.terms.shift();
+        r.resetFormula();
+    });
+    return rolls;
 }
 
 

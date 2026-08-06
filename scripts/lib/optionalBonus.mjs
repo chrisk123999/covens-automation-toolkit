@@ -23,7 +23,7 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  * @property {Record<string, BonusCostEntry>} [hitDice]
  */
 
-export default class OptionalBonus {
+export class DamageBonus {
     #targets;       // Set      | Target(s) of the bonus damage.
     #roll;          // Roll     | The unevaluated roll.
     #actor;         // Actor    | The actor who will spend resources for this bonus.
@@ -54,11 +54,11 @@ export default class OptionalBonus {
         this.#action = this.#getAction(action);
         this.maxScaling = this.#getMaxScaling(maxScaling);
         this.#validate = validate ?? (() => true);
-        this.#use = use ?? OptionalBonus.defaultUse;
-        this.#getHints = getHints ?? OptionalBonus.defaultGetHints;
-        this.#costScaling = getCosts ?? OptionalBonus.defaultCosts;
-        this.#bonusScaling = scaling ?? OptionalBonus.defaultBonusScaling;
-        this.#targetScaling = scaleMaxTargets ?? OptionalBonus.defaultTargetScaling;
+        this.#use = use ?? DamageBonus.defaultUse;
+        this.#getHints = getHints ?? DamageBonus.defaultGetHints;
+        this.#costScaling = getCosts ?? DamageBonus.defaultCosts;
+        this.#bonusScaling = scaling ?? DamageBonus.defaultBonusScaling;
+        this.#targetScaling = scaleMaxTargets ?? DamageBonus.defaultTargetScaling;
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
         this.#targets = new Set();
@@ -119,7 +119,7 @@ export default class OptionalBonus {
             const scaledCost = target._resolveHintCost({scaling: 1}).simplifiedCost;
             const stepCost = scaledCost - baseCost;
             if (stepCost <= 0) continue;
-            const available = OptionalBonus.GetResource({consumption: target, actor, scaling: 0}).available;
+            const available = DamageBonus.GetResource({consumption: target, actor, scaling: 0}).available;
             const limit = Math.max(0, Math.floor((available - baseCost) / stepCost));
             if (limit === 0) return 0;
             if (limit < value) value = limit;
@@ -170,19 +170,19 @@ export default class OptionalBonus {
     get document() {
         return this.#document;
     }
-    /** @type {string} File path to an icon for the bonus source {@link OptionalBonus.document|document}. */
+    /** @type {string} File path to an icon for the bonus source {@link DamageBonus.document|document}. */
     get img() {
         if (this.#document.documentName === 'Activity' && activityUtils.hasDefaultIcon(this.#document))
             return this.#document.item.img;
         return this.#document.img;
     }
-    /** @type {string} Name of the bonus source {@link OptionalBonus.document|document}. */
+    /** @type {string} Name of the bonus source {@link DamageBonus.document|document}. */
     get name() {
         if (this.#document.documentName === 'Activity' && activityUtils.hasDefaultName(this.#document))
             return this.#document.item.name;
         return this.#document.name;
     }
-    /** @type {string} Description of the bonus source {@link OptionalBonus.document|document}. */
+    /** @type {string} Description of the bonus source {@link DamageBonus.document|document}. */
     get description() {
         let desc;
         switch (this.#document.documentName) {
@@ -379,15 +379,15 @@ export default class OptionalBonus {
             const warning = data.available <= 0 ? 'DND5E.CONSUMPTION.Warning.None' : 'DND5E.CONSUMPTION.Warning.NotEnough';
             tooltip = _loc(warning, {type, cost: formatNumber(data.cost), available: formatNumber(Math.max(0, data.available ?? 0))});
         }
-        return {label, tooltip, icon: warn ? OptionalBonus.#warningIcon : '', id: target};
+        return {label, tooltip, icon: warn ? DamageBonus.#warningIcon : '', id: target};
     }
 
     static defaultGetHints({bonusDamage, workflow, otherBonusDamages}) {
         const hints = [];
-        for (const type of OptionalBonus.#resourceTypes) {
+        for (const type of DamageBonus.#resourceTypes) {
             for (const [key, data] of Object.entries(bonusDamage.cost[type] ?? {})) {
                 const target = type === 'actions' ? key : type;
-                hints.push(OptionalBonus.#getHint({target, data, key, bonus: bonusDamage}));
+                hints.push(DamageBonus.#getHint({target, data, key, bonus: bonusDamage}));
             }
         }
         bonusDamage.scalingHints = hints;
@@ -407,15 +407,15 @@ export default class OptionalBonus {
         return roll;
     }
     /** 
-     * @param {OptionalBonus} bonusDamage
+     * @param {DamageBonus} bonusDamage
      * @returns {BonusCost} 
      * */
     static defaultCosts({bonusDamage, workflow, otherBonusDamages}) {
         const costs = {};
         if (bonusDamage.actionRequired) {
-            const action = OptionalBonus.GetAction({action: bonusDamage.actionRequired, actor: bonusDamage.actor});
+            const action = DamageBonus.GetAction({action: bonusDamage.actionRequired, actor: bonusDamage.actor});
             costs.actions ??= {};
-            OptionalBonus.#lazySetCost(costs.actions, action.key, 1, action.available);
+            DamageBonus.#lazySetCost(costs.actions, action.key, 1, action.available);
         }
         if (!bonusDamage.activity) return costs;
         const actor = bonusDamage.actor;
@@ -423,17 +423,17 @@ export default class OptionalBonus {
         const consumption = bonusDamage.activity.consumption;
         if (consumption.spellSlot && bonusDamage.activity.requiresSpellSlot) {
             const base = bonusDamage.activity.item.system.level;
-            const key = `spell${Math.clamp(base + scaling, 1, OptionalBonus.#maxSpell)}`;
+            const key = `spell${Math.clamp(base + scaling, 1, DamageBonus.#maxSpell)}`;
             const available = actor.system.spells?.[key]?.value ?? 0;
             costs.spellSlots ??= {};
-            OptionalBonus.#lazySetCost(costs.spellSlots, key, 1, available);
+            DamageBonus.#lazySetCost(costs.spellSlots, key, 1, available);
         }
         for (const target of consumption.targets) {
             const {simplifiedCost} = target._resolveHintCost({scaling});
             if (simplifiedCost <= 0) continue;
-            const resources = OptionalBonus.GetResource({consumption: target, actor, scaling});
+            const resources = DamageBonus.GetResource({consumption: target, actor, scaling});
             costs[target.type] ??= {};
-            OptionalBonus.#lazySetCost(costs[target.type], resources.key, simplifiedCost, resources.available);
+            DamageBonus.#lazySetCost(costs[target.type], resources.key, simplifiedCost, resources.available);
         }
         return costs;
     }
@@ -449,10 +449,10 @@ export default class OptionalBonus {
     }
     /**
      * Filter valid and applicable {@link bonuses}.
-     * @param {OptionalBonus[]|Set<OptionalBonus>} bonuses
+     * @param {DamageBonus[]|Set<DamageBonus>} bonuses
      * @param {object} [options]
      * @param {MidiQOL.Workflow} [options.workflow]
-     * @returns {OptionalBonus[]}
+     * @returns {DamageBonus[]}
      */
     static ValidateAll(bonuses, {workflow} = {}) {
         const cumulativeCosts = {};
@@ -464,7 +464,7 @@ export default class OptionalBonus {
                 return false;
             }
             let hasEnough = true;
-            for (const type of OptionalBonus.#resourceTypes) {
+            for (const type of DamageBonus.#resourceTypes) {
                 for (const [key, data] of Object.entries(b.cost[type] ?? {})) {
                     const currentCost = cumulativeCosts[type]?.[key]?.cost ?? 0;
                     if (data.cost + currentCost > data.available) {
@@ -475,10 +475,10 @@ export default class OptionalBonus {
                 if (!hasEnough) break;
             }
             if (hasEnough) {
-                for (const type of OptionalBonus.#resourceTypes) {
+                for (const type of DamageBonus.#resourceTypes) {
                     cumulativeCosts[type] ??= {};
                     for (const [key, data] of Object.entries(b.cost[type] ?? {}))
-                        OptionalBonus.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
+                        DamageBonus.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
                 }
                 return true;
             } 
