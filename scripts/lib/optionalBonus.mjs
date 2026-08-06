@@ -400,7 +400,7 @@ export class DamageBonus {
             const rolls = activityUtils.getDefaultDamageRolls(bonusDamage.activity, {scaling});
             return rolls[0];
         }
-        const roll = new CONFIG.Dice.DamageRoll(bonusDamage.baseFormula, bonusDamage.roll.data);
+        const roll = new CONFIG.Dice.DamageRoll(bonusDamage.baseFormula, bonusDamage.roll.data, bonusDamage.roll.options);
         const dieTerm = roll.terms.find(i => i.faces);
         if (dieTerm) dieTerm.number += scaling;
         roll.resetFormula();

@@ -36,7 +36,11 @@
                         {{#if tags}}
                             <div class="cat-tags">
                                 {{#each tags}}
-                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}<span class="cat-hint-text">{{localize label}}</span></span>
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>
+                                        {{#if icon}}<i class="{{icon}}"></i>{{/if}}
+                                        {{#if image}}<img class="cat-damage-icon" src="{{image}}">{{/if}}
+                                        <span class="cat-hint-text">{{localize label}}</span>
+                                    </span>
                                 {{/each}}
                             </div>
                         {{/if}}
@@ -75,7 +79,11 @@
                         {{#if tags}}
                             <div class="cat-tags">
                                 {{#each tags}}
-                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}<span class="cat-hint-text">{{localize label}}</span></span>
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>
+                                        {{#if icon}}<i class="{{icon}}"></i>{{/if}}
+                                        {{#if image}}<img class="cat-damage-icon" src="{{image}}">{{/if}}
+                                        <span class="cat-hint-text">{{localize label}}</span>
+                                    </span>
                                 {{/each}}
                             </div>
                         {{/if}}
@@ -117,7 +125,11 @@
                         {{#if tags}}
                             <div class="cat-tags">
                                 {{#each tags}}
-                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}<span class="cat-hint-text">{{localize label}}</span></span>
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>
+                                        {{#if icon}}<i class="{{icon}}"></i>{{/if}}
+                                        {{#if image}}<img class="cat-damage-icon" src="{{image}}">{{/if}}
+                                        <span class="cat-hint-text">{{localize label}}</span>
+                                    </span>
                                 {{/each}}
                             </div>
                         {{/if}}

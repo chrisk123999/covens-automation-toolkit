@@ -101,7 +101,15 @@
     color: var(--cat-text-accent);
 }
 
+.cat-damage-icon {
+    vertical-align: -0.125em;
+    display: inline;
+    height: 1em;
+    width: 1em;
+}
+
 .hint > .cat-warning-icon,
+.cat-combobox-tag > .cat-damage-icon,
 .cat-combobox-tag > .cat-warning-icon {
     margin-right: var(--cat-space-xs);
 }

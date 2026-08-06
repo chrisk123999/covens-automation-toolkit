@@ -278,7 +278,10 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
                 }
             }]]);
         const tags = [];
-        if (bonus.roll) tags.push({label: bonus.roll.formula, id: 'formula'});
+        if (bonus.roll) {
+            const type = CONFIG.DND5E.damageTypes[bonus.roll.options.type] ?? CONFIG.DND5E.healingTypes[bonus.roll.options.type];
+            tags.push({label: bonus.roll.formula, id: 'formula', image: type?.icon, tooltip: type?.label});
+        }   
         if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id)})));
         if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
         if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});

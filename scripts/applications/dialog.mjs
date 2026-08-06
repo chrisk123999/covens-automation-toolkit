@@ -7,6 +7,7 @@ const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundr
  * @property {string} label
  * @property {string} id Used to fetch the hint and apply updates.
  * @property {string} [icon] Font Awesome css class.
+ * @property {string} [image] The path to an image to be used as an icon.
  * @property {string} [tooltip] Tooltip shown on hover.
  */
 
@@ -95,6 +96,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #expandedSections = new Map();
+    #queuedOpenSections = new Set();
 
     /** @this {DialogApp} */
     static #toggleCollapsed(_event, target) {
@@ -105,6 +107,19 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             target.closest('[data-collapsible-id]')?.dataset.collapsibleId,
             !collapsible.classList.contains('collapsed')
         );
+    }
+
+    #queueOpenCollapsible(target) {
+        const id = target.closest('[data-collapsible-id]')?.dataset.collapsibleId;
+        if (!id) return;
+        this.#queuedOpenSections.add(id);
+    }
+
+    #openCollapsible(target) {
+        const collapsible = target.closest('.cat-form-group');
+        if (!collapsible) return;
+        collapsible.classList.remove('collapsed');
+        this.#expandedSections.set(collapsible.dataset.collapsibleId, true);
     }
 
     _replaceHTML(result, content, options) {
@@ -347,6 +362,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             tags: f.options?.tags?.map(t => ({
                 tooltip: t.tooltip,
                 label: t.label,
+                image: t.image,
                 icon: t.icon,
                 id: t.id
             })),
@@ -385,6 +401,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tags: f.options?.tags?.map(t => ({
                     tooltip: t.tooltip,
                     label: t.label,
+                    image: t.image,
                     icon: t.icon,
                     id: t.id
                 })),
@@ -424,6 +441,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tags: f.options?.tags?.map(t => ({
                     tooltip: t.tooltip,
                     label: t.label,
+                    image: t.image,
                     icon: t.icon,
                     id: t.id
                 })),
@@ -691,6 +709,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             }
         }
         if (ctx.input.onchange) changed ||= ctx.input.onchange(ctx);
+        if (ctx.group.hasSubinputs && ctx.input.isChecked) {
+            if (!changed) this.#openCollapsible(targetInput);
+            else this.#queueOpenCollapsible(targetInput);
+        }
+
         if (changed) this.render(true);
     }
 
@@ -738,6 +761,12 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 token.refresh();
             });
         }
+        for (const id of this.#queuedOpenSections) {
+            const collapsible = this.element.querySelector('#' + id);
+            if (!collapsible) continue;
+            this.#openCollapsible(collapsible);
+        }
+        this.#queuedOpenSections.clear();
         this.element.querySelectorAll('[data-reference-tooltip]').forEach(el => this.#applyTooltip(el));
     }
 }
