@@ -441,7 +441,6 @@ export default class OptionalBonus {
         return;
     }
     static async defaultUse({workflow, bonusDamage, otherBonusDamages}) {
-        await workflowUtils.bonusDamage(workflow, bonusDamage.roll.formula, {damageType: workflow.defaultDamageType});
         if (bonusDamage.document.documentName === 'Item') {
             await workflowUtils.completeItemUse(bonusDamage.document, Array.from(bonusDamage.targets));
         } else {

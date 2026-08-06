@@ -1,81 +1,47 @@
-import {constants, Events} from '../lib/_module.mjs';
+import {OptionalBonus, constants, Events} from '../lib/_module.mjs';
 import {dialogUtils, workflowUtils} from '../utilities/_module.mjs';
-import manualRolls from '../handlers/manualRolls.mjs';
 
 export async function optionalBonusDamage(workflow) {
-    const optional = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    const contextual = (await new Events.WorkflowEvent(constants.workflowPasses.contextualBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document).map(b => ({...b, contextual: true}));
-    const bonuses = [...optional, ...contextual];
+    const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
+    if (!inputs.length) return;
+    let needsDialog = false;
+    let bonuses = [];
+    for (const bonus of inputs) {
+        if (!(bonus instanceof OptionalBonus)) continue;
+        if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0) 
+            needsDialog = true;
+        bonuses.push(bonus);
+    }
     if (!bonuses.length) return;
-    const keys = bonuses.map((b, i) => 'b' + i);
-    const byId = new Map(bonuses.map((b, i) => [keys[i], b]));
-    const targets = [...workflow.targets].map(token => token.document);
-    const multiTarget = targets.length > 1;
-    const isPerTarget = bonus => bonus.targets === 'one';
-    const locked = new Set(keys.filter(k => byId.get(k).contextual));
-    const selects = {};
-    if (multiTarget) {
-        const choices = Object.fromEntries(targets.map(t => [t.uuid, t.name]));
-        bonuses.forEach((bonus, i) => {
-            if (isPerTarget(bonus)) selects[keys[i]] = {choices, value: targets[0].uuid};
-        });
-    }
-    const scopeOf = (id, selections) => isPerTarget(byId.get(id)) ? (selections[id] ?? targets[0]?.uuid) : 'all';
-    const passesWith = (id, active, selections) => {
-        const bonus = byId.get(id);
-        if (!bonus?.predicate) return true;
-        const scope = scopeOf(id, selections);
-        const rolls = [...active].filter(i => i !== id).filter(i => {
-            const other = scopeOf(i, selections);
-            return other === 'all' || scope === 'all' || other === scope;
-        }).flatMap(i => byId.get(i)?.rolls ?? []);
-        return bonus.predicate(workflow, [...workflow.damageRolls, ...rolls]);
-    };
-    const contextualIds = [...locked];
-    const resolveActive = (checkedOptional, selections) => {
-        const active = new Set([...checkedOptional, ...contextualIds]);
-        let changed = true;
-        while (changed) {
-            changed = false;
-            for (const id of [...active]) if (!passesWith(id, active, selections)) { active.delete(id); changed = true; }
-        }
-        return active;
-    };
-    const validate = (checked, selections) => [...new Set([...checked, ...contextualIds])].filter(id => !passesWith(id, new Set([...checked, ...contextualIds]), selections));
-    const tags = Object.fromEntries(bonuses.map((b, i) => [keys[i], (b.rolls ?? []).map(r => r.formula).join(' + ')]).filter(([, formula]) => formula));
-    const labels = Object.fromEntries(bonuses.map((b, i) => [keys[i], b.name]).filter(([, name]) => name));
-    const needsDialog = optional.length > 0 || (multiTarget && contextual.some(isPerTarget));
-    let checkedOptional = [];
-    const selections = {};
+    const targets = workflow.targets.map(t => t.document);
     if (needsDialog) {
-        const selection = await dialogUtils.selectDocumentDialog('CAT.OptionalBonusDamage.Title', 'CAT.OptionalBonusDamage.Context', bonuses.map(b => b.document), {max: null, checkbox: true, displayTooltips: true, sort: 'alphabetical', showUses: true, validate, tags, selects, locked, keys, labels});
-        if (selection) {
-            selection.forEach(i => { if (i.select) selections[i.key] = i.select; });
-            checkedOptional = selection.filter(i => i.amount && !byId.get(i.key)?.contextual).map(i => i.key);
-        }
+        const choices = await dialogUtils.selectScaledDocument(bonuses, {targets, workflow});
+        const selectedTargetsIfRequired = b => b.maxTargets ? b.targets.size : true;
+        if (!choices) bonuses = bonuses.filter(b => b.active && !b.optional && selectedTargetsIfRequired(b)); 
+        else bonuses = choices.filter(c => selectedTargetsIfRequired(c));
     }
-    const chosen = [...resolveActive(checkedOptional, selections)].map(id => ({bonus: byId.get(id), target: targets.find(t => t.uuid === selections[id]) ?? targets[0]})).filter(i => i.bonus);
-    if (!chosen.length) return;
-    const wholeRoll = chosen.filter(i => !isPerTarget(i.bonus));
-    const perTarget = chosen.filter(i => isPerTarget(i.bonus));
-    const newRolls = wholeRoll.flatMap(i => i.bonus.rolls ?? []);
-    if (newRolls.length) {
-        workflow.damageRolls.push(...newRolls);
+    const targeted = {}, fullRoll = [];
+    const defaultDamageType = workflow.damageRolls[0]?.options.type ?? workflow.defaultDamageType;
+    for (const bonus of bonuses) {
+        if (!bonus.roll._evaluated) await bonus.roll.evaluate();
+        if (bonus.targets.size > 0) {
+            if (bonus.targets.size === targets.size) {
+                fullRoll.push(bonus.roll);
+                continue;
+            }
+            for (const target of bonus.targets) {
+                const type = bonus.roll.options.type ?? defaultDamageType;
+                targeted[target.uuid] ??= [];
+                targeted[target.uuid].push({total: bonus.roll.total, type});
+            }
+        } else fullRoll.push(bonus.roll);
+        if (bonus.use) await bonus.use(workflow, bonuses);
+    }
+    if (fullRoll.length) {
+        workflow.damageRolls.push(...fullRoll);
         await workflow.setDamageRolls(workflow.damageRolls);
     }
-    for (const {bonus, target} of wholeRoll) {
-        if (bonus.use) await bonus.use({workflow, rolls: bonus.rolls, target});
-    }
-    const stash = {};
-    const label = _loc('CAT.OptionalBonusDamage.Title');
-    for (const {bonus, target} of perTarget) {
-        if (bonus.rolls?.length && target) {
-            const resolved = await manualRolls.resolveManualRolls(bonus.rolls, workflow.actor, label);
-            (stash[target.uuid] ??= []).push(...resolved.map(roll => ({total: roll.total, type: roll.options.type})));
-        }
-        if (bonus.use) await bonus.use({workflow, rolls: bonus.rolls, target});
-    }
-    if (Object.keys(stash).length) workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', stash);
+    if (Object.keys(targeted).length) workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', targeted);
 }
 
 export function applyOptionalBonusDamage(workflow, token, ditem) {
