@@ -855,6 +855,10 @@
       "Title": "Smite",
       "Context": "Cast a spell?"
     },
+    "Summon": {
+      "DeadTitle": "CAT Summons",
+      "DeadContext": "Summon creature {name} reached 0 hp, delete actor and token?"
+    },
     "OptionalBonus": {
       "Content": "Choose and configure bonuses for this roll.",
       "Contextual": "Contextual Bonuses",

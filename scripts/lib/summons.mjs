@@ -71,7 +71,7 @@ export class SummonsManager {
             this.#creatingOwnerFolders.delete(actor.uuid);
         }
     }
-    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, animation, disposition, sourceDocument, sounds, items = [], initiative, dismissAtZero} = {}) {
+    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, animation, disposition, sourceDocument, sounds, items = [], size} = {}) {
         const actorData = (await summon.getSourceActor()).toObject();
         delete actorData._id;
         delete actorData.sort;
@@ -89,6 +89,13 @@ export class SummonsManager {
             updates.items ??= [];
             await Promise.all(items.map(async itemInfo => this.#processItem(summon, updates, itemInfo)));
         }
+        if (size) {
+            genericUtils.setProperty(actorData, 'system.traits.size', size);
+            genericUtils.setProperty(actorData, 'prototypeToken.width', CONFIG.DND5E.actorSizes[size].token ?? 1);
+            genericUtils.setProperty(actorData, 'prototypeToken.height', CONFIG.DND5E.actorSizes[size].token ?? 1);
+            genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleX', CONFIG.DND5E.actorSizes[size].dynamicTokenScale ?? 1);
+            genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleY', CONFIG.DND5E.actorSizes[size].dynamicTokenScale ?? 1);
+        }
         await summonEvents.preCreate(summon, updates);
         genericUtils.mergeObject(actorData, updates);
         genericUtils.setProperty(actorData, 'prototypeToken.actorLink', true);
@@ -103,7 +110,7 @@ export class SummonsManager {
             parent: summon.parent?.uuid,
             sourceDocument: sourceDocument?.uuid,
             sounds,
-            initiative,
+            initiative: summon.initiative,
             dismissAtZero: summon.dismissAtZero
         });
         return await actorUtils.createActor(actorData);
@@ -325,7 +332,7 @@ export class SummonsManager {
         return spawnedTokens;
     }
     async zeroHP(summon) {
-        const selection = await dialogUtils.confirm('CAT.Summon.DeadTitle', 'CAT.Summon.DeadContext', {userId: queryUtils.gmID()});
+        const selection = await dialogUtils.confirm('CAT.Summon.DeadTitle', _loc('CAT.Summon.DeadContext', {name: summon.actor.name}), {userId: queryUtils.gmID()});
         if (!selection) return;
         await this.deleteSummon(summon);
     }

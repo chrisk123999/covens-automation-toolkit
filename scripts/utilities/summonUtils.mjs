@@ -1,6 +1,6 @@
 import {constants} from '../lib/_module.mjs';
-async function createSummon(ownerActor, sourceActor, {created = game.time.worldTime, duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative} = {}) {
-    return await constants.summons.createSummon(ownerActor, sourceActor, created, {duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative});
+async function createSummon(ownerActor, sourceActor, {created = game.time.worldTime, duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative, dismissAtZero, size} = {}) {
+    return await constants.summons.createSummon(ownerActor, sourceActor, created, {duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative, dismissAtZero, size});
 }
 async function placeSummon(summon, range, {preAnimation, postAnimation, alpha, token} = {}) {
     return await constants.summons.placeSummon(summon, range, {preAnimation, postAnimation, alpha, token});
