@@ -249,36 +249,34 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         const bonus = bonuses[i];
         const name = 'b-' + i;
         const subinputs = [];
-        if (bonus.optional) {
-            if (bonus.maxScaling > 0)
-                subinputs.push(['slider', [{
-                    name: name + '.scaling',
-                    hints: bonus.scalingHints,
-                    label: 'CAT.OptionalBonus.Scaling',
-                    options: {
-                        min: 0,
-                        max: bonus.maxScaling,
-                        step: 1,
-                        onchange: ({thisContext, input, getInputById}) => sliderChange({bonus, thisContext, input, getInputById})
-                    }
-                }]]);
-            const counter = {value: 1};
-            if (targets && bonus.maxTargets > 0)
-                subinputs.push(['comboboxMulti', [{
-                    name: name + '.targets',
-                    hints: bonus.maxTargetsHints,
-                    label: 'CAT.OptionalBonus.Targets',
-                    options: {
-                        maxTotal: bonus.maxTargets,
-                        options: targets.map(t => ({
-                            label: getTokenName(t, {hide, counter}),
-                            image: t.texture.src,
-                            value: t.id
-                        })),
-                        onchange: ({input}) => targetsChange({bonus, input})
-                    }
-                }]]);
-        }
+        if (bonus.optional && bonus.maxScaling > 0)
+            subinputs.push(['slider', [{
+                name: name + '.scaling',
+                hints: bonus.scalingHints,
+                label: 'CAT.OptionalBonus.Scaling',
+                options: {
+                    min: 0,
+                    max: bonus.maxScaling,
+                    step: 1,
+                    onchange: ({thisContext, input, getInputById}) => sliderChange({bonus, thisContext, input, getInputById})
+                }
+            }]]);
+        const counter = {value: 1};
+        if (targets && bonus.maxTargets > 0)
+            subinputs.push(['comboboxMulti', [{
+                name: name + '.targets',
+                hints: bonus.maxTargetsHints,
+                label: 'CAT.OptionalBonus.Targets',
+                options: {
+                    maxTotal: bonus.maxTargets,
+                    options: targets.map(t => ({
+                        label: getTokenName(t, {hide, counter}),
+                        image: t.texture.src,
+                        value: t.id
+                    })),
+                    onchange: ({input}) => targetsChange({bonus, input})
+                }
+            }]]);
         const tags = [];
         if (bonus.roll) tags.push({label: bonus.roll.formula, id: 'formula'});
         if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id)})));

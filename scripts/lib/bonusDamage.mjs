@@ -67,6 +67,7 @@ export default class BonusDamage {
         this.#roll = roll ?? new CONFIG.Dice.DamageRoll('1d4', (this.#activity ?? this.#document).getRollData?.());
         this.#baseFormula = this.#roll.formula;
 
+        this.active = !this.#optional;
         this.scalingHints = scalingHints;
         this.validateHints = validateHints;
         this.maxTargetsHints = maxTargetsHints;
