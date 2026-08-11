@@ -1,13 +1,12 @@
-import {DamageBonus, constants, Events} from '../lib/_module.mjs';
-import {dialogUtils, workflowUtils} from '../utilities/_module.mjs';
+import {DamageBonus, D20Bonus, constants, Events} from '../lib/_module.mjs';
+import {dialogUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
 
-export async function optionalBonusDamage(workflow) {
-    const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
+async function processBonuses(inputs, workflow, type) {
     if (!inputs.length) return;
     let needsDialog = false;
     let bonuses = [];
     for (const bonus of inputs) {
-        if (!(bonus instanceof DamageBonus)) continue;
+        if (!(bonus instanceof type)) continue;
         if (bonus.maxTargets > 0 && workflow.targets.size === 1) bonus.maxTargets = 0;
         if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0) 
             needsDialog = true;
@@ -21,12 +20,32 @@ export async function optionalBonusDamage(workflow) {
         if (!choices) bonuses = bonuses.filter(b => b.active && !b.optional && selectedTargetsIfRequired(b)); 
         else bonuses = choices.filter(c => selectedTargetsIfRequired(c));
     }
+    return bonuses;
+}
+
+async function attack(workflow) {
+    const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusAttack, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
+    inputs.forEach(i => i.maxTargets = 0);
+    const bonuses = await processBonuses(inputs, workflow, D20Bonus);
+    if (!bonuses?.length) return;
+    let roll = workflow.attackRoll;
+    for (const bonus of bonuses) {
+        if (bonus.use) await bonus.use(workflow, bonuses);
+        roll = await rollUtils.addToRoll(roll, bonus.roll.formula, {rollData: bonus.roll.data});
+    }
+    await workflow.setAttackRoll(roll);
+}
+
+async function damage(workflow) {
+    const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
+    const bonuses = await processBonuses(inputs, workflow, DamageBonus);
+    if (!bonuses?.length) return;
     const targeted = {}, fullRoll = [];
     const defaultDamageType = workflow.damageRolls[0]?.options.type ?? workflow.defaultDamageType;
     for (const bonus of bonuses) {
         if (!bonus.roll._evaluated) await bonus.roll.evaluate();
         if (bonus.targets.size > 0) {
-            if (bonus.targets.size === targets.size) {
+            if (bonus.targets.size === workflow.targets.size) {
                 fullRoll.push(bonus.roll);
                 continue;
             }
@@ -45,9 +64,15 @@ export async function optionalBonusDamage(workflow) {
     if (Object.keys(targeted).length) workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', targeted);
 }
 
-export function applyOptionalBonusDamage(workflow, token, ditem) {
+function applyDamage(workflow, token, ditem) {
     const stash = workflowUtils.getWorkflowProperty(workflow, 'optionalBonusDamage');
     const bonuses = stash?.[token.document.uuid];
     if (!bonuses?.length) return;
     for (const {total, type} of bonuses) workflowUtils.modifyDamageAppliedFlat(ditem, total, {type, multiplier: 'auto'});
 }
+
+export default {
+    attack,
+    damage,
+    applyDamage
+};
