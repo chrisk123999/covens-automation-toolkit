@@ -8,6 +8,7 @@ export async function optionalBonusDamage(workflow) {
     let bonuses = [];
     for (const bonus of inputs) {
         if (!(bonus instanceof DamageBonus)) continue;
+        if (bonus.maxTargets > 0 && workflow.targets.size === 1) bonus.maxTargets = 0;
         if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0) 
             needsDialog = true;
         bonuses.push(bonus);

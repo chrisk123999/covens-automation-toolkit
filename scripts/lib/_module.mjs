@@ -13,4 +13,4 @@ export {Crosshairs} from './crosshairs.mjs';
 export {default as Animations} from './animation.mjs';
 export {Summon, SummonsManager} from './summons.mjs';
 export {default as ColorMatrix} from './colorMatrix.mjs';
-export {DamageBonus} from './optionalBonus.mjs';
+export {DamageBonus, D20Bonus} from './optionalBonus.mjs';

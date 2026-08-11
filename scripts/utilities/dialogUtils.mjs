@@ -1,7 +1,7 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import {queryUtils, tokenUtils, automationUtils, uiUtils} from './_module.mjs';
 import constants from '../lib/constants.mjs';
-import {DamageBonus} from '../lib/_module.mjs';
+import {D20Bonus, DamageBonus} from '../lib/_module.mjs';
 
 /**
  * @param {foundry.documents.TokenDocument} token 
@@ -193,7 +193,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
 }
 /**
  * 
- * @param {DamageBonus[]} bonuses 
+ * @param {DamageBonus[]|D20Bonus[]} bonuses 
  * @param {object} [options]
  * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets]
  * @param {MidiQOL.Workflow} [options.workflow]
@@ -203,8 +203,9 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
 async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content'} = {}) {
     if (!bonuses.length) return false;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
+    const cls = bonuses[0].constructor;
     const validateAll = context => {
-        DamageBonus.ValidateAll(bonuses, {workflow});
+        cls.ValidateAll(bonuses, {workflow});
         for (const bonusContext of context) {
             const index = bonusContext.name.match(/\d+/)[0];
             const bonus = bonuses[index];
@@ -311,7 +312,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
     if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);
     const choices = await runDialog(game.user.id, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!choices?.buttons) return false;
-    return DamageBonus.ValidateAll(bonuses, {workflow});
+    return cls.ValidateAll(bonuses, {workflow});
 }
 async function selectAmounts(title, content, fields, {totalMax, displayAsRows = true, userId = game.user.id, buttons = 'okCancel'} = {}) {
     let inputs = [['selectAmount', fields, {displayAsRows, totalMax}]];

@@ -23,14 +23,15 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  * @property {Record<string, BonusCostEntry>} [hitDice]
  */
 
-export class DamageBonus {
-    #targets;       // Set      | Target(s) of the bonus damage.
+class RollBonus {
+    #targets;       // Set      | Target(s) of the bonus.
     #roll;          // Roll     | The unevaluated roll.
+    #rollClass;     // Roll     | The type of the roll.
     #actor;         // Actor    | The actor who will spend resources for this bonus.
     #baseFormula;   // string   | The original roll formula before scaling.
     #maxTargets;    // Number   | Max targets, if any.
     #baseMaxTargets;// Number   | The original max targets before scaling.
-    #document;      // Document | Item, Activity, and possibly the effect providing this bonus damage.
+    #document;      // Document | Item, Activity, and possibly the effect providing this bonus.
     #activity;      // Activity | Used for default consumption and scaling if a `scaling` callback is not provided.
     #validate;      // Function | Callback for any validation beyond resource consumption. 
     #bonusScaling;  // Function | Callback updates the bonus formula when scaled.
@@ -43,10 +44,10 @@ export class DamageBonus {
     #use;           // Function | Async callback runs after the selection is confirmed.
     #scalingHints;//DialogHint[]| Array of {label, icon} for UI scaling hints.
     #maxTargetsHints;// ...     | Array of {label, icon} for UI target hints. 
-    #validateHints; // ...      | Array of {label, icon} for explaining the validity of bonus damage.
-    #optional;      // Boolean  | Whether this bonus damage is optional or not. If there are only static bonus damages and no optional ones, the dialog shouldn't be shown.
+    #validateHints; // ...      | Array of {label, icon} for explaining the validity of bonus.
+    #optional;      // Boolean  | Whether this bonus is optional or not. If there are only static bonuses and no optional ones, the dialog shouldn't be shown.
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
-    #active;        // Boolean  | Whether this bonus damage is active or not.
+    #active;        // Boolean  | Whether this bonus is active or not.
     constructor(document, {maxTargets, getHints, getCosts, scaleMaxTargets, validate, scaling, use, scalingHints, maxTargetsHints, validateHints, maxScaling, roll, optional = true, action, actor} = {}) {
         this.#document = document;
         this.#getActivity(document);
@@ -54,17 +55,18 @@ export class DamageBonus {
         this.#action = this.#getAction(action);
         this.maxScaling = this.#getMaxScaling(maxScaling);
         this.#validate = validate ?? (() => true);
-        this.#use = use ?? DamageBonus.defaultUse;
-        this.#getHints = getHints ?? DamageBonus.defaultGetHints;
-        this.#costScaling = getCosts ?? DamageBonus.defaultCosts;
-        this.#bonusScaling = scaling ?? DamageBonus.defaultBonusScaling;
-        this.#targetScaling = scaleMaxTargets ?? DamageBonus.defaultTargetScaling;
+        this.#use = use ?? this.constructor.defaultUse;
+        this.#getHints = getHints ?? this.constructor.defaultGetHints;
+        this.#costScaling = getCosts ?? this.constructor.defaultCosts;
+        this.#bonusScaling = scaling ?? this.constructor.defaultBonusScaling;
+        this.#targetScaling = scaleMaxTargets ?? this.constructor.defaultTargetScaling;
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
         this.#targets = new Set();
         this.#optional = optional;
         this.#scalingValue = 0;
-        this.#roll = roll ?? new CONFIG.Dice.DamageRoll('1d4', (this.#activity ?? this.#document).getRollData?.());
+        this.#roll = roll ?? new this.constructor.rollClass('0', (this.#activity ?? this.#document).getRollData?.());
+        this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
 
         this.active = !this.#optional;
@@ -119,7 +121,7 @@ export class DamageBonus {
             const scaledCost = target._resolveHintCost({scaling: 1}).simplifiedCost;
             const stepCost = scaledCost - baseCost;
             if (stepCost <= 0) continue;
-            const available = DamageBonus.GetResource({consumption: target, actor, scaling: 0}).available;
+            const available = RollBonus.GetResource({consumption: target, actor, scaling: 0}).available;
             const limit = Math.max(0, Math.floor((available - baseCost) / stepCost));
             if (limit === 0) return 0;
             if (limit < value) value = limit;
@@ -134,13 +136,14 @@ export class DamageBonus {
         if (override) return override;
         return this.activity?.actor ?? this.document.actor;
     }
-
-    /** @type {dnd5e.dice.DamageRoll} */
+    get rollClass() { 
+        return this.#rollClass;
+    }
     get roll() {
         return this.#roll;
     }
     set roll(newRoll) {
-        if (!(newRoll instanceof CONFIG.Dice.DamageRoll)) return;
+        if (!(newRoll instanceof this.constructor.rollClass)) return;
         this.#roll = newRoll;
     }
     /** @type {string} Original bonus formula, before scaling. */
@@ -170,19 +173,19 @@ export class DamageBonus {
     get document() {
         return this.#document;
     }
-    /** @type {string} File path to an icon for the bonus source {@link DamageBonus.document|document}. */
+    /** @type {string} File path to an icon for the bonus source {@link RollBonus.document|document}. */
     get img() {
         if (this.#document.documentName === 'Activity' && activityUtils.hasDefaultIcon(this.#document))
             return this.#document.item.img;
         return this.#document.img;
     }
-    /** @type {string} Name of the bonus source {@link DamageBonus.document|document}. */
+    /** @type {string} Name of the bonus source {@link RollBonus.document|document}. */
     get name() {
         if (this.#document.documentName === 'Activity' && activityUtils.hasDefaultName(this.#document))
             return this.#document.item.name;
         return this.#document.name;
     }
-    /** @type {string} Description of the bonus source {@link DamageBonus.document|document}. */
+    /** @type {string} Description of the bonus source {@link RollBonus.document|document}. */
     get description() {
         let desc;
         switch (this.#document.documentName) {
@@ -262,12 +265,12 @@ export class DamageBonus {
         this.#active = Boolean(value);
     }
 
-    validate(workflow, otherBonusDamages) {
-        return this.#validate({bonusDamage: this, workflow, otherBonusDamages});
+    validate(workflow, otherBonuses) {
+        return this.#validate({bonus: this, workflow, otherBonuses});
     }
-    updateScaling(value, workflow, otherBonusDamages) {
+    updateScaling(value, workflow, otherBonuses) {
         this.scalingValue = value;
-        const params = {bonusDamage: this, workflow, otherBonusDamages};
+        const params = {bonus: this, workflow, otherBonuses};
         const updates = {
             cost: this.#costScaling(params),
             roll: this.#bonusScaling(params),
@@ -278,10 +281,11 @@ export class DamageBonus {
         if (Number.isNumeric(updates.maxTargets)) this.maxTargets = updates.maxTargets;
         this.#getHints(params);
     }
-    async use(workflow, otherBonusDamages) {
-        return await this.#use({workflow, bonusDamage: this, otherBonusDamages});
+    async use(workflow, otherBonuses) {
+        return await this.#use({workflow, bonus: this, otherBonuses});
     }
 
+    static get rollClass() { throw new Error('A subclass of RollBonus must implement handling for a specific roll type!'); }
     static get #warningIcon() { return 'fa-solid fa-triangle-exclamation cat-warning-icon'; }
     static get #maxSpell() { return Object.keys(CONFIG.DND5E.spellLevels).length - 1; }
     static get #resourceTypes() { return ['actions', ...Object.keys(CONFIG.DND5E.activityConsumptionTypes)]; }
@@ -379,80 +383,74 @@ export class DamageBonus {
             const warning = data.available <= 0 ? 'DND5E.CONSUMPTION.Warning.None' : 'DND5E.CONSUMPTION.Warning.NotEnough';
             tooltip = _loc(warning, {type, cost: formatNumber(data.cost), available: formatNumber(Math.max(0, data.available ?? 0))});
         }
-        return {label, tooltip, icon: warn ? DamageBonus.#warningIcon : '', id: target};
+        return {label, tooltip, icon: warn ? RollBonus.#warningIcon : '', id: target};
     }
 
-    static defaultGetHints({bonusDamage, workflow, otherBonusDamages}) {
+    static defaultGetHints({bonus, workflow, otherBonuses}) {
         const hints = [];
-        for (const type of DamageBonus.#resourceTypes) {
-            for (const [key, data] of Object.entries(bonusDamage.cost[type] ?? {})) {
+        for (const type of RollBonus.#resourceTypes) {
+            for (const [key, data] of Object.entries(bonus.cost[type] ?? {})) {
                 const target = type === 'actions' ? key : type;
-                hints.push(DamageBonus.#getHint({target, data, key, bonus: bonusDamage}));
+                hints.push(RollBonus.#getHint({target, data, key, bonus: bonus}));
             }
         }
-        bonusDamage.scalingHints = hints;
+        bonus.scalingHints = hints;
     }
-    static defaultBonusScaling({bonusDamage, workflow, otherBonusDamages}) {
-        const scaling = bonusDamage.scalingValue;
-        if (bonusDamage.activity?.damage?.parts.length) {
-            if (!bonusDamage.activity.canScaleDamage) return bonusDamage.roll;
-            // incompatible with multiple damage types - requires a restructure for allowing several rolls per bonus
-            const rolls = activityUtils.getDefaultDamageRolls(bonusDamage.activity, {scaling});
-            return rolls[0];
-        }
-        const roll = new CONFIG.Dice.DamageRoll(bonusDamage.baseFormula, bonusDamage.roll.data, bonusDamage.roll.options);
+    static defaultBonusScaling({bonus, workflow, otherBonuses}) {
+        const scaling = bonus.scalingValue;
+        const roll = new bonus.rollClass(bonus.baseFormula, bonus.roll.data, bonus.roll.options);
         const dieTerm = roll.terms.find(i => i.faces);
         if (dieTerm) dieTerm.number += scaling;
         roll.resetFormula();
         return roll;
     }
     /** 
-     * @param {DamageBonus} bonusDamage
+     * @param {RollBonus} bonusDamage
      * @returns {BonusCost} 
      * */
-    static defaultCosts({bonusDamage, workflow, otherBonusDamages}) {
+    static defaultCosts({bonus, workflow, otherBonuses}) {
         const costs = {};
-        if (bonusDamage.actionRequired) {
-            const action = DamageBonus.GetAction({action: bonusDamage.actionRequired, actor: bonusDamage.actor});
+        if (bonus.actionRequired) {
+            const action = RollBonus.GetAction({action: bonus.actionRequired, actor: bonus.actor});
             costs.actions ??= {};
-            DamageBonus.#lazySetCost(costs.actions, action.key, 1, action.available);
+            RollBonus.#lazySetCost(costs.actions, action.key, 1, action.available);
         }
-        if (!bonusDamage.activity) return costs;
-        const actor = bonusDamage.actor;
-        const scaling = bonusDamage.scalingValue;
-        const consumption = bonusDamage.activity.consumption;
-        if (consumption.spellSlot && bonusDamage.activity.requiresSpellSlot) {
-            const base = bonusDamage.activity.item.system.level;
-            const key = `spell${Math.clamp(base + scaling, 1, DamageBonus.#maxSpell)}`;
+        if (!bonus.activity) return costs;
+        const actor = bonus.actor;
+        const scaling = bonus.scalingValue;
+        const consumption = bonus.activity.consumption;
+        if (consumption.spellSlot && bonus.activity.requiresSpellSlot) {
+            const base = bonus.activity.item.system.level;
+            const key = `spell${Math.clamp(base + scaling, 1, RollBonus.#maxSpell)}`;
             const available = actor.system.spells?.[key]?.value ?? 0;
             costs.spellSlots ??= {};
-            DamageBonus.#lazySetCost(costs.spellSlots, key, 1, available);
+            RollBonus.#lazySetCost(costs.spellSlots, key, 1, available);
         }
         for (const target of consumption.targets) {
             const {simplifiedCost} = target._resolveHintCost({scaling});
             if (simplifiedCost <= 0) continue;
-            const resources = DamageBonus.GetResource({consumption: target, actor, scaling});
+            const resources = RollBonus.GetResource({consumption: target, actor, scaling});
             costs[target.type] ??= {};
-            DamageBonus.#lazySetCost(costs[target.type], resources.key, simplifiedCost, resources.available);
+            RollBonus.#lazySetCost(costs[target.type], resources.key, simplifiedCost, resources.available);
         }
         return costs;
     }
-    static defaultTargetScaling({bonusDamage, workflow, otherBonusDamages}) { 
+    static defaultTargetScaling({bonus, workflow, otherBonuses}) { 
         return;
     }
-    static async defaultUse({workflow, bonusDamage, otherBonusDamages}) {
-        if (bonusDamage.document.documentName === 'Item') {
-            await workflowUtils.completeItemUse(bonusDamage.document, Array.from(bonusDamage.targets));
+    static async defaultUse({bonus, workflow, otherBonuses}) {
+        if (bonus.document.documentName === 'Item') {
+            await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets));
         } else {
-            await workflowUtils.completeActivityUse(bonusDamage.document, Array.from(bonusDamage.targets));
+            await workflowUtils.completeActivityUse(bonus.document, Array.from(bonus.targets));
         }
     }
     /**
      * Filter valid and applicable {@link bonuses}.
-     * @param {DamageBonus[]|Set<DamageBonus>} bonuses
+     * @param {RollBonus[]|Set<RollBonus>} bonuses
      * @param {object} [options]
      * @param {MidiQOL.Workflow} [options.workflow]
-     * @returns {DamageBonus[]}
+     * @returns {RollBonus[]}
      */
     static ValidateAll(bonuses, {workflow} = {}) {
         const cumulativeCosts = {};
@@ -464,7 +462,7 @@ export class DamageBonus {
                 return false;
             }
             let hasEnough = true;
-            for (const type of DamageBonus.#resourceTypes) {
+            for (const type of RollBonus.#resourceTypes) {
                 for (const [key, data] of Object.entries(b.cost[type] ?? {})) {
                     const currentCost = cumulativeCosts[type]?.[key]?.cost ?? 0;
                     if (data.cost + currentCost > data.available) {
@@ -475,10 +473,10 @@ export class DamageBonus {
                 if (!hasEnough) break;
             }
             if (hasEnough) {
-                for (const type of DamageBonus.#resourceTypes) {
+                for (const type of RollBonus.#resourceTypes) {
                     cumulativeCosts[type] ??= {};
                     for (const [key, data] of Object.entries(b.cost[type] ?? {}))
-                        DamageBonus.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
+                        RollBonus.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
                 }
                 return true;
             } 
@@ -559,4 +557,35 @@ export class DamageBonus {
         }
         return data;
     }
+}
+
+/**
+ * @extends RollBonus
+ * @property {dnd5e.dice.BasicRoll} roll 
+ */
+export class D20Bonus extends RollBonus {
+    static get rollClass() { return CONFIG.Dice.BasicRoll; }
+}
+
+/**
+ * @extends RollBonus
+ * @property {dnd5e.dice.DamageRoll} roll 
+ */
+export class DamageBonus extends RollBonus {
+    static get rollClass() { return CONFIG.Dice.DamageRoll; }
+    static defaultBonusScaling({bonus, workflow, otherBonuses}) {
+        if (!bonus.activity?.damage?.parts.length) return RollBonus.defaultBonusScaling({bonus, workflow, otherBonuses});
+        if (!bonus.activity.canScaleDamage) return bonus.roll;
+        // incompatible with multiple damage types - requires a restructure for allowing several rolls per bonus
+        const rolls = activityUtils.getDefaultDamageRolls(bonus.activity, {scaling: bonus.scalingValue});
+        return rolls[0];
+    }
+    /**
+     * Filter valid and applicable {@link bonuses}.
+     * @param {DamageBonus[]|Set<DamageBonus>} bonuses
+     * @param {object} [options]
+     * @param {MidiQOL.Workflow} [options.workflow]
+     * @returns {DamageBonus[]}
+     */
+    static ValidateAll(bonuses, {workflow} = {}) { return RollBonus.ValidateAll(bonuses, {workflow}); }
 }
