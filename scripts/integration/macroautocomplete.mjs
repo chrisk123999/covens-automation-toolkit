@@ -1,4 +1,4 @@
-import {constants, Events, Logging, Summon} from '../lib/_module.mjs';
+import {constants, D20Bonus, DamageBonus, Events, Logging, Summon} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
 
 // reference https://gitlab.com/tposney/midi-qol/-/blob/v13/src/module/lib/midiCompletions.ts#L969
@@ -9,7 +9,22 @@ const makeInfo = msg => msg ? `CAT Data: ${msg}` : '';
 const fnDetails = (fnEntry, params, info) => {
     fnEntry.detail = params;
     fnEntry.info = makeInfo(info);
-}; 
+};
+const classCompletion = (api, cls, path, info) => {
+    let completion = api.tree.cat;
+    path = path.split('.');
+    for (const key of path) {
+        completion = completion?.children?.[key];
+        if (!completion) break;
+    }
+    completion ??= api.classToCompletions(cls);
+    completion.info = makeInfo(info);
+    if (!completion.constructorDetail) {
+        const ctor = Object.getPrototypeOf(cls).toString().match(/constructor\s*\(([^)]*)\)/);
+        if (ctor) completion.constructorDetail = `(${ctor[1].trim()}) => ${cls.name}`;
+    }
+    return completion;
+};
 const classInstance = (api, cls, info) => {
     let walked = api.tree[cls.name];
     if (!walked) {
@@ -69,6 +84,8 @@ const VARS = {
     message: (_, {event}) => variable('object', INFO.message[event]),
     updates: (_, {event}) => variable('object', INFO.updates[event]),
     targetToken: (api, {event}) => classInstance(api, CONFIG.Token.documentClass, INFO.targetToken[event]),
+    DamageBonus: (api) => classCompletion(api, DamageBonus, 'lib.DamageBonus', 'Used in optional bonus prompts.'), 
+    D20Bonus: (api) => classCompletion(api, D20Bonus, 'lib.D20Bonus', 'Used in optional bonus prompts.'),
 
     // Damage    
     ditem: () => variable('object', 'Live copy of workflow.damageItem.'),
