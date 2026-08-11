@@ -166,6 +166,7 @@ const rollPasses = {
     situational: 'situational',
     context: 'context',
     bonus: 'bonus',
+    optionalBonus: 'optionalBonus',
     post: 'post',
     targetSituational: 'targetSituational'
 };

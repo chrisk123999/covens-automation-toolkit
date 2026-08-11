@@ -1,7 +1,7 @@
 import {checkEvents, hitDieEvents, saveEvents, skillEvents, toolEvents} from '../events/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 import {genericUtils} from '../utilities/_module.mjs';
-import {conditionResistanceAndVulnerability} from '../mechanics/conditionResistanceAndVulnerability.mjs';
+import {conditionResistanceAndVulnerability, optionalBonus} from '../mechanics/_module.mjs';
 async function check(wrapped, config, dialog = {}, message = {}) {
     const event = config.event;
     const checkId = config.ability;
@@ -41,6 +41,9 @@ async function check(wrapped, config, dialog = {}, message = {}) {
     const oldOptions = roll.options;
     const bonusRoll = await checkEvents.bonus(this, {config, dialog, message, options, checkId, roll});
     if (bonusRoll instanceof Roll) roll = bonusRoll;
+    if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
+    const optional = await optionalBonus.check(this, {config, dialog, message, options, checkId, roll});
+    if (optional instanceof Roll) roll = optional;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
@@ -93,6 +96,9 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     const oldOptions = roll.options;
     const bonusRoll = await skillEvents.bonus(this, {config, dialog, message, options, skillId, roll});
     if (bonusRoll instanceof Roll) roll = bonusRoll;
+    if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
+    const optional = await optionalBonus.skill(this, {config, dialog, message, options, skillId, roll});
+    if (optional instanceof Roll) roll = optional;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
@@ -152,6 +158,9 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     const bonusRoll = await saveEvents.bonus(this, {config, dialog, message, options, saveId, roll});
     if (bonusRoll instanceof Roll) roll = bonusRoll;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
+    const optional = await optionalBonus.save(this, {config, dialog, message, options, saveId, roll});
+    if (optional instanceof Roll) roll = optional;
+    if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
         let messageId = event?.target.closest('[data-message-id]')?.dataset.messageId;
@@ -175,6 +184,9 @@ async function tool(wrapped, config, dialog, message) {
     let oldOptions = roll.options;
     const bonusRoll = await toolEvents.bonus(this, {config, options, dialog, message, roll, toolId});
     if (bonusRoll instanceof Roll) roll = bonusRoll;
+    if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
+    const optional = await optionalBonus.tool(this, {config, dialog, message, options, roll, toolId});
+    if (optional instanceof Roll) roll = optional;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     await toolEvents.post(this, {config, options, dialog, message, roll, toolId});
     return [roll];
