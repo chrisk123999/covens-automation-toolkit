@@ -517,6 +517,12 @@
       "TargetCantSeeAttacker": "Target Can't See Attacker"
     },
     "Dialog": {
+      "Request": {
+        "Approved": "Approved",
+        "Pending": "Pending",
+        "Rejected": "Rejected",
+        "Request": "Request"
+      },
       "Combobox": {
         "Filter": "Type to filter...",
         "NoMatches": "No matches"
