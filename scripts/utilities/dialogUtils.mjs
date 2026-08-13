@@ -245,7 +245,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         bonus.targets = targets.filter(t => selected.has(t.id));
     };
     const hide = game.settings.get('cat', 'hideNames');
-    const optional = [], contextual = [];
+    const optional = [], contextual = [], thirdParty = [];
     for (let i = 0; i < bonuses.length; i++) {
         const bonus = bonuses[i];
         const name = 'b-' + i;
@@ -286,11 +286,16 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id)})));
         if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
         if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
-        const fieldset = bonus.optional ? optional : contextual;
+        const fieldset = bonus.optional ? bonus.isThirdParty ? thirdParty : optional : contextual;
         fieldset.push({
             label: bonus.name,
             hints: bonus.validateHints,
             name: name + '.active',
+            onrequest: async () => {
+                const result = await bonus.request(workflow, bonuses);
+                if (result.result ?? result) bonus.active = true;
+                return result;
+            },
             options: {
                 image: bonus.img,
                 tooltip: await uiUtils.enrichHTML(bonus.description, bonus.roll.data),
@@ -306,9 +311,10 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
             }
         });
     }
+    if (!optional.length && !thirdParty.length) return [];
     const inputs = [];
-    if (!optional.length) return [];
-    else inputs.push(['checkbox', optional, {displayAsRows: true, legend: contextual.length > 0 ? 'CAT.OptionalBonus.Optional' : ''}]);
+    if (thirdParty.length) inputs.push(['request', thirdParty, {displayAsRows: true, legend: contextual.length + optional.length > 0 ? 'CAT.OptionalBonus.ThirdParty' : ''}]);
+    if (optional.length) inputs.push(['checkbox', optional, {displayAsRows: true, legend: contextual.length + thirdParty.length > 0 ? 'CAT.OptionalBonus.Optional' : ''}]);
     if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);
     const choices = await runDialog(game.user.id, title, content, inputs, 'okCancel', {height: 'auto'});
     if (!choices?.buttons) return false;

@@ -1,14 +1,15 @@
 import {DamageBonus, D20Bonus, constants, Events} from '../lib/_module.mjs';
 import {dialogUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
 
-async function processBonuses(inputs, type, workflow) {
+async function processBonuses(inputs, type, targetActor, workflow) {
     if (!inputs.length) return;
     let needsDialog = false;
     let bonuses = [];
     for (const bonus of inputs) {
         if (!(bonus instanceof type)) continue;
+        bonus.targetActor = targetActor;
         if (bonus.maxTargets > 0 && workflow?.targets.size === 1) bonus.maxTargets = 0;
-        if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0) 
+        if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0 || !!bonus.targetActor) 
             needsDialog = true;
         bonuses.push(bonus);
     }
@@ -23,9 +24,9 @@ async function processBonuses(inputs, type, workflow) {
     return bonuses;
 }
 
-async function addAllToRoll(roll, inputs, workflow) {
+async function addAllToRoll(roll, inputs, targetActor, workflow) {
     inputs.forEach(i => i.maxTargets = 0);
-    const bonuses = await processBonuses(inputs, D20Bonus, workflow);
+    const bonuses = await processBonuses(inputs, D20Bonus, targetActor, workflow);
     if (!bonuses?.length) return;
     for (const bonus of bonuses) {
         if (bonus.use) await bonus.use(workflow, bonuses);
@@ -36,33 +37,33 @@ async function addAllToRoll(roll, inputs, workflow) {
 
 async function attack(workflow) {
     const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusAttack, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    const roll = await addAllToRoll(workflow.attackRoll, inputs, workflow);
-    await workflow.setAttackRoll(roll);
+    const roll = await addAllToRoll(workflow.attackRoll, inputs, workflow.actor, workflow);
+    if (roll) await workflow.setAttackRoll(roll);
 }
 
 async function check(actor, data) {
     const inputs = (await new Events.CheckEvent(actor, constants.rollPasses.optionalBonus, data).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    return await addAllToRoll(data.roll, inputs);
+    return await addAllToRoll(data.roll, inputs, actor);
 }
 
 async function save(actor, data) {
     const inputs = (await new Events.SaveEvent(actor, constants.rollPasses.optionalBonus, data).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    return await addAllToRoll(data.roll, inputs);
+    return await addAllToRoll(data.roll, inputs, actor);
 }
 
 async function skill(actor, data) {
     const inputs = (await new Events.SkillEvent(actor, constants.rollPasses.optionalBonus, data).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    return await addAllToRoll(data.roll, inputs);
+    return await addAllToRoll(data.roll, inputs, actor);
 }
 
 async function tool(actor, data) {
     const inputs = (await new Events.ToolEvent(actor, constants.rollPasses.optionalBonus, data).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    return await addAllToRoll(data.roll, inputs);
+    return await addAllToRoll(data.roll, inputs, actor);
 }
 
 async function damage(workflow) {
     const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    const bonuses = await processBonuses(inputs, DamageBonus, workflow);
+    const bonuses = await processBonuses(inputs, DamageBonus, workflow.actor, workflow);
     if (!bonuses?.length) return;
     const targeted = {}, fullRoll = [];
     const defaultDamageType = workflow.damageRolls[0]?.options.type ?? workflow.defaultDamageType;

@@ -40,6 +40,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     static DEFAULT_OPTIONS = {
+        id: 'cat-dialog-app-{id}',
         classes: ['cat', 'cat-dialog'],
         tag: 'form',
         form: {
@@ -385,24 +386,24 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             idle: {key: 'idle', label: _loc('CAT.Dialog.Request.Request')},
             pending: {key: 'pending', label: _loc('CAT.Dialog.Request.Pending'), icon: 'fas fa-circle-notch fa-spin'},
             approved: {key: 'approved', label: _loc('CAT.Dialog.Request.Approved')},
-            rejected: {key: 'rejected', label: _loc('CAT.Dialog.Request.Rejected')}
+            declined: {key: 'declined', label: _loc('CAT.Dialog.Request.Declined')}
         };
     }
 
     /** @this {DialogApp} */
-    static async #request(event, target) {
+    static async #request(_event, target) {
         const states = DialogApp.requestStates;
-        const ctx = this.#getContextByID(target.id);
-        const input = ctx?.input;
+        const input = this.#getContextByID(target.id)?.input;
         if (input?.state.key !== states.idle.key) return;
-        const uuid = target.dataset.actoruuid;
-        if (!uuid) return;
-        const actor = await fromUuid(uuid);
-        if (!actor) return;
-        ctx.input.state = states.pending;
+        input.state = states.pending;
         await this.render(true);
-        const result = await ctx.input.onrequest?.(actor);
-        ctx.input.state = result ? states.approved : states.rejected;
+        let result = await input.onrequest?.();
+        let reason;
+        if (typeof result === 'object') ({result, reason} = result);
+        if (!this.rendered) return;
+        input.state = result ? states.approved : states.declined;
+        input.stateReason = reason;
+        input.isChecked = result;
         await this.render(true);
     }
 
@@ -411,10 +412,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         const options = fields.map((f, i) => ({
             label: f.label,
             name: f.name,
-            state: f.state ?? states.idle,
-            approved: f.state.key === states.approved.key,
-            locked: f.state.key !== states.idle.key,
-            requestActorUUID: f.requestActorUUID,
+            state: states.idle,
+            stateReason: f.options?.stateReason,
+            isChecked: false,
             onrequest: f.onrequest,
             image: f.options?.image,
             tooltip: f.options?.tooltip,

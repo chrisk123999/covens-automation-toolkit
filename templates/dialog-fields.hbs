@@ -88,8 +88,8 @@
                             </div>
                         {{/if}}
                         <div class="form-fields">
-                            <input type="hidden" name="{{name}}" value="{{approved}}" data-for="{{id}}">
-                            <button type="button" class="cat-body-button cat-request {{state.key}}" data-action="request" data-actoruuid="{{requestActorUUID}}" id="{{id}}" {{disabled locked}}>
+                            <input type="hidden" name="{{name}}" value="{{isChecked}}" data-for="{{id}}">
+                            <button type="button" class="cat-body-button cat-request {{state.key}}" id="{{id}}" data-action="request"{{#if stateReason}} data-tooltip="{{stateReason}}"{{/if}}>
                                 {{#if state.icon}}<i class="{{state.icon}}"></i>{{/if}}
                                 <span>{{state.label}}</span>
                             </button>

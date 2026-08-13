@@ -28,7 +28,7 @@
     --cat-transition-fast: all 150ms ease;
     --cat-request-pending: color-mix(in srgb, var(--cat-status-yellow) 20%, transparent);
     --cat-request-approved: color-mix(in srgb, var(--cat-status-green) 20%, transparent);
-    --cat-request-rejected: color-mix(in srgb, var(--cat-status-red) 20%, transparent);
+    --cat-request-declined: color-mix(in srgb, var(--cat-status-red) 20%, transparent);
 }
 
 [data-medkit-status="unknown"]          { color: var(--cat-status-pink) !important; }
@@ -120,7 +120,7 @@
 .cat-request {
     &.pending { background-color: var(--cat-request-pending); }
     &.approved { background-color: var(--cat-request-approved); }
-    &.rejected { background-color: var(--cat-request-rejected); }
+    &.declined { background-color: var(--cat-request-declined); }
 }
 
 .cat-app-header-button {

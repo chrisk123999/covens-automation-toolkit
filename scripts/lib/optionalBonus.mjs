@@ -1,4 +1,4 @@
-import {activityUtils, dataUtils, effectUtils, genericUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, dataUtils, dialogUtils, effectUtils, genericUtils, queryUtils, workflowUtils} from '../utilities/_module.mjs';
 const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
 /** @import {DialogHint} from '../applications/dialog.mjs' */
@@ -28,6 +28,8 @@ class RollBonus {
     #roll;          // Roll     | The unevaluated roll.
     #rollClass;     // Roll     | The type of the roll.
     #actor;         // Actor    | The actor who will spend resources for this bonus.
+    #targetActor;   // Actor    | The actor who will benefit from this bonus.
+    #thirdPartyRequest; //Fn    | Async callback builds a request dialog, returning true or false for accept or decline.
     #baseFormula;   // string   | The original roll formula before scaling.
     #maxTargets;    // Number   | Max targets, if any.
     #baseMaxTargets;// Number   | The original max targets before scaling.
@@ -48,10 +50,12 @@ class RollBonus {
     #optional;      // Boolean  | Whether this bonus is optional or not. If there are only static bonuses and no optional ones, the dialog shouldn't be shown.
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus is active or not.
-    constructor(document, {maxTargets, getHints, getCosts, scaleMaxTargets, validate, scaling, use, scalingHints, maxTargetsHints, validateHints, maxScaling, roll, optional = true, action, actor} = {}) {
+    constructor(document, {maxTargets, getHints, getCosts, scaleMaxTargets, validate, scaling, use, scalingHints, maxTargetsHints, validateHints, maxScaling, roll, optional = true, action, actor, targetActor, thirdPartyRequest} = {}) {
         this.#document = document;
         this.#getActivity(document);
         this.#actor = this.#getActor(actor);
+        this.#targetActor = targetActor ?? this.#actor;
+        this.#thirdPartyRequest = thirdPartyRequest ?? this.constructor.defaultRequest;
         this.#action = this.#getAction(action);
         this.maxScaling = this.#getMaxScaling(maxScaling);
         this.#validate = validate ?? (() => true);
@@ -253,6 +257,18 @@ class RollBonus {
     get actor() {
         return this.#actor;
     }
+    /** @type {foundry.documents.Actor} The actor who will benefit from this bonus. */
+    get targetActor() {
+        return this.#targetActor;
+    }
+    set targetActor(value) {
+        if (!(value instanceof CONFIG.Actor.documentClass)) return;
+        this.#targetActor = value;
+    }
+    /** @type {boolean} */
+    get isThirdParty() { 
+        return this.actor.id !== this.targetActor.id;
+    }
     /** @type {dnd5e.dataModels.activity.BaseActivityData} */
     get activity() {
         return this.#activity;
@@ -283,6 +299,9 @@ class RollBonus {
     }
     async use(workflow, otherBonuses) {
         return await this.#use({workflow, bonus: this, otherBonuses});
+    }
+    async request(workflow, otherBonuses) {
+        return await this.#thirdPartyRequest({bonus: this, workflow, otherBonuses});
     }
 
     static get rollClass() { throw new Error('A subclass of RollBonus must implement handling for a specific roll type!'); }
@@ -446,6 +465,39 @@ class RollBonus {
         }
     }
     /**
+     * @param {object} options
+     * @param {RollBonus} options.bonus
+     * @param {MidiQOL.Workflow} [options.workflow]
+     * @param {RollBonus[]} [options.otherBonuses] 
+     * @returns {boolean|{request: boolean, reason: string}}
+     */
+    static async defaultRequest({bonus, workflow, otherBonuses}) {
+        if (!bonus.targetActor) return false;
+        if (!RollBonus.CheckCost(bonus)) return {result: false, reason: _loc('CAT.OptionalBonus.InvalidResources')};
+        const name = bonus.targetActor?.name ?? _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally');
+        return await dialogUtils.confirm(
+            `${_loc('CAT.OptionalBonus.Title')} - ${bonus.name}`,
+            _loc('CAT.Dialog.UseForRollTotal', {document: bonus.name, name, rollTotal: bonus.roll.formula}),
+            {userId: queryUtils.firstOwner(bonus.actor, true)}
+        );
+    }
+    /**
+     * Check resource requirements for a bonus.
+     * @param {RollBonus} bonus 
+     * @param {BonusCost} [costs] Optionally provide other calculated costs, usually cumulative.
+     * @returns {boolean}
+     */
+    static CheckCost(bonus, costs = bonus.cost) {
+        for (const type of RollBonus.#resourceTypes) {
+            for (const [key, data] of Object.entries(bonus.cost[type] ?? {})) {
+                const currentCost = costs[type]?.[key]?.cost ?? 0;
+                if (data.cost + currentCost > data.available)
+                    return false;
+            }
+        }
+        return true;
+    }
+    /**
      * Filter valid and applicable {@link bonuses}.
      * @param {RollBonus[]|Set<RollBonus>} bonuses
      * @param {object} [options]
@@ -461,17 +513,7 @@ class RollBonus {
                 b.active = false;
                 return false;
             }
-            let hasEnough = true;
-            for (const type of RollBonus.#resourceTypes) {
-                for (const [key, data] of Object.entries(b.cost[type] ?? {})) {
-                    const currentCost = cumulativeCosts[type]?.[key]?.cost ?? 0;
-                    if (data.cost + currentCost > data.available) {
-                        hasEnough = false;
-                        break; 
-                    }
-                }
-                if (!hasEnough) break;
-            }
+            const hasEnough = RollBonus.CheckCost(b, cumulativeCosts);
             if (hasEnough) {
                 for (const type of RollBonus.#resourceTypes) {
                     cumulativeCosts[type] ??= {};

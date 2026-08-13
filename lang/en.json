@@ -519,8 +519,8 @@
     "Dialog": {
       "Request": {
         "Approved": "Approved",
+        "Declined": "Declined",
         "Pending": "Pending",
-        "Rejected": "Rejected",
         "Request": "Request"
       },
       "Combobox": {
@@ -875,6 +875,7 @@
       "Scaling": "Scaling",
       "Targeted": "Targeted",
       "Targets": "Targets",
+      "ThirdParty": "Third Party Optional Bonuses",
       "Title": "Optional Bonus"
     }
   }
