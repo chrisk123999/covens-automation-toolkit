@@ -517,6 +517,12 @@
       "TargetCantSeeAttacker": "Target Can't See Attacker"
     },
     "Dialog": {
+      "Request": {
+        "Approved": "Approved",
+        "Declined": "Declined",
+        "Pending": "Pending",
+        "Request": "Request"
+      },
       "Combobox": {
         "Filter": "Type to filter...",
         "NoMatches": "No matches"
@@ -869,6 +875,7 @@
       "Scaling": "Scaling",
       "Targeted": "Targeted",
       "Targets": "Targets",
+      "ThirdParty": "Third Party Optional Bonuses",
       "Title": "Optional Bonus"
     }
   }

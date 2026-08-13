@@ -40,7 +40,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     static DEFAULT_OPTIONS = {
-        id: 'cat-dialog-app',
+        id: 'cat-dialog-app-{id}',
         classes: ['cat', 'cat-dialog'],
         tag: 'form',
         form: {
@@ -50,6 +50,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         },
         actions: {
             confirm: DialogApp.#confirm,
+            request: DialogApp.#request,
             toggleDetach: DialogApp.#onToggleDetach,
             toggleCollapsed: DialogApp.#toggleCollapsed
         },
@@ -241,6 +242,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'button': return this.#buildButton(...args);
             case 'number': return this.#buildNumber(...args);
             case 'slider': return this.#buildSlider(...args);
+            case 'request': return this.#buildRequest(...args);
             case 'checkbox': return this.#buildCheckbox(...args);
             case 'combobox': return this.#buildCombobox(...args);
             case 'filePicker': return this.#buildFilePicker(...args);
@@ -374,6 +376,70 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             totalMax: opts?.totalMax ?? 99,
             showCounter: opts?.totalMax != null,
             currentNum: options.filter(i => i.isChecked).length,
+            hasSubinputs: options.some(i => i.subinputs?.length),
+            legend: opts?.legend
+        };
+    }
+
+    static get requestStates() {
+        return {
+            idle: {key: 'idle', label: _loc('CAT.Dialog.Request.Request')},
+            pending: {key: 'pending', label: _loc('CAT.Dialog.Request.Pending'), icon: 'fas fa-circle-notch fa-spin'},
+            approved: {key: 'approved', label: _loc('CAT.Dialog.Request.Approved')},
+            declined: {key: 'declined', label: _loc('CAT.Dialog.Request.Declined')}
+        };
+    }
+
+    /** @this {DialogApp} */
+    static async #request(_event, target) {
+        const states = DialogApp.requestStates;
+        const input = this.#getContextByID(target.id)?.input;
+        if (input?.state.key !== states.idle.key) return;
+        input.state = states.pending;
+        await this.render(true);
+        let result = await input.onrequest?.();
+        let reason;
+        if (typeof result === 'object') ({result, reason} = result);
+        if (!this.rendered) return;
+        input.state = result ? states.approved : states.declined;
+        input.stateReason = reason;
+        input.isChecked = result;
+        await this.render(true);
+    }
+
+    #buildRequest(fields, opts, index, parentIndex) {
+        const states = DialogApp.requestStates;
+        const options = fields.map((f, i) => ({
+            label: f.label,
+            name: f.name,
+            state: states.idle,
+            stateReason: f.options?.stateReason,
+            isChecked: false,
+            onrequest: f.onrequest,
+            image: f.options?.image,
+            tooltip: f.options?.tooltip,
+            reference: f.options?.reference,
+            invertColor: f.options?.invertColor,
+            hints: f.hints?.map(h => ({
+                label: h.label,
+                icon: h.icon,
+                tooltip: h.tooltip,
+                id: h.id
+            })),
+            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+            onchange: f.options?.onchange,
+            tags: f.options?.tags?.map(t => ({
+                tooltip: t.tooltip,
+                label: t.label,
+                image: t.image,
+                icon: t.icon,
+                id: t.id
+            })),
+            id: DialogApp.#makeID(index, i, parentIndex)
+        }));
+        return {
+            isRequest: true,
+            options,
             hasSubinputs: options.some(i => i.subinputs?.length),
             legend: opts?.legend
         };

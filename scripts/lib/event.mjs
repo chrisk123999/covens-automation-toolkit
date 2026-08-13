@@ -1,6 +1,6 @@
 import {actorUtils, documentUtils, effectUtils, genericUtils, tokenUtils} from '../utilities/_module.mjs';
 import * as utils from '../utilities/_module.mjs';
-import {Triggers, Logging, constants} from '../lib/_module.mjs';
+import {Triggers, Logging, constants, DamageBonus, D20Bonus} from '../lib/_module.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
@@ -400,7 +400,9 @@ class WorkflowEvent extends BaseWorkflowEvent {
         return {
             ...super.appendData(data),
             workflow: this.workflow,
-            activity: this.activity
+            activity: this.activity,
+            DamageBonus,
+            D20Bonus
         };
     }
 }
@@ -742,7 +744,8 @@ class BaseRollEvent extends CatEvent {
     appendData(data) {
         return {
             ...super.appendData(data),
-            ...this.data
+            ...this.data,
+            D20Bonus
         };
     }
 }

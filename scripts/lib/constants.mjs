@@ -18,12 +18,12 @@ const workflowPasses = {
     attackRoll: 'attackRoll', // Regular adjustments to attack rolls, such as re-rolling them or editing the formula. Do not re-roll an attack after this pass.
     attackRollBonuses: 'attackRollBonuses', // Add bonuses to attack rolls but before target AC checks.
     attackRollMissedBonuses: 'attackRollMissedBonuses', // Add bonuses to attack rolls after checking target AC.
+    optionalBonusAttack: 'optionalBonusAttack', // Combined optional bonus attack dialog.
     attackRollComplete: 'attackRollComplete', // Finalized attack roll, no adjustments can be made here.
     savesComplete: 'savesComplete', // Can adjust the hitTargets and failedSaves set here (not often used).
     damageRoll: 'damageRoll', // Regular adjustments to damage rolls, such as re-rolling them or editing the formula. Do not re-roll damage after this pass.
     smite: 'smite', // Smite spells.
     optionalBonusDamage: 'optionalBonusDamage', // Combined optional bonus damage dialog.
-    contextualBonusDamage: 'contextualBonusDamage', // Combined bonus damage dialog, see above.
     damageRollBonuses: 'damageRollBonuses', // Add bonuses to damage rolls.
     damageRollComplete: 'damageRollComplete', // Finalized damage rolls, no adjustments should be made here.
     utilityRoll: 'utilityRoll', // Regular adjustments to utility rolls, such as re-rolling them or editing the formula. Do not re-roll after this pass.
@@ -166,6 +166,7 @@ const rollPasses = {
     situational: 'situational',
     context: 'context',
     bonus: 'bonus',
+    optionalBonus: 'optionalBonus',
     post: 'post',
     targetSituational: 'targetSituational'
 };

@@ -61,6 +61,53 @@
                 {{/if}}
             </div>
         {{/each}}
+    {{else if isRequest}}
+        {{#each options}}
+            <div class="cat-form-group"{{#if subinputs}} data-collapsible-id="{{id}}"{{/if}}>
+                <div{{#if subinputs}} class="cat-summary"{{/if}}>
+                    <div class="form-group inline{{#if locked}} cat-locked{{/if}}">
+                        {{#if ../hasSubinputs}}
+                        <div class="cat-collapsible-icon-placeholder"{{#if subinputs}} data-action="toggleCollapsed"{{/if}}>
+                            {{#if subinputs}}<i class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                        </div>
+                        {{/if}}
+                        
+                        <label for="{{id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}{{#if reference}} data-reference-tooltip="{{reference}}"{{/if}}>
+                            {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}" src="{{image}}" data-token-id="{{name}}">{{/if}}
+                            <span class="cat-label-text">{{{localize label}}}</span>
+                        </label>
+                        {{#if tags}}
+                            <div class="cat-tags">
+                                {{#each tags}}
+                                    <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>
+                                        {{#if icon}}<i class="{{icon}}"></i>{{/if}}
+                                        {{#if image}}<img class="cat-damage-icon" src="{{image}}">{{/if}}
+                                        <span class="cat-hint-text">{{localize label}}</span>
+                                    </span>
+                                {{/each}}
+                            </div>
+                        {{/if}}
+                        <div class="form-fields">
+                            <input type="hidden" name="{{name}}" value="{{isChecked}}" data-for="{{id}}">
+                            <button type="button" class="cat-body-button cat-request {{state.key}}" id="{{id}}" data-action="request"{{#if stateReason}} data-tooltip="{{stateReason}}"{{/if}}>
+                                {{#if state.icon}}<i class="{{state.icon}}"></i>{{/if}}
+                                <span>{{state.label}}</span>
+                            </button>
+                        </div>
+                        {{#each hints}}
+                            <p class="hint" id="{{id}}" data-for="{{../id}}"{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
+                        {{/each}}
+                    </div>
+                </div>
+                {{#if subinputs}}
+                <div class="cat-collapsible-content">
+                    <div class="cat-collapsible-wrapper">
+                        {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                    </div>
+                </div>
+                {{/if}}
+            </div>
+        {{/each}}
     {{else if isRadio}}
         {{#each options}}
             <div class="cat-form-group"{{#if subinputs}} data-collapsible-id="{{id}}"{{/if}}>
