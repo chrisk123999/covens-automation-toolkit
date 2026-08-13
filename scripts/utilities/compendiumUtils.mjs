@@ -20,9 +20,7 @@ async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filte
     return (await Promise.all(Array.from(results).map(uuid => fromUuid(uuid)))).filter(Boolean);
 }
 async function getDocumentByIdentifier(packId, identifier, {object = false, description, translate, flatAttack, flatDC} = {}) {
-    console.log(packId, identifier);
     const pack = game.packs.get(packId);
-    console.log(pack);
     if (!pack) return;
     const index = await pack.getIndex({fields: ['system.identifier', 'flags.cat.identifier']});
     const found = index.find(i => i.system.identifier === identifier || i.flags.cat?.identifier === identifier);
