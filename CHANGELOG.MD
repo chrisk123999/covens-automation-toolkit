@@ -1,3 +1,13 @@
+# 0.0.8 Release:
+## API Update Notes:
+- Added utils:
+  - `activityUtils`: `hasDefaultIcon`, `hasDefaultName`, `getDefaultDamageRolls`
+  - `automationUtils.getCompendiumDocumentByName`
+  - `dialogUtils.selectScaledDocument`
+- New dialog inputs: slider and request.
+## Update Notes:
+- Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
+
 # 0.0.7 Release:
 ## API Update Notes:
 - Added utils: `effectUtils.resetDuration`, `rollUtils.replaceRollShowDiscarded`, `rollUtils.setTotalWithBonus`, `workflowUtils.updateTargets`, and several confirm dialog helpers for different localized prompts.

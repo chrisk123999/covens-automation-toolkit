@@ -164,7 +164,7 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
             if (actorUtils.checkTrait(actor, 'dr', type)) modificationAmount = Math.floor(modificationAmount / 2);
         }
     }
-    if (modificationAmount < 0) modificationAmount = Math.max(modificationAmount, -ditem.hpDamage - ditem.tempDamage);
+    if (modificationAmount < 0 && type !== 'healing') modificationAmount = Math.max(modificationAmount, -ditem.hpDamage - ditem.tempDamage);
     MidiQOL.modifyDamageBy({damageItem: ditem, value: modificationAmount, multiplier, type});
     ditem.rawDamageDetail.push({value: modificationAmount, type});
 }

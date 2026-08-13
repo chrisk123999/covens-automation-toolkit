@@ -36,6 +36,7 @@ async function addAllToRoll(roll, inputs, targetActor, workflow) {
 }
 
 async function attack(workflow) {
+    if (!workflow.attackRoll) return;
     const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusAttack, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
     const roll = await addAllToRoll(workflow.attackRoll, inputs, workflow.actor, workflow);
     if (roll) await workflow.setAttackRoll(roll);
@@ -65,7 +66,7 @@ async function damage(workflow) {
     const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
     const bonuses = await processBonuses(inputs, DamageBonus, workflow.actor, workflow);
     if (!bonuses?.length) return;
-    const targeted = {}, fullRoll = [];
+    const targetedData = {}, fullRoll = [], targeted = [];
     const defaultDamageType = workflow.damageRolls[0]?.options.type ?? workflow.defaultDamageType;
     for (const bonus of bonuses) {
         if (!bonus.roll._evaluated) await bonus.roll.evaluate();
@@ -74,10 +75,13 @@ async function damage(workflow) {
                 fullRoll.push(bonus.roll);
                 continue;
             }
+            targeted.push(bonus);
             for (const target of bonus.targets) {
                 const type = bonus.roll.options.type ?? defaultDamageType;
-                targeted[target.uuid] ??= [];
-                targeted[target.uuid].push({total: bonus.roll.total, type});
+                targetedData[target.uuid] ??= [];
+                let total = bonus.roll.total;
+                if (type === 'healing') total *= -1;
+                targetedData[target.uuid].push({total, type});
             }
         } else fullRoll.push(bonus.roll);
         if (bonus.use) await bonus.use(workflow, bonuses);
@@ -86,7 +90,15 @@ async function damage(workflow) {
         workflow.damageRolls.push(...fullRoll);
         await workflow.setDamageRolls(workflow.damageRolls);
     }
-    if (Object.keys(targeted).length) workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', targeted);
+    if (targeted.length) {
+        workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', targetedData);
+        for (const bonus of targeted)
+            await bonus.roll.toMessage({
+                flavor: `${bonus.name}: ${Array.from(bonus.targets).map(t => t.name).join(', ')}`,
+                speaker: ChatMessage.implementation.getSpeaker({token: workflow.token}),
+                rollMode: 'roll'
+            });
+    }
 }
 
 function applyDamage(workflow, token, ditem) {
