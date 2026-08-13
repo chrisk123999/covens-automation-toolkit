@@ -9,7 +9,7 @@ async function processBonuses(inputs, type, targetActor, workflow) {
         if (!(bonus instanceof type)) continue;
         bonus.targetActor = targetActor;
         if (bonus.maxTargets > 0 && workflow?.targets.size === 1) bonus.maxTargets = 0;
-        if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0 || !!bonus.targetActor) 
+        if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0 || bonus.isThirdParty) 
             needsDialog = true;
         bonuses.push(bonus);
     }
