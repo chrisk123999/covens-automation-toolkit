@@ -24,33 +24,28 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  */
 
 class RollBonus {
-    #targets;       // Set      | Target(s) of the bonus.
     #roll;          // Roll     | The unevaluated roll.
     #rollClass;     // Roll     | The type of the roll.
     #actor;         // Actor    | The actor who will spend resources for this bonus.
     #targetActor;   // Actor    | The actor who will benefit from this bonus.
     #thirdPartyRequest; //Fn    | Async callback builds a request dialog, returning true or false for accept or decline.
     #baseFormula;   // string   | The original roll formula before scaling.
-    #maxTargets;    // Number   | Max targets, if any.
-    #baseMaxTargets;// Number   | The original max targets before scaling.
     #document;      // Document | Item, Activity, and possibly the effect providing this bonus.
     #activity;      // Activity | Used for default consumption and scaling if a `scaling` callback is not provided.
     #validate;      // Function | Callback for any validation beyond resource consumption. 
     #bonusScaling;  // Function | Callback updates the bonus formula when scaled.
     #costScaling;   // Function | Callback collects the costs required to use this bonus when scaled.
-    #targetScaling; // Function | Callback adjusts max targets when the bonus is scaled.
     #getHints;      // Function | Callback creates hints for the UI after all other changes are settled.
     #cost;          // BonusCost| The costs required to use this bonus.
     #maxScaling;    // Number   | Max value of the scaling slider.
     #scalingValue;  // Number   | Current scaling. Base 0.
     #use;           // Function | Async callback runs after the selection is confirmed.
     #scalingHints;//DialogHint[]| Array of {label, icon} for UI scaling hints.
-    #maxTargetsHints;// ...     | Array of {label, icon} for UI target hints. 
     #validateHints; // ...      | Array of {label, icon} for explaining the validity of bonus.
     #optional;      // Boolean  | Whether this bonus is optional or not. If there are only static bonuses and no optional ones, the dialog shouldn't be shown.
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus is active or not.
-    constructor(document, {maxTargets, getHints, getCosts, scaleMaxTargets, validate, scaling, use, scalingHints, maxTargetsHints, validateHints, maxScaling, roll, optional = true, action, actor, targetActor, thirdPartyRequest} = {}) {
+    constructor(document, {getHints, getCosts, validate, scaling, use, scalingHints, validateHints, maxScaling, roll, optional = true, action, actor, targetActor, thirdPartyRequest} = {}) {
         this.#document = document;
         this.#getActivity(document);
         this.#actor = this.#getActor(actor);
@@ -63,10 +58,6 @@ class RollBonus {
         this.#getHints = getHints ?? this.constructor.defaultGetHints;
         this.#costScaling = getCosts ?? this.constructor.defaultCosts;
         this.#bonusScaling = scaling ?? this.constructor.defaultBonusScaling;
-        this.#targetScaling = scaleMaxTargets ?? this.constructor.defaultTargetScaling;
-        this.#baseMaxTargets = maxTargets;
-        this.#maxTargets = maxTargets;
-        this.#targets = new Set();
         this.#optional = optional;
         this.#scalingValue = 0;
         this.#roll = roll ?? new this.constructor.rollClass('0', (this.#activity ?? this.#document).getRollData?.());
@@ -76,12 +67,9 @@ class RollBonus {
         this.active = !this.#optional;
         this.scalingHints = scalingHints;
         this.validateHints = validateHints;
-        this.maxTargetsHints = maxTargetsHints;
-
-        this.updateScaling(0);
     }
 
-    #makeHints(list) {
+    _makeHints(list) {
         list = dataUtils.toArray(list);
         const hints = [];
         for (const hint of list) {
@@ -154,25 +142,6 @@ class RollBonus {
     get baseFormula() {
         return this.#baseFormula;
     }
-    /** @type {Set<foundry.documents.TokenDocument>} Targets of the damage. Size truncated to {@link maxTargets}, if present. */
-    get targets() {
-        return this.#targets;
-    }
-    set targets(tokens) {
-        this.#targets = new Set(tokens);
-        if (this.#maxTargets && this.#targets.size > this.#maxTargets) this.#targets = new Set(Array.from(this.#targets).slice(0, this.#maxTargets));
-    }
-    /** @type {number} */
-    get maxTargets() {
-        return this.#maxTargets;
-    }
-    set maxTargets(value) {
-        this.#maxTargets = Number(value);
-    }
-    /** @type {number} Original max targets, before scaling. */
-    get baseMaxTargets() {
-        return this.#baseMaxTargets;
-    }
     /** @type {dnd5e.dataModels.activity.BaseActivityData|foundry.documents.Item|foundry.documents.ActiveEffect} */
     get document() {
         return this.#document;
@@ -210,21 +179,14 @@ class RollBonus {
         return this.#scalingHints;
     }
     set scalingHints(value) {
-        this.#scalingHints = this.#makeHints(value);
-    }
-    /** @type {DialogHint[]} */
-    get maxTargetsHints() {
-        return this.#maxTargetsHints;
-    }
-    set maxTargetsHints(value) {
-        this.#maxTargetsHints = this.#makeHints(value);
+        this.#scalingHints = this._makeHints(value);
     }
     /** @type {DialogHint[]} */
     get validateHints() {
         return this.#validateHints;
     }
     set validateHints(value) {
-        this.#validateHints = this.#makeHints(value);
+        this.#validateHints = this._makeHints(value);
     }
     /** @type {number} */
     get maxScaling() {
@@ -281,26 +243,30 @@ class RollBonus {
         this.#active = Boolean(value);
     }
 
+    _otherScaling({bonus, workflow, otherBonuses}) {}
     validate(workflow, otherBonuses) {
+        if (!this.#validate) return true;
         return this.#validate({bonus: this, workflow, otherBonuses});
     }
     updateScaling(value, workflow, otherBonuses) {
         this.scalingValue = value;
         const params = {bonus: this, workflow, otherBonuses};
-        const updates = {
-            cost: this.#costScaling(params),
-            roll: this.#bonusScaling(params),
-            maxTargets: this.#targetScaling(params)
-        };
-        if (updates.cost) this.#cost = updates.cost;
-        if (updates.roll) this.roll = updates.roll;
-        if (Number.isNumeric(updates.maxTargets)) this.maxTargets = updates.maxTargets;
+        const cost = this.#costScaling?.(params);
+        const roll = this.#bonusScaling?.(params);
+        this._otherScaling(params);
+        if (cost) this.#cost = cost;
+        if (roll) this.roll = roll;
         this.#getHints(params);
     }
+    initialize() {
+        this.updateScaling(0);
+    }
     async use(workflow, otherBonuses) {
+        if (!this.#use) return;
         return await this.#use({workflow, bonus: this, otherBonuses});
     }
     async request(workflow, otherBonuses) {
+        if (!this.#thirdPartyRequest) return false;
         return await this.#thirdPartyRequest({bonus: this, workflow, otherBonuses});
     }
 
@@ -454,9 +420,6 @@ class RollBonus {
         }
         return costs;
     }
-    static defaultTargetScaling({bonus, workflow, otherBonuses}) { 
-        return;
-    }
     static async defaultUse({bonus, workflow, otherBonuses}) {
         if (bonus.document.documentName === 'Item') {
             await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets));
@@ -607,6 +570,10 @@ class RollBonus {
  */
 export class D20Bonus extends RollBonus {
     static get rollClass() { return CONFIG.Dice.BasicRoll; }
+    constructor(document, options) {
+        super(document, options);
+        this.initialize();
+    }
 }
 
 /**
@@ -614,13 +581,65 @@ export class D20Bonus extends RollBonus {
  * @property {dnd5e.dice.DamageRoll} roll 
  */
 export class DamageBonus extends RollBonus {
+    #targets;         // Set           | Target(s) of the bonus.   
+    #maxTargets;      // Number        | Max targets, if any.
+    #baseMaxTargets;  // Number        | The original max targets before scaling.
+    #targetScaling;   // Function      | Callback adjusts max targets when the bonus is scaled.
+    #maxTargetsHints; // DialogHints[] | Array of {label, icon} for UI target hints. 
+    constructor(document, {maxTargets, scaleMaxTargets, maxTargetsHints, ...baseOptions} = {}) {
+        super(document, baseOptions);
+
+        this.#targetScaling = scaleMaxTargets ?? this.constructor.defaultTargetScaling;
+        this.#baseMaxTargets = maxTargets;
+        this.#maxTargets = maxTargets;
+        this.#targets = new Set();
+
+        this.maxTargetsHints = maxTargetsHints;
+        this.initialize();
+    }
+
+    /** @type {Set<foundry.documents.TokenDocument>} Targets of the damage. Size truncated to {@link maxTargets}, if present. */
+    get targets() {
+        return this.#targets;
+    }
+    set targets(tokens) {
+        this.#targets = new Set(tokens);
+        if (this.#maxTargets && this.#targets.size > this.#maxTargets) this.#targets = new Set(Array.from(this.#targets).slice(0, this.#maxTargets));
+    }
+    /** @type {number} */
+    get maxTargets() {
+        return this.#maxTargets;
+    }
+    set maxTargets(value) {
+        this.#maxTargets = Number(value);
+    }
+    /** @type {number} Original max targets, before scaling. */
+    get baseMaxTargets() {
+        return this.#baseMaxTargets;
+    }
+    /** @type {DialogHint[]} */
+    get maxTargetsHints() {
+        return this.#maxTargetsHints;
+    }
+    set maxTargetsHints(value) {
+        this.#maxTargetsHints = this._makeHints(value);
+    }
+
+    _otherScaling({bonus, workflow, otherBonuses}) {
+        const maxTargets = this.#targetScaling({bonus, workflow, otherBonuses});
+        if (Number.isNumeric(maxTargets)) this.maxTargets = maxTargets;
+    }
+    
     static get rollClass() { return CONFIG.Dice.DamageRoll; }
     static defaultBonusScaling({bonus, workflow, otherBonuses}) {
-        if (!bonus.activity?.damage?.parts.length) return RollBonus.defaultBonusScaling({bonus, workflow, otherBonuses});
         if (!bonus.activity.canScaleDamage) return bonus.roll;
+        if (!bonus.activity?.damage?.parts.length) return RollBonus.defaultBonusScaling({bonus, workflow, otherBonuses});
         // incompatible with multiple damage types - requires a restructure for allowing several rolls per bonus
         const rolls = activityUtils.getDefaultDamageRolls(bonus.activity, {scaling: bonus.scalingValue});
         return rolls[0];
+    }
+    static defaultTargetScaling({bonus, workflow, otherBonuses}) { 
+        return;
     }
     /**
      * Filter valid and applicable {@link bonuses}.
