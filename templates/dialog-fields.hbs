@@ -233,6 +233,25 @@
                 {{/if}}
             </div>
         {{/each}}
+    {{else if isFormula}}
+        <div class="cat-formula{{#if header}} cat-dialog-subheader{{/if}}">
+            {{#each groups}}
+                <div class="cat-dice-group" id="{{id}}">
+                    <header class="cat-dice-group-header">
+                        {{#if icon}}<img class="cat-dmg-icon" src="{{icon}}">{{/if}}
+                        {{#if label}}<span class="cat-dice-type-label">{{label}}</span>{{/if}}
+                        <strong class="cat-dice-subtotal">{{formula}}</strong>
+                    </header>
+                    <ol class="dice-rolls">
+                        {{#each dice}}
+                            <li class="cat-die-cell">
+                                <label class="roll{{#if faces}} d{{faces}}{{else}} cat-die-generic{{/if}}{{#if add}} add{{else}} subtract{{/if}}" data-tooltip="{{tooltip}}">{{value}}</label>
+                            </li>
+                        {{/each}}
+                    </ol>
+                </div>
+            {{/each}}
+        </div>
     {{else if isDice}}
         {{#if showCounter}}
             <div class="cat-budget-counter">{{currentNum}}/{{totalMax}}</div>

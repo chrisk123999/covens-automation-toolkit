@@ -242,6 +242,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'button': return this.#buildButton(...args);
             case 'number': return this.#buildNumber(...args);
             case 'slider': return this.#buildSlider(...args);
+            case 'formula': return this.#buildFormula(...args);
             case 'request': return this.#buildRequest(...args);
             case 'checkbox': return this.#buildCheckbox(...args);
             case 'combobox': return this.#buildCombobox(...args);
@@ -308,6 +309,42 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             grandTotal,
             groups: Array.from(groups.values()),
             options: fields.map((f, i) => ({name: f.name, isChecked: false})),
+            legend: opts?.legend
+        };
+    }
+
+    #buildFormula(fields, opts, index, parentIndex) {
+        const groups = fields.map((f, i) => {
+            const dice = [];
+            for(let j = 0; j < f.terms.length; j++) {
+                const t = f.terms[j];
+                if (t instanceof foundry.dice.terms.OperatorTerm) continue;
+                const add = j === 0 || f.terms[j - 1]?.operator === '+';
+                if (t.faces) dice.push(...new Array(t.number).fill({
+                    tooltip: t.denomination,
+                    faces: t.faces,
+                    add
+                }));
+                else dice.push({
+                    tooltip: t.formula,
+                    value: t.formula,
+                    add
+                });
+            }
+            const type = f.options?.type;
+            const cfg = CONFIG.DND5E.damageTypes[type] ?? CONFIG.DND5E.healingTypes[type];
+            return {
+                id: DialogApp.#makeID(index, i, parentIndex),
+                formula: f.formula,
+                label: cfg?.label,
+                icon: cfg?.icon,
+                dice
+            };
+        });
+        return {
+            isFormula: true,
+            groups,
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -798,9 +835,13 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     _onRender(context, options) {
         super._onRender(context, options);
         uiUtils.enableWindowDrag(this, '.cat-dialog-header');
-        const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
         const header = this.element?.querySelector('.cat-dialog-header');
-        if (counter && header) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));
+        if (header) {
+            const moveToHeader = this.element?.querySelectorAll('.cat-dialog-body .cat-dialog-subheader');
+            const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
+            if (counter) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));
+            if (moveToHeader?.length) header.after(...moveToHeader);
+        }
         if (options.isFirstRender) {
             this.bringToFront();
             uiUtils.centerWindow(this, {width: 400, height: 300});
