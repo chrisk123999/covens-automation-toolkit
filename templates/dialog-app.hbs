@@ -9,6 +9,11 @@
         <i class="fas fa-xmark" aria-hidden="true"></i>
     </button>
 </header>
+{{#if subheaders.length}}
+<div class="cat-subheaders">
+    {{> (lookup @root 'inputTemplate') inputs=subheaders inputTemplate=inputTemplate}}
+</div>
+{{/if}}
 <div id="dialog-app" class="cat-dialog-body standard-form scrollable">
     {{#if content}}<div class="cat-dialog-content{{#unless inputs}} cat-dialog-content-only{{/unless}}">{{{localize content}}}</div>{{/if}}
     {{> (lookup @root 'inputTemplate') inputs=inputs inputTemplate=inputTemplate}}

@@ -1,7 +1,7 @@
 import {DamageBonus, D20Bonus, constants, Events} from '../lib/_module.mjs';
 import {dialogUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
 
-async function processBonuses(inputs, type, targetActor, workflow) {
+async function processBonuses(rolls, inputs, type, targetActor, workflow) {
     if (!inputs.length) return;
     let needsDialog = false;
     let bonuses = [];
@@ -16,7 +16,7 @@ async function processBonuses(inputs, type, targetActor, workflow) {
     if (!bonuses.length) return;
     const targets = workflow?.targets.map(t => t.document);
     if (needsDialog) {
-        const choices = await dialogUtils.selectScaledDocument(bonuses, {targets, workflow});
+        const choices = await dialogUtils.selectScaledDocument(bonuses, {rolls, targets, workflow});
         const selectedTargetsIfRequired = b => b.maxTargets ? b.targets.size : true;
         if (!choices) bonuses = bonuses.filter(b => b.active && !b.optional && selectedTargetsIfRequired(b)); 
         else bonuses = choices.filter(c => selectedTargetsIfRequired(c));
@@ -26,7 +26,7 @@ async function processBonuses(inputs, type, targetActor, workflow) {
 
 async function addAllToRoll(roll, inputs, targetActor, workflow) {
     inputs.forEach(i => i.maxTargets = 0);
-    const bonuses = await processBonuses(inputs, D20Bonus, targetActor, workflow);
+    const bonuses = await processBonuses([roll], inputs, D20Bonus, targetActor, workflow);
     if (!bonuses?.length) return;
     for (const bonus of bonuses) {
         if (bonus.use) await bonus.use(workflow, bonuses);
@@ -64,7 +64,10 @@ async function tool(actor, data) {
 
 async function damage(workflow) {
     const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    const bonuses = await processBonuses(inputs, DamageBonus, workflow.actor, workflow);
+    const rolls = dnd5e.dice.aggregateDamageRolls(workflow.damageRolls, {respectProperties: true}).map(r =>
+        new CONFIG.Dice.DamageRoll(dnd5e.dice.simplifyRollFormula(r.formula), r.data, r.options)
+    );
+    const bonuses = await processBonuses(rolls, inputs, DamageBonus, workflow.actor, workflow);
     if (!bonuses?.length) return;
     const targetedData = {}, fullRoll = [], targeted = [];
     const defaultDamageType = workflow.damageRolls[0]?.options.type ?? workflow.defaultDamageType;

@@ -203,8 +203,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     // Convert each declarative input tuple into template-ready entry.
     #formatInputs() {
-        const context = {content: this.content, inputs: [], buttons: []};
-        context.inputs = this.#buildInputs(this.inputs);
+        const context = {content: this.content, inputs: [], subheaders: [], buttons: []};
+        const {inputs, subheaders} = this.#buildInputs(this.inputs) ?? {};
+        if (inputs) context.inputs = inputs;
+        if (subheaders) context.subheaders = subheaders;
         switch (this.buttons) {
             case 'yesNo':
                 context.buttons.push(DialogApp.#makeButton('Yes', 'true'), DialogApp.#makeButton('No', 'false'));
@@ -225,13 +227,17 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     #buildInputs(inputs, parentIndex = '') {
         if (!inputs?.length) return;
-        const built = [];
+        const built = [], subheaders = [];
         for (let i = 0; i < inputs.length; i++) {
             const [inputType, inputFields, inputOptions] = inputs[i];
-            const entry = this.#buildInput(inputType, inputFields, inputOptions, i, parentIndex);
-            if (entry) built.push(entry);
+            const index = inputOptions?.header ? subheaders.length : built.length;
+            const entry = this.#buildInput(inputType, inputFields, inputOptions, index, parentIndex);
+            if (entry) {
+                if (entry.header) subheaders.push(entry);
+                else built.push(entry);
+            }
         }
-        return built;
+        return {inputs: built, subheaders};
     }
 
     #buildInput(type, ...args) {
@@ -276,7 +282,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 invertColor: f.options?.invertColor,
                 onchange: f.options?.onchange,
                 id: DialogApp.#makeID(index, i, parentIndex),
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs
             })),
             hasSubinputs: fields.some(f => f.options?.subinputs?.length),
             legend: opts?.legend
@@ -321,12 +327,12 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 if (t instanceof foundry.dice.terms.OperatorTerm) continue;
                 const add = j === 0 || f.terms[j - 1]?.operator === '+';
                 if (t.faces) dice.push(...new Array(t.number).fill({
-                    tooltip: t.denomination,
+                    tooltip: t.options.source || t.denomination,
                     faces: t.faces,
                     add
                 }));
                 else dice.push({
-                    tooltip: t.formula,
+                    tooltip: t.options.source || t.formula,
                     value: t.formula,
                     add
                 });
@@ -335,7 +341,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             const cfg = CONFIG.DND5E.damageTypes[type] ?? CONFIG.DND5E.healingTypes[type];
             return {
                 id: DialogApp.#makeID(index, i, parentIndex),
-                formula: f.formula,
+                formula: f._formula,
                 label: cfg?.label,
                 icon: cfg?.icon,
                 dice
@@ -345,7 +351,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isFormula: true,
             groups,
             header: opts?.header,
-            legend: opts?.legend
+            legend: opts?.legend,
+            parseNewFormula: rolls => this.#buildFormula(rolls, opts, index, parentIndex)
         };
     }
 
@@ -395,7 +402,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tooltip: h.tooltip,
                 id: h.id
             })),
-            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
             locked: f.options?.locked ?? false,
             onchange: f.options?.onchange,
             tags: f.options?.tags?.map(t => ({
@@ -430,7 +437,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     /** @this {DialogApp} */
     static async #request(_event, target) {
         const states = DialogApp.requestStates;
-        const input = this.#getContextByID(target.id)?.input;
+        const ctx = this.#getContextByID(target.id);
+        const input = ctx?.input;
         if (input?.state.key !== states.idle.key) return;
         input.state = states.pending;
         await this.render(true);
@@ -441,6 +449,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         input.state = result ? states.approved : states.declined;
         input.stateReason = reason;
         input.isChecked = result;
+        if (input.onchange) input.onchange(ctx);
         await this.render(true);
     }
 
@@ -463,7 +472,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tooltip: h.tooltip,
                 id: h.id
             })),
-            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
             onchange: f.options?.onchange,
             tags: f.options?.tags?.map(t => ({
                 tooltip: t.tooltip,
@@ -499,7 +508,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tooltip: f.options?.tooltip,
                 reference: f.options?.reference,
                 invertColor: f.options?.invertColor,
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
                 onchange: f.options?.onchange,
                 tags: f.options?.tags?.map(t => ({
                     tooltip: t.tooltip,
@@ -540,7 +549,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tooltip: f.options?.tooltip,
                 reference: f.options?.reference,
                 invertColor: f.options?.invertColor,
-                subinputs: this.#buildInputs(f.options?.subinputs, id),
+                subinputs: this.#buildInputs(f.options?.subinputs, id)?.inputs,
                 tags: f.options?.tags?.map(t => ({
                     tooltip: t.tooltip,
                     label: t.label,
@@ -622,7 +631,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     image: o.image ?? '',
                     tag: o.tag ?? ''
                 })),
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
                 id: DialogApp.#makeID(index, i, parentIndex),
                 onchange: f.options?.onchange
             })),
@@ -658,7 +667,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     selected: o.selected,
                     amount: o.amount
                 })),
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex)),
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
                 id: DialogApp.#makeID(index, i, parentIndex),
                 onchange: f.options?.onchange
             })),
@@ -835,13 +844,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     _onRender(context, options) {
         super._onRender(context, options);
         uiUtils.enableWindowDrag(this, '.cat-dialog-header');
+        const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
         const header = this.element?.querySelector('.cat-dialog-header');
-        if (header) {
-            const moveToHeader = this.element?.querySelectorAll('.cat-dialog-body .cat-dialog-subheader');
-            const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
-            if (counter) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));
-            if (moveToHeader?.length) header.after(...moveToHeader);
-        }
+        if (counter && header) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));
         if (options.isFirstRender) {
             this.bringToFront();
             uiUtils.centerWindow(this, {width: 400, height: 300});

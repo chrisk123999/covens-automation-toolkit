@@ -195,14 +195,16 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
  * 
  * @param {DamageBonus[]|D20Bonus[]} bonuses 
  * @param {object} [options]
+ * @param {foundry.dice.Roll[]} [options.rolls] The roll(s) to which selected bonuses will be added.
  * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets]
  * @param {MidiQOL.Workflow} [options.workflow]
  * @param {string} [options.title]
  * @param {string} [options.content]
  */
-async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content'} = {}) {
+async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content'} = {}) {
     if (!bonuses.length) return false;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
+    if (rolls?.length) rolls = rolls.map(r => r._evaluated ? r.clone() : r);
     const cls = bonuses[0].constructor;
     const validateAll = context => {
         cls.ValidateAll(bonuses, {workflow});
@@ -243,6 +245,41 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
         const selected = new Set(input.options.filter(o => o.selected).map(o => o.value));
         if (selected.size === bonus.targets.size) return;
         bonus.targets = targets.filter(t => selected.has(t.id));
+    };
+    const defaultType = workflow?.damageRolls[0]?.options.type ?? workflow?.defaultDamageType;
+    const combineRolls = () => {
+        let groupedRolls;
+        const active = [...rolls, ...bonuses.filter(b => b.active).map(b => {
+            const r = b.roll.clone();
+            r.options.type ||= rolls[0]?.options?.type ?? defaultType;
+            r.terms.forEach(t => t.options.source = b.name);
+            return r;
+        })];
+        if (bonuses[0] instanceof DamageBonus) {
+            groupedRolls = dnd5e.dice.aggregateDamageRolls(active, {respectProperties: true});
+            groupedRolls.forEach(r => {
+                if (r.terms[0].operator !== '+') return;
+                r.terms.shift();
+                r.resetFormula();
+            });
+        }
+        else {
+            const terms = [];
+            for (const r of active) {
+                if (terms.length) terms.push(new foundry.dice.terms.OperatorTerm({operator: '+'}));
+                terms.push(...r.terms);
+            }
+            groupedRolls = [D20Bonus.rollClass.fromTerms(terms)];
+        }
+        groupedRolls.forEach(r => r._formula = dnd5e.dice.simplifyRollFormula(r.formula));
+        return groupedRolls;
+    };
+    const updateFormula = ctx => {
+        const formula = ctx.subheaders.find(i => i.isFormula);
+        if (!formula) return;
+        const aggregate = combineRolls();
+        const newCtx = formula.parseNewFormula(aggregate);
+        formula.groups = newCtx.groups;
     };
     const hide = game.settings.get('cat', 'hideNames');
     const optional = [], contextual = [], thirdParty = [];
@@ -291,11 +328,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
             label: bonus.name,
             hints: bonus.validateHints,
             name: name + '.active',
-            onrequest: async () => {
-                const result = await bonus.request(workflow, bonuses);
-                if (result.result ?? result) bonus.active = true;
-                return result;
-            },
+            onrequest: async () => await bonus.request(workflow, bonuses),
             options: {
                 image: bonus.img,
                 tooltip: await uiUtils.enrichHTML(bonus.description, bonus.roll.data),
@@ -303,9 +336,10 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
                 locked: !bonus.optional,
                 isChecked: !bonus.optional,
                 tags,
-                onchange: ({input, group}) => {
+                onchange: ({fullContext, input, group}) => {
                     bonus.active = input.isChecked;
                     validateAll(group.options);
+                    if (rolls?.length) updateFormula(fullContext);
                     return true;
                 }
             }
@@ -313,6 +347,7 @@ async function selectScaledDocument(bonuses, {targets, workflow, title = 'CAT.Op
     }
     if (!optional.length && !thirdParty.length) return [];
     const inputs = [];
+    if (rolls?.length) inputs.push(['formula', combineRolls(), {header: true}]);
     if (thirdParty.length) inputs.push(['request', thirdParty, {displayAsRows: true, legend: contextual.length + optional.length > 0 ? 'CAT.OptionalBonus.ThirdParty' : ''}]);
     if (optional.length) inputs.push(['checkbox', optional, {displayAsRows: true, legend: contextual.length + thirdParty.length > 0 ? 'CAT.OptionalBonus.Optional' : ''}]);
     if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);

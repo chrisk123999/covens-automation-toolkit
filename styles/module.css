@@ -96,8 +96,10 @@
 }
 
 .cat-dialog-subheader {
-    padding: var(--cat-space-md);
+    margin: var(--cat-space-md);
     color: var(--cat-text-primary);
+    border-radius: var(--cat-radius-lg);
+    border-bottom: 1px solid var(--cat-text-accent);
 }
 
 .cat-dialog-header:active {
