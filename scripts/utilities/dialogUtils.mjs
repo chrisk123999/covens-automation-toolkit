@@ -256,7 +256,7 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
             return r;
         })];
         if (bonuses[0] instanceof DamageBonus) {
-            groupedRolls = dnd5e.dice.aggregateDamageRolls(active, {respectProperties: true});
+            groupedRolls = dnd5e.dice.aggregateDamageRolls(active);
             groupedRolls.forEach(r => {
                 if (r.terms[0].operator !== '+') return;
                 r.terms.shift();
