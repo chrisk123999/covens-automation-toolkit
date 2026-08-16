@@ -1,12 +1,13 @@
 # 0.0.8 Release:
+## Update Notes:
+- Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
 ## API Update Notes:
 - Added utils:
   - `activityUtils`: `hasDefaultIcon`, `hasDefaultName`, `getDefaultDamageRolls`
   - `automationUtils.getCompendiumDocumentByName`
   - `dialogUtils.selectScaledDocument`
 - New dialog inputs: formula display, slider, request.
-## Update Notes:
-- Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
+- The smite event pass has been removed in favor of using the optional bonuses dialog.
 ## API Bug Fixes:
 - `documentUtils.getSavedCastData` now correctly checks for ActiveEffect instead of Effect as the document name.
 
