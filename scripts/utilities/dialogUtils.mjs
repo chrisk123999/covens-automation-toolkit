@@ -204,10 +204,14 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
 async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content'} = {}) {
     if (!bonuses.length) return false;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
-    if (rolls?.length) rolls = rolls.map(r => r._evaluated ? r.clone() : r);
+    let rollTotal;
+    if (rolls?.length) {
+        rollTotal = rolls.reduce((t, r) => t += r.total, 0);
+        rolls = rolls.map(r => r._evaluated ? r.clone() : r);
+    }
     const cls = bonuses[0].constructor;
     const validateAll = context => {
-        cls.ValidateAll(bonuses, {workflow});
+        cls.ValidateAll(bonuses, {rollTotal, workflow});
         for (const bonusContext of context) {
             const index = bonusContext.name.match(/\d+/)[0];
             const bonus = bonuses[index];
@@ -217,7 +221,7 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
     };
     const tagLabel = key => CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;
     const sliderChange = ({bonus, thisContext, input, getInputById}) => {
-        bonus.updateScaling(input.value, workflow, bonuses);
+        bonus.updateScaling(input.value, workflow, bonuses, rollTotal);
         input.hints = bonus.scalingHints;
         const targets = thisContext.inputs.find(i => i.isComboboxMulti)?.options[0];
         if (targets) {
@@ -246,39 +250,12 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
         if (selected.size === bonus.targets.size) return;
         bonus.targets = targets.filter(t => selected.has(t.id));
     };
-    const defaultType = workflow?.damageRolls[0]?.options.type ?? workflow?.defaultDamageType;
-    const combineRolls = () => {
-        let groupedRolls;
-        const active = [...rolls, ...bonuses.filter(b => b.active).map(b => {
-            const r = b.roll.clone();
-            r.options.type ||= rolls[0]?.options?.type ?? defaultType;
-            r.terms.forEach(t => t.options.source = b.name);
-            return r;
-        })];
-        if (bonuses[0] instanceof DamageBonus) {
-            groupedRolls = dnd5e.dice.aggregateDamageRolls(active);
-            groupedRolls.forEach(r => {
-                if (r.terms[0].operator !== '+') return;
-                r.terms.shift();
-                r.resetFormula();
-            });
-        }
-        else {
-            const terms = [];
-            for (const r of active) {
-                if (terms.length) terms.push(new foundry.dice.terms.OperatorTerm({operator: '+'}));
-                terms.push(...r.terms);
-            }
-            groupedRolls = [D20Bonus.rollClass.fromTerms(terms)];
-        }
-        groupedRolls.forEach(r => r._formula = dnd5e.dice.simplifyRollFormula(r.formula));
-        return groupedRolls;
-    };
+    let currentAggregate = cls.CombineRolls(rolls, bonuses, {workflow});
     const updateFormula = ctx => {
         const formula = ctx.subheaders.find(i => i.isFormula);
         if (!formula) return;
-        const aggregate = combineRolls();
-        const newCtx = formula.parseNewFormula(aggregate);
+        currentAggregate = cls.CombineRolls(rolls, bonuses, {workflow});
+        const newCtx = formula.parseNewFormula(currentAggregate);
         formula.groups = newCtx.groups;
     };
     const hide = game.settings.get('cat', 'hideNames');
@@ -328,7 +305,7 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
             label: bonus.name,
             hints: bonus.validateHints,
             name: name + '.active',
-            onrequest: async () => await bonus.request(workflow, bonuses),
+            onrequest: async () => await bonus.request(workflow, bonuses, rollTotal),
             options: {
                 image: bonus.img,
                 tooltip: await uiUtils.enrichHTML(bonus.description, bonus.roll.data),
@@ -347,7 +324,7 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
     }
     if (!optional.length && !thirdParty.length) return [];
     const inputs = [];
-    if (rolls?.length) inputs.push(['formula', combineRolls(), {header: true}]);
+    if (rolls?.length) inputs.push(['formula', currentAggregate, {header: true}]);
     if (thirdParty.length) inputs.push(['request', thirdParty, {displayAsRows: true, legend: contextual.length + optional.length > 0 ? 'CAT.OptionalBonus.ThirdParty' : ''}]);
     if (optional.length) inputs.push(['checkbox', optional, {displayAsRows: true, legend: contextual.length + thirdParty.length > 0 ? 'CAT.OptionalBonus.Optional' : ''}]);
     if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);

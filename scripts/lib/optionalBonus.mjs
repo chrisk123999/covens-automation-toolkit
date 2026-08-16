@@ -23,6 +23,48 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  * @property {Record<string, BonusCostEntry>} [hitDice]
  */
 
+/**
+ * @typedef {object} RollBonusHandlerOptions
+ * @property {RollBonus} bonus The current bonus.
+ * @property {number} rollTotal The current total of the target roll(s) before adding bonuses, if available.
+ * @property {RollBonus[]} otherBonuses Other candidate bonuses for the same target roll.
+ * @property {MidiQOL.Worklow} [workflow] The workflow the target roll is part of.
+ */
+/**
+ * @callback CostScalingHandler
+ * @param {RollBonusHandlerOptions} params
+ * @returns {BonusCost}
+ */
+
+/**
+ * @callback HintOverride
+ * @param {RollBonusHandlerOptions} params
+ */
+
+/**
+ * @callback RequestHandler
+ * @param {RollBonusHandlerOptions} params
+ * @returns {Promise<boolean|{result: boolean, reason: string}>} True/false represent approve/decline respectively.
+ */
+
+/**
+ * @callback BonusScalingHandler
+ * @param {RollBonusHandlerOptions} params
+ * @returns {foundry.dice.Roll} A roll containing the scaled formula.
+ */
+
+/**
+ * @callback OnUse
+ * @param {RollBonusHandlerOptions} params
+ * @returns {Promise}
+ */
+
+/**
+ * @callback ValidationHandler
+ * @param {RollBonusHandlerOptions} params
+ * @returns {boolean}
+ */
+
 class RollBonus {
     #roll;          // Roll     | The unevaluated roll.
     #rollClass;     // Roll     | The type of the roll.
@@ -45,28 +87,23 @@ class RollBonus {
     #optional;      // Boolean  | Whether this bonus is optional or not. If there are only static bonuses and no optional ones, the dialog shouldn't be shown.
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus is active or not.
-    constructor(document, {getHints, getCosts, validate, scaling, use, scalingHints, validateHints, maxScaling, roll, optional = true, action, actor, targetActor, thirdPartyRequest} = {}) {
+    #initialized;   // Boolean  | Whether handlers have been called to initialize costs, hints, and scaling.
+    constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor} = {}) {
         this.#document = document;
         this.#getActivity(document);
         this.#actor = this.#getActor(actor);
         this.#targetActor = targetActor ?? this.#actor;
-        this.#thirdPartyRequest = thirdPartyRequest ?? this.constructor.defaultRequest;
         this.#action = this.#getAction(action);
         this.maxScaling = this.#getMaxScaling(maxScaling);
-        this.#validate = validate ?? (() => true);
-        this.#use = use ?? this.constructor.defaultUse;
-        this.#getHints = getHints ?? this.constructor.defaultGetHints;
-        this.#costScaling = getCosts ?? this.constructor.defaultCosts;
-        this.#bonusScaling = scaling ?? this.constructor.defaultBonusScaling;
+        this.#getHints = this.constructor.defaultScalingHints;
         this.#optional = optional;
         this.#scalingValue = 0;
-        this.#roll = roll ?? new this.constructor.rollClass('0', (this.#activity ?? this.#document).getRollData?.());
+        this.#cost = {};
+        this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.());
         this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
 
         this.active = !this.#optional;
-        this.scalingHints = scalingHints;
-        this.validateHints = validateHints;
     }
 
     _makeHints(list) {
@@ -242,15 +279,89 @@ class RollBonus {
     set active(value) {
         this.#active = Boolean(value);
     }
-
-    _otherScaling({bonus, workflow, otherBonuses}) {}
-    validate(workflow, otherBonuses) {
-        if (!this.#validate) return true;
-        return this.#validate({bonus: this, workflow, otherBonuses});
+    /** @type {boolean} True if {@link initialize} has been called. */
+    get initialized() {
+        return this.#initialized;
     }
-    updateScaling(value, workflow, otherBonuses) {
+
+    /** @param {CostScalingHandler} cost @returns {this} */
+    withCostHandler(cost) {
+        if (typeof cost !== 'function') return this;
+        this.#costScaling = cost;
+        return this;
+    }
+    /** Collects action economy and consumption targets from {@link RollBonus.activity|this.activity}.
+     * @param {dnd5e.dataModels.activity.BaseActivityData} [activity] Optionally change the activity for this bonus.
+     * @param {foundry.documents.Actor} [actor] Optionally change the actor who provides resources for this bonus.
+     * @returns {this} */
+    withDefaultCosts({activity, actor} = {}) {
+        if (activity) this.#activity = activity;
+        if (actor) this.#actor = actor;
+        this.#costScaling = this.constructor.defaultCosts;
+        return this;
+    }
+    /** @param {HintOverride} hints @returns {this} */
+    withHintOverride(hints) {
+        if (typeof hints !== 'function') return this;
+        this.#getHints = hints;
+        return this;
+    }
+    /** @param {RequestHandler} request @returns {this} */
+    withRequestHandler(request) {
+        if (typeof request !== 'function') return this;
+        this.#thirdPartyRequest = request;
+        return this;
+    }
+    /** Sends a basic confirmation prompt to the source of the bonus that displays the current roll total.
+     * @param {foundry.documents.Actor} [actor] Optionally change the actor who provides resources for this bonus.
+     * @param {foundry.documents.Actor} [targetActor] Optionally change the actor who benefits from this bonus.
+     * @returns {this} */
+    withDefaultRequest({actor, targetActor} = {}) {
+        if (actor) this.#actor = actor;
+        if (targetActor) this.#targetActor = targetActor;
+        this.#thirdPartyRequest = this.constructor.defaultRequest;
+        return this;
+    }
+    /** @param {BonusScalingHandler} scaling @returns {this} */
+    withScalingHandler(scaling) {
+        if (typeof scaling !== 'function') return this;
+        this.#bonusScaling = scaling;
+        return this;
+    }
+    /** Uses the configured damage scaling from {@link activity|this.activity}. Otherwise adds one additional die per level.
+     * @returns {this} */
+    withDefaultScaling() {
+        this.#bonusScaling = this.constructor.defaultBonusScaling;
+        return this;
+    }
+    /** @param {OnUse} use @returns {this} */
+    withOnUse(use) {
+        if (typeof use !== 'function') return this;
+        this.#use = use;
+        return this;
+    }
+    /** Rolls {@link RollBonus.document|this.document} if it is an Item or Activity.
+     * @returns {this} */
+    withDefaultOnUse() {
+        this.#use = this.constructor.defaultUse;
+        return this;
+    }
+    /** @param {ValidationHandler} validate @returns {this} */
+    withValidation(validate) {
+        if (typeof validate !== 'function') return this;
+        this.#validate = validate;
+        return this;
+    }
+
+    _otherScaling({rollTotal, bonus, workflow, otherBonuses}) {}
+    validate(workflow, otherBonuses, rollTotal) {
+        if (!this.#validate) return true;
+        return this.#validate({rollTotal, bonus: this, workflow, otherBonuses});
+    }
+    updateScaling(value, workflow, otherBonuses, rollTotal) {
+        this.#initialized = true;
         this.scalingValue = value;
-        const params = {bonus: this, workflow, otherBonuses};
+        const params = {bonus: this, workflow, otherBonuses, rollTotal};
         const cost = this.#costScaling?.(params);
         const roll = this.#bonusScaling?.(params);
         this._otherScaling(params);
@@ -258,18 +369,21 @@ class RollBonus {
         if (roll) this.roll = roll;
         this.#getHints(params);
     }
+    /** Runs all handlers to initialize costs, hints, and scaling. */
     initialize() {
         this.updateScaling(0);
+        return this;
     }
     async use(workflow, otherBonuses) {
         if (!this.#use) return;
         return await this.#use({workflow, bonus: this, otherBonuses});
     }
-    async request(workflow, otherBonuses) {
+    async request(workflow, otherBonuses, rollTotal) {
         if (!this.#thirdPartyRequest) return false;
-        return await this.#thirdPartyRequest({bonus: this, workflow, otherBonuses});
+        return await this.#thirdPartyRequest({rollTotal, bonus: this, workflow, otherBonuses});
     }
 
+    static _combineRolls(rolls) { throw new Error('A subclass of RollBonus must implement handling for a specific roll type!');}
     static get rollClass() { throw new Error('A subclass of RollBonus must implement handling for a specific roll type!'); }
     static get #warningIcon() { return 'fa-solid fa-triangle-exclamation cat-warning-icon'; }
     static get #maxSpell() { return Object.keys(CONFIG.DND5E.spellLevels).length - 1; }
@@ -371,7 +485,8 @@ class RollBonus {
         return {label, tooltip, icon: warn ? RollBonus.#warningIcon : '', id: target};
     }
 
-    static defaultGetHints({bonus, workflow, otherBonuses}) {
+    /** @type {HintOverride} */
+    static defaultScalingHints({rollTotal, bonus, workflow, otherBonuses}) {
         const hints = [];
         for (const type of RollBonus.#resourceTypes) {
             for (const [key, data] of Object.entries(bonus.cost[type] ?? {})) {
@@ -381,7 +496,8 @@ class RollBonus {
         }
         bonus.scalingHints = hints;
     }
-    static defaultBonusScaling({bonus, workflow, otherBonuses}) {
+    /** @type {BonusScalingHandler} */
+    static defaultBonusScaling({rollTotal, bonus, workflow, otherBonuses}) {
         const scaling = bonus.scalingValue;
         const roll = new bonus.rollClass(bonus.baseFormula, bonus.roll.data, bonus.roll.options);
         const dieTerm = roll.terms.find(i => i.faces);
@@ -389,11 +505,8 @@ class RollBonus {
         roll.resetFormula();
         return roll;
     }
-    /** 
-     * @param {RollBonus} bonusDamage
-     * @returns {BonusCost} 
-     * */
-    static defaultCosts({bonus, workflow, otherBonuses}) {
+    /** @type {CostScalingHandler} */
+    static defaultCosts({rollTotal, bonus, workflow, otherBonuses}) {
         const costs = {};
         if (bonus.actionRequired) {
             const action = RollBonus.GetAction({action: bonus.actionRequired, actor: bonus.actor});
@@ -420,29 +533,32 @@ class RollBonus {
         }
         return costs;
     }
+    /** @type {OnUse} */
     static async defaultUse({bonus, workflow, otherBonuses}) {
         if (bonus.document.documentName === 'Item') {
-            await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets));
+            await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets ?? []));
         } else {
-            await workflowUtils.completeActivityUse(bonus.document, Array.from(bonus.targets));
+            await workflowUtils.completeActivityUse(bonus.document, Array.from(bonus.targets ?? []));
         }
     }
-    /**
-     * @param {object} options
-     * @param {RollBonus} options.bonus
-     * @param {MidiQOL.Workflow} [options.workflow]
-     * @param {RollBonus[]} [options.otherBonuses] 
-     * @returns {boolean|{request: boolean, reason: string}}
-     */
-    static async defaultRequest({bonus, workflow, otherBonuses}) {
+    /** @type {RequestHandler} */
+    static async defaultRequest({rollTotal, bonus, workflow, otherBonuses}) {
         if (!bonus.targetActor) return false;
         if (!RollBonus.CheckCost(bonus)) return {result: false, reason: _loc('CAT.OptionalBonus.InvalidResources')};
         const name = bonus.targetActor?.name ?? _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally');
-        return await dialogUtils.confirm(
-            `${_loc('CAT.OptionalBonus.Title')} - ${bonus.name}`,
-            _loc('CAT.Dialog.UseForRollTotal', {document: bonus.name, name, rollTotal: bonus.roll.formula}),
-            {userId: queryUtils.firstOwner(bonus.actor, true)}
-        );
+        const document = {name: `${bonus.name} (+${bonus.roll.formula})`};
+        if (Number.isNumeric(rollTotal)) {
+            let diceTerms = [];
+            otherBonuses.forEach(b => {
+                if (!b.active) return;
+                if (b.roll.isDeterministic) rollTotal += b.roll.clone().evaluateSync().total;
+                else diceTerms.push(b.roll.formula);
+            });
+            if (diceTerms.length) rollTotal = `${rollTotal} + ${diceTerms.join(' + ')}`;
+        }
+        const user = queryUtils.firstOwner(bonus.actor);
+        const result = await dialogUtils.confirmUseForRollTotal(document, name, rollTotal, {userId: user.id});
+        return result ? result : {result, reason: `${user.name} ${_loc('CAT.Dialog.Request.Declined')}`};
     }
     /**
      * Check resource requirements for a bonus.
@@ -450,29 +566,43 @@ class RollBonus {
      * @param {BonusCost} [costs] Optionally provide other calculated costs, usually cumulative.
      * @returns {boolean}
      */
-    static CheckCost(bonus, costs = bonus.cost) {
+    static CheckCost(bonus, costs) {
         for (const type of RollBonus.#resourceTypes) {
             for (const [key, data] of Object.entries(bonus.cost[type] ?? {})) {
-                const currentCost = costs[type]?.[key]?.cost ?? 0;
+                const currentCost = costs?.[type]?.[key]?.cost ?? 0;
                 if (data.cost + currentCost > data.available)
                     return false;
             }
         }
         return true;
     }
+    static CombineRolls(rolls, bonuses, {workflow}) {
+        const defaultType = workflow?.damageRolls[0]?.options.type ?? workflow?.defaultDamageType;
+        const active = [...rolls, ...bonuses.filter(b => b.active).map(b => {
+            const r = b.roll.clone();
+            r.options.type ||= rolls[0]?.options?.type ?? defaultType;
+            r.terms.forEach(t => t.options.source = b.name);
+            return r;
+        })];
+        const groupedRolls = this._combineRolls(active);
+        groupedRolls.forEach(r => r._formula = dnd5e.dice.simplifyRollFormula(r.formula));
+        return groupedRolls;
+    }
+
     /**
      * Filter valid and applicable {@link bonuses}.
      * @param {RollBonus[]|Set<RollBonus>} bonuses
      * @param {object} [options]
+     * @param {number} [options.rollTotal] The current total of the target roll(s) before adding bonuses, if available.
      * @param {MidiQOL.Workflow} [options.workflow]
      * @returns {RollBonus[]}
      */
-    static ValidateAll(bonuses, {workflow} = {}) {
+    static ValidateAll(bonuses, {rollTotal, workflow} = {}) {
         const cumulativeCosts = {};
         return bonuses.filter(b => {
             b.validateHints = [];
             if (!b.active) return false;
-            if (!b.validate(workflow, bonuses)) {
+            if (!b.validate(rollTotal, workflow, bonuses)) {
                 b.active = false;
                 return false;
             }
@@ -572,9 +702,22 @@ export class D20Bonus extends RollBonus {
     static get rollClass() { return CONFIG.Dice.BasicRoll; }
     constructor(document, options) {
         super(document, options);
-        this.initialize();
+    }
+    static _combineRolls(rolls) {
+        const terms = [];
+        for (const r of rolls) {
+            if (terms.length) terms.push(new foundry.dice.terms.OperatorTerm({operator: '+'}));
+            terms.push(...r.terms);
+        }
+        return [this.rollClass.fromTerms(terms)];
     }
 }
+
+/**
+ * @callback TargetScalingHandler
+ * @param {RollBonusHandlerOptions} params
+ * @returns {number}
+ */
 
 /**
  * @extends RollBonus
@@ -586,16 +729,13 @@ export class DamageBonus extends RollBonus {
     #baseMaxTargets;  // Number        | The original max targets before scaling.
     #targetScaling;   // Function      | Callback adjusts max targets when the bonus is scaled.
     #maxTargetsHints; // DialogHints[] | Array of {label, icon} for UI target hints. 
-    constructor(document, {maxTargets, scaleMaxTargets, maxTargetsHints, ...baseOptions} = {}) {
+    constructor(document, {type, maxTargets, ...baseOptions} = {}) {
         super(document, baseOptions);
-
-        this.#targetScaling = scaleMaxTargets ?? this.constructor.defaultTargetScaling;
+        
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
         this.#targets = new Set();
-
-        this.maxTargetsHints = maxTargetsHints;
-        this.initialize();
+        if (type) this.roll.options.type = type;
     }
 
     /** @type {Set<foundry.documents.TokenDocument>} Targets of the damage. Size truncated to {@link maxTargets}, if present. */
@@ -625,28 +765,39 @@ export class DamageBonus extends RollBonus {
         this.#maxTargetsHints = this._makeHints(value);
     }
 
-    _otherScaling({bonus, workflow, otherBonuses}) {
-        const maxTargets = this.#targetScaling({bonus, workflow, otherBonuses});
+    /** @param {TargetScalingHandler} targetScaling @returns {this} */
+    withTargetScaling(targetScaling) {
+        if (typeof targetScaling !== 'function') return this;
+        this.#targetScaling = targetScaling;
+        return this;
+    }
+    _otherScaling({rollTotal, bonus, workflow, otherBonuses}) {
+        const maxTargets = this.#targetScaling?.({rollTotal, bonus, workflow, otherBonuses});
         if (Number.isNumeric(maxTargets)) this.maxTargets = maxTargets;
     }
     
     static get rollClass() { return CONFIG.Dice.DamageRoll; }
-    static defaultBonusScaling({bonus, workflow, otherBonuses}) {
+    static defaultBonusScaling({rollTotal, bonus, workflow, otherBonuses}) {
         if (!bonus.activity.canScaleDamage) return bonus.roll;
-        if (!bonus.activity?.damage?.parts.length) return RollBonus.defaultBonusScaling({bonus, workflow, otherBonuses});
+        if (!bonus.activity?.damage?.parts.length) return RollBonus.defaultBonusScaling({rollTotal, bonus, workflow, otherBonuses});
         // incompatible with multiple damage types - requires a restructure for allowing several rolls per bonus
-        const rolls = activityUtils.getDefaultDamageRolls(bonus.activity, {scaling: bonus.scalingValue});
-        return rolls[0];
+        const scaled = activityUtils.getDefaultDamageRolls(bonus.activity, {scaling: bonus.scalingValue});
+        return scaled[0];
     }
-    static defaultTargetScaling({bonus, workflow, otherBonuses}) { 
-        return;
+    static _combineRolls(rolls) {
+        return dnd5e.dice.aggregateDamageRolls(rolls).map(r => {
+            if (r.terms[0].operator !== '+') return r;
+            r.terms.shift();
+            r.resetFormula();
+        });
     }
     /**
      * Filter valid and applicable {@link bonuses}.
      * @param {DamageBonus[]|Set<DamageBonus>} bonuses
      * @param {object} [options]
+     * @param {number} [options.rollTotal] The current total of the target roll(s) before adding bonuses, if available.
      * @param {MidiQOL.Workflow} [options.workflow]
      * @returns {DamageBonus[]}
      */
-    static ValidateAll(bonuses, {workflow} = {}) { return RollBonus.ValidateAll(bonuses, {workflow}); }
+    static ValidateAll(bonuses, {rollTotal, workflow} = {}) { return RollBonus.ValidateAll(bonuses, {rollTotal, workflow}); }
 }

@@ -7,6 +7,7 @@ async function processBonuses(rolls, inputs, type, targetActor, workflow) {
     let bonuses = [];
     for (const bonus of inputs) {
         if (!(bonus instanceof type)) continue;
+        if (!bonus.initialized) bonus.initialize();
         bonus.targetActor = targetActor;
         if (bonus.maxTargets > 0 && workflow?.targets.size === 1) bonus.maxTargets = 0;
         if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0 || bonus.isThirdParty) 

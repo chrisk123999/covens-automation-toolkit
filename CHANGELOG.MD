@@ -4,7 +4,7 @@
   - `activityUtils`: `hasDefaultIcon`, `hasDefaultName`, `getDefaultDamageRolls`
   - `automationUtils.getCompendiumDocumentByName`
   - `dialogUtils.selectScaledDocument`
-- New dialog inputs: slider and request.
+- New dialog inputs: formula display, slider, request.
 ## Update Notes:
 - Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
 
