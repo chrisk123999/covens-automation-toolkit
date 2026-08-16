@@ -74,6 +74,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static get SUBINPUT_SEPARATOR() { return '-'; }
     static get GROUP_ID() { return 'g'; }
+    static get HEADER_ID() { return 'h'; }
     static get INPUT_ID() { return 'i'; }
 
     /** @this {DialogApp} */
@@ -196,9 +197,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static #ID_REGEX = new RegExp(`${DialogApp.GROUP_ID}(\\d+)${DialogApp.INPUT_ID}(\\d+)`);
 
-    static #makeID(groupIndex, inputIndex, parentIndex = '') {
+    static #makeID(groupIndex, inputIndex, {parentIndex = '', header = false} = {}) {
         if (parentIndex) parentIndex += DialogApp.SUBINPUT_SEPARATOR;
-        return parentIndex + DialogApp.GROUP_ID + groupIndex + DialogApp.INPUT_ID + inputIndex;
+        const group = header ? DialogApp.HEADER_ID : DialogApp.GROUP_ID;
+        return parentIndex + group + groupIndex + DialogApp.INPUT_ID + inputIndex;
     }
 
     // Convert each declarative input tuple into template-ready entry.
@@ -281,10 +283,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 reference: f.options?.reference,
                 invertColor: f.options?.invertColor,
                 onchange: f.options?.onchange,
-                id: DialogApp.#makeID(index, i, parentIndex),
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs
+                id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}),
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs
             })),
             hasSubinputs: fields.some(f => f.options?.subinputs?.length),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -340,7 +343,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             const type = f.options?.type;
             const cfg = CONFIG.DND5E.damageTypes[type] ?? CONFIG.DND5E.healingTypes[type];
             return {
-                id: DialogApp.#makeID(index, i, parentIndex),
+                id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}),
                 formula: f._formula,
                 label: cfg?.label,
                 icon: cfg?.icon,
@@ -367,8 +370,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 invertColor: f.options?.invertColor,
                 tooltip: f.options?.tooltip,
                 reference: f.options?.reference,
-                id: DialogApp.#makeID(index, i, parentIndex)
+                id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
             })),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -384,7 +388,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     name: f.name,
                     value: f.options?.isChecked ?? false,
                     onchange: f.options?.onchange,
-                    id: DialogApp.#makeID(index, 0, parentIndex)
+                    id: DialogApp.#makeID(index, 0, {parentIndex})
                 }]
             };
         }
@@ -402,7 +406,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tooltip: h.tooltip,
                 id: h.id
             })),
-            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
+            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs,
             locked: f.options?.locked ?? false,
             onchange: f.options?.onchange,
             tags: f.options?.tags?.map(t => ({
@@ -412,7 +416,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 icon: t.icon,
                 id: t.id
             })),
-            id: DialogApp.#makeID(index, i, parentIndex)
+            id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
         }));
         return {
             isCheckbox: true,
@@ -421,6 +425,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             showCounter: opts?.totalMax != null,
             currentNum: options.filter(i => i.isChecked).length,
             hasSubinputs: options.some(i => i.subinputs?.length),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -472,7 +477,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tooltip: h.tooltip,
                 id: h.id
             })),
-            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
+            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs,
             onchange: f.options?.onchange,
             tags: f.options?.tags?.map(t => ({
                 tooltip: t.tooltip,
@@ -481,12 +486,13 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 icon: t.icon,
                 id: t.id
             })),
-            id: DialogApp.#makeID(index, i, parentIndex)
+            id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
         }));
         return {
             isRequest: true,
             options,
             hasSubinputs: options.some(i => i.subinputs?.length),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -508,7 +514,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 tooltip: f.options?.tooltip,
                 reference: f.options?.reference,
                 invertColor: f.options?.invertColor,
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs,
                 onchange: f.options?.onchange,
                 tags: f.options?.tags?.map(t => ({
                     tooltip: t.tooltip,
@@ -517,10 +523,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     icon: t.icon,
                     id: t.id
                 })),
-                id: DialogApp.#makeID(index, i, parentIndex)
+                id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
             })),
             hasSubinputs: fields.some(f => f.options?.subinputs?.length),
             radioName: opts?.radioName ?? 'radio',
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -529,7 +536,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         const options = fields.map((f, i) => {
             const min = f.options?.minAmount ?? 0;
             const max = f.options?.maxAmount ?? 10;
-            const id = DialogApp.#makeID(index, i, parentIndex);
+            const id = DialogApp.#makeID(index, i, {parentIndex, header: opts?.header});
             return {
                 id,
                 label: f.label,
@@ -565,6 +572,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             isSelectAmount: true,
             totalMax: opts?.totalMax,
             options,
+            header: opts?.header,
             legend: opts?.legend
         });
     }
@@ -581,10 +589,11 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     field: new SetField(new StringField({choices}), {label: f.label, hint: f.hint}),
                     name: f.name,
                     value: f.options?.value ?? [],
-                    id: DialogApp.#makeID(index, i, parentIndex),
+                    id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}),
                     onchange: f.options?.onchange
                 };
             }),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -605,6 +614,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     onchange: f.options?.onchange
                 };
             }),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -631,11 +641,12 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     image: o.image ?? '',
                     tag: o.tag ?? ''
                 })),
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
-                id: DialogApp.#makeID(index, i, parentIndex),
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs,
+                id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}),
                 onchange: f.options?.onchange
             })),
             hasSubinputs: fields.some(f => f.options?.subinputs?.length),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -667,11 +678,12 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     selected: o.selected,
                     amount: o.amount
                 })),
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, parentIndex))?.inputs,
-                id: DialogApp.#makeID(index, i, parentIndex),
+                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs,
+                id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}),
                 onchange: f.options?.onchange
             })),
             hasSubinputs: fields.some(f => f.options?.subinputs?.length),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -685,6 +697,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 value: f.options?.currentValue ?? '',
                 onchange: f.options?.onchange
             })),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -698,6 +711,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 value: f.options?.currentValue ?? 0,
                 onchange: f.options?.onchange
             })),
+            header: opts?.header,
             legend: opts?.legend
         };
     }
@@ -717,6 +731,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     onchange: f.options?.onchange
                 };
             }),
+            header: opts?.header,
             legend: opts?.legend
         };
     }

@@ -90,11 +90,15 @@ export default class CatMultiCombobox extends HTMLElement {
         this.#input.addEventListener('mousedown', this.#onInputMousedown.bind(this));
         this.#input.addEventListener('keydown', this.#onKeydown.bind(this));
         this.#list.addEventListener('mousedown', this.#onListMousedown.bind(this));
+        this.#list.addEventListener('mouseover', e => this.#tokenHover(e, 'li', true));
+        this.#list.addEventListener('mouseout', e => this.#tokenHover(e, 'li', false));
         this.#chipsWrap.addEventListener('mousedown', (e) => {
             if (e.target.closest('button')) e.preventDefault();
         });
         this.#chipsWrap.addEventListener('click', this.#onChipsClick.bind(this));
         this.#chipsWrap.addEventListener('input', this.#onChipsInput.bind(this));
+        this.#chipsWrap.addEventListener('mouseover', e => this.#tokenHover(e, '.cat-multi-combobox-chip', true));
+        this.#chipsWrap.addEventListener('mouseout', e => this.#tokenHover(e, '.cat-multi-combobox-chip', false));
         document.addEventListener('mousedown', this.#onDocumentMousedown);
     }
 
@@ -321,6 +325,21 @@ export default class CatMultiCombobox extends HTMLElement {
             this.#step(down.dataset.value, -1);
             return;
         }
+        const chip = event.target.closest('.cat-multi-combobox-chip');
+        if (chip) {
+            const token = canvas.tokens.get(chip.dataset.value);
+            if (token) canvas.ping(token.center);
+            return;
+        }
+    }
+
+    #tokenHover(event, selector, active) {
+        const target = event.target.closest(selector);
+        if (!target) return;
+        const token = canvas.tokens.get(target.dataset.value);
+        if (!token) return;
+        token.hover = active;
+        token.refresh();
     }
 
     #step(value, delta) {

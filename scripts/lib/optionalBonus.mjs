@@ -789,6 +789,7 @@ export class DamageBonus extends RollBonus {
             if (r.terms[0].operator !== '+') return r;
             r.terms.shift();
             r.resetFormula();
+            return r;
         });
     }
     /**
