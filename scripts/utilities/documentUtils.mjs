@@ -24,7 +24,7 @@ function getSavedCastData(document) {
         case 'Item': castData = itemUtils.getSavedCastData(document); break;
         case 'Token': castData = tokenUtils.getSavedCastData(document); break;
         case 'Actor': castData = actorUtils.getSavedCastData(document); break;
-        case 'Effect': castData = effectUtils.getCastData(document); break;
+        case 'ActiveEffect': castData = effectUtils.getCastData(document); break;
         case 'Region': castData = regionUtils.getCastData(document); break;
     }
     return castData ?? {
