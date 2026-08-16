@@ -1,20 +1,17 @@
-# 0.0.8 Release:
+# 0.0.7 Release:
 ## Update Notes:
+## API Update Notes:
 - Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
 - The multi-combobox now supports token ping and highlighting.
-## API Update Notes:
 - Added utils:
   - `activityUtils`: `hasDefaultIcon`, `hasDefaultName`, `getDefaultDamageRolls`
   - `automationUtils.getCompendiumDocumentByName`
   - `dialogUtils.selectScaledDocument`
 - New dialog inputs: formula display, slider, request.
 - The smite event pass has been removed in favor of using the optional bonuses dialog.
+- Added utils: `effectUtils.resetDuration`, `rollUtils.replaceRollShowDiscarded`, `rollUtils.setTotalWithBonus`, `workflowUtils.updateTargets`, and several confirm dialog helpers for different localized prompts.
 ## API Bug Fixes:
 - `documentUtils.getSavedCastData` now correctly checks for ActiveEffect instead of Effect as the document name.
-
-# 0.0.7 Release:
-## API Update Notes:
-- Added utils: `effectUtils.resetDuration`, `rollUtils.replaceRollShowDiscarded`, `rollUtils.setTotalWithBonus`, `workflowUtils.updateTargets`, and several confirm dialog helpers for different localized prompts.
 ## Bug Fixes:
 - Alternate Attribute for class spellcasting bonuses now displays attacks on the character sheet correctly.
 
