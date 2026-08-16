@@ -1,5 +1,4 @@
 # 0.0.7 Release:
-## Update Notes:
 ## API Update Notes:
 - Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
 - The multi-combobox now supports token ping and highlighting.
