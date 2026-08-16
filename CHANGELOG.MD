@@ -7,6 +7,8 @@
 - New dialog inputs: formula display, slider, request.
 ## Update Notes:
 - Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
+## API Bug Fixes:
+- `documentUtils.getSavedCastData` now correctly checks for ActiveEffect instead of Effect as the document name.
 
 # 0.0.7 Release:
 ## API Update Notes:
