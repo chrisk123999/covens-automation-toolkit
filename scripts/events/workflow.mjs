@@ -1,5 +1,5 @@
 import {constants, Events} from '../lib/_module.mjs';
-import {optionalBonus, regionVisibility, smite} from '../mechanics/_module.mjs';
+import {optionalBonus, regionVisibility} from '../mechanics/_module.mjs';
 import {diceSoNice} from '../integration/_modules.mjs';
 import {effects, manualRolls} from '../handlers/_module.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
@@ -36,7 +36,6 @@ async function savesComplete(workflow) {
 async function damageRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.damageRoll, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.damageRollBonuses, workflow).run();
-    await smite(workflow);
     await optionalBonus.damage(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.damageRollComplete, workflow).run();
     await manualRolls.manualDamageRolls(workflow);
