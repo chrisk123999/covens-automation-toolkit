@@ -1,6 +1,7 @@
 # 0.0.8 Release:
 ## Update Notes:
 - Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
+- The multi-combobox now supports token ping and highlighting.
 ## API Update Notes:
 - Added utils:
   - `activityUtils`: `hasDefaultIcon`, `hasDefaultName`, `getDefaultDamageRolls`
