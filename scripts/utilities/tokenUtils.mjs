@@ -202,6 +202,5 @@ export default {
     findNearby,
     teleportToken,
     displaceToken,
-    slideToken,
-    moveToken
+    slideToken
 };

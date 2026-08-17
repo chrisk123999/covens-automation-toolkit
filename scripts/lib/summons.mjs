@@ -1,5 +1,5 @@
 import {summonEvents} from '../events/_module.mjs';
-import {actorUtils, folderUtils, genericUtils, documentUtils, crosshairUtils, animationUtils, itemUtils, dialogUtils, queryUtils} from '../utilities/_module.mjs';
+import {actorUtils, folderUtils, genericUtils, documentUtils, crosshairUtils, animationUtils, itemUtils, dialogUtils, queryUtils, tokenUtils} from '../utilities/_module.mjs';
 import {constants} from './_module.mjs';
 export class SummonsManager {
     #summons = new Map();
@@ -289,6 +289,12 @@ export class SummonsManager {
         if (!result || result.cancelled) return;
         return await this.spawnSummon(summon, token.scene, result, {elevation: token.elevation});
     }
+    async moveSummon(summon, range, {token, action} = {}) {
+        if (!summon.token) return await summon.placeSummon(summon, range, {token});
+        token ??= summon.token;
+        if (!token) return;
+        await tokenUtils.displaceToken(summon.token, {sourceToken: token, range, action});
+    }
     async spawnSummon(summon, scene, location, {elevation} = {}) {
         const preToken = await summon.actor.getTokenDocument({
             x: location.x,
@@ -387,5 +393,8 @@ export class Summon {
     async extendDuration(value) {
         this.duration += value;
         await documentUtils.setFlag(this.actor, 'cat', 'summon.duration', this.duration);
+    }
+    async move(range, {token, action} = {}) {
+        return await constants.summons.moveSummon(this, range, {token, action});
     }
 }
