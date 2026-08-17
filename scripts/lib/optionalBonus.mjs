@@ -102,7 +102,6 @@ class RollBonus {
         this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.());
         this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
-
         this.active = !this.#optional;
     }
 
@@ -602,7 +601,7 @@ class RollBonus {
         return bonuses.filter(b => {
             b.validateHints = [];
             if (!b.active) return false;
-            if (!b.validate(rollTotal, workflow, bonuses)) {
+            if (!b.validate(workflow, bonuses, rollTotal)) {
                 b.active = false;
                 return false;
             }
