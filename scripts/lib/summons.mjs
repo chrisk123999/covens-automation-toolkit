@@ -292,7 +292,7 @@ export class SummonsManager {
     async moveSummon(summon, range, {token, action} = {}) {
         if (!summon.token) return await summon.placeSummon(summon, range, {token});
         token ??= summon.token;
-        if (!token) return;
+        action ??= summon.token.movementAction;
         await tokenUtils.displaceToken(summon.token, {sourceToken: token, range, action});
     }
     async spawnSummon(summon, scene, location, {elevation} = {}) {
