@@ -65,13 +65,11 @@ async function tool(actor, data) {
 
 async function damage(workflow) {
     const inputs = (await new Events.WorkflowEvent(constants.workflowPasses.optionalBonusDamage, workflow).run({multiResult: true, canOverlap: true})).filter(i => i.document);
-    const rolls = dnd5e.dice.aggregateDamageRolls(workflow.damageRolls, {respectProperties: true}).map(r =>
-        new CONFIG.Dice.DamageRoll(dnd5e.dice.simplifyRollFormula(r.formula), r.data, r.options)
-    );
+    const rolls = workflow.damageRolls;
     const bonuses = await processBonuses(rolls, inputs, DamageBonus, workflow.actor, workflow);
     if (!bonuses?.length) return;
     const targetedData = {}, fullRoll = [], targeted = [];
-    const defaultDamageType = workflow.damageRolls[0]?.options.type ?? workflow.defaultDamageType;
+    const defaultDamageType = rolls[0]?.options.type ?? workflow.defaultDamageType;
     for (const bonus of bonuses) {
         if (!bonus.roll._evaluated) await bonus.roll.evaluate();
         if (bonus.targets.size > 0) {
@@ -91,8 +89,8 @@ async function damage(workflow) {
         if (bonus.use) await bonus.use(workflow, bonuses);
     }
     if (fullRoll.length) {
-        workflow.damageRolls.push(...fullRoll);
-        await workflow.setDamageRolls(workflow.damageRolls);
+        rolls.push(...fullRoll);
+        await workflow.setDamageRolls(rolls);
     }
     if (targeted.length) {
         workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', targetedData);

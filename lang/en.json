@@ -519,6 +519,7 @@
     "Dialog": {
       "Request": {
         "Approved": "Approved",
+        "Automatic": "Automatic Approval",
         "Declined": "Declined",
         "Pending": "Pending",
         "Request": "Request"
@@ -866,12 +867,13 @@
       "Contextual": "Contextual Bonuses",
       "Invalid": "Bonus disabled: {reason}",
       "InvalidResources": "not enough resources!",
+      "NoRequest": "bonus has no request handler!",
       "Optional": "Optional Bonuses",
       "Scaleable": "Scalable",
       "Scaling": "Scaling",
       "Targeted": "Targeted",
       "Targets": "Targets",
-      "ThirdParty": "Third Party Optional Bonuses",
+      "ThirdParty": "Third Party Bonuses",
       "Title": "Optional Bonus"
     }
   }

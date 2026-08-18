@@ -1,4 +1,5 @@
-import {activityUtils, dataUtils, dialogUtils, effectUtils, genericUtils, queryUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, queryUtils, workflowUtils} from '../utilities/_module.mjs';
+import {Logging} from './_module.mjs';
 const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
 /** @import {DialogHint} from '../applications/dialog.mjs' */
@@ -37,7 +38,7 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  */
 
 /**
- * @callback HintOverride
+ * @callback HintGenerator
  * @param {RollBonusHandlerOptions} params
  */
 
@@ -71,13 +72,14 @@ class RollBonus {
     #actor;         // Actor    | The actor who will spend resources for this bonus.
     #targetActor;   // Actor    | The actor who will benefit from this bonus.
     #thirdPartyRequest; //Fn    | Async callback builds a request dialog, returning true or false for accept or decline.
+    #autoApprove;   // Boolean  | Automatically approve third party requests.
     #baseFormula;   // string   | The original roll formula before scaling.
     #document;      // Document | Item, Activity, and possibly the effect providing this bonus.
     #activity;      // Activity | Used for default consumption and scaling if a `scaling` callback is not provided.
     #validate;      // Function | Callback for any validation beyond resource consumption. 
     #bonusScaling;  // Function | Callback updates the bonus formula when scaled.
     #costScaling;   // Function | Callback collects the costs required to use this bonus when scaled.
-    #getHints;      // Function | Callback creates hints for the UI after all other changes are settled.
+    #getScalingHints;//Function | Callback creates scaling hints for the UI after all other changes are settled.
     #cost;          // BonusCost| The costs required to use this bonus.
     #maxScaling;    // Number   | Max value of the scaling slider.
     #scalingValue;  // Number   | Current scaling. Base 0.
@@ -88,14 +90,15 @@ class RollBonus {
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus is active or not.
     #initialized;   // Boolean  | Whether handlers have been called to initialize costs, hints, and scaling.
-    constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor} = {}) {
+    constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor, autoApproveRequests = false} = {}) {
         this.#document = document;
         this.#getActivity(document);
         this.#actor = this.#getActor(actor);
         this.#targetActor = targetActor ?? this.#actor;
+        this.#autoApprove = autoApproveRequests;
         this.#action = this.#getAction(action);
         this.maxScaling = this.#getMaxScaling(maxScaling);
-        this.#getHints = this.constructor.defaultScalingHints;
+        this.#getScalingHints = this.constructor.defaultScalingHints;
         this.#optional = optional;
         this.#scalingValue = 0;
         this.#cost = {};
@@ -267,6 +270,10 @@ class RollBonus {
     get isThirdParty() { 
         return this.actor.id !== this.targetActor.id;
     }
+    /** @type {boolean} */
+    get autoApproveRequests() {
+        return this.#autoApprove || Object.keys(this.cost).length === 0;
+    }
     /** @type {dnd5e.dataModels.activity.BaseActivityData} */
     get activity() {
         return this.#activity;
@@ -299,10 +306,10 @@ class RollBonus {
         this.#costScaling = this.constructor.defaultCosts;
         return this;
     }
-    /** @param {HintOverride} hints @returns {this} */
-    withHintOverride(hints) {
+    /** @param {HintGenerator} hints @returns {this} */
+    withScalingHints(hints) {
         if (typeof hints !== 'function') return this;
-        this.#getHints = hints;
+        this.#getScalingHints = hints;
         return this;
     }
     /** @param {RequestHandler} request @returns {this} */
@@ -366,7 +373,7 @@ class RollBonus {
         this._otherScaling(params);
         if (cost) this.#cost = cost;
         if (roll) this.roll = roll;
-        this.#getHints(params);
+        this.#getScalingHints(params);
     }
     /** Runs all handlers to initialize costs, hints, and scaling. */
     initialize() {
@@ -378,7 +385,11 @@ class RollBonus {
         return await this.#use({workflow, bonus: this, otherBonuses});
     }
     async request(workflow, otherBonuses, rollTotal) {
-        if (!this.#thirdPartyRequest) return false;
+        if (!this.#thirdPartyRequest) {
+            const reason = _loc('CAT.OptionalBonus.NoRequest');
+            Logging.addMacroWarning('cat', documentUtils.getIdentifier(this.document), _loc('CAT.OptionalBonus.Invalid', {reason}));
+            return {result: false, reason};
+        }
         return await this.#thirdPartyRequest({rollTotal, bonus: this, workflow, otherBonuses});
     }
 
@@ -484,7 +495,7 @@ class RollBonus {
         return {label, tooltip, icon: warn ? RollBonus.#warningIcon : '', id: target};
     }
 
-    /** @type {HintOverride} */
+    /** @type {HintGenerator} */
     static defaultScalingHints({rollTotal, bonus, workflow, otherBonuses}) {
         const hints = [];
         for (const type of RollBonus.#resourceTypes) {
@@ -542,8 +553,8 @@ class RollBonus {
     }
     /** @type {RequestHandler} */
     static async defaultRequest({rollTotal, bonus, workflow, otherBonuses}) {
-        if (!bonus.targetActor) return false;
         if (!RollBonus.CheckCost(bonus)) return {result: false, reason: _loc('CAT.OptionalBonus.InvalidResources')};
+        if (bonus.autoApproveRequests) return {result: true, reason: _loc('CAT.Dialog.Request.Automatic')};
         const name = bonus.targetActor?.name ?? _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally');
         const document = {name: `${bonus.name} (+${bonus.roll.formula})`};
         if (Number.isNumeric(rollTotal)) {
@@ -615,7 +626,7 @@ class RollBonus {
                 return true;
             } 
             b.active = false;
-            b.validateHints = {label: _loc('CAT.OptionalBonus.Invalid', {reason: _loc('CAT.OptionalBonus.InvalidResources')})};
+            b.validateHints.push({label: _loc('CAT.OptionalBonus.Invalid', {reason: _loc('CAT.OptionalBonus.InvalidResources')})});
             return hasEnough;
         });
     }

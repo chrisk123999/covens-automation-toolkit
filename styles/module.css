@@ -505,6 +505,8 @@
     margin: 0;
     padding: 0;
     list-style: none;
+    width: 0;
+    min-width: stretch;
 }
 
 .cat-dialog .cat-die-cell {
