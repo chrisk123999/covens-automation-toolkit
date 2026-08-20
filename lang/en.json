@@ -449,6 +449,10 @@
           "Label": "Conditions",
           "Hint": "Conditions applied to the actor while this effect is active."
         },
+        "DisableCondition": {
+          "Label": "Disable Conditions",
+          "Hint": "Triggers that automatically disable this effect."
+        },
         "SpecialDuration": {
           "Label": "Special Durations",
           "Hint": "Triggers that automatically remove this effect."

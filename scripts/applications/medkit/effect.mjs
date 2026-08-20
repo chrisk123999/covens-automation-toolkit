@@ -49,7 +49,7 @@ export default class EffectMedkit extends MedkitApp {
             .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}))
             .map(c => ({...c, selected: pickedConditions.has(c.value)}));
 
-        const pickedDurations = new Set(flags.specialDuration ?? []);
+        let pickedDurations = new Set(flags.specialDuration ?? []);
         const sortChoices = choices => choices
             .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}))
             .map(c => ({...c, selected: pickedDurations.has(c.value)}));
@@ -72,6 +72,11 @@ export default class EffectMedkit extends MedkitApp {
             prefixedGroup('ToolRolled', toolChoices('')),
             prefixedGroup('ToolFailed', toolChoices('Fail')),
             prefixedGroup('ToolSucceeded', toolChoices('Succeed'))
+        ];
+        pickedDurations = new Set(flags.disableCondition ?? []);
+        context.disableConditionGroups = [
+            prefixedGroup('ConditionAdded', statusChoices('')),
+            prefixedGroup('Equipped', Object.entries(CONFIG.DND5E.armorTypes).map(([key, label]) => ({value: key, label})))
         ];
 
         this._prepareIdentifierField(context);

@@ -1,4 +1,6 @@
 # 0.0.8 Release:
+## Update Notes:
+ - Added disable conditions to the Effect CatKit.
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 ## Bug Fixes:

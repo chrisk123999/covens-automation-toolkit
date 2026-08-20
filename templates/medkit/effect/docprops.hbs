@@ -31,6 +31,23 @@
         <p class="hint">{{localize "CAT.MEDKIT.Effect.SpecialDuration.Hint"}}</p>
     </fieldset>
 
+    <fieldset data-section="disable-conditions">
+        <legend>{{localize "CAT.MEDKIT.Effect.DisableCondition.Label"}}</legend>
+        <div class="form-group cat-multi-combobox-group">
+            <label>{{localize "CAT.MEDKIT.Effect.DisableCondition.Label"}}</label>
+            <cat-multi-combobox input-id="cat-medkit-disable-conditions" name="flags.cat.disableCondition">
+                {{#each disableConditionGroups}}
+                    <optgroup label="{{label}}">
+                        {{#each options}}
+                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                        {{/each}}
+                    </optgroup>
+                {{/each}}
+            </cat-multi-combobox>
+        </div>
+        <p class="hint">{{localize "CAT.MEDKIT.Effect.DisableCondition.Hint"}}</p>
+    </fieldset>
+
     <fieldset data-section="animation">
         <legend>{{localize "CAT.MEDKIT.Effect.Animation"}}</legend>
         {{formGroup fields.noAnimation name="flags.cat.noAnimation" value=noAnimation hint=(localize "CAT.MEDKIT.Effect.NoAnimation.Hint")}}
