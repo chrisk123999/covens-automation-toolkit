@@ -1,14 +1,23 @@
+# 0.0.8 Release:
+## API Bug Fixes:
+- Fixed registry for custom automation compendiums. (Thanks Darsh)
+## Bug Fixes:
+- Fixed max counter for `selectAmount` dialog input.
+
 # 0.0.7 Release:
 ## API Update Notes:
 - Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
 - The multi-combobox now supports token ping and highlighting.
 - Added utils:
   - `activityUtils`: `hasDefaultIcon`, `hasDefaultName`, `getDefaultDamageRolls`
+  - `effectUtils.resetDuration`
   - `automationUtils.getCompendiumDocumentByName`
   - `dialogUtils.selectScaledDocument`
+  - `rollUtils`: `replaceRollShowDiscarded`, `setTotalWithBonus`
+  - `workflowUtils.updateTargets`
+  - several confirm dialog helpers for different localized prompts
 - New dialog inputs: formula display, slider, request.
 - The smite event pass has been removed in favor of using the optional bonuses dialog.
-- Added utils: `effectUtils.resetDuration`, `rollUtils.replaceRollShowDiscarded`, `rollUtils.setTotalWithBonus`, `workflowUtils.updateTargets`, and several confirm dialog helpers for different localized prompts.
 ## API Bug Fixes:
 - `documentUtils.getSavedCastData` now correctly checks for ActiveEffect instead of Effect as the document name.
 ## Bug Fixes:

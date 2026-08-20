@@ -811,7 +811,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             case 'select-one':
                 if (ctx.group.isSelectAmount) {
                     ctx.input.currentAmount = Number(targetInput.value);
-                    if (ctx.input?.weight) ctx.group = this.#currentMaxAmounts(ctx.group);
+                    if (ctx.input?.weight) ctx.fullContext.inputs[ctx.groupIndex] = this.#currentMaxAmounts(ctx.group);
                     changed = true;
                 }
                 break;

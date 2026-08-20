@@ -16,11 +16,12 @@ async function updateHash(item, {create = false, remove = false} = {}) {
     await automationUtils.setDocumentHash(item, hash);
     if (create) {
         constants.automations.registerAutomation({
+            uuid: item.uuid,
+            type: item.type,
             source: compendiumId,
             rules: documentUtils.getRules(item),
             identifier: documentUtils.getIdentifier(item),
-            uuid: item.uuid,
-            version: '0'
+            version: documentUtils.getVersion(item) ?? '0'
         });
     }
 }
@@ -36,15 +37,14 @@ async function hashCompendium(compendium, {register = false} = {}) {
     index.forEach(entry => {
         promises.push((async () => {
             const oldHash = foundry.utils.getProperty(entry, 'flags.cat.automation.hash');
-            const rules = foundry.utils.getProperty(entry, 'system.source.rules');
-            const identifier = foundry.utils.getProperty(entry, 'system.identifier');
             if (register) {
                 constants.automations.registerAutomation({
-                    source: compendium.metadata.id,
-                    rules: rules,
-                    identifier: identifier,
                     uuid: entry.uuid,
-                    version: '0'
+                    type: entry.type,
+                    source: compendium.metadata.id,
+                    identifier: documentUtils.getIdentifier(entry),
+                    version: documentUtils.getVersion(entry) ?? '0',
+                    rules: documentUtils.getRules(entry, {documentType: compendium.metadata.type})
                 });
             }
             if (!oldHash && !compendium.locked) {
