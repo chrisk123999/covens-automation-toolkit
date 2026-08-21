@@ -97,9 +97,17 @@ async function specialDuration(workflow) {
             for (const i of specialDurations) {
                 switch (i) {
                     case 'damagedByAlly':
-                        if (workflow.token.document.disposition === token.document.disposition && workflow.hitTargets.has(token) && workflow.damageRolls?.length) remove = true; break outerLoop;
+                        if (workflow.token.document.disposition === token.document.disposition && workflow.damageList.find(d => d.targetUuid === token.document.uuid)?.totalDamage > 0) {
+                            remove = true;
+                            break outerLoop;
+                        }
+                        break;
                     case 'damagedByEnemy':
-                        if (workflow.token.document.disposition != token.document.disposition && workflow.hitTargets.has(token) && workflow.damageRolls?.length) remove = true; break outerLoop;
+                        if (workflow.token.document.disposition != token.document.disposition && workflow.damageList.find(d => d.targetUuid === token.document.uuid)?.totalDamage > 0) {
+                            remove = true;
+                            break outerLoop;
+                        }
+                        break;
                     case 'hitByAnotherCreature':
                         if (!workflow.hitTargets.size) break;
                     // eslint-disable-next-line no-fallthrough
@@ -206,9 +214,12 @@ async function disableConditionStatuses(effect, gainedStatus) {
     }));
 }
 async function specialDurationHitPoints(actor, updates) {
+    const hp = updates.system?.attributes?.hp;
+    if (!hp) return;
     const validTypes = [];
-    if (updates.system?.attributes?.hp?.temp === 0) validTypes.push('tempHP');
-    if (updates.system?.attributes?.hp?.tempmax === 0) validTypes.push('tempMaxHP');
+    if (hp.temp === 0) validTypes.push('tempHP');
+    if (hp.value === 0) validTypes.push('zeroHP');
+    if (hp.tempmax === 0) validTypes.push('tempMaxHP');
     if (!validTypes.length) return;
     await Promise.all(actorUtils.getEffects(actor, {includeItemEffects: true}).map(async effect => {
         const specialDurations = effect.flags.cat?.specialDuration;

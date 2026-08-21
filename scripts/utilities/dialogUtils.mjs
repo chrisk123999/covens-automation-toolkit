@@ -352,6 +352,7 @@ async function selectSpellSlot(actor, title, content, {maxLevel = 9, minLevel = 
     return await buttonDialog(title, content, buttons, {displayAsRows: true, userId});
 }
 async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id, sort = null} = {}) {
+    if (!damageTypes?.length) return false;
     let buttons = damageTypes.map(t => {
         const config = constants.damageTypeOptions().find(o => o.value === t);
         return [config?.label ?? t, t, {image: config?.image, invertColor: config?.invertColor}];

@@ -1,10 +1,14 @@
 # 0.0.8 Release:
 ## Update Notes:
  - Added disable conditions to the Effect CatKit.
+ - Added `zeroHP` special duration to the Effect CatKit.
+ - Added utils:
+   - `actorUtils.getCR`
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 ## Bug Fixes:
 - Fixed max counter for `selectAmount` dialog input.
+- Effect special durations `damagedByAlly` and `damagedByEnemy` can now be used together.
 
 # 0.0.7 Release:
 ## API Update Notes:

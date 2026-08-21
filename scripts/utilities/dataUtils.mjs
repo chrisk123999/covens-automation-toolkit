@@ -52,6 +52,7 @@ function setIdentifier(documentData, identifier) {
  * @property {VaeEntry[]} vae
  * @property {'2014'|'2024'|'all'} rules
  * @property {object} copyConfigs Duplicate macro configurations from another document onto this effect.
+ * @property {foundry.abstract.Document} parentEntity A dependent parent for this effect.
  */
 /**
  * Attach CAT data to an effect before creation.
@@ -59,7 +60,7 @@ function setIdentifier(documentData, identifier) {
  * @param {CatEffectData} [options]
  * @returns {object} Modified effectData.
  */
-function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, copyConfigs} = {}) {
+function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, copyConfigs, parentEntity} = {}) {
     if (removeMacros?.length) {
         removeMacros.forEach(macroGroup => {
             if (!macroGroup.macros?.length) return;
@@ -87,9 +88,10 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
         });
     }
     if (rules) setRules(effectData, rules);
+    if (vae) genericUtils.setProperty(effectData, 'flags.cat.vae.buttons', vae);
+    if (parentEntity) genericUtils.setProperty(effectData, 'flags.dnd5e.dependentOn', parentEntity.uuid);
     if (specialDuration) genericUtils.setProperty(effectData, 'flags.cat.specialDuration', specialDuration);
     if (disableCondition) genericUtils.setProperty(effectData, 'flags.cat.disableCondition', disableCondition);
-    if (vae) genericUtils.setProperty(effectData, 'flags.cat.vae.buttons', vae);
     if (unhideActivities) genericUtils.setProperty(effectData, 'flags.cat.unhideActivities', unhideActivities);
     if (createAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, config: createAnimationOptions});
     if (deleteAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions});

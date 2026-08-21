@@ -4,7 +4,7 @@ const {fields} = foundry.data;
 const SPECIAL_DURATION_GROUPS = {
     Workflow: ['endOfWorkflow', 'forceSave', 'attackMissed', 'damagedByAlly', 'damagedByEnemy', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource'],
     Movement: ['moveFinished', 'zeroSpeed'],
-    HitPoints: ['tempHP', 'tempMaxHP']
+    HitPoints: ['tempHP', 'tempMaxHP', 'zeroHP']
 };
 
 export default class EffectMedkit extends MedkitApp {
