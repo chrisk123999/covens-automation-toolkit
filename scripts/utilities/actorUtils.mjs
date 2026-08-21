@@ -298,6 +298,9 @@ function getMaxCastLevel(actor) {
         return (slot && slot.max > 0) ? Math.max(currentMax, i) : currentMax;
     }, pactLevel);
 }
+function getCR(actor) {
+    return actor.system.details.cr ?? (4 * actor.system.attributes.prof - 7);
+}
 export default {
     getEffects,
     getGroups,
@@ -325,5 +328,6 @@ export default {
     getEquippedWeapons,
     createActor,
     hasUsedBonusAction,
-    getMaxCastLevel
+    getMaxCastLevel,
+    getCR
 };
