@@ -332,24 +332,39 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
     if (!choices?.buttons) return false;
     return cls.ValidateAll(bonuses, {workflow});
 }
-async function selectAmounts(title, content, fields, {totalMax, displayAsRows = true, userId = game.user.id, buttons = 'okCancel'} = {}) {
-    let inputs = [['selectAmount', fields, {displayAsRows, totalMax}]];
-    let result = await runDialog(userId, title, content, inputs, buttons, {height: 'auto'});
-    if (!result?.buttons) return false;
-    delete result.buttons;
-    return Object.fromEntries(Object.entries(result).map(([key, value]) => [key, Number(value)]));
-}
-async function selectSpellSlot(actor, title, content, {maxLevel = 9, minLevel = 0, userId = game.user.id, no = false} = {}) {
-    let buttons = Object.entries(actor.system.spells).filter(([k, v]) => {
+/**
+ * @param {foundry.documents.Actor} actor 
+ * @param {string} title 
+ * @param {string} content 
+ * @param {object} [options]
+ * @param {boolean} [options.recover] If true, select missing slots. If false, select available slots.
+ * @param {number} [options.maxAmount]
+ * @param {'count'|'level'} [options.maxAmountMode] 'count' mode selects a number of spell slots. 'level' mode selects a combined total of slot levels. 
+ * @returns {Promise<{key: string, amount: number}[]>}
+ */
+async function selectSpellSlots(actor, title, content, {maxAmount, maxAmountMode = 'level', maxLevel = 9, minLevel = 0, userId = game.user.id, recover = false} = {}) {
+    const maxes = {};
+    const weights = {};
+    const entries = Object.entries(actor.system.spells).filter(([k, v]) => {
+        if (maxAmount && maxAmountMode === 'level' && v.level > maxAmount) return false;
         if (v.level > maxLevel || v.level < minLevel) return false;
-        if (k === 'spell0') return false;
-        return v.value > 0 && v.max > 0;
+        if (recover) return v.max > 0 && v.value < v.max;
+        else return v.value > 0 && v.max > 0;
     }).map(([k, v]) => {
-        if (k === 'pact') return [CONFIG.DND5E.spellPreparationModes.pact.label + ' (' + v.level + ')', 'pact'];
-        return [CONFIG.DND5E.spellLevels[v.level], v.level];
+        maxes[k] = recover ? v.max - v.value : v.value;
+        weights[k] = maxAmountMode === 'level' ? v.level : 1;
+        return {
+            name: v.label + (k === 'pact' ? ` (${v.level})` : ''),
+            id: k,
+            img: `systems/dnd5e/icons/spell-tiers/spell${v.level}.webp`
+        };
     });
-    if (no) buttons.push(['No', false]);
-    return await buttonDialog(title, content, buttons, {displayAsRows: true, userId});
+    if (!entries.length) return false;
+    const result = await selectDocumentDialog(title, content, entries, {max: maxAmount, maxes, weights, userId});
+    if (!result) return false;
+    if (maxAmount === 1) return [{key: result.id, amount: 1}];
+    const slots = result.filter(r => r.amount > 0).map(r => ({key: r.key, amount: r.amount}));
+    return slots.length ? slots : false;
 }
 async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id, sort = null} = {}) {
     if (!damageTypes?.length) return false;
@@ -505,8 +520,7 @@ export default {
     selectDialog,
     selectDocumentDialog,
     selectScaledDocument,
-    selectAmounts,
-    selectSpellSlot,
+    selectSpellSlots,
     selectDamageType,
     selectHitDie,
     confirm,

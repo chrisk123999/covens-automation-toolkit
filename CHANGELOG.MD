@@ -10,7 +10,7 @@
 - Added `zeroHP` special duration to the Effect CatKit.
 - Added utils:
   - `actorUtils.getCR`
-  - `dialogUtils.selectSpellSlots`
+  - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 ## Bug Fixes:
