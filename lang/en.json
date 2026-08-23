@@ -264,6 +264,11 @@
         "AddPlaceholder": "Class identifier",
         "Duplicate": "A bonus for class \"{identifier}\" already exists."
       },
+      "FeatureRollMode": {
+        "Add": "Add activity identifier",
+        "AddPlaceholder": "Activity identifier",
+        "Duplicate": "An entry for identifier \"{identifier}\" already exists."
+      },
       "Categories": {
         "behavior": {
           "Label": "Behavior",
@@ -377,15 +382,10 @@
         }
       },
       "Actor": {
+        "Ability": {
+          "All": "All"
+        },
         "Automations": "Automations",
-        "Name": {
-          "Label": "Match Name",
-          "Hint": "Override the name used when matching this actor (typically NPCs) against registered automations."
-        },
-        "IgnoreActor": {
-          "Label": "Ignore Actor",
-          "Hint": "Skip this actor during mass compendium / scene updates."
-        },
         "ConditionResistance": {
           "Label": "Condition Resistance",
           "Hint": "Conditions this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
@@ -394,8 +394,29 @@
           "Label": "Condition Vulnerability",
           "Hint": "Conditions this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
         },
-        "Ability": {
-          "All": "All"
+        "FeatureFailure": {
+          "Label": "Feature Failure",
+          "Hint": "Activity identifiers on which this actor should auto-fail. Click All for any save, or pick specific abilities to scope it."
+        },
+        "FeatureImmunity": {
+          "Label": "Feature Immunity",
+          "Hint": "Activity identifiers on which this actor should auto-succeed. Click All for any save, or pick specific abilities to scope it."
+        },
+        "FeatureResistance": {
+          "Label": "Feature Resistance",
+          "Hint": "Activity identifiers this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
+        },
+        "FeatureVulnerability": {
+          "Label": "Feature Vulnerability",
+          "Hint": "Activity identifiers this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
+        },
+        "IgnoreActor": {
+          "Label": "Ignore Actor",
+          "Hint": "Skip this actor during mass compendium / scene updates."
+        },
+        "Name": {
+          "Label": "Match Name",
+          "Hint": "Override the name used when matching this actor (typically NPCs) against registered automations."
         }
       },
       "Activity": {
@@ -802,11 +823,27 @@
     "DAE": {
       "CV": {
         "Name": "{condition} Condition Vulnerability",
-        "Description": "Condition Vulnerability to {condition}, roll at disadvantage to save. 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+        "Description": "Condition Vulnerability to {condition}, roll at disadvantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
       },
       "CR": {
         "Name": "{condition} Condition Resistance",
-        "Description": "Condition Resistance to {condition}, roll at advantage to save. 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+        "Description": "Condition Resistance to {condition}, roll at advantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+      },
+      "FF": {
+        "Name": "Feature Failure",
+        "Description": "Feature Failure on an activity by identifier, auto-fail saves. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+      },
+      "FI": {
+        "Name": "Feature Immunity",
+        "Description": "Feature Immunity to an activity by identifier, auto-succeed saves. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+      },
+      "FV": {
+        "Name": "Feature Vulnerability",
+        "Description": "Feature Vulnerability to an activity by identifier, roll at disadvantage to save. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+      },
+      "FR": {
+        "Name": "Feature Resistance",
+        "Description": "Feature Resistance to an activity by identifier, roll at advantage to save. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
       }
     },
     "Generic": {

@@ -8,7 +8,12 @@ export default class ActorMedkit extends MedkitApp {
         actions: {
             toggleCR: ActorMedkit.#toggleCR,
             toggleCV: ActorMedkit.#toggleCV,
-            removeCondition: ActorMedkit.#removeCondition
+            toggleFR: ActorMedkit.#toggleFR,
+            toggleFV: ActorMedkit.#toggleFV,
+            toggleFI: ActorMedkit.#toggleFI,
+            toggleFF: ActorMedkit.#toggleFF,
+            removeCondition: ActorMedkit.#removeCondition,
+            addFeatureRollMode: ActorMedkit.#addFeatureRollMode
         }
     };
 
@@ -82,6 +87,10 @@ export default class ActorMedkit extends MedkitApp {
             context[`conditionChoices${flagKey}`] = sortedTypes.map(t => ({value: t.key, label: t.label, selected: pickedSet.has(t.key)}));
             context[`${flagKey.toLowerCase()}ConditionRows`] = this.#buildConditionRows(flagKey, picked, sortedTypes);
         }
+        for (const flagKey of ['FR', 'FV', 'FI', 'FF']) {
+            const picked = Object.keys(flags[flagKey] ?? {});
+            context[`${flagKey.toLowerCase()}IdentifierRows`] = this.#buildConditionRows(flagKey, picked, sortedTypes);
+        }
         return context;
     }
 
@@ -140,12 +149,49 @@ export default class ActorMedkit extends MedkitApp {
     }
 
     /** @this {ActorMedkit} */
+    static #toggleFR(_event, target) {
+        this.#mutateCondition('FR', target.dataset.condition, target.dataset.ability);
+    }
+
+    /** @this {ActorMedkit} */
+    static #toggleFV(_event, target) {
+        this.#mutateCondition('FV', target.dataset.condition, target.dataset.ability);
+    }
+
+    /** @this {ActorMedkit} */
+    static #toggleFI(_event, target) {
+        this.#mutateCondition('FI', target.dataset.condition, target.dataset.ability);
+    }
+
+    /** @this {ActorMedkit} */
+    static #toggleFF(_event, target) {
+        this.#mutateCondition('FF', target.dataset.condition, target.dataset.ability);
+    }
+
+    /** @this {ActorMedkit} */
     static #removeCondition(_event, target) {
         const flagKey = target.dataset.flagKey;
         const condition = target.dataset.condition;
         const flags = this._getFlags();
         if (!flags[flagKey]) return;
         delete flags[flagKey][condition];
+        this.render();
+    }
+
+    /** @this {ActorMedkit} */
+    static #addFeatureRollMode(_event, target) {
+        const flagKey = target.dataset.flagKey;
+        if (!flagKey) return;
+        const input = target.closest('[data-feature-roll-mode]')?.querySelector('input');
+        const id = input?.value?.trim();
+        if (!id) return;
+        const flags = this._getFlags();
+        const identifiers = (flags[flagKey] ??= {});
+        if (identifiers[id]) {
+            ui.notifications.error(_loc('CAT.MEDKIT.FeatureRollMode.Duplicate', {identifier: id}));
+            return;
+        }
+        identifiers[id] = true;
         this.render();
     }
 }

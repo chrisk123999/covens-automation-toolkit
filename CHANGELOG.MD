@@ -1,9 +1,16 @@
 # 0.0.8 Release:
 ## Update Notes:
- - Added disable conditions to the Effect CatKit.
- - Added `zeroHP` special duration to the Effect CatKit.
- - Added utils:
-   - `actorUtils.getCR`
+- Added document properties to the Actor CatKit:
+  - Feature Resistance: `flags.cat.FR.identifier`
+  - Feature Vulnerability: `flags.cat.FV.identifier`
+  - Feature Immunity: `flags.cat.FI.identifier`
+  - Feature Failure: `flags.cat.FF.identifier`
+  - Use an activity identifier, e.g. turn resistance: `flags.cat.FR.turn-undead | override | wis`.
+- Added disable conditions to the Effect CatKit.
+- Added `zeroHP` special duration to the Effect CatKit.
+- Added utils:
+  - `actorUtils.getCR`
+  - `dialogUtils.selectSpellSlots`
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 ## Bug Fixes:

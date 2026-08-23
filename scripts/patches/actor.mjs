@@ -151,6 +151,7 @@ async function save(wrapped, config, dialog = {}, message = {}) {
         ...config,
         ...options
     };
+    if (options.auto) dialog.configure = false;
     let roll = await wrapped(config, dialog, {...message, create: false});
     roll = roll?.[0];
     if (!roll) return;
