@@ -250,6 +250,16 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
         if (selected.size === bonus.targets.size) return;
         bonus.targets = targets.filter(t => selected.has(t.id));
     };
+    const damageChange = ({bonus, fullContext, input, getInputById}) => {
+        bonus.damageType = input.value;
+        if (bonus.active) updateFormula(fullContext);
+        const tag = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags?.find(t => t.id === 'formula');
+        if (!tag) return bonus.active;
+        const type = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
+        tag.image = type.icon;
+        tag.tooltip = type.label;
+        return true;
+    };
     let currentAggregate = cls.CombineRolls(rolls, bonuses, {workflow});
     const updateFormula = ctx => {
         const formula = ctx.subheaders.find(i => i.isFormula);
@@ -292,10 +302,21 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
                     onchange: ({input}) => targetsChange({bonus, input})
                 }
             }]]);
+        if (bonus.damageTypes?.size > 1)
+            subinputs.push(['combobox', [{
+                name: name + '.damageType',
+                label: 'CAT.OptionalBonus.DamageType',
+                options: {
+                    value: bonus.damageType,
+                    options: constants.damageTypeOptions().filter(o => bonus.damageTypes.has(o.value)),
+                    onchange: ({fullContext, input, getInputById}) => damageChange({bonus, fullContext, input, getInputById})
+                }
+            }]]);
         const tags = [];
         if (bonus.roll) {
-            const type = CONFIG.DND5E.damageTypes[bonus.roll.options.type] ?? CONFIG.DND5E.healingTypes[bonus.roll.options.type];
+            const type = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
             tags.push({label: bonus.roll.formula, id: 'formula', image: type?.icon, tooltip: type?.label});
+            if (bonus.damageTypes?.size > 1) tags.push({label: 'CAT.OptionalBonus.DamageTypeChoice', id: 'damageType'});
         }   
         if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id)})));
         if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});

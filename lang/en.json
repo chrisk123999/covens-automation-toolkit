@@ -906,6 +906,8 @@
     "OptionalBonus": {
       "Content": "Choose and configure bonuses for this roll.",
       "Contextual": "Contextual Bonuses",
+      "DamageType": "Damage Type",
+      "DamageTypeChoice": "Choose Type",
       "Invalid": "Bonus disabled: {reason}",
       "InvalidResources": "not enough resources!",
       "NoRequest": "bonus has no request handler!",

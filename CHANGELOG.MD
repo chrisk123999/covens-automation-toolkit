@@ -8,11 +8,13 @@
   - Use an activity identifier, e.g. turn resistance: `flags.cat.FR.turn-undead | override | wis`.
 - Added disable conditions to the Effect CatKit.
 - Added `zeroHP` special duration to the Effect CatKit.
+- Added a damage type picker in the optional bonus dialog.
 - Added utils:
   - `actorUtils.getCR`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
+- `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.
 ## Bug Fixes:
 - Fixed max counter for `selectAmount` dialog input.
 - Effect special durations `damagedByAlly` and `damagedByEnemy` can now be used together.

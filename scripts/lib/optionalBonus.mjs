@@ -739,13 +739,17 @@ export class DamageBonus extends RollBonus {
     #baseMaxTargets;  // Number        | The original max targets before scaling.
     #targetScaling;   // Function      | Callback adjusts max targets when the bonus is scaled.
     #maxTargetsHints; // DialogHints[] | Array of {label, icon} for UI target hints. 
+    #damageTypes;     // Set           | Damage type options. A subinput combobox is shown if there is more than one type.
     constructor(document, {type, maxTargets, ...baseOptions} = {}) {
         super(document, baseOptions);
         
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
         this.#targets = new Set();
-        if (type) this.roll.options.type = type;
+        if (type) {
+            this.#damageTypes = new Set(dataUtils.toArray(type));
+            this.damageType = this.#damageTypes.first();
+        }
     }
 
     /** @type {Set<foundry.documents.TokenDocument>} Targets of the damage. Size truncated to {@link maxTargets}, if present. */
@@ -773,6 +777,18 @@ export class DamageBonus extends RollBonus {
     }
     set maxTargetsHints(value) {
         this.#maxTargetsHints = this._makeHints(value);
+    }
+    /** @type {string} */
+    get damageType() {
+        return this.roll.options.type;
+    }
+    set damageType(value) {
+        if (!CONFIG.DND5E.damageTypes[value] && !CONFIG.DND5E.healingTypes[value]) return;
+        this.roll.options.type = value;
+    }
+    /** @type {Set<string>} */
+    get damageTypes() {
+        return this.#damageTypes;
     }
 
     /** @param {TargetScalingHandler} targetScaling @returns {this} */
