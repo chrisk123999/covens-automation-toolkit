@@ -9,6 +9,7 @@
 - Added disable conditions to the Effect CatKit.
 - Added `zeroHP` special duration to the Effect CatKit.
 - Added a damage type picker in the optional bonus dialog.
+- Critical hit rules can now be applied to optional bonuses.
 - Added utils:
   - `actorUtils.getCR`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`

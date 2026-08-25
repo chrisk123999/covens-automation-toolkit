@@ -1,4 +1,4 @@
-import {activityUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, queryUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, queryUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
 import {Logging} from './_module.mjs';
 const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
@@ -370,14 +370,17 @@ class RollBonus {
         const params = {bonus: this, workflow, otherBonuses, rollTotal};
         const cost = this.#costScaling?.(params);
         const roll = this.#bonusScaling?.(params);
-        this._otherScaling(params);
         if (cost) this.#cost = cost;
         if (roll) this.roll = roll;
+        this._otherScaling(params);
         this.#getScalingHints(params);
     }
-    /** Runs all handlers to initialize costs, hints, and scaling. */
-    initialize() {
-        this.updateScaling(0);
+    /** 
+     * Runs all handlers to initialize costs, hints, and scaling. 
+     * @param {MidiQOL.Worklow} [workflow]
+     * */
+    initialize(workflow) {
+        this.updateScaling(0, workflow);
         return this;
     }
     async use(workflow, otherBonuses) {
@@ -740,11 +743,13 @@ export class DamageBonus extends RollBonus {
     #targetScaling;   // Function      | Callback adjusts max targets when the bonus is scaled.
     #maxTargetsHints; // DialogHints[] | Array of {label, icon} for UI target hints. 
     #damageTypes;     // Set           | Damage type options. A subinput combobox is shown if there is more than one type.
-    constructor(document, {type, maxTargets, ...baseOptions} = {}) {
+    #canCrit;         // Boolean       | False for static bonuses, true for double dice on critical hits.
+    constructor(document, {type, maxTargets, allowCritical = true, ...baseOptions} = {}) {
         super(document, baseOptions);
         
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
+        this.#canCrit = allowCritical;
         this.#targets = new Set();
         if (type) {
             this.#damageTypes = new Set(dataUtils.toArray(type));
@@ -790,6 +795,10 @@ export class DamageBonus extends RollBonus {
     get damageTypes() {
         return this.#damageTypes;
     }
+    /** @type {Boolean} */
+    get canCrit() {
+        return this.#canCrit;
+    }
 
     /** @param {TargetScalingHandler} targetScaling @returns {this} */
     withTargetScaling(targetScaling) {
@@ -800,6 +809,7 @@ export class DamageBonus extends RollBonus {
     _otherScaling({rollTotal, bonus, workflow, otherBonuses}) {
         const maxTargets = this.#targetScaling?.({rollTotal, bonus, workflow, otherBonuses});
         if (Number.isNumeric(maxTargets)) this.maxTargets = maxTargets;
+        if (workflow?.isCritical) DamageBonus.MakeCritical(bonus);
     }
     
     static get rollClass() { return CONFIG.Dice.DamageRoll; }
@@ -817,6 +827,15 @@ export class DamageBonus extends RollBonus {
             r.resetFormula();
             return r;
         });
+    }
+    /**
+     * Applies a critical dice formula to the bonus, if allowed.
+     * @param {DamageBonus} bonus
+     */
+    static MakeCritical(bonus) {
+        if (!bonus.canCrit || bonus.roll.options.isCritical) return;
+        const formula = rollUtils.getCriticalFormula(bonus.roll.formula, bonus.document, bonus.roll.options.critical);
+        bonus.roll = new bonus.rollClass(formula, bonus.roll.data, {...bonus.roll.options, isCritical: true});
     }
     /**
      * Filter valid and applicable {@link bonuses}.
