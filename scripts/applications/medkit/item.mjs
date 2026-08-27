@@ -1,6 +1,6 @@
 import MedkitApp from './base.mjs';
 import {constants} from '../../lib/_module.mjs';
-import {documentUtils, automationUtils} from '../../utilities/_module.mjs';
+import {documentUtils, automationUtils, itemUtils} from '../../utilities/_module.mjs';
 import DocPropertyEditorApp from '../doc-property-editor.mjs';
 const {fields} = foundry.data;
 
@@ -63,6 +63,7 @@ export default class ItemMedkit extends MedkitApp {
         context.fields = {
             identifier: new fields.StringField({label: _loc('CAT.MEDKIT.Identifier.Label')}),
             source: new fields.StringField({label: _loc('CAT.MEDKIT.Source.Label'), required: true, blank: false}),
+            sourceType: new fields.StringField({label: _loc('CAT.MEDKIT.SourceType.Label')}),
             version: new fields.StringField({label: _loc('CAT.MEDKIT.Version.Label')}),
             ignore: new fields.BooleanField({label: _loc('CAT.MEDKIT.IgnoreItem.Label')}),
             rules: new fields.StringField({
@@ -79,8 +80,11 @@ export default class ItemMedkit extends MedkitApp {
         const rulesValue = this._getRulesValue();
         const itemType = this.document.type;
         const savedSource = documentUtils.getSource(this.document);
-        const currAutomation = (identifier && rulesValue && selectedSource && selectedSource !== 'none') ? constants.automations.getAutomationByIdentifier(identifier, {rules: rulesValue, source: selectedSource, monsterIdentifier, type: itemType}) : (!savedSource ? automationUtils.getCurrentAutomation(this.document) : undefined);
+        const sourceType = itemUtils.getAdvancementSourceKey(this.document);
+        const currAutomation = (identifier && rulesValue && selectedSource && selectedSource !== 'none') ? constants.automations.getAutomationByIdentifier(identifier, {rules: rulesValue, source: selectedSource, monsterIdentifier, type: itemType, sourceType}) : (!savedSource ? automationUtils.getCurrentAutomation(this.document) : undefined);
         context.source = currAutomation?.source ?? selectedSource;
+        if (sourceType) context.sourceType = sourceType;
+        context.editSourceType = this.document.inCompendium;
         const availableAutomations = automationUtils.getAvailableAutomations(this.document);
         switch (automationUtils.getAutomationStatus(this.document)) {
             case -2:

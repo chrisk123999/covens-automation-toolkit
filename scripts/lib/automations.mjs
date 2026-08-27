@@ -1,6 +1,6 @@
 /** @import {CompendiumCollection} from '@client/documents/collections/_module.mjs' */
 import {Logging} from '../lib/_module.mjs';
-import {documentUtils} from '../utilities/_module.mjs';
+import {documentUtils, genericUtils, itemUtils} from '../utilities/_module.mjs';
 const fields = foundry.data.fields;
 
 /**
@@ -9,9 +9,12 @@ const fields = foundry.data.fields;
  * @property {'2014'|'2024'} rules
  * @property {string} version
  * @property {string} uuid
- * @property {AutomationConfig[]} config
- * @property {string} [notes]
- */
+ * @property {AutomationConfig[]} [config]
+ * @property {string} [notes] 
+ * @property {string} [sourceType] The key for an advancement source that would grant this document, e.g. 'class:cleric'.
+ * @property {object} [scales] Provide advancement scale data.
+ * @property {string} [type] Override the document type.
+  */
 
 // TODO: More fully document
 /**
@@ -142,6 +145,7 @@ export class RegisteredAutomations {
      * @param {boolean} [options.multiple=false]            Whether to return all matching automations or only one
      * @param {string} [options.monsterIdentifier]          Match using a monster identifier as well
      * @param {string} [options.type]                       The item type to get automation(s) for
+     * @param {string} [options.sourceType]                 A key representing the advancement source for the item, if any, e.g. 'class:cleric'
      * @param {string[]} [options.excludeSources]           Which sources to exclude from consideration, if any
      * @returns {Automation[]|Automation|undefined}
      */
@@ -223,63 +227,35 @@ export class RegisteredAutomations {
     }
 
     /**
-     * Register a compendium pack of documents with automations
-     * @param {CompendiumCollection} pack                                   The compendium pack of documents to register as automations
-     * @param {object} [options={}]                                         Additional options
-     * @param {Record<string, AutomationConfig[]>} [options.configs2014={}] An object with identifiers as keys and configs as values
-     * @param {Record<string, AutomationConfig[]>} [options.configs2024={}] An object with identifiers as keys and configs as values
-     * @param {Record<string, AutomationConfig[]>} [options.configsAll={}]  An object with identifiers as keys and configs as values
-     * @param {Record<string, string>} [options.versions={}]                An object with identifiers as keys and versions as values
-     * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
-     * @param {string} [options.source]                                     The source of the automations
+     * @callback FetchAutomationInfo
+     * @param {foundry.abstract.Document} document
+     * @param {AutomationData} defaults Not mutable, return changes from your callback instead.
+     * @returns {AutomationData}
      */
-    async registerAutomationCompendium(pack, {configs2014 = {}, configs2024 = {}, configsAll = {}, versions2014 = {}, versions2024 = {}, versionsAll = {}, rules = {}, source, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
-        const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation.version', 'type']});
-        source ??= pack.metadata.packageName;
+
+    /**
+     * Register a compendium pack of documents with automations
+     * @param {CompendiumCollection} pack                         The compendium pack of documents to register as automations
+     * @param {object} [options={}]                               Additional options
+     * @param {string} [options.source]                           The source id for the automations
+     * @param {FetchAutomationInfo} [options.infoFetcherCallback] Provide additional automation info or override defaults. See {@link FetchAutomationInfo}.
+     */
+    async registerAutomationCompendium(pack, {source = pack.metadata.packageName, infoFetcherCallback} = {}) {
+        const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation', 'type']});
         const documentType = pack.metadata.type;
         Logging.group('Automation Compendium Registered: ' + pack.metadata.label + ' (' + pack.metadata.packageName + ')');
         const results = index.map(document => {
             const identifier = documentUtils.getIdentifier(document, {documentType});
-            const rule = rules[identifier] ?? documentUtils.getRules(document, {documentType});
-            let config;
-            let notes;
-            let scales;
-            let type;
-            let version;
-            switch (rule) {
-                case '2014':
-                    config = configs2014[identifier] ?? configsAll[identifier];
-                    notes = notes2014[identifier] ?? notesAll[identifier];
-                    scales = scales2014[identifier] ?? scalesAll[identifier];
-                    type = types2014[identifier] ?? typesAll[identifier];
-                    version = versions2014[identifier] ?? documentUtils.getVersion(document) ?? '0';
-                    break;
-                case '2024':
-                    config = configs2024[identifier] ?? configsAll[identifier];
-                    notes = notes2024[identifier] ?? notesAll[identifier];
-                    scales = scales2024[identifier] ?? scalesAll[identifier];
-                    type = types2024[identifier] ?? typesAll[identifier];
-                    version = versions2024[identifier] ?? documentUtils.getVersion(document) ?? '0';
-                    break;
-                default:
-                    config = configsAll[identifier];
-                    notes = notesAll[identifier];
-                    scales = scalesAll[identifier];
-                    type = typesAll[identifier];
-                    version = versionsAll[identifier] ?? documentUtils.getVersion(document) ?? '0';
-                    break;
-            }
-            const data = {
-                source,
-                rules: rule,
-                identifier,
-                version,
+            const defaults = {
+                rules: documentUtils.getRules(document, {documentType}),
+                sourceType: itemUtils.getAdvancementSourceKey(document),
+                version: documentUtils.getVersion(document) || '0',
                 uuid: document.uuid,
-                config,
-                notes,
-                scales,
-                type: type ?? document.type
+                type: document.type,
+                identifier,
+                source
             };
+            const data = genericUtils.mergeObject(defaults, infoFetcherCallback(document, genericUtils.duplicate(defaults)));
             return this.registerAutomation(data);
         });
         Logging.groupEnd();
@@ -288,16 +264,12 @@ export class RegisteredAutomations {
 
     /**
      * Register multiple compendium packs of documents with automations, with those packs being provided by the given module ID
-     * @param {string} id                                                   The id of the module to register the compendium packs of
-     * @param {object} [options={}]                                         Additional options
-     * @param {string[]} [options.ignoredPackIds=[]]                        A list of compendium pack IDs to ignore and not register
-     * @param {Record<string, AutomationConfig[]>} [options.configs2014={}] An object with identifiers as keys and configs as values
-     * @param {Record<string, AutomationConfig[]>} [options.configs2024={}] An object with identifiers as keys and configs as values
-     * @param {Record<string, AutomationConfig[]>} [options.configsAll={}]  An object with identifiers as keys and configs as values
-     * @param {Record<string, string>} [options.versions={}]                An object with identifiers as keys and versions as values
-     * @param {Record<string, string>} [options.rules={}]                   An object with identifiers as keys and rulesets as values
+     * @param {string} id                                         The id of the module to register the compendium packs of
+     * @param {object} [options={}]                               Additional options
+     * @param {string[]} [options.ignoredPackIds=[]]              A list of compendium pack IDs to ignore and not register
+     * @param {FetchAutomationInfo} [options.infoFetcherCallback] Provide additional automation info or override defaults. See {@link FetchAutomationInfo}.
      */
-    async registerAutomationModule(id, {ignoredPackIds = [], configs2014 = {}, configs2024 = {}, configsAll = {}, versions2014 = {}, versions2024 = {}, versionsAll = {}, rules = {}, notes2014 = {}, notes2024 = {}, notesAll = {}, scales2014 = {}, scales2024 = {}, scalesAll = {}, typesAll = {}, types2014 = {}, types2024 = {}} = {}) {
+    async registerAutomationModule(id, {ignoredPackIds = [], infoFetcherCallback} = {}) {
         const module = game.modules.get(id);
         if (!module?.active) return false;
         Logging.group('Automation Module Registered: ' + module.title);
@@ -306,7 +278,7 @@ export class RegisteredAutomations {
         const results = await Promise.all(itemPacks.map(async data => {
             const pack = game.packs.get(data.id);
             if (!pack) return false;
-            return await this.registerAutomationCompendium(pack, {configs2014, configs2024, configsAll, versions2014, versions2024, versionsAll, rules, source: id, notes2014, notes2024, notesAll, scales2014, scales2024, scalesAll, types2014, types2024, typesAll});
+            return await this.registerAutomationCompendium(pack, {source: id, infoFetcherCallback});
         }));
         Logging.groupEnd();
         return results;

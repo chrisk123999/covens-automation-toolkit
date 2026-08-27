@@ -138,11 +138,23 @@ async function rehideActivities(item, identifiers = [], {all = false} = {}) {
 function getSourceClassIdentifier(item, {subclass = false} = {}) {
     if (!item?.actor?.classes) return;
     if (item.system.sourceItem && item.system.sourceItem.indexOf('class:') === 0) return item.system.sourceItem.split(':')[1];
-    if (item.system.advancementRootItem) {
-        let rootItem = item.system.advancementRootItem;
+    let rootItem = item.system.advancementRootItem ?? item.actor.items.get(item.flags.dnd5e?.advancementOrigin);
+    if (rootItem) {
         if (!subclass && rootItem.type === 'subclass' && rootItem.class) rootItem = rootItem.class;
         if (['subclass', 'class'].includes(rootItem.type)) return rootItem.identifier;
     }
+}
+/**
+ * If the item has an advancement source, returns a string in the form: 'sourceType:sourceIdentifier'.
+ * This can be set manually on compendium items in the Item CatKit.
+ * @param {Item5e} item 
+ * @returns {string}
+ */
+function getAdvancementSourceKey(item) {
+    if (!item?.actor) return item.flags.cat?.automation?.sourceType;
+    if (item.system?.sourceItem) return item.system.sourceItem;
+    let rootItem = item.system?.advancementRootItem ?? item.actor.items.get(item.flags.dnd5e?.advancementOrigin);
+    if (rootItem) return `${rootItem.type}:${rootItem.identifier}`;
 }
 function getEquipmentState(item) {
     if (item.system.equipped === undefined) return true;
@@ -237,6 +249,7 @@ export default {
     unhideActivities,
     rehideActivities,
     getSourceClassIdentifier,
+    getAdvancementSourceKey,
     getEquipmentState,
     getSourceClass,
     getItemDamageTypes,

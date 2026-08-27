@@ -6,8 +6,7 @@ function getCurrentAutomation(item) {
     const rules = documentUtils.getRules(item);
     const source = documentUtils.getSource(item);
     const type = item.type;
-    const sourceClass = itemUtils.getSourceClass(item, {subclass: true});
-    const sourceType = sourceClass ? sourceClass.system.type?.value ?? sourceClass.type : undefined;
+    const sourceType = itemUtils.getAdvancementSourceKey(item);
     const actorType = type === 'spell' ? 'character' : item.actor?.type ?? 'character';
     const monsterIdentifier = actorType === 'npc' ? documentUtils.getIdentifier(item.actor) : undefined;
     if (!identifier || !rules) return;
@@ -44,7 +43,7 @@ function getItemAutomationStatus(item) {
 function isUpToDate(item) {
     const currentAutomation = getCurrentAutomation(item);
     if (currentAutomation) {
-        if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item))) return false;
+        if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item) ?? '0')) return false;
         return true;
     }
     const storedHash = getStoredHash(item);
@@ -59,8 +58,7 @@ function getAvailableAutomations(item, {excludeSources = []} = {}) {
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item) ?? 'all';
     const type = item.type;
-    const sourceClass = itemUtils.getSourceClass(item, {subclass: true});
-    const sourceType = sourceClass ? sourceClass.system.type?.value ?? sourceClass.type : undefined;
+    const sourceType = itemUtils.getAdvancementSourceKey(item);
     return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, excludeSources, sourceType});
 }
 function getConfigValue(item, key) {
@@ -144,8 +142,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item);
     if (source) {
-        const sourceClass = itemUtils.getSourceClass(item, {subclass: true});
-        const sourceType = sourceClass ? sourceClass.system.type?.value ?? sourceClass.type : undefined;
+        const sourceType = itemUtils.getAdvancementSourceKey(item);
         automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type: item.type, sourceType});
     } else {
         automation = getAppliedOrPreferredAutomation(item);
@@ -166,6 +163,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     if (existingDescription) genericUtils.setProperty(documentData, 'system.description.value', itemUtils.stripDescriptionBlock(existingDescription));
     genericUtils.setProperty(documentData, 'flags.cat.automation.source', automation.source);
     genericUtils.setProperty(documentData, 'flags.cat.automation.version', automation.version);
+    if (documentData.flags.cat.automation.sourceType) delete documentData.flags.cat.automation.sourceType;
     const defaultImages = Object.values(CONFIG.DND5E.defaultArtwork.Item);
     if (!defaultImages.includes(oldDocumentData.img)) {
         documentData.effects.filter(effect => effect.img === documentData.img).forEach(effect => effect.img = oldDocumentData.img);
