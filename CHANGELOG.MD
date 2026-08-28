@@ -15,7 +15,8 @@
 - Added utils:
   - `actorUtils.getCR`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
-  - `itemUtils.getAdvancementSourceKey`
+  - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
+  - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.

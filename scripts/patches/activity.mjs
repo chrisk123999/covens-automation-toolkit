@@ -62,7 +62,7 @@ function availableAbilities(wrapped) {
 function prepareFinalDataSave(wrapped, ...args) {
     wrapped.apply(this, args);
     if (!this.actor || !this.save?.dc?.value) return;
-    const sourceClassIdentifier = itemUtils.getSourceClassIdentifier(this.item);
+    const [_, sourceClassIdentifier] = itemUtils.getAdvancementSourceKey(this.item)?.split(':') ?? [];
     if (!sourceClassIdentifier) return;
     const totalBonus = this.actor.items.reduce((acc, item) => {
         if (!itemUtils.getEquipmentState(item)) return acc;
@@ -76,7 +76,7 @@ function getAttackData(wrapped, ...args) {
     const exit = () => wrapped(args);
     if (!this.actor) return exit();
     if (this.attack.catModified) return exit();
-    const sourceClassIdentifier = itemUtils.getSourceClassIdentifier(this.item);
+    const [_, sourceClassIdentifier] = itemUtils.getAdvancementSourceKey(this.item)?.split(':') ?? [];
     if (!sourceClassIdentifier) return exit();
     const totalBonus = this.actor.items.reduce((acc, item) => {
         if (!itemUtils.getEquipmentState(item)) return acc;

@@ -149,12 +149,15 @@ function getEffectByStatusID(actor, id) {
  * @param {Actor5e} actor 
  * @param {string} identifier 
  * @param {object} [options]
+ * @param {string} [options.type] The item type to find. Possible values are the keys of CONFIG.Item.typeLabels.
  * @param {boolean} [options.multiple]  Whether to return all items matching the identifier (default false)
  * @returns {Item|Item[]|undefined}
  */
-function getItemByIdentifier(actor, identifier, {multiple = false} = {}) {
+function getItemByIdentifier(actor, identifier, {multiple = false, type} = {}) {
     const predicate = item => documentUtils.getIdentifier(item) === identifier;
-    return multiple ? actor.items.filter(predicate) : actor.items.find(predicate);
+    let collection = actor.items;
+    if (type && actor.itemTypes[type]) collection = actor.itemTypes[type];
+    return multiple ? collection.filter(predicate) : collection.find(predicate);
 }
 
 /**

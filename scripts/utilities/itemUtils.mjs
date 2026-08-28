@@ -1,7 +1,7 @@
 /** @import Item5e from "../../dnd5e/module/documents/item.mjs" */
 
 import {Logging} from '../lib/_module.mjs';
-import {activityUtils, documentUtils, effectUtils, genericUtils} from './_module.mjs';
+import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils} from './_module.mjs';
 const activityVisibilityLocks = new Map();
 
 /**
@@ -135,37 +135,44 @@ async function rehideActivities(item, identifiers = [], {all = false} = {}) {
         if (activityVisibilityLocks.get(uuid) === nextPromise) activityVisibilityLocks.delete(uuid);
     }
 }
-function getSourceClassIdentifier(item, {subclass = false} = {}) {
-    if (!item?.actor?.classes) return;
-    if (item.system.sourceItem && item.system.sourceItem.indexOf('class:') === 0) return item.system.sourceItem.split(':')[1];
-    let rootItem = item.system.advancementRootItem ?? item.actor.items.get(item.flags.dnd5e?.advancementOrigin);
-    if (rootItem) {
-        if (!subclass && rootItem.type === 'subclass' && rootItem.class) rootItem = rootItem.class;
-        if (['subclass', 'class'].includes(rootItem.type)) return rootItem.identifier;
-    }
-}
 /**
- * If the item has an advancement source, returns a string in the form: 'sourceType:sourceIdentifier'.
+ * Fetch a key representing the class, race, feat, etc. that granted an item ('type:identifier').
  * This can be set manually on compendium items in the Item CatKit.
  * @param {Item5e} item 
- * @returns {string}
+ * @returns {string|undefined}
  */
 function getAdvancementSourceKey(item) {
-    if (!item?.actor) return item.flags.cat?.automation?.sourceType;
+    if (!item.actor) return item.flags.cat?.automation?.sourceType;
     if (item.system?.sourceItem) return item.system.sourceItem;
     let rootItem = item.system?.advancementRootItem ?? item.actor.items.get(item.flags.dnd5e?.advancementOrigin);
     if (rootItem) return `${rootItem.type}:${rootItem.identifier}`;
+}
+/**
+ * Fetch the class, race, feat, etc. that granted an item. Works on actor items only.
+ * @param {Item5e} item 
+ * @param {*} [options]
+ * @param {boolean} [options.subclass] If true and the advancement source resolves to a subclass, return the base class instead. Default false.
+ * @returns {Item5e|undefined}
+ */
+function getAdvancementSourceItem(item, {subclass = false}) {
+    if (!item.actor) return;
+    const key = getAdvancementSourceKey(item);
+    if (!key) return;
+    let [type, identifier] = key.split(':');
+    if (!identifier) {
+        identifier = type;
+        type = undefined;
+    }
+    const source = actorUtils.getItemByIdentifier(item.actor, identifier, {type});
+    if (!source) return;
+    if (type === 'subclass' && !subclass && source.class) return source.class;
+    return source;
 }
 function getEquipmentState(item) {
     if (item.system.equipped === undefined) return true;
     if (!item.system.equipped) return false;
     if (item.system.attunement === 'required' && !item.system.attuned) return false;
     return true;
-}
-function getSourceClass(item, {subclass = false} = {}) {
-    const sourceClassIdentifier = getSourceClassIdentifier(item, {subclass});
-    if (!sourceClassIdentifier) return;
-    return item.actor.classes[sourceClassIdentifier];
 }
 /**
  * Get every damage type an item can deal across its attack, damage and save activities, including flavor-declared types.
@@ -248,10 +255,9 @@ export default {
     enchantItem,
     unhideActivities,
     rehideActivities,
-    getSourceClassIdentifier,
     getAdvancementSourceKey,
+    getAdvancementSourceItem,
     getEquipmentState,
-    getSourceClass,
     getItemDamageTypes,
     stripDescriptionBlock,
     setDescriptionBlock,
