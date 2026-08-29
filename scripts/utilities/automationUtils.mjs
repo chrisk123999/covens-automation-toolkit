@@ -172,6 +172,10 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
         if (documentData.system.activities) Object.values(documentData.system.activities).filter(activity => activity.img === documentData.img).forEach(activity => activity.img = oldDocumentData.img);
         documentData.img = oldDocumentData.img;
     }
+    for (const effect of documentData.effects) {
+        if (effect.origin !== sourceDocument.uuid) continue;
+        effect.origin = item.uuid;
+    }
     if (item.flags.dnd5e?.cachedFor && item.system.linkedActivity) {
         const enchantId = item.system.linkedActivity.constructor.ENCHANTMENT_ID;
         const enchantment = oldDocumentData.effects.find(effect => effect._id === enchantId);

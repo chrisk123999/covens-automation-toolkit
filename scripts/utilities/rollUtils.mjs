@@ -37,11 +37,16 @@ function rollDiceSync(formula, {document, options: {strict = false, maximize = f
  * @param {string} formula 
  * @param {object} [options]
  * @param {foundry.abstract.Document} [options.document]
+ * @param {boolean} [options.message]
+ * @param {string} [options.flavor]
+ * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode]
  * @param {EvaluateOptions} [options.options]
  * @returns {Promise<foundry.dice.Roll>}
  */
-async function rollDice(formula, {document, options: {maximize = false, minimize = false} = {}} = {}) {
-    return await new Roll(formula, document?.getRollData()).evaluate({maximize, minimize});
+async function rollDice(formula, {document, message, flavor, mode = 'public', options: {maximize = false, minimize = false} = {}} = {}) {
+    const roll = await new Roll(formula, document?.getRollData()).evaluate({maximize, minimize});
+    if (message) return {message: await roll.toMessage({flavor}, {rollMode: mode}), roll};
+    return roll;
 }
 /**
  * @param {foundry.dice.Roll[]} rolls 
