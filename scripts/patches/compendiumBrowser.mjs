@@ -1,9 +1,14 @@
 import {Logging} from '../lib/_module.mjs';
 async function fetch(wrapped, documentClass, options = {}) {
-    const isCatRequest = Array.isArray(options.filters) && options.filters.some(f => Object.hasOwn(f, '_customPredicate') || Object.hasOwn(f, '_allowedPacks'));
+    const isCatRequest = Array.isArray(options.filters) && options.filters.some(f => 
+        Object.hasOwn(f, '_customPredicate') || 
+        Object.hasOwn(f, '_allowedPacks') || 
+        Object.hasOwn(f, '_exceptions')
+    );
     if (!isCatRequest) return wrapped(documentClass, options);
     let customPredicate = null;
     let allowedPacks = null;
+    let exceptions = null;
     options.filters = options.filters.filter(f => {
         if (Object.hasOwn(f, '_customPredicate')) {
             customPredicate = f._customPredicate;
@@ -13,8 +18,19 @@ async function fetch(wrapped, documentClass, options = {}) {
             allowedPacks = f._allowedPacks;
             return false;
         }
+        if (Object.hasOwn(f, '_exceptions')) {
+            exceptions = f._exceptions;
+            return false;
+        }
         return true;
     });
+    if (exceptions?.length) {
+        const exceptionFilter = {k: 'system.identifier', o: 'in', v: exceptions};
+        if (options.filters.length)
+            options.filters = [{o: 'OR', v: [{o: 'AND', v: options.filters}, exceptionFilter]}];
+        else
+            options.filters = [exceptionFilter];
+    }
     let results = await wrapped(documentClass, options);
     if (allowedPacks?.length) {
         const allowed = new Set(allowedPacks);

@@ -12,6 +12,7 @@
 - Critical hit rules can now be applied to optional bonuses.
 - Added utils:
   - `actorUtils.getCR`
+  - `compendiumUtils.selectSpellFromLists`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)

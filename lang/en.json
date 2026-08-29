@@ -918,6 +918,10 @@
       "Targets": "Targets",
       "ThirdParty": "Third Party Bonuses",
       "Title": "Optional Bonus"
+    },
+    "CompendiumBrowser":{
+      "SpellPicker": "Choose spells from the {lists} list:",
+      "Title": "CAT Compendium Browser"
     }
   }
 }

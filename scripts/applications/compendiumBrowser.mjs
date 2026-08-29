@@ -1,8 +1,10 @@
+import genericUtils from '../utilities/genericUtils.mjs';
 const {CompendiumBrowser} = dnd5e.applications;
 export class CatCompendiumBrowser extends CompendiumBrowser {
     static DEFAULT_OPTIONS = {
         allowedPacks: [],
         customFilters: [],
+        exceptions: [],
         filterPredicate: null 
     };
     static async select(config = {}, renderOptions = {}) {
@@ -10,10 +12,14 @@ export class CatCompendiumBrowser extends CompendiumBrowser {
             if (config[key] === undefined) delete config[key];
         }
         const tabData = dnd5e.applications.CompendiumBrowser.TABS.find(t => t.tab === config.tab);
-        if (tabData && config.mode === undefined) {
-            config.mode = tabData.advanced ?  
+        if (tabData) {
+            config.mode ??= tabData.advanced ?  
                 dnd5e.applications.CompendiumBrowser.MODES.ADVANCED : 
                 dnd5e.applications.CompendiumBrowser.MODES.BASIC;
+            if (!genericUtils.isEmpty(config.filters?.locked)) {
+                genericUtils.setProperty(config, 'filters.locked.documentClass', tabData.documentClass);
+                genericUtils.setProperty(config, 'filters.locked.types', new Set(tabData.types));
+            }
         }
         return new Promise(resolve => {
             const browser = new CatCompendiumBrowser(config);
@@ -34,6 +40,11 @@ export class CatCompendiumBrowser extends CompendiumBrowser {
         if (this.options.allowedPacks?.length) {
             context.filters.arbitrary.push({
                 _allowedPacks: this.options.allowedPacks
+            });
+        }
+        if (this.options.exceptions?.length) {
+            context.filters.arbitrary.push({
+                _exceptions: this.options.exceptions
             });
         }
         if (this.options.customFilters?.length) context.filters.arbitrary.push(...this.options.customFilters);
