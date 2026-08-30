@@ -34,6 +34,10 @@
         "Hint": "Pick which module provides the automation for this document.",
         "HintNone": "No automation sources have registered an automation for this document."
       },
+      "SourceType": {
+        "Label": "Granted By",
+        "Hint": "A key that represents the class, feat, race, etc. that granted this document, e.g. 'class:cleric'."
+      },
       "Version": {
         "Label": "Automation Version",
         "Hint": "Reported by the selected automation source."

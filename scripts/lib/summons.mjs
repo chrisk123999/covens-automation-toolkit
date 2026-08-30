@@ -133,7 +133,7 @@ export class SummonsManager {
             genericUtils.setProperty(itemData, 'system.uses.spent', 0);
             if (usesRecovery) genericUtils.setProperty(itemData, 'system.uses.recovery', [{period: usesRecovery, type: 'recoverAll', formula: usesRecovery === 'recharge' ? (usesRechargeFormula || '6') : ''}]);
         }
-        const sourceClass = itemUtils.getSourceClass(summon.sourceDocument);
+        const sourceClass = itemUtils.getAdvancementSourceItem(summon.sourceDocument);
         if (!sourceClass) {
             updates.items.push(itemData);
             return;

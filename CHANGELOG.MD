@@ -1,4 +1,6 @@
 # 0.0.8 Release:
+## API Update Notes:
+- The automation registry can now differentiate between duplicate identifiers, such as 'channel-divinity' from cleric and paladin. See `itemUtils.getAdvancementSourceKey`.
 ## Update Notes:
 - Added document properties to the Actor CatKit:
   - Feature Resistance: `flags.cat.FR.identifier`
@@ -14,6 +16,8 @@
   - `actorUtils.getCR`
   - `compendiumUtils.selectSpellFromLists`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
+  - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
+  - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.
