@@ -221,7 +221,8 @@ export class RegisteredAutomations {
         /** @type {Automation|undefined} */
         const automation = this.getAutomationByIdentifier(documentUtils.getIdentifier(document), {
             rules: documentUtils.getRules(document),
-            source: documentUtils.getSource(document)
+            source: documentUtils.getSource(document),
+            sourceType: itemUtils.getAdvancementSourceKey(document)
         });
         return automation?.config?.[key]?.default;
     }
