@@ -241,6 +241,7 @@
                         {{#if icon}}<img class="cat-dmg-icon" src="{{icon}}">{{/if}}
                         {{#if label}}<span class="cat-dice-type-label">{{label}}</span>{{/if}}
                         <strong class="cat-dice-subtotal">{{formula}}</strong>
+                        {{#if crit}}<i class="fas fa-check-double" data-tooltip="{{localize 'DND5E.CriticalHit'}}"></i>{{/if}}
                     </header>
                     <ol class="dice-rolls">
                         {{#each dice}}

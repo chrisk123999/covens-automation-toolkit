@@ -445,7 +445,8 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
     }));
 }
 async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
-    let selection = await runDialog(userId, title, content, [], buttons);
+    const config = {width: content?.length > 100 ? 600 : undefined};
+    let selection = await runDialog(userId, title, content, [], buttons, config);
     return selection?.buttons;
 }
 async function confirmUseItem(document, {userId = game.user.id, buttons = 'yesNo'} = {}) {

@@ -256,7 +256,7 @@ export class RegisteredAutomations {
                 identifier,
                 source
             };
-            const data = genericUtils.mergeObject(defaults, infoFetcherCallback(document, genericUtils.duplicate(defaults)));
+            const data = infoFetcherCallback ? genericUtils.mergeObject(defaults, infoFetcherCallback(document, genericUtils.duplicate(defaults))) : defaults;
             return this.registerAutomation(data);
         });
         Logging.groupEnd();

@@ -1,4 +1,4 @@
-import {uiUtils, genericUtils} from '../utilities/_module.mjs';
+import {uiUtils, genericUtils, automationUtils} from '../utilities/_module.mjs';
 import {constants} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
@@ -134,13 +134,6 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         };
     }
 
-    #sourceName(id) {
-        return constants.automations?.sourceNames?.[id]
-            ?? game.modules.get(id)?.title
-            ?? (game.system?.id === id ? game.system.title : null)
-            ?? id;
-    }
-
     #buildPackPriority(input) {
         const sources = input.value ?? {};
         const registered = new Set(Object.keys(constants.automations?.sourceNames ?? {}));
@@ -192,7 +185,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 id, 
                 kind: isPack ? 'pack' : 'source', 
                 kindLabel: isPack ? packTag : sourceTag, 
-                name: isPack ? game.packs.get(id).metadata.label : this.#sourceName(id), 
+                name: automationUtils.getSourceName(id), 
                 enabled: cfg.enabled ?? false, 
                 priority: cfg.priority ?? 50
             });

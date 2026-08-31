@@ -1,5 +1,6 @@
 import {constants, Logging} from '../../lib/_module.mjs';
 import {documentUtils, genericUtils, automationUtils, dialogUtils, uiUtils, itemUtils} from '../../utilities/_module.mjs';
+import DialogApp from '../dialog.mjs';
 import EmbeddedMacroEditorApp from '../embedded-macros.mjs';
 const {fields} = foundry.data;
 
@@ -972,8 +973,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     static async #massApply() {
         const rawItems = Array.from(await this._getMassApplyItems() ?? []);
         if (!rawItems.length) return;
-        const confirmed = await dialogUtils.confirm('CAT.MEDKIT.MassApply.ConfirmTitle', _loc('CAT.MEDKIT.MassApply.ConfirmPrompt'));
-        if (!confirmed) return;
         const dependencyMap = new Map();
         rawItems.forEach(item => dependencyMap.set(item.id, itemUtils.getDependencies(item)));
         const sortedItems = [];
@@ -995,23 +994,72 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             });
             visiting.delete(item.id);
             visited.add(item.id);
-            sortedItems.push(item);
-        };
-        rawItems.forEach(visit);
-        if (cycleDetected) ui.notifications.warn('CAT.MEDKIT.MassApply.CycleWarning');
-        for (const item of sortedItems) {
-            const isApplied = automationUtils.getCurrentAutomation(item) || automationUtils.getStoredHash(item);
-            let needsUpdate = false;
-            if (isApplied) {
-                needsUpdate = !automationUtils.isUpToDate(item);
+            const applied = automationUtils.getCurrentAutomation(item);
+            if (applied || automationUtils.getStoredHash(item)) {
+                if (!automationUtils.isUpToDate(item)) sortedItems.push({item, reason: 'outdated', applied});
             } else {
                 const available = automationUtils.getAvailableAutomations(item, {excludeSources: constants.massApplyExcludeSources});
-                if (available?.length) needsUpdate = true;
+                if (available?.length) sortedItems.push({item, reason: 'available', available});
             }
-            if (needsUpdate) await automationUtils.updateItem(item);
+        };
+        rawItems.forEach(visit);
+        if (!sortedItems.length) return ui.notifications.warn('CAT.MEDKIT.MassApply.NoUpdates');
+        if (cycleDetected) ui.notifications.warn('CAT.MEDKIT.MassApply.CycleWarning');
+        if (!await this.#massApplyPrompt(sortedItems)) return;
+        for (const item of sortedItems) {
+            await automationUtils.updateItem(item.item);
         }
         ui.notifications.info('CAT.MEDKIT.MassApply.Done');
         this.render();
+    }
+
+    async #massApplyPrompt(items) {
+        const text = `${_loc('CAT.MEDKIT.MassApply.ConfirmPrompt')}<br>
+            ${_loc('CAT.MEDKIT.MassApply.Ignored')}
+            <ul>${constants.massApplyExcludeSources.map(s => `<li>${automationUtils.getSourceName(s)}</li>`).join('')}</ul>`;
+        const inputs = [];
+        for (const entry of items) {
+            const i = entry.item;
+            const subinputs = [];
+            if (entry.available?.length > 1) {
+                const preferred = automationUtils.getAutomationSources().find(s => entry.available.some(e => e.source === s));
+                subinputs.push(['selectOption', [{
+                    label: _loc('CAT.MEDKIT.MassApply.ChooseSource'),
+                    name: i.id + '.source',
+                    options: {
+                        currentValue: preferred ?? entry.available[0],
+                        options: entry.available.map(a => ({
+                            label: automationUtils.getSourceName(a.source),
+                            value: a.source
+                        }))
+                    }
+                }]]);
+            }
+            const tags = [{label: `CAT.MEDKIT.MassApply.${entry.reason === 'available' ? 'Apply' : 'Update'}`, id: 'reason'}];
+            if (entry.available?.length === 1) tags.push({label: automationUtils.getSourceName(entry.available[0].source), id: 'source'});
+            else if (entry.available?.length > 1) tags.push({label: 'CAT.MEDKIT.MassApply.ChooseSource', id: 'choose'});
+            if (entry.applied) {
+                const version = documentUtils.getVersion(i) ?? '0';
+                const label = `${version} ⟶ ${entry.applied.version}`;
+                tags.push({label, id: 'update'});
+            }
+            inputs.push({
+                label: i.name,
+                name: i.id,
+                options: {
+                    tooltip: await uiUtils.enrichHTML(i.system?.description?.value, i.getRollData()),
+                    isChecked: true,
+                    image: i.img,
+                    subinputs,
+                    tags
+                }
+            });
+        }
+        // WIP review and edit documents for mass apply
+        // const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', text, [['checkbox', inputs, {displayAsRows: true}]], 'yesNo');
+        // console.log('CHOICES', choices);
+        
+        return await dialogUtils.confirm('CAT.MEDKIT.MassApply.ConfirmTitle', text);
     }
 
     #openEmbeddedEditor(macro, onSubmit) {

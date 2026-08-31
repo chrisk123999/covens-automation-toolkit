@@ -344,6 +344,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             const cfg = CONFIG.DND5E.damageTypes[type] ?? CONFIG.DND5E.healingTypes[type];
             return {
                 id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}),
+                crit: f.options?.isCritical,
                 formula: f._formula,
                 label: cfg?.label,
                 icon: cfg?.icon,

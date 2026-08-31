@@ -589,7 +589,7 @@ class RollBonus {
         }
         return true;
     }
-    static CombineRolls(rolls, bonuses, {workflow}) {
+    static CombineRolls(rolls, bonuses, {workflow} = {}) {
         const defaultType = workflow?.damageRolls[0]?.options.type ?? workflow?.defaultDamageType;
         const active = [...rolls, ...bonuses.filter(b => b.active).map(b => {
             const r = b.roll.clone();
@@ -598,7 +598,11 @@ class RollBonus {
             return r;
         })];
         const groupedRolls = this._combineRolls(active);
-        groupedRolls.forEach(r => r._formula = dnd5e.dice.simplifyRollFormula(r.formula));
+        groupedRolls.forEach(r => {
+            r._formula = dnd5e.dice.simplifyRollFormula(r.formula);
+            if (r instanceof DamageBonus.rollClass && workflow?.isCritical) 
+                r.options.isCritical = workflow.isCritical; 
+        });
         return groupedRolls;
     }
 

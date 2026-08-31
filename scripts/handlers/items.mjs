@@ -1,5 +1,5 @@
 import {constants, Logging} from '../lib/_module.mjs';
-import {automationUtils, documentUtils} from '../utilities/_module.mjs';
+import {automationUtils, documentUtils, itemUtils} from '../utilities/_module.mjs';
 import * as integration from '../integration/_modules.mjs';
 async function updateHash(item, {create = false, remove = false} = {}) {
     const compendiumId = item.compendium?.metadata?.id;
@@ -28,12 +28,13 @@ async function updateHash(item, {create = false, remove = false} = {}) {
 async function hashCompendium(compendium, {register = false} = {}) {
     const index = await compendium.getIndex({ 
         fields: [
-            'flags.cat.automation.hash',
+            'flags.cat.automation',
             'system.source.rules',
             'system.identifier'
         ] 
     });
     const promises = [];
+    const documentType = compendium.metadata.type;
     index.forEach(entry => {
         promises.push((async () => {
             const oldHash = foundry.utils.getProperty(entry, 'flags.cat.automation.hash');
@@ -42,9 +43,10 @@ async function hashCompendium(compendium, {register = false} = {}) {
                     uuid: entry.uuid,
                     type: entry.type,
                     source: compendium.metadata.id,
-                    identifier: documentUtils.getIdentifier(entry),
+                    sourceType: itemUtils.getAdvancementSourceKey(entry),
+                    identifier: documentUtils.getIdentifier(entry, {documentType}),
                     version: documentUtils.getVersion(entry) ?? '0',
-                    rules: documentUtils.getRules(entry, {documentType: compendium.metadata.type})
+                    rules: documentUtils.getRules(entry, {documentType})
                 });
             }
             if (!oldHash && !compendium.locked) {

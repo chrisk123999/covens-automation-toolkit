@@ -113,6 +113,13 @@ function getAutomationSources({packsOnly = false} = {}) {
     const entries = Object.entries(settings).filter(([key, value]) => value.enabled && (!packsOnly || value.pack)).map(([key, value]) => [key, value.priority]);
     return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
 }
+function getSourceName(id) {
+    return constants.automations?.sourceNames?.[id]
+        ?? game.packs.get(id)?.metadata.label
+        ?? game.modules.get(id)?.title
+        ?? (game.system?.id === id ? game.system.title : null)
+        ?? id;
+}
 function getSourceDataSources(type, {packsOnly = false} = {}) {
     const settingKeys = {
         Monster: 'monsterCompendiums',
@@ -327,6 +334,7 @@ export default {
     getGenericAnimationConfig,
     getSourceDataSources,
     getSourceDocumentByIdentifier,
+    getSourceName,
     calledEvent,
     calledEventSync,
     getAnimationConfig,
