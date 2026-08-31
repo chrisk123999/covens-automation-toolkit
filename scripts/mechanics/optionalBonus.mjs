@@ -22,7 +22,7 @@ async function processBonuses(rolls, inputs, type, targetActor, workflow) {
         if (!choices) bonuses = bonuses.filter(b => b.active && !b.optional && selectedTargetsIfRequired(b)); 
         else bonuses = choices.filter(c => selectedTargetsIfRequired(c));
     }
-    return bonuses;
+    return bonuses.sort((a, b) => b.priority - a.priority);
 }
 
 async function addAllToRoll(roll, inputs, targetActor, workflow) {
