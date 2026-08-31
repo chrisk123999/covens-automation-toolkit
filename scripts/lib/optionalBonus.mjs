@@ -92,7 +92,8 @@ class RollBonus {
     #initialized;   // Boolean  | Whether handlers have been called to initialize costs, hints, and scaling.
     #identifier;    // String   | Identifier of the bonus.
     #tags;          // Set      | Tags of the bonus.
-    constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor, autoApproveRequests = false, identifier, tags = []} = {}) {
+    #priority;      // Number   | The priority of the bonus, lower runs first.
+    constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor, autoApproveRequests = false, identifier, tags = [], priority = 50} = {}) {
         this.#document = document;
         this.#getActivity(document);
         this.#actor = this.#getActor(actor);
@@ -110,6 +111,7 @@ class RollBonus {
         this.active = !this.#optional;
         this.#identifier = identifier ?? documentUtils.getIdentifier(this.#document);
         this.#tags = new Set (tags);
+        this.#priority = Number(priority);
     }
 
     _makeHints(list) {
@@ -176,6 +178,9 @@ class RollBonus {
     }
     get tags() {
         return this.#tags;
+    }
+    get priority() {
+        return this.#priority;
     }
     get rollClass() { 
         return this.#rollClass;
