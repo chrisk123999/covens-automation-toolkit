@@ -90,7 +90,9 @@ class RollBonus {
     #action;        // Boolean  | Action economy required to use the bonus. Only reactions can be used outside of your own turn.
     #active;        // Boolean  | Whether this bonus is active or not.
     #initialized;   // Boolean  | Whether handlers have been called to initialize costs, hints, and scaling.
-    constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor, autoApproveRequests = false} = {}) {
+    #identifier;    // String   | Identifier of the bonus.
+    #tags;          // Set      | Tags of the bonus.
+    constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor, autoApproveRequests = false, identifier, tags = []} = {}) {
         this.#document = document;
         this.#getActivity(document);
         this.#actor = this.#getActor(actor);
@@ -106,6 +108,8 @@ class RollBonus {
         this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
         this.active = !this.#optional;
+        this.#identifier = identifier ?? documentUtils.getIdentifier(this.#document);
+        this.#tags = new Set (tags);
     }
 
     _makeHints(list) {
@@ -166,6 +170,12 @@ class RollBonus {
     #getActor(override) {
         if (override) return override;
         return this.activity?.actor ?? this.document.actor;
+    }
+    get identifier() {
+        return this.#identifier;
+    }
+    get tags() {
+        return this.#tags;
     }
     get rollClass() { 
         return this.#rollClass;
