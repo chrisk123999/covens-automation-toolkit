@@ -1005,39 +1005,46 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         rawItems.forEach(visit);
         if (!sortedItems.length) return ui.notifications.warn('CAT.MEDKIT.MassApply.NoUpdates');
         if (cycleDetected) ui.notifications.warn('CAT.MEDKIT.MassApply.CycleWarning');
-        if (!await this.#massApplyPrompt(sortedItems)) return;
-        for (const item of sortedItems) {
-            await automationUtils.updateItem(item.item);
+        const choices = await this.#massApplyPrompt(sortedItems);
+        if (!choices) return;
+        for (const entry of sortedItems) {
+            const options = choices[entry.item.id];
+            if (!options.included) continue;
+            await automationUtils.updateItem(entry.item, {source: options.source});
         }
         ui.notifications.info('CAT.MEDKIT.MassApply.Done');
         this.render();
     }
 
     async #massApplyPrompt(items) {
-        const text = `${_loc('CAT.MEDKIT.MassApply.ConfirmPrompt')}<br>
-            ${_loc('CAT.MEDKIT.MassApply.Ignored')}
-            <ul>${constants.massApplyExcludeSources.map(s => `<li>${automationUtils.getSourceName(s)}</li>`).join('')}</ul>`;
         const inputs = [];
         for (const entry of items) {
+            let preferred;
             const i = entry.item;
             const subinputs = [];
+            const tags = [{label: `CAT.MEDKIT.MassApply.${entry.reason === 'available' ? 'Apply' : 'Update'}`, id: 'reason'}];
             if (entry.available?.length > 1) {
-                const preferred = automationUtils.getAutomationSources().find(s => entry.available.some(e => e.source === s));
+                preferred = automationUtils.getAutomationSources().find(s => entry.available.some(e => e.source === s));
+                tags.push({label: 'CAT.MEDKIT.MassApply.ChooseSource', id: 'choose'});
                 subinputs.push(['selectOption', [{
                     label: _loc('CAT.MEDKIT.MassApply.ChooseSource'),
                     name: i.id + '.source',
                     options: {
-                        currentValue: preferred ?? entry.available[0],
+                        currentValue: preferred ?? entry.available[0].source,
                         options: entry.available.map(a => ({
                             label: automationUtils.getSourceName(a.source),
                             value: a.source
-                        }))
+                        })),
+                        onchange: ({input, getInputById}) => {
+                            const tag = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags.find(t => t.id === 'source');
+                            if (!tag) return;
+                            tag.label = automationUtils.getSourceName(input.value);
+                            return true;
+                        }
                     }
                 }]]);
             }
-            const tags = [{label: `CAT.MEDKIT.MassApply.${entry.reason === 'available' ? 'Apply' : 'Update'}`, id: 'reason'}];
-            if (entry.available?.length === 1) tags.push({label: automationUtils.getSourceName(entry.available[0].source), id: 'source'});
-            else if (entry.available?.length > 1) tags.push({label: 'CAT.MEDKIT.MassApply.ChooseSource', id: 'choose'});
+            if (entry.available?.length) tags.push({label: automationUtils.getSourceName(preferred ?? entry.available[0].source), id: 'source'});
             if (entry.applied) {
                 const version = documentUtils.getVersion(i) ?? '0';
                 const label = `${version} ⟶ ${entry.applied.version}`;
@@ -1045,7 +1052,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             }
             inputs.push({
                 label: i.name,
-                name: i.id,
+                name: i.id + '.included',
                 options: {
                     tooltip: await uiUtils.enrichHTML(i.system?.description?.value, i.getRollData()),
                     isChecked: true,
@@ -1055,11 +1062,9 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 }
             });
         }
-        // WIP review and edit documents for mass apply
-        // const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', text, [['checkbox', inputs, {displayAsRows: true}]], 'yesNo');
-        // console.log('CHOICES', choices);
-        
-        return await dialogUtils.confirm('CAT.MEDKIT.MassApply.ConfirmTitle', text);
+        const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', 'CAT.MEDKIT.MassApply.ConfirmPrompt', [['checkbox', inputs, {displayAsRows: true, totalMax: items.length}]], 'yesNo', {width: 475});
+        if (!choices || !choices.buttons) return false;
+        return choices;
     }
 
     #openEmbeddedEditor(macro, onSubmit) {

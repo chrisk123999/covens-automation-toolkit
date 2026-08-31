@@ -599,10 +599,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         };
     }
 
-    #buildSelectOption(fields, opts, _index, _parentIndex) {
+    #buildSelectOption(fields, opts, index, parentIndex) {
         return {
             useHelper: true,
-            options: fields.map(f => {
+            options: fields.map((f, idx) => {
                 const choices = (f.options?.options ?? []).reduce((acc, i) => {
                     if (typeof i === 'string') acc[i] = i;
                     else acc[i.value] = i.label;
@@ -612,7 +612,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     field: new StringField({label: f.label, hint: f.hint, choices, required: true, blank: false}),
                     name: f.name,
                     value: f.options?.currentValue ?? '',
-                    onchange: f.options?.onchange
+                    onchange: f.options?.onchange,
+                    id: DialogApp.#makeID(index, idx, {parentIndex, header: opts?.header})
                 };
             }),
             header: opts?.header,
@@ -814,7 +815,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     ctx.input.currentAmount = Number(targetInput.value);
                     if (ctx.input?.weight) ctx.fullContext.inputs[ctx.groupIndex] = this.#currentMaxAmounts(ctx.group);
                     changed = true;
-                }
+                } else ctx.input.value = targetInput.value;
                 break;
             case 'radio':
                 ctx.group.options.forEach(o => o.isChecked = false);

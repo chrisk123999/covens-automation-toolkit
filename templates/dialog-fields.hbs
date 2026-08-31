@@ -4,7 +4,7 @@
     {{#cat-wrapIf hasSubinputs "div" class="cat-has-collapsible"}}
     {{#if useHelper}}
         {{#each options}}
-            {{formGroup field name=name value=value}}
+            {{formGroup field name=name value=value id=id}}
         {{/each}}
     {{else if isButton}}
         <div class="cat-body-buttons {{#if displayAsRows}}cat-stacked{{/if}}">

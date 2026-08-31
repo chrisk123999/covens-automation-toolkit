@@ -23,7 +23,6 @@
         "Done": "Mass apply complete.",
         "CompendiumPending": "Compendium mass apply isn't wired yet - waiting on a pack-aware updater.",
         "CycleWarning": "Circular dependency detected among items. Some updates may occur out of sequence!",
-        "Ignored": "Automations from the following sources are ignored for this operation:",
         "NoUpdates": "There are no items in need of updates!",
         "ChooseSource": "Choose Source",
         "Update": "Update",
