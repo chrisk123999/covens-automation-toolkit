@@ -64,8 +64,8 @@ function getAvailableAutomations(item, {excludeSources = []} = {}) {
 function getConfigValue(item, key) {
     return constants.automations.getConfigValue(item, key);
 }
-function getGenericConfigValue(item, source, identifier, key) {
-    return constants.macros.getGenericConfigValue(item, source, identifier, key);
+function getGenericConfigValue(item, source, identifier, key, {rules} = {}) {
+    return constants.macros.getGenericConfigValue(item, source, identifier, key, {rules});
 }
 async function setConfigValue(item, key, value) {
     return await documentUtils.setFlag(item, 'cat', 'config.' + key, value);

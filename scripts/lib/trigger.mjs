@@ -1,4 +1,4 @@
-import {automationUtils, documentUtils, tokenUtils} from '../utilities/_module.mjs';
+import {automationUtils, documentUtils, rollUtils, tokenUtils} from '../utilities/_module.mjs';
 import {constants, EmbeddedMacros} from '../lib/_module.mjs';
 class Trigger {
     static get type() {
@@ -27,21 +27,26 @@ class Trigger {
     processEmbeddedMacro() {
         this.embeddedMacros = new EmbeddedMacros(this.document).getMacros(this.constructor.type, this.pass);
     }
-    filterDistance(macro) {
+    filterDistance(macro, fnMacro) {
         const target = this.targetToken || this.sourceToken;
         if (!this.distances || !target) return false;
-        const disabled = macro.configDisabled ? automationUtils.getConfigValue(this.document, macro.configDisabled) : macro.disabled;
+        const getConfig = (key) => {
+            if (fnMacro.generic) return automationUtils.getGenericConfigValue(this.document, fnMacro.source, fnMacro.identifier, key, {rules: fnMacro.rules});
+            return automationUtils.getConfigValue(this.document, key);
+        };
+        const disabled = macro.configDisabled ? getConfig(macro.configDisabled) : macro.disabled;
         if (disabled) {
             const actor = this.targetToken.actor;
             if (actor && disabled.some(reason => actor.statuses.has(reason))) return false;
         }
-        const dispositions = macro.configDispositions ? automationUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
+        const dispositions = macro.configDispositions ? getConfig(macro.configDispositions) : macro.dispositions;
         if (dispositions) {
             const isEnemy = tokenUtils.isEnemy(this.token, this.targetToken);
             const isAlly = !isEnemy;
             if (!(dispositions.includes('all') || (dispositions.includes('ally') && isAlly) || (dispositions.includes('enemy') && isEnemy))) return false;
         }
-        const maxDistance = macro.configDistance ? automationUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
+        let maxDistance = macro.configDistance ? getConfig(macro.configDistance) : macro.distance;
+        if (typeof maxDistance === 'string') maxDistance = rollUtils.rollDiceSync(maxDistance, {document: this.document, options: {maximize: true}}).total;
         if (maxDistance !== undefined) {
             const distance = this.distances[target.id] ?? Infinity;
             if (distance < 0 || maxDistance < distance) return false;
@@ -50,11 +55,11 @@ class Trigger {
     }
     processDistanceMacros() {
         if (this.fnMacros.length) {
-            this.fnMacros.forEach(fnMacro => fnMacro.macros = fnMacro.macros.map(this.filterDistance, this).filter(Boolean));
+            this.fnMacros.forEach(fnMacro => fnMacro.macros = fnMacro.macros.map(macro => this.filterDistance(macro, fnMacro)).filter(Boolean));
             this.fnMacros = this.fnMacros.filter(fnMacro => fnMacro.macros.length);
         }
         if (this.embeddedMacros.length) {
-            this.embeddedMacros.forEach(embeddedMacro => embeddedMacro.macros = embeddedMacro.macros.map(this.filterDistance, this).filter(Boolean));
+            this.embeddedMacros.forEach(embeddedMacro => embeddedMacro.macros = embeddedMacro.macros.map(macro => this.filterDistance(macro, embeddedMacro)).filter(Boolean));
             this.embeddedMacros = this.embeddedMacros.filter(embeddedMacro => embeddedMacro.macros.length);
         }
     }
@@ -76,21 +81,31 @@ class CombatTrigger extends Trigger {
 }
 class AuraTrigger extends Trigger {
     static get type() { return 'aura'; }
-    filterDistance(macro) {
+    filterDistance(macro, fnMacro) {
         const auraSourceToken = this.targetToken;
         if (!this.distances || !auraSourceToken) return false;
-        const disabled = macro.configDisabled ? automationUtils.getConfigValue(this.document, macro.configDisabled) : macro.disabled;
-        if (disabled) {
+        const getConfig = (key) => {
+            if (fnMacro.generic) return automationUtils.getGenericConfigValue(this.document, fnMacro.source, fnMacro.identifier, key, {rules: fnMacro.rules});
+            return automationUtils.getConfigValue(this.document, key);
+        };
+        const selfDisable = macro.configSelfDisable ? getConfig(macro.configSelfDisable) : macro.selfDisable;
+        if (selfDisable?.length) {
+            const actor = auraSourceToken.actor;
+            if (actor && selfDisable.some(reason => actor.statuses.has(reason))) return false;
+        }
+        const disabled = macro.configDisabled ? getConfig(macro.configDisabled) : macro.disabled;
+        if (disabled?.length) {
             const actor = this.token.actor;
             if (actor && disabled.some(reason => actor.statuses.has(reason))) return false;
         }
-        const dispositions = macro.configDispositions ? automationUtils.getConfigValue(this.document, macro.configDispositions) : macro.dispositions;
+        const dispositions = macro.configDispositions ? getConfig(macro.configDispositions) : macro.dispositions;
         if (dispositions) {
             const isEnemy = tokenUtils.isEnemy(this.token, auraSourceToken);
             const isAlly = !isEnemy;
             if (!(dispositions.includes('all') || (dispositions.includes('ally') && isAlly) || (dispositions.includes('enemy') && isEnemy))) return false;
         }
-        const maxDistance = macro.configDistance ? automationUtils.getConfigValue(this.document, macro.configDistance) : macro.distance;
+        let maxDistance = macro.configDistance ? getConfig(macro.configDistance) : macro.distance;
+        if (typeof maxDistance === 'string') maxDistance = rollUtils.rollDiceSync(maxDistance, {document: this.document, options: {maximize: true}}).total;
         if (maxDistance !== undefined) {
             const distance = this.distances[auraSourceToken.id] ?? Infinity;
             if (distance < 0 || maxDistance < distance) return false;

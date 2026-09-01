@@ -33,7 +33,8 @@ export class RegisteredMacros {
             source,
             rules,
             identifier,
-            macros
+            macros,
+            generic: fnMacro.generic ?? false
         };
     }
     getAllMacros({genericOnly = false, documentType} = {}) {
@@ -70,10 +71,10 @@ export class RegisteredMacros {
         }
         return data.map(i => this.registerFnMacro(i, overwrite));
     }
-    getGenericConfigValue(document, source, identifier, key) {
+    getGenericConfigValue(document, source, identifier, key, {rules} = {}) {
         const value = document.flags.cat?.genericConfig?.[source]?.[identifier]?.[key];
         if (value != undefined) return value;
-        const rules = documentUtils.getRules(document);
+        rules ??= documentUtils.getRules(document);
         const macroKey = this.#getMacroKey(source, identifier, rules);
         const macro = this.overwriteMacros.get(macroKey) ?? this.fnMacros.get(macroKey);
         return macro?.genericConfig?.[key]?.default;
