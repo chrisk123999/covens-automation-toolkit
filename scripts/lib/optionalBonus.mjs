@@ -606,7 +606,7 @@ class RollBonus {
     }
     static CombineRolls(rolls, bonuses, {workflow} = {}) {
         const defaultType = workflow?.damageRolls[0]?.options.type ?? workflow?.defaultDamageType;
-        const active = [...rolls, ...bonuses.filter(b => b.active).map(b => {
+        const active = [...rolls, ...bonuses.filter(b => b.active && b.roll.formula !== '0').map(b => {
             const r = b.roll.clone();
             r.options.type ||= rolls[0]?.options?.type ?? defaultType;
             r.terms.forEach(t => t.options.source = b.name);
