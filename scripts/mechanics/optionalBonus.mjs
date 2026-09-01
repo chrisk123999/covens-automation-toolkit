@@ -7,7 +7,7 @@ async function processBonuses(rolls, inputs, type, targetActor, workflow) {
     let bonuses = [];
     for (const bonus of inputs) {
         if (!(bonus instanceof type)) continue;
-        if (!bonus.initialized) bonus.initialize();
+        if (!bonus.initialized) bonus.initialize(workflow);
         bonus.targetActor = targetActor;
         if (bonus.maxTargets > 0 && workflow?.targets.size === 1) bonus.maxTargets = 0;
         if (bonus.optional || bonus.maxTargets > 0 || bonus.maxScaling > 0 || bonus.isThirdParty) 
@@ -18,11 +18,9 @@ async function processBonuses(rolls, inputs, type, targetActor, workflow) {
     const targets = workflow?.targets.map(t => t.document);
     if (needsDialog) {
         const choices = await dialogUtils.selectScaledDocument(bonuses, {rolls, targets, workflow});
-        const selectedTargetsIfRequired = b => b.maxTargets ? b.targets.size : true;
-        if (!choices) bonuses = bonuses.filter(b => b.active && !b.optional && selectedTargetsIfRequired(b)); 
-        else bonuses = choices.filter(c => selectedTargetsIfRequired(c));
+        if (!choices) bonuses = bonuses.filter(b => b.active && !b.optional);
     }
-    return bonuses.sort((a, b) => b.priority - a.priority);
+    return bonuses.filter(b => !(b.maxTargets && !b.targets.size)).sort((a, b) => b.priority - a.priority);
 }
 
 async function addAllToRoll(roll, inputs, targetActor, workflow) {
@@ -31,6 +29,7 @@ async function addAllToRoll(roll, inputs, targetActor, workflow) {
     if (!bonuses?.length) return;
     for (const bonus of bonuses) {
         if (bonus.use) await bonus.use(workflow, bonuses);
+        if (bonus.roll.formula === '0') continue;
         roll = await rollUtils.addToRoll(roll, bonus.roll.formula, {rollData: bonus.roll.data});
     }
     return roll;
@@ -72,6 +71,8 @@ async function damage(workflow) {
     const defaultDamageType = rolls[0]?.options.type ?? workflow.defaultDamageType;
     for (const bonus of bonuses) {
         if (workflow.isCritical) DamageBonus.MakeCritical(bonus);
+        if (bonus.use) await bonus.use(workflow, bonuses);
+        if (bonus.roll.formula === '0') continue;
         if (!bonus.roll._evaluated) await bonus.roll.evaluate();
         if (bonus.targets.size > 0) {
             if (bonus.targets.size === workflow.targets.size) {
@@ -87,7 +88,6 @@ async function damage(workflow) {
                 targetedData[target.uuid].push({total, type});
             }
         } else fullRoll.push(bonus.roll);
-        if (bonus.use) await bonus.use(workflow, bonuses);
     }
     if (fullRoll.length) {
         rolls.push(...fullRoll);
