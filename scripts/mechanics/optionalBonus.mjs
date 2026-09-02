@@ -70,7 +70,7 @@ async function damage(workflow) {
     const targetedData = {}, fullRoll = [], targeted = [];
     const defaultDamageType = rolls[0]?.options.type ?? workflow.defaultDamageType;
     for (const bonus of bonuses) {
-        if (workflow.isCritical) DamageBonus.MakeCritical(bonus);
+        if (workflow.isCritical) bonus.roll = DamageBonus.GetCriticalRoll(bonus);
         if (bonus.use) await bonus.use(workflow, bonuses);
         if (bonus.roll.formula === '0') continue;
         if (!bonus.roll._evaluated) await bonus.roll.evaluate();

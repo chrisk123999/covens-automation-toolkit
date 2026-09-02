@@ -235,7 +235,8 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
         const tags = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags ?? [];
         for (const t of tags) {
             if (t.id === 'formula') {
-                t.label = bonus.roll.formula;
+                if (workflow?.isCritical) t.label = DamageBonus.GetCriticalRoll(bonus).formula;
+                else t.label = bonus.roll.formula;
                 continue;
             }
             const hint = bonus.scalingHints.find(h => h.id === t.id);
@@ -314,8 +315,9 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
             }]]);
         const tags = [];
         if (bonus.roll) {
+            const formula = workflow?.isCritical ? DamageBonus.GetCriticalRoll(bonus).formula : bonus.roll.formula;
             const type = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
-            tags.push({label: bonus.roll.formula, id: 'formula', image: type?.icon, tooltip: type?.label});
+            tags.push({label: formula, id: 'formula', image: type?.icon, tooltip: type?.label});
             if (bonus.damageTypes?.size > 1) tags.push({label: 'CAT.OptionalBonus.DamageTypeChoice', id: 'damageType'});
         }   
         if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id)})));

@@ -607,7 +607,11 @@ class RollBonus {
     static CombineRolls(rolls, bonuses, {workflow} = {}) {
         const defaultType = workflow?.damageRolls[0]?.options.type ?? workflow?.defaultDamageType;
         const active = [...rolls, ...bonuses.filter(b => b.active && b.roll.formula !== '0').map(b => {
-            const r = b.roll.clone();
+            let r;
+            if (b.roll instanceof DamageBonus.rollClass && workflow?.isCritical) 
+                r = DamageBonus.GetCriticalRoll(b);
+            else 
+                r = b.roll.clone();
             r.options.type ||= rolls[0]?.options?.type ?? defaultType;
             r.terms.forEach(t => t.options.source = b.name);
             return r;
@@ -828,7 +832,6 @@ export class DamageBonus extends RollBonus {
     _otherScaling({rollTotal, bonus, workflow, otherBonuses}) {
         const maxTargets = this.#targetScaling?.({rollTotal, bonus, workflow, otherBonuses});
         if (Number.isNumeric(maxTargets)) this.maxTargets = maxTargets;
-        if (workflow?.isCritical) DamageBonus.MakeCritical(bonus);
     }
     
     static get rollClass() { return CONFIG.Dice.DamageRoll; }
@@ -848,13 +851,14 @@ export class DamageBonus extends RollBonus {
         });
     }
     /**
-     * Applies a critical dice formula to the bonus, if allowed.
+     * Fetches a copy of the roll with critical hit rules applied.
      * @param {DamageBonus} bonus
+     * @returns {dnd5e.dice.DamageRoll}
      */
-    static MakeCritical(bonus) {
-        if (!bonus.canCrit || bonus.roll.options.isCritical) return;
+    static GetCriticalRoll(bonus) {
+        if (!bonus.canCrit || bonus.roll.options.isCritical) return bonus.roll.clone();
         const formula = rollUtils.getCriticalFormula(bonus.roll.formula, bonus.document, bonus.roll.options.critical);
-        bonus.roll = new bonus.rollClass(formula, bonus.roll.data, {...bonus.roll.options, isCritical: true});
+        return new bonus.rollClass(formula, bonus.roll.data, {...bonus.roll.options, isCritical: true});
     }
     /**
      * Filter valid and applicable {@link bonuses}.
