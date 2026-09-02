@@ -1083,7 +1083,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             .sort((a, b) => {
                 if (!a[2].legend) return 1;
                 if (!b[2].legend) return -1;
-                return a[2].legend?.localeCompare(b[2].legend, game.i18n.lang);
+                return a[2].legend.localeCompare(b[2].legend, game.i18n.lang);
             });
         const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', 'CAT.MEDKIT.MassApply.ConfirmPrompt', inputs, 'yesNo');
         if (!choices || !choices.buttons) return false;
