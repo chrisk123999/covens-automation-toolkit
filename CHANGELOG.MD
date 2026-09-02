@@ -19,13 +19,14 @@
 - Added `zeroHP` special duration to the Effect CatKit.
 - Added a damage type picker in the optional bonus dialog.
 - Critical hit rules can now be applied to optional bonuses.
-- The mass apply feature in the Actor CatKit now prompts a review of the documents to be updated.
+- The mass apply feature now prompts a review of the documents to be updated.
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.
 ## Bug Fixes:
 - Fixed max counter for `selectAmount` dialog input.
 - Effect special durations `damagedByAlly` and `damagedByEnemy` can now be used together.
+- Fixed a crash with saving throws on MidiQOL overtimes. (Thanks Skyl3lazer)
 
 # 0.0.7 Release:
 ## API Update Notes:
