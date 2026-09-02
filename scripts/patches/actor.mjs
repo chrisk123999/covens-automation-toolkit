@@ -116,7 +116,8 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     let activity;
     const overTimeEffectUuid = config.workflowOptions?.overTimeEffectUuid;
     if (overTimeEffectUuid) {
-        activity = await effectUtils.getOriginActivity(overTimeEffectUuid);
+        const effect = await fromUuid(overtimeActorUuid);
+        activity = await effectUtils.getOriginActivity(effect);
     } else if (config.midiOptions?.saveItemUuid) {
         const activityUuid = game.messages.contents.toReversed().find(i => i.flags.dnd5e?.item?.uuid === config.midiOptions.saveItemUuid)?.flags.dnd5e.activity.uuid;
         if (activityUuid) activity = await fromUuid(activityUuid);
