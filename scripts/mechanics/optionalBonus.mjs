@@ -18,9 +18,9 @@ async function processBonuses(rolls, inputs, type, targetActor, workflow) {
     const targets = workflow?.targets.map(t => t.document);
     if (needsDialog) {
         const choices = await dialogUtils.selectScaledDocument(bonuses, {rolls, targets, workflow});
-        if (!choices) bonuses = bonuses.filter(b => b.active && !b.optional);
+        if (!choices) bonuses = bonuses.filter(b => !b.optional);
     }
-    return bonuses.filter(b => !(b.maxTargets && !b.targets.size)).sort((a, b) => b.priority - a.priority);
+    return bonuses.filter(b => b.active && !(b.maxTargets && !b.targets.size)).sort((a, b) => b.priority - a.priority);
 }
 
 async function addAllToRoll(roll, inputs, targetActor, workflow) {
