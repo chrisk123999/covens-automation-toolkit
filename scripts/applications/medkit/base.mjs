@@ -49,7 +49,11 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     #reacquireDocument() {
         const actor = this.#document.actor;
-        if (actor) this.#document = actor.items.get(this.#document.id) ?? this.#document;
+        if (!actor) return;
+        switch (this.#document.documentName) {
+            case 'Item': this.#document = actor.items.get(this.#document.id) ?? this.#document; break;
+            case 'Activity': this.#document = actor.items.get(this.#document.item.id)?.system.activities.get(this.#document.id) ?? this.#document; break;
+        }
     }
 
     static DEFAULT_OPTIONS = {
