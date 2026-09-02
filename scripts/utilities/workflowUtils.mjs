@@ -238,6 +238,26 @@ async function updateTargets(workflow, targets, userId = game.user.id) {
     if (userId === game.user.id) canvas.tokens?.setTargets(ids);
     else await queryUtils.query('updateTargets', userId, {ids});
 }
+async function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, actor} = {}) {
+    if (deathOnly) {
+        if (!actor) return;
+        const hpDamage = ditem.oldHP + ditem.oldTempHP - ditem.totalDamage;
+        const maxHP = actor.system.attributes.hp.max;
+        if (hpDamage > -maxHP) return;
+    }
+    const hpDamage = ditem.oldHP - targetHP;
+    const tempDamage = ditem.oldTempHP ?? 0; 
+    const totalDamage = hpDamage + tempDamage;
+    ditem.totalDamage = totalDamage;
+    ditem.hpDamage = hpDamage;
+    ditem.tempDamage = tempDamage;
+    ditem.newHP = targetHP;
+    ditem.newTempHP = 0;
+    ditem.damageDetail.forEach(i => i.value = 0);
+    ditem.damageDetail[0].value = totalDamage;
+    ditem.rawDamageDetail.forEach(i => i.value = 0);
+    ditem.rawDamageDetail[0].value = totalDamage;
+}
 export default {
     getActionType,
     isAttackType,
@@ -259,5 +279,6 @@ export default {
     setActivity,
     bonusAttack,
     applyWorkflowDamage,
-    updateTargets
+    updateTargets,
+    preventZeroHP
 };
