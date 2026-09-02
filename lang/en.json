@@ -20,6 +20,7 @@
         "Tooltip": "Apply / update automations for every item under this document.",
         "ConfirmTitle": "Mass apply automations?",
         "ConfirmPrompt": "Apply registered automations to every item under this document? This rewrites their data and cannot be undone.",
+        "Started": "Mass apply started.",
         "Done": "Mass apply complete.",
         "CompendiumPending": "Compendium mass apply isn't wired yet - waiting on a pack-aware updater.",
         "CycleWarning": "Circular dependency detected among items. Some updates may occur out of sequence!",
