@@ -289,9 +289,9 @@ async function calledEvent(pass, actor, {multiResult, canOverlap, data} = {}) {
 function calledEventSync(pass, actor, {multiResult, canOverlap, data} = {}) {
     return new Events.CalledEvent(actor, pass, data).runSync({canOverlap, multiResult});
 }
-function getResolvedAnimation(document, settingKey, {source, identifier} = {}) {
+function getResolvedAnimation(document, settingKey, {source, identifier, rules} = {}) {
     const isGeneric = source && identifier;
-    const animationSetting = isGeneric ? getGenericConfigValue(document, source, identifier, settingKey) : getConfigValue(document, settingKey);
+    const animationSetting = isGeneric ? getGenericConfigValue(document, source, identifier, settingKey, {rules}) : getConfigValue(document, settingKey);
     if (!animationSetting || !animationSetting.source || !animationSetting.identifier || animationSetting.source === 'none' || animationSetting.identifier === 'none') return {animation: undefined, options: {}};
     const animation = constants.animations.getAnimation(animationSetting.source, animationSetting.identifier);
     if (!animation) return {animation: undefined, options: {}};
