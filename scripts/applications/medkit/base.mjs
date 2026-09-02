@@ -786,6 +786,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             updates['system.source.rules'] = this.#rulesValue;
         }
         await documentUtils.update(this.#document, updates);
+        this.#reacquireDocument();
         this.#hydrateState();
     }
 
