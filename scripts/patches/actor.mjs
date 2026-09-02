@@ -1,6 +1,6 @@
 import {checkEvents, hitDieEvents, saveEvents, skillEvents, toolEvents} from '../events/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
-import {genericUtils} from '../utilities/_module.mjs';
+import {activityUtils, effectUtils, genericUtils} from '../utilities/_module.mjs';
 import {conditionResistanceAndVulnerability, optionalBonus} from '../mechanics/_module.mjs';
 async function check(wrapped, config, dialog = {}, message = {}) {
     const event = config.event;
@@ -114,9 +114,17 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     const saveId = config.ability;
     let activityUuid;
     let activity;
-    if (config.midiOptions?.saveItemUuid) {
-        activityUuid = game.messages.contents.toReversed().find(i => i.flags.dnd5e?.item?.uuid === config.midiOptions.saveItemUuid)?.flags.dnd5e.activity.uuid;
-        if (activityUuid) genericUtils.setProperty(config, 'cat.activityUuid', activityUuid);
+    const overTimeEffectUuid = config.workflowOptions?.overTimeEffectUuid;
+    if (overTimeEffectUuid) {
+        activity = await effectUtils.getOriginActivity(overTimeEffectUuid);
+    } else if (config.midiOptions?.saveItemUuid) {
+        const activityUuid = game.messages.contents.toReversed().find(i => i.flags.dnd5e?.item?.uuid === config.midiOptions.saveItemUuid)?.flags.dnd5e.activity.uuid;
+        if (activityUuid) activity = await fromUuid(activityUuid);
+    }
+    if (activity) {
+        genericUtils.setProperty(config, 'cat.activity', activity);
+        const conditions = activityUtils.getConditions(activity);
+        if (conditions) genericUtils.setProperty(config, 'cat.conditions', conditions);
     }
     const options = {};
     await conditionResistanceAndVulnerability(this, config, options);
