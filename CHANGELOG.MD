@@ -4,7 +4,7 @@
 - Added utils:
   - `actorUtils.getCR`
   - `automationUtils.getSourceName`
-  - `compendiumUtils.selectSpellFromLists`
+  - `compendiumUtils`: `selectSpellFromLists`, `selectNPCFromCompendiums`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
   - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
   - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`

@@ -903,6 +903,8 @@
       "Forced": "Forced Movement"
     },
     "Error": {
+      "NoMonsterCompendiums": "You do not have any monster compendiums enabled in settings!",
+      "NoSpellCompendiums": "You do not have any spell compendiums enabled in settings!",
       "OutdatedSequencer": "Sequencer is out of date! In order to use animations, CAT requires a minimum of version {minSequencerVersion}"
     },
     "Troubleshooter": {

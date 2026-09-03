@@ -4,7 +4,8 @@ export class CatCompendiumBrowser extends CompendiumBrowser {
     static DEFAULT_OPTIONS = {
         allowedPacks: [],
         customFilters: [],
-        exceptions: [],
+        exceptionUuids: [],
+        exceptionIdentifiers: [],
         filterPredicate: null 
     };
     static async select(config = {}, renderOptions = {}) {
@@ -42,9 +43,14 @@ export class CatCompendiumBrowser extends CompendiumBrowser {
                 _allowedPacks: this.options.allowedPacks
             });
         }
-        if (this.options.exceptions?.length) {
+        if (this.options.exceptionUuids?.length) {
             context.filters.arbitrary.push({
-                _exceptions: this.options.exceptions
+                _exceptionUuids: this.options.exceptionUuids
+            });
+        }
+        if (this.options.exceptionIdentifiers?.length) {
+            context.filters.arbitrary.push({
+                _exceptionIdentifiers: this.options.exceptionIdentifiers
             });
         }
         if (this.options.customFilters?.length) context.filters.arbitrary.push(...this.options.customFilters);

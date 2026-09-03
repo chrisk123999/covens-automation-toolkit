@@ -1,9 +1,10 @@
 import {CatCompendiumBrowser} from '../applications/_module.mjs';
 import {genericUtils} from './_module.mjs';
-async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filters, lockedFilters, exceptions, minAmount = 1, maxAmount, title, hint, icon, position} = {}) {
+async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filters, lockedFilters, exceptionIdentifiers, exceptionUuids, minAmount = 1, maxAmount, title, hint, icon, position} = {}) {
     const options = {
         tab,
-        exceptions,
+        exceptionUuids,
+        exceptionIdentifiers,
         allowedPacks: packIds,
         filterPredicate,
         customFilters: filters,
@@ -67,6 +68,9 @@ async function getDocumentByName(packId, name) {
     if (!found) return;
     return await fromUuid(found.uuid);
 }
+function makeBrowserFilter(list, include = true) {
+    return list.reduce((obj, key) => (obj[key] = include ? 1 : -1, obj), {});
+}
 /**
  * Open the compendium browser for a choice of spell from the provided classes.
  * Spells are collected from the spell compendiums configured in settings.
@@ -82,7 +86,11 @@ async function getDocumentByName(packId, name) {
  * @param {string[]} [options.exceptions] Item identifiers for spells that should be offered despite failing other filters.
  * @returns {Promise<>}
  */
-async function getSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, exceptions, filters, icon, title = 'CAT.CompendiumBrowser.Title'} = {}) {
+async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, exceptions, filters, icon, title = 'CAT.CompendiumBrowser.Title'} = {}) {
+    const packIds = Object.entries(game.settings.get('cat', 'spellCompendiums'))
+        .filter(s => s[1].enabled)
+        .map(s => s[0]);
+    if (!packIds.length) return genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
     const labels = [];
     const validKeys = [];
     for (const key of listKeys) {
@@ -92,17 +100,14 @@ async function getSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, exce
         validKeys.push(key);
     }
     if (!validKeys.length) return;
-    const packIds = Object.entries(game.settings.get('cat', 'spellCompendiums'))
-        .filter(s => s[1].enabled)
-        .map(s => s[0]);
-    const lockedFilters = {additional: {spelllist: validKeys.reduce((obj, key) => (obj[key] = 1, obj), {})}};
+    const lockedFilters = {additional: {spelllist: makeBrowserFilter(validKeys)}};
     if (Number.isInteger(minLevel)) genericUtils.setProperty(lockedFilters, 'additional.level.min', minLevel);
     if (Number.isInteger(maxLevel)) genericUtils.setProperty(lockedFilters, 'additional.level.max', maxLevel);
     const result = await selectFromCompendiumBrowser('spells', {
         hint: _loc('CAT.CompendiumBrowser.SpellPicker', {lists: labels.join(', ')}),
+        exceptionIdentifiers: exceptions,
         maxAmount: amount,
         lockedFilters,
-        exceptions,
         filters,
         packIds,
         title,
@@ -110,9 +115,48 @@ async function getSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, exce
     });
     return result;
 }
+/**
+ * Open the compendium browser for a choice of actor document.
+ * @param {object} [options]
+ * @param {string} [options.icon]
+ * @param {string} [options.title]
+ * @param {object[]} [options.filters] Additional filters, see dnd5e.Filter.
+ * @param {number} [options.amount] The number of actors that can be chosen.
+ * @param {number} [options.minCR] The minimum challenge rating offered as an option.
+ * @param {number} [options.maxCR] The maxmium challenge rating offered as an option.
+ * @param {string[]} [options.creatureTypes] Include provided types. Allowed types are defined in CONFIG.DND5E.creatureTypes.
+ * @param {string[]} [options.excludeMovement] Exclude provided types. Allowed types are defined in CONFIG.DND5E.movementTypes.
+ * @param {string[]} [options.packIds] Pack ids to use instead of the monster compendiums configured in settings.
+ * @param {string[]} [options.exceptions] Uuids for actors that should be offered despite failing other filters.
+ * @returns {Promise<>}
+ */
+async function selectNPCFromCompendiums({amount = 1, minCR, maxCR, creatureTypes, excludeMovement, packIds, exceptions, filters, icon, hint, title = 'CAT.CompendiumBrowser.Title'} = {}) {
+    if (!packIds?.length)
+        packIds = Object.entries(game.settings.get('cat', 'monsterCompendiums'))
+            .filter(s => s[1].enabled)
+            .map(s => s[0]);
+    if (!packIds.length) return genericUtils.notify('CAT.Error.NoMonsterCompendiums', {type: 'warn'});
+    const lockedFilters = {};
+    if (Number.isNumeric(minCR)) genericUtils.setProperty(lockedFilters, 'additional.cr.min', minCR);
+    if (Number.isNumeric(maxCR)) genericUtils.setProperty(lockedFilters, 'additional.cr.max', maxCR);
+    if (creatureTypes?.length) genericUtils.setProperty(lockedFilters, 'additional.type', makeBrowserFilter(creatureTypes));
+    if (excludeMovement?.length) genericUtils.setProperty(lockedFilters, 'additional.movement', makeBrowserFilter(excludeMovement, false));
+    const result = await selectFromCompendiumBrowser('monsters', {
+        exceptionUuids: exceptions,
+        maxAmount: amount,
+        lockedFilters,
+        filters,
+        packIds,
+        title,
+        icon,
+        hint
+    });
+    return result;
+}
 export default {
     selectFromCompendiumBrowser,
     getDocumentByIdentifier,
     getDocumentByName,
-    getSpellFromLists
+    selectSpellFromLists,
+    selectNPCFromCompendiums
 };
