@@ -11,6 +11,7 @@ function initFlags() {
         browserFields.push(...conditionFlags.map(c => catFlag(c, condition)))
     );
     browserFields.push(...featureFlags.map(f => catFlag(f, 'identifier')));
+    browserFields.push('flags.cat.ignoreDifficultTerrain.tokens');
     daeFieldBrowserFields.push(...Array.from(new Set(browserFields)).sort());
 }
 function injectFlags() {
@@ -28,6 +29,10 @@ function injectFlags() {
             description: _loc(`CAT.DAE.${featureRollMode}.Description`) 
         });
     }
+    genericUtils.setProperty(game.i18n.translations, 'dae.CAT.fieldData.flags.cat.ignoreDifficultTerrain.tokens', {
+        name: _loc('CAT.DAE.IgnoreDifficultTerrainTokens.Name'),
+        description: _loc('CAT.DAE.IgnoreDifficultTerrainTokens.Description')
+    });
 }
 function addFlags(fieldData) {
     fieldData['CAT'] = daeFieldBrowserFields;

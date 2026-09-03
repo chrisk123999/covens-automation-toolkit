@@ -38,12 +38,20 @@ async function removeConditions(effect) {
     if (ids.length) return await documentUtils.deleteEmbeddedDocuments(parent, 'ActiveEffect', ids);
 }
 function applyActiveEffect(actor, change, current, delta, changes) {
-    if (change.key.startsWith('flags.cat.CR.') || change.key.startsWith('flags.cat.CV.')) {
+    if (change.key.startsWith('flags.cat.CR.') || change.key.startsWith('flags.cat.CV.') || change.key.startsWith('flags.cat.FR.') || change.key.startsWith('flags.cat.FV.')) {
         const existing = genericUtils.getProperty(actor, change.key);
         const newValue = existing ? String(existing) + ', ' + String(change.value) : String(change.value);
         genericUtils.setProperty(actor, change.key, newValue);
         changes[change.key] = newValue;
         return true; 
+    } else if (change.key === 'flags.cat.ignoreDifficultTerrain.tokens') {
+        const existing = genericUtils.getProperty(actor, change.key);
+        const val = String(change.value).trim().toLowerCase();
+        const isTrue = val === 'true' || val === '1';
+        const newValue = existing || isTrue;
+        genericUtils.setProperty(actor, change.key, newValue);
+        changes[change.key] = newValue;
+        return true;
     }
 }
 function noAnimation(effect, options) {
@@ -267,6 +275,10 @@ async function rehideActivities(effect) {
     if (!originActivity) return;
     await itemUtils.rehideActivities(originActivity.item, identifiers);
 }
+function difficultTerrain(gridSpace, token, options, found) {
+    if (!token.actor.flags.cat?.ignoreDifficultTerrain?.tokens) return;
+    found.clear();
+}
 export default {
     addConditions,
     removeConditions,
@@ -286,5 +298,6 @@ export default {
     createAnimations,
     deleteAnimations,
     unhideActivities,
-    rehideActivities
+    rehideActivities,
+    difficultTerrain
 };

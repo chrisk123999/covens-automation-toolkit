@@ -6,6 +6,7 @@ import {dae, vae, tidy5e, macroautocomplete} from './integration/_modules.mjs';
 export function readyHooks() {
     // Handlers
     Hooks.on(constants.miscHookNames.itemUseActivitySelect, activities.hiddenActivities);
+    Hooks.on('dnd5e.determineOccupiedGridSpaceDifficult', effects.difficultTerrain);
     // Integration
     Hooks.on(constants.miscHookNames.daeSetFieldData, dae.addFlags);
     Hooks.on(constants.miscHookNames.vaeCreateEffectButtons, vae.createEffectButton);

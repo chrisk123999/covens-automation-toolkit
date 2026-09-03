@@ -853,6 +853,10 @@
       "FR": {
         "Name": "Feature Resistance",
         "Description": "Feature Resistance to an activity by identifier, roll at advantage to save. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+      },
+      "IgnoreDifficultTerrainTokens": {
+        "Name": "Ignore Difficult Terrain: Other Tokens",
+        "Description": "This actor does not consider other tokens as difficult terrain."
       }
     },
     "Generic": {
@@ -930,7 +934,7 @@
       "ThirdParty": "Third Party Bonuses",
       "Title": "Optional Bonus"
     },
-    "CompendiumBrowser":{
+    "CompendiumBrowser": {
       "SpellPicker": "Choose spells from the {lists} list:",
       "Title": "CAT Compendium Browser"
     }
