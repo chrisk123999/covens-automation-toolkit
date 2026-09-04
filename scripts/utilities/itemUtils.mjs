@@ -50,7 +50,7 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
     });
     return await effectUtils.createEffects(item, [effectData], {effectOptions, forceGM});
 }
-async function unhideActivities(item, identifiers) {
+async function unhideActivities(item, identifiers, {ids = false, favorite = false} = {}) {
     const uuid = item.uuid;
     const currentPromise = activityVisibilityLocks.get(uuid) ?? Promise.resolve();
     const nextPromise = (async () => {
@@ -58,7 +58,7 @@ async function unhideActivities(item, identifiers) {
         let effect = documentUtils.getEffectByIdentifier(item, 'catHiddenActivities');
         const changes = [];
         identifiers.forEach(identifier => {
-            const activity = getActivityByIdentifier(item, identifier);
+            const activity = ids ? item.system.activities.get(identifier) : getActivityByIdentifier(item, identifier);
             if (activity) {
                 changes.push({
                     key: 'system.activities.' + activity.id + '.flags.cat.hidden',

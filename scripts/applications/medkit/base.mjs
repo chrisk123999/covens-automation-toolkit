@@ -321,6 +321,14 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 option.allowBlank = true;
                 option.choices = this.#activityChoices();
                 break;
+            case 'selectActivities': {
+                const activities = this.#activityChoices();
+                const selectedValues = Array.isArray(value) ? value : [];
+                option.isMultiCombobox = true;
+                option.choices = activities.map(a => ({value: a.value, label: a.label, image: a.image, selected: selectedValues.includes(a.value)}));
+                option.value = selectedValues;
+                break;
+            }
             case 'selectEffect':
                 option.isCombobox = true;
                 option.allowBlank = true;
@@ -447,8 +455,18 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #activityChoices() {
-        const activities = this.#document.system?.activities;
-        if (!activities) return [];
+        let activities = [];
+        const documentName = this.#document.documentName;
+        switch (documentName) {
+            case 'Item': activities = this.#document.system?.activities; break;
+            case 'ActiveEffect': {
+                const parent = this.#document.parent;
+                if (parent?.documentName !== 'Item') break;
+                activities = parent.system?.activities;
+                break;
+            }
+            default: return [];
+        }
         return [...activities].map(a => ({value: a.id, label: a.name ?? a.id, image: a.img}));
     }
 
