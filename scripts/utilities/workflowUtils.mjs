@@ -228,6 +228,15 @@ function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flav
     return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, targets.map(t => t.object), damageRoll, {flavor, itemCardId, itemData});
 }
 /**
+ * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} tokens 
+ * @param {number} value 
+ * @param {string} damageType 
+ * @returns {Promise<string[]>} ChatMessage uuids
+ */
+async function applyDamage(tokens, value, damageType) {
+    return await MidiQOL.applyTokenDamage([{damage: value, type: damageType}], value, new Set(tokens.map(t => t.object)));
+}
+/**
  * @param {MidiQOL.Workflow} workflow 
  * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} targets 
  * @param {string} userId 
@@ -279,6 +288,7 @@ export default {
     getCastLevel,
     setActivity,
     bonusAttack,
+    applyDamage,
     applyWorkflowDamage,
     updateTargets,
     preventZeroHP

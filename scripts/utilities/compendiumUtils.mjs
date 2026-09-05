@@ -1,5 +1,5 @@
 import {CatCompendiumBrowser} from '../applications/_module.mjs';
-import {genericUtils} from './_module.mjs';
+import {genericUtils, itemUtils} from './_module.mjs';
 async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filters, lockedFilters, exceptionIdentifiers, exceptionUuids, minAmount = 1, maxAmount, title, hint, icon, position} = {}) {
     const options = {
         tab,
@@ -71,9 +71,14 @@ async function getDocumentByName(packId, name) {
 function makeBrowserFilter(list, include = true) {
     return list.reduce((obj, key) => (obj[key] = include ? 1 : -1, obj), {});
 }
+function getEnabledCompendiumIds(settingKey) {
+    return Object.entries(game.settings.get('cat', settingKey) ?? {})
+        .filter(s => s[1].enabled)
+        .sort((a, b) => a[1].priority - b[1].priority)
+        .map(s => s[0]);
+}
 /**
  * Open the compendium browser for a choice of spell from the provided classes.
- * Spells are collected from the spell compendiums configured in settings.
  * Spell lists are taken from the DND5E registry.
  * @param {string[]} listKeys Class list keys in the form 'type:identifier'. Allowed types are defined in CONFIG.DND5E.spellListTypes.
  * @param {object} [options]
@@ -83,13 +88,12 @@ function makeBrowserFilter(list, include = true) {
  * @param {number} [options.amount] The number of spells that can be chosen.
  * @param {number} [options.minLevel] The minimum spell level offered as an option.
  * @param {number} [options.maxLevel] The maxmium spell level offered as an option.
+ * @param {string[]} [options.packIds] Pack ids to use instead of the spell compendiums configured in settings.
  * @param {string[]} [options.exceptions] Item identifiers for spells that should be offered despite failing other filters.
- * @returns {Promise<>}
+ * @returns {Promise<foundry.documents.Item[]|undefined>}
  */
-async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, exceptions, filters, icon, title = 'CAT.CompendiumBrowser.Title'} = {}) {
-    const packIds = Object.entries(game.settings.get('cat', 'spellCompendiums'))
-        .filter(s => s[1].enabled)
-        .map(s => s[0]);
+async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, packIds, exceptions, filters, icon, title = 'CAT.CompendiumBrowser.Title'} = {}) {
+    if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
     if (!packIds.length) return genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
     const labels = [];
     const validKeys = [];
@@ -128,13 +132,10 @@ async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, e
  * @param {string[]} [options.excludeMovement] Exclude provided types. Allowed types are defined in CONFIG.DND5E.movementTypes.
  * @param {string[]} [options.packIds] Pack ids to use instead of the monster compendiums configured in settings.
  * @param {string[]} [options.exceptions] Uuids for actors that should be offered despite failing other filters.
- * @returns {Promise<>}
+ * @returns {Promise<foundry.documents.Actor[]|undefined>}
  */
-async function selectNPCFromCompendiums({amount = 1, minCR, maxCR, creatureTypes, excludeMovement, packIds, exceptions, filters, icon, hint, title = 'CAT.CompendiumBrowser.Title'} = {}) {
-    if (!packIds?.length)
-        packIds = Object.entries(game.settings.get('cat', 'monsterCompendiums'))
-            .filter(s => s[1].enabled)
-            .map(s => s[0]);
+async function selectActor({amount = 1, minCR, maxCR, creatureTypes, excludeMovement, packIds, exceptions, filters, icon, hint, title = 'CAT.CompendiumBrowser.Title'} = {}) {
+    if (!packIds?.length) packIds = getEnabledCompendiumIds('monsterCompendiums');
     if (!packIds.length) return genericUtils.notify('CAT.Error.NoMonsterCompendiums', {type: 'warn'});
     const lockedFilters = {};
     if (Number.isNumeric(minCR)) genericUtils.setProperty(lockedFilters, 'additional.cr.min', minCR);
@@ -153,10 +154,32 @@ async function selectNPCFromCompendiums({amount = 1, minCR, maxCR, creatureTypes
     });
     return result;
 }
+/**
+ * Fetch a compendium spell by identifier.
+ * @param {string} identifier 
+ * @param {object} [options]
+ * @param {string[]} [options.packIds] Pack ids to search instead of the spell compendiums configured in settings.
+ * @param {boolean} [options.object] Return an object rather than a document.
+ * @param {string} [options.description] Set the description.
+ * @param {string} [options.translate] A localization key for the spell and effect names.
+ * @param {number} [options.flatAttack] Set a flat attack bonus.
+ * @param {number} [options.flatDC] Set a flat save DC.
+ */
+async function getSpell(identifier, {packIds, object = false, description, translate, flatAttack, flatDC} = {}) {
+    if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
+    if (!packIds.length) return genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
+    for (const id of packIds) {
+        const spell = await getDocumentByIdentifier(id, identifier, {object: true, description, translate, flatAttack, flatDC});
+        if (!spell) continue;
+        return object ? spell : itemUtils.syntheticItem(spell);
+    }
+}
 export default {
     selectFromCompendiumBrowser,
     getDocumentByIdentifier,
     getDocumentByName,
     selectSpellFromLists,
-    selectNPCFromCompendiums
+    selectActor,
+    getEnabledCompendiumIds,
+    getSpell
 };

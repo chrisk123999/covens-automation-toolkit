@@ -4,6 +4,7 @@
       "Title": "Coven's Automation Toolkit Configuration: {name}",
       "HeaderLabel": "CAT Medkit",
       "NoPermission": "You do not have permission to modify this tab.",
+      "ReloadWarning": "The registered automation will not reflect your changes until the world is reloaded!",
       "TABS": {
         "Automation": "Info",
         "Automations": "Automations",

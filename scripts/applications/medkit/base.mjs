@@ -787,6 +787,15 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         };
     }
 
+    #needsReload() {
+        if (!this.#document.inCompendium) return false;
+        if (documentUtils.getVersion(this.#document) !== genericUtils.getProperty(this.#flags, 'automation.version')) return true;
+        if (this.#rulesValue !== (this.#document.system?.source?.rules ?? null)) return true;
+        if (this.#document.documentName !== 'Item') return false;
+        if (itemUtils.getAdvancementSourceKey(this.#document) !== genericUtils.getProperty(this.#flags, 'automation.sourceType')) return true;
+        return false;
+    }
+
     async _commit() {
         const committedSource = documentUtils.getSource(this.#document) ?? 'none';
         if (this.#selectedSource !== committedSource) {
@@ -803,6 +812,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             }
             this.#hydrateState();
         }
+        if (this.#needsReload()) genericUtils.notify('CAT.MEDKIT.ReloadWarning', {type: 'warn'});
         const updates = {flags: {cat: _replace(this.#flags)}};
         if (this.#rulesValue !== (this.#document.system?.source?.rules ?? null)) {
             updates['system.source.rules'] = this.#rulesValue;

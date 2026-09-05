@@ -1,13 +1,16 @@
 # 0.0.8 Release:
 ## API Update Notes:
-- The automation registry can now differentiate between duplicate identifiers, such as 'channel-divinity' from cleric and paladin. See `itemUtils.getAdvancementSourceKey`.
+- The automation registry can now differentiate between duplicate identifiers, such as 'channel-divinity' from cleric and paladin. See `itemUtils.
+getAdvancementSourceKey`.
 - Added utils:
+  - `activityUtils.correctSpellLink`
   - `actorUtils.getCR`
   - `automationUtils.getSourceName`
-  - `compendiumUtils`: `selectSpellFromLists`, `selectNPCFromCompendiums`
+  - `compendiumUtils`: `getEnabledCompendiumIds`, `getSpell`, `selectActor`, `selectSpellFromLists`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
   - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
   - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`
+  - `workflowUtils.applyDamage`
 ## Update Notes:
 - Added document properties to the Actor CatKit:
   - Feature Resistance: `flags.cat.FR.identifier`
@@ -20,6 +23,7 @@
 - Added a damage type picker in the optional bonus dialog.
 - Critical hit rules can now be applied to optional bonuses.
 - The mass apply feature now prompts a review of the documents to be updated.
+- Automation version can now be changed in the CatKit on compendium documents. Reload the world to update the automation registry.
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.

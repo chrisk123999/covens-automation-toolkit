@@ -1,4 +1,4 @@
-import {effectUtils, itemUtils} from './_module.mjs';
+import {documentUtils, effectUtils, itemUtils} from './_module.mjs';
 
 /**
  * Get the save DC of the activity, if a save, otherwise infer a save DC from the activity's ability, default 10.
@@ -191,6 +191,13 @@ function getDefaultDamageRolls(activity, {attackMode, scaling = 0, simplify = tr
     return rolls;
 }
 
+/**
+ * @param {dnd5e.dataModels.activity.BaseActivityData} activity 
+ * @param {foundry.documents.Item} spell
+ */
+async function correctSpellLink(activity, spell) {
+    return await documentUtils.update(activity, {'spell.uuid': spell.uuid});
+}
 
 export default {
     getSaveDC,
@@ -203,5 +210,6 @@ export default {
     getDependencies,
     hasDefaultIcon,
     hasDefaultName,
-    getDefaultDamageRolls
+    getDefaultDamageRolls,
+    correctSpellLink
 };

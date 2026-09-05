@@ -84,7 +84,7 @@ export default class ItemMedkit extends MedkitApp {
         const currAutomation = (identifier && rulesValue && selectedSource && selectedSource !== 'none') ? constants.automations.getAutomationByIdentifier(identifier, {rules: rulesValue, source: selectedSource, monsterIdentifier, type: itemType, sourceType}) : (!savedSource ? automationUtils.getCurrentAutomation(this.document) : undefined);
         context.source = currAutomation?.source ?? selectedSource;
         if (sourceType) context.sourceType = sourceType;
-        context.editSourceType = this.document.inCompendium;
+        context.inCompendium = this.document.inCompendium;
         const availableAutomations = automationUtils.getAvailableAutomations(this.document);
         switch (automationUtils.getAutomationStatus(this.document)) {
             case -2:
@@ -130,7 +130,8 @@ export default class ItemMedkit extends MedkitApp {
         }
         context.availableSources = availableSources;
         context.disableSources = Object.keys(availableSources).length === 1;
-        context.version = currAutomation?.version ?? documentUtils.getVersion(this.document);
+        if (context.inCompendium) context.version = documentUtils.getVersion(this.document) ?? currAutomation?.version;
+        else context.version = currAutomation?.version ?? documentUtils.getVersion(this.document);
         if (currAutomation?.notes?.length) context.notes = currAutomation.notes;
         context.ignoreItem = this._getFlags().ignoreItem ?? false;
 
