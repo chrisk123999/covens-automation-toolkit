@@ -231,7 +231,17 @@ class CatEvent {
     static hasCatFlag(document) {
         return !!(document.flags?.cat?.macros || document.flags?.cat?.embeddedMacros);
     }
-    async run({canOverlap = false, multiResult = false} = {}) {
+    get defaultPhase() {
+        return this.pass === constants.workflowPasses.optionalBonusDamage ? constants.bonusPhases.postResult : constants.bonusPhases.preResult;
+    }
+    getPhase(macroConfig) {
+        return macroConfig?.phase ?? this.defaultPhase;
+    }
+    matchesPhase(macroConfig, phase) {
+        const configured = this.getPhase(macroConfig);
+        return Array.isArray(configured) ? configured.includes(phase) : configured === phase;
+    }
+    async run({canOverlap = false, multiResult = false, phase} = {}) {
         if (!this.actor) return;
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.actor.name);
         this.canOverlap = canOverlap;
@@ -239,6 +249,7 @@ class CatEvent {
         this._debugEvent();
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
+            if (phase && !this.matchesPhase(trigger.macroConfig, phase)) continue;
             let result;
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
@@ -387,8 +398,9 @@ class BaseWorkflowEvent extends CatEvent {
     }
 }
 class WorkflowEvent extends BaseWorkflowEvent {
-    constructor(pass, workflow) {
+    constructor(pass, workflow, data = {}) {
         super(pass);
+        this.data = data;
         this.workflow = workflow;
         this.activity = workflow.activity;
         this.item = workflow.item;
@@ -402,7 +414,8 @@ class WorkflowEvent extends BaseWorkflowEvent {
             workflow: this.workflow,
             activity: this.activity,
             DamageBonus,
-            D20Bonus
+            D20Bonus,
+            ...this.data
         };
     }
 }

@@ -12,6 +12,7 @@ const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundr
  */
 
 const INPUTS_TEMPLATE = 'modules/cat/templates/dialog-fields.hbs';
+const STANDARD_FACES = new Set([4, 6, 8, 10, 12, 20]);
 Hooks.once('setup', () => {
     foundry.applications.handlebars.loadTemplates([INPUTS_TEMPLATE]);
 });
@@ -31,7 +32,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             if (config.height != null) init.position.height = config.height;
         }
         super(init);
-        this.#resultsPromise = new Promise(r => this.#resolveResults = r);
+        this._armResults();
         if (!options?.length) return;
         this.windowTitle = _loc(title);
         this.content = content;
@@ -71,6 +72,24 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             scrollable: ['.scrollable']
         }
     };
+
+    _armResults() {
+        this.#resultsPromise = new Promise(r => this.#resolveResults = r);
+    }
+
+    async _awaitResults() {
+        return await this.#resultsPromise;
+    }
+
+    _setContents({content, inputs, buttons} = {}) {
+        this.content = content;
+        this.inputs = inputs;
+        this.buttons = buttons;
+        this.#context = null;
+        this.#expandedSections.clear();
+        this.#queuedOpenSections.clear();
+        this._armResults();
+    }
 
     static get SUBINPUT_SEPARATOR() { return '-'; }
     static get GROUP_ID() { return 'g'; }
@@ -176,7 +195,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             this.submit({buttons: false});
             return false;
         }
-        const results = await this.#resultsPromise;
+        const results = await this._awaitResults();
         results.buttons = (name === 'true') ? true : name;
         this.submit(results);
     }
@@ -293,7 +312,6 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #buildDice(fields, opts, _index, _parentIndex) {
-        const standardFaces = new Set([4, 6, 8, 10, 12, 20]);
         const groups = new Map();
         for (const f of fields) {
             const key = f.typeLabel ?? '';
@@ -304,7 +322,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 name: f.name,
                 faces: f.faces,
                 result: f.result,
-                isStandard: standardFaces.has(f.faces),
+                isStandard: STANDARD_FACES.has(f.faces),
                 isMin: f.result === 1,
                 isMax: f.result === f.faces
             });
@@ -329,13 +347,22 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 const t = f.terms[j];
                 if (t instanceof foundry.dice.terms.OperatorTerm) continue;
                 const add = j === 0 || f.terms[j - 1]?.operator === '+';
-                if (t.faces) dice.push(...new Array(t.number).fill({
-                    tooltip: t.options.source || t.denomination,
-                    faces: t.faces,
-                    add
-                }));
-                else dice.push({
+                if (t.faces) {
+                    const source = t.options.source || t.denomination;
+                    const results = t.results?.filter(r => r.active) ?? [];
+                    const dieClass = STANDARD_FACES.has(t.faces) ? 'd' + t.faces : 'cat-die-generic';
+                    for (let k = 0; k < t.number; k++) {
+                        const value = results[k]?.result;
+                        dice.push({
+                            tooltip: value === undefined ? source : `${source} - ${value}`,
+                            dieClass,
+                            value,
+                            add
+                        });
+                    }
+                } else dice.push({
                     tooltip: t.options.source || t.formula,
+                    dieClass: 'cat-die-generic',
                     value: t.formula,
                     add
                 });
@@ -346,6 +373,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}),
                 crit: f.options?.isCritical,
                 formula: f._formula,
+                total: opts?.total,
+                outcome: opts?.outcome,
+                muted: opts?.muted,
                 label: cfg?.label,
                 icon: cfg?.icon,
                 dice

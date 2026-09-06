@@ -1,7 +1,7 @@
-import {RegisteredMacros} from './macros.mjs';
-import {RegisteredAutomations} from './automations.mjs';
-import {RegisteredScales} from './scales.mjs';
 import {RegisteredAnimations} from './animation.mjs';
+import {RegisteredAutomations} from './automations.mjs';
+import {RegisteredMacros} from './macros.mjs';
+import {RegisteredScales} from './scales.mjs';
 import {SummonsManager} from './summons.mjs';
 import {default as Triggers} from './trigger.mjs';
 const rules = {
@@ -168,6 +168,11 @@ const rollPasses = {
     optionalBonus: 'optionalBonus',
     post: 'post',
     targetSituational: 'targetSituational'
+};
+const bonusPhases = {
+    preRoll: 'preRoll',
+    preResult: 'preResult',
+    postResult: 'postResult'
 };
 const timeHookNames = {
     updateWorldTime: 'updateWorldTime'
@@ -428,6 +433,7 @@ export default {
     rangedSpellAttacks,
     meleeSpellAttacks,
     miscHookNames,
+    bonusPhases,
     statusEffectKeys,
     automationStatus,
     getItemKeepPaths,
