@@ -123,9 +123,9 @@
             "Label": "Alternate Damage Formulas"
           },
           "Range": {
-            "Field": "Range",
-            "Hint": "A formula added to the range of any matching documents. This can stack.",
-            "Label": "Range Bonus"
+            "Field": "Spell Range",
+            "Hint": "A formula added to the range of any matching spells. This can stack.",
+            "Label": "Spell Range Bonus"
           },
           "RollModifier": {
             "Field": "Modifiers",
