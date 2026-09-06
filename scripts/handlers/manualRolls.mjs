@@ -1,7 +1,7 @@
 import CatRollResolver from '../applications/dice/roll-resolver.mjs';
-async function resolveManualRolls(rolls, actor, label) {
+async function resolveManualRolls(rolls, actor, label, {rollClass = CONFIG.Dice.DamageRoll} = {}) {
     if (!game.settings.get('cat', 'manualRollsEnabled') || !CatRollResolver.shouldForce(actor)) return rolls;
-    const newRolls = rolls.map(roll => roll.options.cat?.noManualRoll ? roll : new CONFIG.Dice.DamageRoll(roll.formula, roll.data, roll.options));
+    const newRolls = rolls.map(roll => roll.options.cat?.noManualRoll ? roll : new rollClass(roll.formula, roll.data, roll.options));
     const toRoll = newRolls.filter(roll => !roll.options.cat?.noManualRoll);
     if (!toRoll.length) return rolls;
     await CatRollResolver.fulfillBatch(toRoll, label, {prompt: true});

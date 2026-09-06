@@ -16,10 +16,12 @@ async function preambleComplete(workflow) {
     if (event) return;
     event = await new Events.WorkflowEvent(constants.workflowPasses.preambleComplete, workflow).run();
     if (event) return false;
+    await optionalBonus.preambleComplete(workflow);
 }
 async function attackRollConfig(workflow) {
     await regionVisibility(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollConfig, workflow).run();
+    await optionalBonus.attackPreRoll(workflow);
 }
 async function postAttackRoll(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRoll, workflow).run();
@@ -32,6 +34,7 @@ async function attackRollComplete(workflow) {
 }
 async function savesComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.savesComplete, workflow).run();
+    await optionalBonus.savesComplete(workflow);
 }
 async function damageRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.damageRoll, workflow).run();
@@ -55,6 +58,7 @@ async function preTargetDamageApplication(token, {workflow, ditem}) {
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageComplete, workflow, token, ditem).run();
 }
 async function rollFinished(workflow) {
+    await optionalBonus.cleanup(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.rollFinished, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
     await effects.specialDuration(workflow);

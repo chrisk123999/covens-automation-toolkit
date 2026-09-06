@@ -4,14 +4,14 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
 /** @import {DialogHint} from '../applications/dialog.mjs' */
 
-/** 
+/**
  * @typedef BonusCostEntry
  * @property {number} cost
  * @property {number} available
  */
 
-/** 
- * @typedef BonusCost 
+/**
+ * @typedef BonusCost
  * @property {object} [actions]
  * @property {BonusCostEntry} [actions.action]
  * @property {BonusCostEntry} [actions.bonus]
@@ -76,7 +76,7 @@ class RollBonus {
     #baseFormula;   // string   | The original roll formula before scaling.
     #document;      // Document | Item, Activity, and possibly the effect providing this bonus.
     #activity;      // Activity | Used for default consumption and scaling if a `scaling` callback is not provided.
-    #validate;      // Function | Callback for any validation beyond resource consumption. 
+    #validate;      // Function | Callback for any validation beyond resource consumption.
     #bonusScaling;  // Function | Callback updates the bonus formula when scaled.
     #costScaling;   // Function | Callback collects the costs required to use this bonus when scaled.
     #getScalingHints;//Function | Callback creates scaling hints for the UI after all other changes are settled.
@@ -182,7 +182,7 @@ class RollBonus {
     get priority() {
         return this.#priority;
     }
-    get rollClass() { 
+    get rollClass() {
         return this.#rollClass;
     }
     get roll() {
@@ -282,7 +282,7 @@ class RollBonus {
         this.#targetActor = value;
     }
     /** @type {boolean} */
-    get isThirdParty() { 
+    get isThirdParty() {
         return this.actor.id !== this.targetActor.id;
     }
     /** @type {boolean} */
@@ -390,8 +390,8 @@ class RollBonus {
         this._otherScaling(params);
         this.#getScalingHints(params);
     }
-    /** 
-     * Runs all handlers to initialize costs, hints, and scaling. 
+    /**
+     * Runs all handlers to initialize costs, hints, and scaling.
      * @param {MidiQOL.Worklow} [workflow]
      * */
     initialize(workflow) {
@@ -474,7 +474,7 @@ class RollBonus {
                 });
             }
                 break;
-            case 'hitDice': {    
+            case 'hitDice': {
                 let denomination;
                 if ( key === 'smallest' ) denomination = _loc('DND5E.ConsumeHitDiceSmallest');
                 else if ( key === 'largest' ) denomination = _loc('DND5E.ConsumeHitDiceLargest');
@@ -590,7 +590,7 @@ class RollBonus {
     }
     /**
      * Check resource requirements for a bonus.
-     * @param {RollBonus} bonus 
+     * @param {RollBonus} bonus
      * @param {BonusCost} [costs] Optionally provide other calculated costs, usually cumulative.
      * @returns {boolean}
      */
@@ -604,23 +604,41 @@ class RollBonus {
         }
         return true;
     }
+    /**
+     * Fold the costs of committed bonuses into a running budget for later phases.
+     * @param {BonusCost} budget
+     * @param {RollBonus[]|Set<RollBonus>} bonuses
+     * @returns {BonusCost} The same budget, mutated.
+     */
+    static AddCosts(budget, bonuses) {
+        for (const bonus of bonuses) {
+            for (const type of RollBonus.#resourceTypes) {
+                if (!bonus.cost[type]) continue;
+                budget[type] ??= {};
+                for (const [key, data] of Object.entries(bonus.cost[type]))
+                    RollBonus.#lazySetCost(budget[type], key, data.cost, data.available);
+            }
+        }
+        return budget;
+    }
     static CombineRolls(rolls, bonuses, {workflow} = {}) {
         const defaultType = workflow?.damageRolls[0]?.options.type ?? workflow?.defaultDamageType;
         const active = [...rolls, ...bonuses.filter(b => b.active && b.roll.formula !== '0').map(b => {
             let r;
-            if (b.roll instanceof DamageBonus.rollClass && workflow?.isCritical) 
+            if (b.roll instanceof DamageBonus.rollClass && workflow?.isCritical)
                 r = DamageBonus.GetCriticalRoll(b);
-            else 
+            else
                 r = b.roll.clone();
-            r.options.type ||= rolls[0]?.options?.type ?? defaultType;
+            r.options = {...r.options};
+            if (b instanceof DamageBonus) r.options.type ||= rolls[0]?.options?.type ?? defaultType;
             r.terms.forEach(t => t.options.source = b.name);
             return r;
         })];
         const groupedRolls = this._combineRolls(active);
         groupedRolls.forEach(r => {
             r._formula = dnd5e.dice.simplifyRollFormula(r.formula);
-            if (r instanceof DamageBonus.rollClass && workflow?.isCritical) 
-                r.options.isCritical = workflow.isCritical; 
+            if (r instanceof DamageBonus.rollClass && workflow?.isCritical)
+                r.options.isCritical = workflow.isCritical;
         });
         return groupedRolls;
     }
@@ -631,10 +649,11 @@ class RollBonus {
      * @param {object} [options]
      * @param {number} [options.rollTotal] The current total of the target roll(s) before adding bonuses, if available.
      * @param {MidiQOL.Workflow} [options.workflow]
+     * @param {BonusCost} [options.spent] Resources already committed in earlier phases.
      * @returns {RollBonus[]}
      */
-    static ValidateAll(bonuses, {rollTotal, workflow} = {}) {
-        const cumulativeCosts = {};
+    static ValidateAll(bonuses, {rollTotal, workflow, spent} = {}) {
+        const cumulativeCosts = spent ? genericUtils.deepClone(spent) : {};
         return bonuses.filter(b => {
             b.validateHints = [];
             if (!b.active) return false;
@@ -650,7 +669,7 @@ class RollBonus {
                         RollBonus.#lazySetCost(cumulativeCosts[type], key, data.cost, data.available);
                 }
                 return true;
-            } 
+            }
             b.active = false;
             b.validateHints.push({label: _loc('CAT.OptionalBonus.Invalid', {reason: _loc('CAT.OptionalBonus.InvalidResources')})});
             return hasEnough;
@@ -658,7 +677,7 @@ class RollBonus {
     }
     /**
      * Fetch the available resources for a given consumption target.
-     * @param {object} options 
+     * @param {object} options
      * @param {dnd5e.dataModels.activity.ConsumptionTargetData} options.consumption
      * @param {foundry.documents.Actor} options.actor
      * @param {number} options.scaling
@@ -707,7 +726,7 @@ class RollBonus {
     }
     /**
      * Fetch the available actions for a given actor.
-     * @param {object} options 
+     * @param {object} options
      * @param {'action'|'bonus'|'reaction'|undefined} options.action
      * @param {foundry.documents.Actor} options.actor
      * @returns {{key: string, available: number}}
@@ -722,7 +741,7 @@ class RollBonus {
             case 'reaction':
                 data.available = Math.max(0, (actions?.reactionsMax ?? 1) - (actions?.reactionsUsed ?? 0));
                 break;
-            default: 
+            default:
                 data.available = 999;
                 break;
         }
@@ -732,7 +751,7 @@ class RollBonus {
 
 /**
  * @extends RollBonus
- * @property {dnd5e.dice.BasicRoll} roll 
+ * @property {dnd5e.dice.BasicRoll} roll
  */
 export class D20Bonus extends RollBonus {
     static get rollClass() { return CONFIG.Dice.BasicRoll; }
@@ -757,19 +776,19 @@ export class D20Bonus extends RollBonus {
 
 /**
  * @extends RollBonus
- * @property {dnd5e.dice.DamageRoll} roll 
+ * @property {dnd5e.dice.DamageRoll} roll
  */
 export class DamageBonus extends RollBonus {
-    #targets;         // Set           | Target(s) of the bonus.   
+    #targets;         // Set           | Target(s) of the bonus.
     #maxTargets;      // Number        | Max targets, if any.
     #baseMaxTargets;  // Number        | The original max targets before scaling.
     #targetScaling;   // Function      | Callback adjusts max targets when the bonus is scaled.
-    #maxTargetsHints; // DialogHints[] | Array of {label, icon} for UI target hints. 
+    #maxTargetsHints; // DialogHints[] | Array of {label, icon} for UI target hints.
     #damageTypes;     // Set           | Damage type options. A subinput combobox is shown if there is more than one type.
     #canCrit;         // Boolean       | False for static bonuses, true for double dice on critical hits.
     constructor(document, {type, maxTargets, allowCritical = true, ...baseOptions} = {}) {
         super(document, baseOptions);
-        
+
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
         this.#canCrit = allowCritical;
@@ -833,7 +852,7 @@ export class DamageBonus extends RollBonus {
         const maxTargets = this.#targetScaling?.({rollTotal, bonus, workflow, otherBonuses});
         if (Number.isNumeric(maxTargets)) this.maxTargets = maxTargets;
     }
-    
+
     static get rollClass() { return CONFIG.Dice.DamageRoll; }
     static defaultBonusScaling({rollTotal, bonus, workflow, otherBonuses}) {
         if (!bonus.activity.canScaleDamage) return bonus.roll;
@@ -866,7 +885,8 @@ export class DamageBonus extends RollBonus {
      * @param {object} [options]
      * @param {number} [options.rollTotal] The current total of the target roll(s) before adding bonuses, if available.
      * @param {MidiQOL.Workflow} [options.workflow]
+     * @param {BonusCost} [options.spent] Resources already committed in earlier phases.
      * @returns {DamageBonus[]}
      */
-    static ValidateAll(bonuses, {rollTotal, workflow} = {}) { return RollBonus.ValidateAll(bonuses, {rollTotal, workflow}); }
+    static ValidateAll(bonuses, {rollTotal, workflow, spent} = {}) { return RollBonus.ValidateAll(bonuses, {rollTotal, workflow, spent}); }
 }

@@ -944,16 +944,26 @@
       "DeadContext": "Summon creature {name} reached 0 hp, delete actor and token?"
     },
     "OptionalBonus": {
+      "Applied": "Already Applied",
       "Content": "Choose and configure bonuses for this roll.",
       "Contextual": "Contextual Bonuses",
       "DamageType": "Damage Type",
       "DamageTypeChoice": "Choose Type",
+      "Failure": "Failure",
+      "Hit": "Hit",
       "Invalid": "Bonus disabled: {reason}",
       "InvalidResources": "not enough resources!",
+      "Miss": "Miss",
       "NoRequest": "bonus has no request handler!",
       "Optional": "Optional Bonuses",
+      "Phase": {
+        "PostResult": "After the Result",
+        "PreResult": "Before the Result",
+        "PreRoll": "Before the Roll"
+      },
       "Scaleable": "Scalable",
       "Scaling": "Scaling",
+      "Success": "Success",
       "Targeted": "Targeted",
       "Targets": "Targets",
       "ThirdParty": "Third Party Bonuses",

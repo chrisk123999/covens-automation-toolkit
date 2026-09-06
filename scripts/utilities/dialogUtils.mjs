@@ -1,15 +1,15 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
-import {queryUtils, tokenUtils, automationUtils, uiUtils} from './_module.mjs';
-import constants from '../lib/constants.mjs';
 import {D20Bonus, DamageBonus} from '../lib/_module.mjs';
+import constants from '../lib/constants.mjs';
+import {automationUtils, queryUtils, tokenUtils, uiUtils} from './_module.mjs';
 
 /**
- * @param {foundry.documents.TokenDocument} token 
+ * @param {foundry.documents.TokenDocument} token
  * @param {object} [options]
  * @param {boolean} [options.hide]
  * @param {object} [options.counter]
  * @param {number} [options.counter.value]
- * @returns 
+ * @returns
  */
 function getTokenName(token, {hide, counter} = {}) {
     if (!hide || token.disposition > 0) return token.name;
@@ -192,26 +192,37 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
     }).filter(i => i);
 }
 /**
- * 
- * @param {DamageBonus[]|D20Bonus[]} bonuses 
+ * Builds the input tree for one optional bonus dialog phase.
+ * @param {DamageBonus[]|D20Bonus[]} bonuses
  * @param {object} [options]
- * @param {foundry.dice.Roll[]} [options.rolls] The roll(s) to which selected bonuses will be added.
+ * @param {foundry.dice.Roll[]} [options.rolls] The d20 roll(s) to which selected bonuses will be added.
+ * @param {foundry.dice.Roll[]} [options.damageRolls] Damage roll(s) already built for this workflow.
  * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets]
  * @param {MidiQOL.Workflow} [options.workflow]
- * @param {string} [options.title]
- * @param {string} [options.content]
+ * @param {BonusCost} [options.spent] Resources committed in earlier phases.
+ * @param {DamageBonus[]|D20Bonus[]} [options.committed] Bonuses already applied in earlier phases.
+ * @param {string} [options.outcome] Localized hit/miss or success/failure label, once it is known.
+ * @param {boolean} [options.missed] True once the roll is known to have failed.
+ * @returns {Promise<{inputs: Array, hasOptional: boolean}|undefined>}
  */
-async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 'CAT.OptionalBonus.Title', content = 'CAT.OptionalBonus.Content'} = {}) {
-    if (!bonuses.length) return false;
+async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls, spent, committed = [], outcome, missed} = {}) {
+    if (!bonuses.length && !committed.length && !rolls?.length) return;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     let rollTotal;
     if (rolls?.length) {
-        rollTotal = rolls.reduce((t, r) => t += r.total, 0);
+        if (rolls.every(r => r._evaluated)) rollTotal = rolls.reduce((t, r) => t += r.total, 0);
         rolls = rolls.map(r => r._evaluated ? r.clone() : r);
     }
-    const cls = bonuses[0].constructor;
+    const groups = [
+        {cls: D20Bonus, rolls: rolls ?? [], bonuses: bonuses.filter(b => b instanceof D20Bonus)},
+        {cls: DamageBonus, rolls: damageRolls?.map(r => r.clone()) ?? [], bonuses: bonuses.filter(b => b instanceof DamageBonus)}
+    ].filter(group => group.bonuses.length || group.rolls.length);
+    const groupOf = bonus => groups.find(group => bonus instanceof group.cls);
+    const aggregateOf = group => group.rolls.length || group.bonuses.some(b => b.active)
+        ? group.cls.CombineRolls(group.rolls, group.bonuses, {workflow})
+        : [];
     const validateAll = context => {
-        cls.ValidateAll(bonuses, {rollTotal, workflow});
+        for (const group of groups) group.cls.ValidateAll(group.bonuses, {rollTotal, workflow, spent});
         for (const bonusContext of context) {
             const index = bonusContext.name.match(/\d+/)[0];
             const bonus = bonuses[index];
@@ -220,6 +231,14 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
         }
     };
     const tagLabel = key => CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;
+    const updateFormula = (ctx, bonus) => {
+        const group = groupOf(bonus);
+        if (!group) return;
+        const formula = ctx.subheaders?.[groups.indexOf(group)];
+        if (!formula?.isFormula) return;
+        group.aggregate = aggregateOf(group);
+        formula.groups = formula.parseNewFormula(group.aggregate).groups;
+    };
     const sliderChange = ({bonus, thisContext, input, getInputById}) => {
         bonus.updateScaling(input.value, workflow, bonuses, rollTotal);
         input.hints = bonus.scalingHints;
@@ -235,7 +254,7 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
         const tags = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags ?? [];
         for (const t of tags) {
             if (t.id === 'formula') {
-                if (workflow?.isCritical) t.label = DamageBonus.GetCriticalRoll(bonus).formula;
+                if (workflow?.isCritical && bonus instanceof DamageBonus) t.label = DamageBonus.GetCriticalRoll(bonus).formula;
                 else t.label = bonus.roll.formula;
                 continue;
             }
@@ -253,7 +272,7 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
     };
     const damageChange = ({bonus, fullContext, input, getInputById}) => {
         bonus.damageType = input.value;
-        if (bonus.active) updateFormula(fullContext);
+        if (bonus.active) updateFormula(fullContext, bonus);
         const tag = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags?.find(t => t.id === 'formula');
         if (!tag) return bonus.active;
         const type = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
@@ -261,14 +280,7 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
         tag.tooltip = type.label;
         return true;
     };
-    let currentAggregate = cls.CombineRolls(rolls, bonuses, {workflow});
-    const updateFormula = ctx => {
-        const formula = ctx.subheaders.find(i => i.isFormula);
-        if (!formula) return;
-        currentAggregate = cls.CombineRolls(rolls, bonuses, {workflow});
-        const newCtx = formula.parseNewFormula(currentAggregate);
-        formula.groups = newCtx.groups;
-    };
+    for (const group of groups) group.aggregate = aggregateOf(group);
     const hide = game.settings.get('cat', 'hideNames');
     const optional = [], contextual = [], thirdParty = [];
     for (let i = 0; i < bonuses.length; i++) {
@@ -315,11 +327,11 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
             }]]);
         const tags = [];
         if (bonus.roll) {
-            const formula = workflow?.isCritical ? DamageBonus.GetCriticalRoll(bonus).formula : bonus.roll.formula;
+            const formula = workflow?.isCritical && bonus instanceof DamageBonus ? DamageBonus.GetCriticalRoll(bonus).formula : bonus.roll.formula;
             const type = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
             tags.push({label: formula, id: 'formula', image: type?.icon, tooltip: type?.label});
             if (bonus.damageTypes?.size > 1) tags.push({label: 'CAT.OptionalBonus.DamageTypeChoice', id: 'damageType'});
-        }   
+        }
         if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id)})));
         if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
         if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
@@ -339,30 +351,47 @@ async function selectScaledDocument(bonuses, {rolls, targets, workflow, title = 
                 onchange: ({fullContext, input, group}) => {
                     bonus.active = input.isChecked;
                     validateAll(group.options);
-                    if (rolls?.length) updateFormula(fullContext);
+                    updateFormula(fullContext, bonus);
                     return true;
                 }
             }
         });
     }
-    if (!optional.length && !thirdParty.length) return [];
+    const applied = [];
+    const appliedOrder = [...committed].sort((a, b) => (a instanceof D20Bonus ? 0 : 1) - (b instanceof D20Bonus ? 0 : 1));
+    for (const bonus of appliedOrder) {
+        const appliedType = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
+        applied.push({
+            label: bonus.name,
+            name: 'applied-' + applied.length,
+            options: {
+                image: bonus.img,
+                tooltip: await uiUtils.enrichHTML(bonus.description, bonus.roll.data),
+                locked: true,
+                isChecked: true,
+                tags: [{label: bonus.roll.formula, id: 'formula', image: appliedType?.icon, tooltip: appliedType?.label}]
+            }
+        });
+    }
     const inputs = [];
-    if (rolls?.length) inputs.push(['formula', currentAggregate, {header: true}]);
+    for (const group of groups) {
+        const isD20 = group.cls === D20Bonus;
+        inputs.push(['formula', group.aggregate, {header: true, total: isD20 ? rollTotal : undefined, outcome: isD20 ? outcome : undefined, muted: !isD20 && missed}]);
+    }
     if (thirdParty.length) inputs.push(['request', thirdParty, {displayAsRows: true, legend: contextual.length + optional.length > 0 ? 'CAT.OptionalBonus.ThirdParty' : ''}]);
     if (optional.length) inputs.push(['checkbox', optional, {displayAsRows: true, legend: contextual.length + thirdParty.length > 0 ? 'CAT.OptionalBonus.Optional' : ''}]);
     if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);
-    const choices = await runDialog(game.user.id, title, content, inputs, 'okCancel', {height: 'auto'});
-    if (!choices?.buttons) return false;
-    return cls.ValidateAll(bonuses, {workflow});
+    if (applied.length) inputs.push(['checkbox', applied, {displayAsRows: true, legend: 'CAT.OptionalBonus.Applied'}]);
+    return {inputs, hasOptional: !!(optional.length || thirdParty.length)};
 }
 /**
- * @param {foundry.documents.Actor} actor 
- * @param {string} title 
- * @param {string} content 
+ * @param {foundry.documents.Actor} actor
+ * @param {string} title
+ * @param {string} content
  * @param {object} [options]
  * @param {boolean} [options.recover] If true, select missing slots. If false, select available slots.
  * @param {number} [options.maxAmount]
- * @param {'count'|'level'} [options.maxAmountMode] 'count' mode selects a number of spell slots. 'level' mode selects a combined total of slot levels. 
+ * @param {'count'|'level'} [options.maxAmountMode] 'count' mode selects a number of spell slots. 'level' mode selects a combined total of slot levels.
  * @returns {Promise<{key: string, amount: number}[]>}
  */
 async function selectSpellSlots(actor, title, content, {maxAmount, maxAmountMode = 'level', maxLevel = 9, minLevel = 0, userId = game.user.id, recover = false} = {}) {
@@ -508,7 +537,7 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
             if (key === 'buttons' || key === 'skip' || value === false || value === 0 || value === '0' || value == null) continue;
             const doc = targets.find(target => target.id === key);
             if (!doc) continue;
-            result.push(type === 'multiple' ? doc : {document: doc, value}); 
+            result.push(type === 'multiple' ? doc : {document: doc, value});
         }
     }
     return {result, skip};
@@ -545,7 +574,7 @@ export default {
     numberDialog,
     selectDialog,
     selectDocumentDialog,
-    selectScaledDocument,
+    buildBonusInputs,
     selectSpellSlots,
     selectDamageType,
     selectHitDie,
