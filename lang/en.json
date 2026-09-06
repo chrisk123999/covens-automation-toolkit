@@ -122,6 +122,11 @@
             "Hint": "Roll formula offered as an alternative; the highest-rolling option is used.",
             "Label": "Alternate Damage Formulas"
           },
+          "Range": {
+            "Field": "Range",
+            "Hint": "A formula added to the range of any matching documents. This can stack.",
+            "Label": "Range Bonus"
+          },
           "RollModifier": {
             "Field": "Modifiers",
             "Hint": "Comma-separated dice modifiers (e.g. x, min1, kh1).",
@@ -161,7 +166,12 @@
           "DamageType": {
             "Label": "Damage Type",
             "Hint": "Match any selected damage type.",
-            "InvertedHint": "Exclude any selected damage type."
+            "InvertedHint": "Exclude selected damage types."
+          },
+          "HasActivity": {
+            "Label": "Has Activity",
+            "Hint": "Match any selected activity type.",
+            "InvertedHint": "Exclude selected activity types."
           },
           "Identifier": {
             "Label": "Target Identifiers",
@@ -177,15 +187,28 @@
             "Hint": "Match any selected spellcasting method.",
             "InvertedHint": "Exclude selected spellcasting methods."
           },
+          "MinimumBaseRange": {
+            "Label": "Minimum Base Range",
+            "Hint": "The unmodified range must be equal to or greater than this value."
+          },
           "Property": {
             "Label": "Properties",
             "Hint": "Match any or all selected item properties.",
             "InvertedHint": "Exclude any or all selected item properties."
           },
+          "RangeUnits": {
+            "Label": "Range Units",
+            "Hint": "Match any selected units.",
+            "InvertedHint": "Exclude selected units."
+          },
           "School": {
             "Label": "Spell School",
             "Hint": "Match any selected spell school.",
             "InvertedHint": "Exclude selected spell schools"
+          },
+          "SourceType": {
+            "Label": "Source Type",
+            "Hint": "A comma separated list of source keys, such as 'class:cleric' or 'race:human'. Match items granted by those sources."
           },
           "Type": {
             "Label": "Item Type",
@@ -500,6 +523,7 @@
           "attackedBySource": "Attacked by effect source",
           "moveFinished": "Movement finished",
           "zeroSpeed": "Speed reduced to zero",
+          "zeroHP": "HP reduced to zero",
           "tempHP": "Temporary HP lost",
           "tempMaxHP": "Temporary max HP lost",
           "Groups": {

@@ -81,7 +81,7 @@ class AlternateAttribute {
                 }
             }
             if (!succeeds) continue;
-            if (context.item && !resolveDamageParts(context)) continue;
+            if (context.damage && !resolveDamageParts(context)) continue;
             if (Array.isArray(cleaned.value)) for (const v of cleaned.value) options.add(v);
             else options.add(cleaned.value);
         }
@@ -107,9 +107,11 @@ function resolveDamageParts({item, partIndex, allowedDamageParts}) {
 function getFormulaRestrictions() {
     return [
         Restrictions.Identifier,
+        Restrictions.HasActivity,
         Restrictions.DamagePart,
         Restrictions.DamageType,
         Restrictions.Type,
+        Restrictions.SourceType,
         Restrictions.WeaponType,
         Restrictions.Property,
         Restrictions.Ability,
@@ -156,9 +158,11 @@ function buildAttributes() {
         allowedFlagHolders: ['feat'],
         restrictions: [
             Restrictions.Identifier,
+            Restrictions.HasActivity,
             Restrictions.DamageType,
             Restrictions.Property,
             Restrictions.Type,
+            Restrictions.SourceType,
             Restrictions.WeaponType
         ]
     });
@@ -187,6 +191,30 @@ function buildAttributes() {
         allowedFlagHolders: ['feat'],
         restrictions: [
             Restrictions.Armor
+        ]
+    });
+
+    registerAttribute({
+        type: 'Range',
+        valueSchema: new fields.StringField({
+            placeholder: '30 * @classes.warlock.levels',
+            required: true
+        }),
+        allowedFlagHolders: ['feat', 'equipment'],
+        restrictions: [
+            Restrictions.RangeUnits,
+            Restrictions.MinimumBaseRange,
+            Restrictions.Identifier,
+            Restrictions.HasActivity,
+            Restrictions.DamageType,
+            Restrictions.Property,
+            Restrictions.Type,
+            Restrictions.SourceType,
+            Restrictions.WeaponType,      
+            Restrictions.Ability,
+            Restrictions.School,
+            Restrictions.Method,
+            Restrictions.Level
         ]
     });
 

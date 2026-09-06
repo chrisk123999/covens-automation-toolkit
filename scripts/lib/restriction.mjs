@@ -1,4 +1,4 @@
-import {genericUtils} from '../utilities/_module.mjs';
+import {genericUtils, itemUtils} from '../utilities/_module.mjs';
 
 const fields = foundry.data.fields;
 const RESULTS = {
@@ -66,6 +66,7 @@ function checkList({value, requireAll}, {data, item, propertyPath}) {
     if (Array.isArray(data)) {
         return requireAll ? value.every(v => data.includes(v)) : value.some(v => data.includes(v));
     }
+    if (typeof value[0] === 'string') data = String(data);
     return value.includes(data);
 }
 
@@ -196,6 +197,58 @@ registerRestriction({
             if (!requireAll && matches) return RESULTS.PASS;
         }
         return requireAll;
+    }
+});
+
+registerRestriction({
+    type: 'MinimumBaseRange',
+    evaluate: ({value}, {activity, item, sourceItem}) => {
+        const range = activity?.range ?? item?.system?.range;
+        if (!range) return RESULTS.FORCE_FAIL;
+        if (!value.length) return RESULTS.PASS;
+        const data = (activity ?? item).getRollData();
+        const val = range.value || (item.type === 'weapon' ? 5 : 0);
+        const formula = dnd5e.utils.replaceFormulaData(value[0], data, {item: sourceItem, property: _loc('DND5E.RANGE.FIELDS.range.value.label')});
+        const min = new Roll(formula).evaluateSync().total;
+        return val >= min;
+    }
+});
+
+registerRestriction({
+    type: 'RangeUnits',
+    canInvert: true,
+    choices: () => mapKeyLabel(CONFIG.DND5E.movementUnits),
+    evaluate: (restriction, {activity, item}) => {
+        const units = activity?.range?.units ?? item?.system?.range?.units;
+        return checkList(restriction, {data: units});
+    }
+});
+
+registerRestriction({
+    type: 'SourceType',
+    evaluate: (restriction, {item}) => {
+        if (!item) return RESULTS.FORCE_FAIL;
+        const source = itemUtils.getAdvancementSourceKey(item);
+        return checkList(restriction, {data: source});
+    }
+});
+
+registerRestriction({
+    type: 'HasActivity',
+    canInvert: true,
+    choices: () => ({
+        'attack': _loc('DND5E.ATTACK.Title.one'),
+        'heal': _loc('DND5E.HEAL.Title'),
+        'save': _loc('DND5E.SAVE.Title.one'),
+        'summon': _loc('DND5E.SUMMON.Title')
+    }),
+    evaluate: (restriction, {document}) => {
+        const data = [];
+        if (document.hasAttack) data.push('attack');
+        if (document.hasSave) data.push('save');
+        if (document.isHealing) data.push('heal');
+        if (document.hasSummoning) data.push('summon');
+        return checkList(restriction, {data});
     }
 });
 

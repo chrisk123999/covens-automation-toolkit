@@ -229,33 +229,67 @@ function scaledFormula(increase) {
     }
     return formula;
 }
+function range(wrapped, rollData, labels) {
+    if (!(this.range.units in CONFIG.DND5E.movementUnits)) return wrapped(rollData, labels);
+    dnd5e.utils.prepareFormulaValue(this, 'range.value', 'DND5E.RANGE.FIELDS.range.value.label', rollData);
+    let context;
+    if (this.item) {
+        if (!this.item.actor) return wrapped(rollData, labels);
+        context = {
+            identifier: this.item.system.identifier,
+            activityIdentifier: this.identifier,
+            actor: this.item.actor,
+            range: this.range,
+            item: this.item,
+            activity: this,
+            document: this
+        };
+    } else {
+        if (!this.parent.actor) return wrapped(rollData, labels);
+        context = {
+            identifier: this.parent.system.identifier,
+            actor: this.parent.actor,
+            range: this.range,
+            item: this.parent,
+            document: this
+        };
+    }
+    const Range = constants.alternateAttributes.Range;
+    let bonus = 0;
+    for (const item of Range.getFlagHolders(context.actor)) {
+        context.sourceItem = item;
+        const range = Range.evaluate(context);
+        if (!range?.size) continue;
+        const formula = dnd5e.utils.replaceFormulaData(range.first(), rollData, {item, property: _loc('DND5E.RANGE.FIELDS.range.value.label')});
+        const value = new Roll(formula).evaluateSync().total;
+        if (value) bonus += value;
+    }
+    if (bonus) {
+        this.range.value += bonus;
+        this.range.catModified = true;
+    }
+    wrapped(rollData, labels);
+}
+const patches = [
+    {path: 'dnd5e.dataModels.shared.DamageData.prototype.formula',              fn: formula,        wrapType: 'MIXED'},
+    {path: 'dnd5e.dataModels.actor.CharacterData.defineSchema',                 fn: defineSchema,   wrapType: 'WRAPPER'},
+    {path: 'dnd5e.dataModels.actor.NPCData.defineSchema',                       fn: defineSchema,   wrapType: 'WRAPPER'},
+    {path: 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass',         fn: armorClass,     wrapType: 'MIXED'},
+    {path: 'dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', fn: acLabel,        wrapType: 'MIXED'},
+    {path: 'dnd5e.dataModels.shared.DamageData.prototype.scaledFormula',        fn: scaledFormula,  wrapType: 'OVERRIDE'},
+    {path: 'dnd5e.dataModels.shared.RangeField.prepareData',                    fn: range,          wrapType: 'MIXED'}
+];
 function patch(enabled) {
     if (enabled) {
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.shared.DamageData.prototype.formula', {force: true});
-        libWrapper.register('cat', 'dnd5e.dataModels.shared.DamageData.prototype.formula', formula, 'MIXED');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.actor.CharacterData.defineSchema', {force: true});
-        libWrapper.register('cat', 'dnd5e.dataModels.actor.CharacterData.defineSchema', defineSchema, 'WRAPPER');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.actor.NPCData.defineSchema', {force: true});
-        libWrapper.register('cat', 'dnd5e.dataModels.actor.NPCData.defineSchema', defineSchema, 'WRAPPER');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.actor.AttributesFields.prepareArmorClass', {force: true});
-        libWrapper.register('cat', 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass', armorClass, 'MIXED');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', {force: true});
-        libWrapper.register('cat', 'dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', acLabel, 'MIXED');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.shared.DamageData.prototype.scaledFormula', {force: true});
-        libWrapper.register('cat', 'dnd5e.dataModels.shared.DamageData.prototype.scaledFormula', scaledFormula, 'OVERRIDE');
+        for (const entry of patches) {
+            Logging.addEntry('DEBUG', 'Patching: ' + entry.path, {force: true});
+            libWrapper.register('cat', entry.path, entry.fn, entry.wrapType);
+        }
     } else {
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.shared.DamageData.prototype.formula');
-        libWrapper.unregister('cat', 'dnd5e.dataModels.shared.DamageData.prototype.formula');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.actor.CharacterData.defineSchema');
-        libWrapper.unregister('cat', 'dnd5e.dataModels.actor.CharacterData.defineSchema');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.actor.NPCData.defineSchema');
-        libWrapper.unregister('cat', 'dnd5e.dataModels.actor.NPCData.defineSchema');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.actor.AttributesFields.prepareArmorClass');
-        libWrapper.unregister('cat', 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel');
-        libWrapper.unregister('cat', 'dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.shared.DamageData.prototype.scaledFormula');
-        libWrapper.unregister('cat', 'dnd5e.dataModels.shared.DamageData.prototype.scaledFormula');
+        for (const entry of patches) {
+            Logging.addEntry('DEBUG', 'Unpatching: ' + entry.path, {force: true});
+            libWrapper.unregister('cat', entry.path);
+        }
     }
 }
 export default {

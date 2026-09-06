@@ -18,6 +18,8 @@ getAdvancementSourceKey`.
   - Feature Immunity: `flags.cat.FI.identifier`
   - Feature Failure: `flags.cat.FF.identifier`
   - Use an activity identifier, e.g. turn resistance: `flags.cat.FR.turn-undead | override | wis`.
+- Added document properties to the Item CatKit:
+  - Range Bonus: increase spell or weapon range if restrictions are met.
 - Added disable conditions to the Effect CatKit.
 - Added `zeroHP` special duration to the Effect CatKit.
 - Added a damage type picker in the optional bonus dialog.
