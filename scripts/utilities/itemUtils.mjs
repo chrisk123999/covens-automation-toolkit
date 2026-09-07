@@ -154,7 +154,7 @@ function getAdvancementSourceKey(item) {
  * @param {boolean} [options.subclass] If true and the advancement source resolves to a subclass, return the base class instead. Default false.
  * @returns {Item5e|undefined}
  */
-function getAdvancementSourceItem(item, {subclass = false}) {
+function getAdvancementSourceItem(item, {subclass = false} = {}) {
     if (!item.actor) return;
     const key = getAdvancementSourceKey(item);
     if (!key) return;
