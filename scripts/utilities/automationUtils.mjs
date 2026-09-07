@@ -68,6 +68,10 @@ function getGenericConfigValue(item, source, identifier, key, {rules} = {}) {
     return constants.macros.getGenericConfigValue(item, source, identifier, key, {rules});
 }
 async function setConfigValue(item, key, value) {
+    if (item.documentName === 'Activity') {
+        const updateKey = 'flags.cat.config.' + key;
+        return await documentUtils.update(item, {[updateKey]: value});
+    }
     return await documentUtils.setFlag(item, 'cat', 'config.' + key, value);
 }
 async function setGenericConfigValue(item, source, identifier, key, value) {
