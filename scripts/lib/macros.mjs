@@ -19,12 +19,20 @@ export class RegisteredMacros {
         });
         this.#multiMacrosSchema = new fields.ArrayField(this.#macrosSchema);
     }
-    #getMacroKey(source, identifier, rules) {
+    #makeMacroKey(source, identifier, rules) {
         return source + '|' + identifier + '|' + rules;
     }
+    #getMacroByKey(source, identifier, rules) {
+        const key = this.#makeMacroKey(source, identifier, rules);
+        let fnMacro = this.overwriteMacros.get(key) ?? this.fnMacros.get(key);
+        if (!fnMacro && rules !== 'all') {
+            const allKey = this.#makeMacroKey(source, identifier, 'all');
+            fnMacro = this.overwriteMacros.get(key) ?? this.fnMacros.get(allKey);
+        }
+        return fnMacro;
+    }
     getFnMacros(source, rules, identifier, type, pass) {
-        const key = this.#getMacroKey(source, identifier, rules);
-        const fnMacro = this.overwriteMacros.get(key) ?? this.fnMacros.get(key);
+        const fnMacro = this.#getMacroByKey(source, identifier, rules);
         if (!fnMacro) return;
         if (!fnMacro.macros[type]?.length) return;
         const macros = fnMacro.macros[type].filter(i => i.pass === pass);
@@ -59,7 +67,7 @@ export class RegisteredMacros {
         }
         const fnMap = !overwrite ? this.fnMacros : this.overwriteMacros;
         const fnMacro = new FnMacro(cleaned.source, cleaned.identifier, cleaned.rules, cleaned);
-        const key = this.#getMacroKey(cleaned.source, cleaned.identifier, cleaned.rules);
+        const key = this.#makeMacroKey(cleaned.source, cleaned.identifier, cleaned.rules);
         fnMap.set(key, fnMacro);
         return fnMacro;
     }
@@ -75,8 +83,7 @@ export class RegisteredMacros {
         const value = document.flags.cat?.genericConfig?.[source]?.[identifier]?.[key];
         if (value != undefined) return value;
         rules ??= documentUtils.getRules(document);
-        const macroKey = this.#getMacroKey(source, identifier, rules);
-        const macro = this.overwriteMacros.get(macroKey) ?? this.fnMacros.get(macroKey);
+        const macro = this.#getMacroByKey(source, identifier, rules);
         return macro?.genericConfig?.[key]?.default;
     }
 }
