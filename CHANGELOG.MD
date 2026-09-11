@@ -31,13 +31,13 @@ getAdvancementSourceKey`.
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.
-- Fixed class scale duplication when an automation is applied.
-- Alternate Attribute for damage roll modifiers will work without also using an alternate damage formula.
 - `workflowUtils.modifyDamageAppliedFlat` caps reductions to remaining damage instead of remaining HP. (Ported from CPR 1.5.47).
 ## Bug Fixes:
 - Fixed max counter for `selectAmount` dialog input.
 - Effect special durations `damagedByAlly` and `damagedByEnemy` can now be used together.
 - Fixed a crash with saving throws on MidiQOL overtimes. (Thanks Skyl3lazer)
+- Fixed class scale duplication when an automation is applied.
+- Alternate Attribute for damage roll modifiers will work without also using an alternate damage formula.
 
 # 0.0.7 Release:
 ## API Update Notes:
