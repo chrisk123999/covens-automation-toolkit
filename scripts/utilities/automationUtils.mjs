@@ -205,6 +205,18 @@ function getGenericAnimationConfig(document, source, identifier, settingKey, key
 function getAnimationConfig(document, settingKey, key) {
     return constants.animations.getAnimationConfig(document, settingKey, key);
 }
+function scalesMatch(registeredScale, targetScale) {
+    if (targetScale.type !== registeredScale.data.type) return false;
+    for (const [key, data] of Object.entries(registeredScale.data.configuration.scale)) {
+        const target = targetScale.configuration.scale[key];
+        if (!target) return false;
+        for (const [valueKey, value] of Object.entries(data)) {
+            const targetValue = target[valueKey];
+            if (targetValue !== value) return false;
+        }
+    }
+    return true;
+}
 async function updateScales(item, {automation} = {}) {
     automation ??= getCurrentAutomation(item);
     if (!automation) return;
@@ -223,8 +235,8 @@ async function updateScales(item, {automation} = {}) {
         if (!scale) return;
         const classItem = item.actor.classes[targetIdentifier];
         if (!classItem) return;
-        const scaleValue = classItem.advancement.byType?.ScaleValue?.find(i => i.configuration.identifier === targetIdentifier);
-        if (scaleValue && scaleValue.type === scale.data.type) return;
+        const scaleValue = classItem.advancement.byType?.ScaleValue?.find(i => i.configuration.identifier === scale.identifier);
+        if (scaleValue && scalesMatch(scale, scaleValue)) return;
         const advancementKey = scaleValue ? scaleValue.id : (scale.data._id ?? foundry.utils.randomID());
         const classData = classItem.toObject();
         classData.system.advancement[advancementKey] = scale.data;
