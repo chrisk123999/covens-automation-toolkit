@@ -164,9 +164,15 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
             if (actorUtils.checkTrait(actor, 'dr', type)) modificationAmount = Math.floor(modificationAmount / 2);
         }
     }
-    if (modificationAmount < 0 && type !== 'healing') modificationAmount = Math.max(modificationAmount, -ditem.hpDamage - ditem.tempDamage);
+    if (modificationAmount < 0 && type !== 'healing') modificationAmount = Math.max(modificationAmount, -ditem.totalDamage);
     MidiQOL.modifyDamageBy({damageItem: ditem, value: modificationAmount, multiplier, type});
     ditem.rawDamageDetail.push({value: modificationAmount, type});
+    const actualTotal = ditem.totalDamage + modificationAmount;
+    ditem.totalDamage = actualTotal;
+    const newTempHP = ditem.oldTempHP - actualTotal;
+    ditem.newTempHP = Math.max(newTempHP, 0);
+    ditem.newHP = Math.clamp(ditem.oldHP + Math.min(0, newTempHP), 0, ditem.oldHP);
+    ditem.hpDamage = ditem.oldHP - ditem.newHP;
 }
 function isSustainedRoll(workflow) {
     if (['workflowOptions.isOverTime', 'activity.isOverTimeFlag', 'activity.midiProperties.automationOnly'].some(p => genericUtils.getProperty(workflow, p))) return true;

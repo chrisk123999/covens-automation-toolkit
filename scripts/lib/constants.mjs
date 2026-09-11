@@ -343,6 +343,7 @@ const spellSchoolOptions = () => Object.entries(CONFIG.DND5E.spellSchools).map(i
 const spellSlotOptions = () => Object.entries(CONFIG.DND5E.spellLevels).map(i => i[0] == 0 ? {label: i[1], value: i[0]} : {label: i[1], value: i[0], image: `systems/dnd5e/icons/spell-tiers/${CONFIG.DND5E.spellcasting.spell.getSpellSlotKey(i[0])}.webp`});
 const statusOptions = () => CONFIG.statusEffects.map(i => ({label: _loc(i.name ?? i.label ?? i.id), value: i.id, image: i.img ?? i.icon}));
 const usableItemTypes = () => ['consumable', 'equipment' ,'feat', 'loot', 'spell', 'tool', 'weapon'].map(i => ({label: _loc(CONFIG.Item.typeLabels[i]), value: i, image: itemIconOverrides[i] ?? `systems/dnd5e/icons/svg/items/${i}.svg`}));
+const weaponTypes = () => Object.entries(CONFIG.DND5E.weaponTypes).map(i => ({label: i[1], value: i[0]}));
 const meleeWeapons = [];
 const rangedWeapons = [];
 const tools = [];
@@ -462,5 +463,6 @@ export default {
     triggerTypes,
     usableItemTypes,
     weaponOptions,
+    weaponTypes,
     dispositionOptions
 };

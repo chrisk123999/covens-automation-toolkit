@@ -193,6 +193,14 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
         }
     });
 }
+/**
+ * @param {foundry.documents.TokenDocument} sourceToken 
+ * @param {foundry.documents.TokenDocument} targetToken 
+ * @returns {boolean}
+ */
+function canSee(sourceToken, targetToken) {
+    return MidiQOL.canSee(sourceToken, targetToken);
+}
 export default {
     getSavedCastData,
     getDistance,
@@ -202,5 +210,6 @@ export default {
     findNearby,
     teleportToken,
     displaceToken,
-    slideToken
+    slideToken,
+    canSee
 };

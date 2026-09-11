@@ -120,7 +120,7 @@ function formula(wrapped) {
             }
         }
     }
-    if (maxRoll?.formula === originalParsed?.formula) return originalFormula;
+    if (maxRoll?.formula === originalParsed?.formula && !rollModifiers.size) return originalFormula;
     if (rollModifiers.size) {
         let changed = false;
         for (const term of maxRoll.terms) {
