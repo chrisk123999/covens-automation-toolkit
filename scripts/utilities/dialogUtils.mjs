@@ -230,7 +230,19 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             bonusContext.hints = bonus.validateHints;
         }
     };
-    const tagLabel = key => CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;
+    const tagLabel = (key, bonus) => {
+        if (key === 'itemUses' || key === 'activityUses') {
+            const targets = Object.keys(bonus.cost[key]).map(t => {
+                const tgt = key === 'itemUses' ? fromUuidSync(t)?.system.uses : fromUuidSync(t)?.uses;
+                if (tgt?.recovery?.length !== 1 || tgt?.recovery?.[0].type !== 'recoverAll') return;
+                const recovery = CONFIG.DND5E.limitedUsePeriods[tgt.recovery[0].period];
+                if (!recovery) return;
+                return _loc('DND5E.AbilityUseConsumableLabel', {max: tgt.max, per: recovery.abbreviation});
+            }).filter(Boolean);
+            if (targets.length) return targets.join(', ');
+        }
+        return CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;;
+    };
     const updateFormula = (ctx, bonus) => {
         const group = groupOf(bonus);
         if (!group) return;
@@ -332,7 +344,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             tags.push({label: formula, id: 'formula', image: type?.icon, tooltip: type?.label});
             if (bonus.damageTypes?.size > 1) tags.push({label: 'CAT.OptionalBonus.DamageTypeChoice', id: 'damageType'});
         }
-        if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id)})));
+        if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id, bonus)})));
         if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
         if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
         const fieldset = bonus.optional ? bonus.isThirdParty ? thirdParty : optional : contextual;
