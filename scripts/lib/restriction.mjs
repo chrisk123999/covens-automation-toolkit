@@ -1,4 +1,5 @@
 import {genericUtils, itemUtils} from '../utilities/_module.mjs';
+import constants from './constants.mjs';
 
 const fields = foundry.data.fields;
 const RESULTS = {
@@ -11,6 +12,7 @@ const TYPES = {};
 
 const mapKeyKey = config => Object.entries(config).reduce((acc, [key, _]) => (acc[key] = key, acc), {});
 const mapKeyLabel = config => Object.entries(config).reduce((acc, [key, value]) => (acc[key] = value.label, acc), {});
+const mapValueLabel = config => Object.entries(config).reduce((acc, [_, {value, label}]) => (acc[value] = label, acc), {});
 
 class AttributeRestriction {
 
@@ -175,23 +177,23 @@ registerRestriction({
         unarmored: _loc('DND5E.ArmorClassUnarmored')
     }),
     evaluate: ({value, requireAll}, {actor}) => {
-        const ac = actor.system.attributes?.ac;
-        if (!ac) return RESULTS.FORCE_FAIL;
-        const shield = !!ac.equippedShield;
-        const armor = ac.equippedArmor?.system.type.value;
+        if (!actor.system.attributes?.ac) return RESULTS.FORCE_FAIL;
+        let shield, armor;
+        for (const e of actor.itemTypes.equipment) {
+            if (!e.system.equipped) continue;
+            const type = e.system.type.value;
+            if (!(type in CONFIG.DND5E.armorTypes)) continue;
+            if (type === 'shield') shield = true;
+            else armor ??= type;
+            if (shield && armor) break;
+        }
         for (const requirement of value) {
             let matches = false;
             switch (requirement) {
-                case 'shield':
-                    matches = shield;
-                    break;
+                case 'shield': matches = shield; break;
                 case 'natural':
-                case 'unarmored': 
-                    matches = armor === undefined;
-                    break;
-                default:
-                    matches = armor === requirement;
-                    break;
+                case 'unarmored': matches = armor === undefined; break;
+                default: matches = armor === requirement; break;
             }
             if (requireAll && !matches) return RESULTS.FAIL;
             if (!requireAll && matches) return RESULTS.PASS;
@@ -252,8 +254,28 @@ registerRestriction({
     }
 });
 
+registerRestriction({
+    type: 'Weapon',
+    canInvert: true,
+    canRequireAll: true,
+    choices: () => ({
+        ...mapValueLabel(constants.weaponTypes()),
+        ...mapValueLabel(constants.weaponOptions())
+    }),
+    evaluate: ({value, requireAll}, {actor}) => {
+        const data = [];
+        for (const w of actor.itemTypes.weapon) {
+            if (!w.system.equipped) continue;
+            data.push(w.system.type);
+        }
+        const predicate = v => data.some(d => d.value === v || d.baseItem === v);
+        return requireAll ? value.every(predicate) : value.some(predicate);
+    }
+});
+
 export default {
     mapKeyKey,
     mapKeyLabel,
+    mapValueLabel,
     ...TYPES
 };

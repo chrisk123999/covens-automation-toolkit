@@ -117,7 +117,9 @@ function getFormulaRestrictions() {
         Restrictions.Ability,
         Restrictions.School,
         Restrictions.Method,
-        Restrictions.Level
+        Restrictions.Level,
+        Restrictions.Armor,
+        Restrictions.Weapon
     ];
 }
 
@@ -176,7 +178,8 @@ function buildAttributes() {
         }),
         allowedFlagHolders: ['feat'],
         restrictions: [
-            Restrictions.Armor
+            Restrictions.Armor,
+            Restrictions.Weapon
         ]
     });
 
@@ -190,7 +193,8 @@ function buildAttributes() {
         getValueSummary: value => CONFIG.DND5E.abilities[value]?.label ?? value,
         allowedFlagHolders: ['feat'],
         restrictions: [
-            Restrictions.Armor
+            Restrictions.Armor,
+            Restrictions.Weapon
         ]
     });
 

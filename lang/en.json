@@ -151,7 +151,7 @@
             "InvertedHint": "Exclude spells that use selected abilities."
           },
           "Armor": {
-            "Label": "Armor",
+            "Label": "Equipped Armor",
             "Hint": "Any or all selected must be equipped.",
             "InvertedHint": "Any or all selected must not be equipped."
           },
@@ -214,6 +214,11 @@
             "Label": "Item Type",
             "Hint": "Match any selected item type.",
             "InvertedHint": "Exclude selected item types."
+          },
+          "Weapon": {
+            "Label": "Equipped Weapons",
+            "Hint": "Any or all selected must be equipped.",
+            "InvertedHint": "Any or all selected must not be equipped."
           },
           "WeaponType": {
             "Label": "Weapon Type",
