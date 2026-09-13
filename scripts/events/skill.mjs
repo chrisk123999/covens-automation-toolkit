@@ -3,6 +3,9 @@ import {constants, Events} from '../lib/_module.mjs';
 async function situational(actor, data) {
     return await new Events.SkillEvent(actor, constants.rollPasses.situational, data).run();
 }
+async function targetSituational(actor, data) {
+    return await new Events.SkillEvent(actor, constants.rollPasses.targetSituational, data).run();
+}
 async function context(actor, data) {
     const selections = await new Events.SkillEvent(actor, constants.rollPasses.context, data).run({multiResult: true});
     if (selections.length) {
@@ -37,6 +40,7 @@ async function post(actor, data) {
 }
 export default {
     situational,
+    targetSituational,
     context,
     bonus,
     post

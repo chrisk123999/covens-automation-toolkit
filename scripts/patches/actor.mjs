@@ -1,12 +1,15 @@
 import {checkEvents, hitDieEvents, saveEvents, skillEvents, toolEvents} from '../events/_module.mjs';
+import {genericUtils, workflowUtils} from '../utilities/_module.mjs';
+import {optionalBonus} from '../mechanics/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
-import {conditionResistanceAndVulnerability, optionalBonus} from '../mechanics/_module.mjs';
-import {activityUtils, effectUtils, genericUtils, workflowUtils} from '../utilities/_module.mjs';
 async function check(wrapped, config, dialog = {}, message = {}) {
+    const options = {};
     const event = config.event;
     const checkId = config.ability;
-    const options = {};
+    const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
+    if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await checkEvents.situational(this, {config, dialog, message, options, checkId});
+    if (activity) await checkEvents.targetSituational(this, {config, dialog, message, options, checkId});
     await checkEvents.context(this, {config, dialog, message, options, checkId});
     const bonusSession = optionalBonus.rollSession();
     await optionalBonus.rollPreRoll('check', this, {config, dialog, message, options, checkId}, bonusSession);
@@ -37,6 +40,7 @@ async function check(wrapped, config, dialog = {}, message = {}) {
         ...config,
         ...options
     };
+    if (options.auto) dialog.configure = false;
     let roll = await wrapped(config, dialog, {...message, create: false});
     roll = roll?.[0];
     if (!roll) {
@@ -63,10 +67,13 @@ async function check(wrapped, config, dialog = {}, message = {}) {
     return [roll];
 }
 async function skill(wrapped, config, dialog = {}, message = {}) {
+    const options = {};
     const event = config.event;
     const skillId = config.skill;
-    const options = {};
+    const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
+    if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await skillEvents.situational(this, {config, dialog, message, options, skillId});
+    if (activity) await skillEvents.targetSituational(this, {config, dialog, message, options, skillId});
     await skillEvents.context(this, {config, dialog, message, options, skillId});
     const bonusSession = optionalBonus.rollSession();
     await optionalBonus.rollPreRoll('skill', this, {config, dialog, message, options, skillId}, bonusSession);
@@ -97,6 +104,7 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
         ...config,
         ...options
     };
+    if (options.auto) dialog.configure = false;
     let roll = await wrapped(config, dialog, {...message, create: false});
     roll = roll?.[0];
     if (!roll) {
@@ -120,32 +128,12 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     return [roll];
 }
 async function save(wrapped, config, dialog = {}, message = {}) {
+    const options = {};
     const event = config.event;
     const saveId = config.ability;
-    let activityUuid;
-    let activity;
-    const overTimeEffectUuid = config.workflowOptions?.overTimeEffectUuid;
-    if (overTimeEffectUuid) {
-        const effect = await fromUuid(overtimeActorUuid);
-        activity = await effectUtils.getOriginActivity(effect);
-    } else if (config.midiOptions?.saveItemUuid) {
-        const activityUuid = game.messages.contents.toReversed().find(i => i.flags.dnd5e?.item?.uuid === config.midiOptions.saveItemUuid)?.flags.dnd5e.activity.uuid;
-        if (activityUuid) activity = await fromUuid(activityUuid);
-    }
-    if (activity) {
-        genericUtils.setProperty(config, 'cat.activity', activity);
-        const conditions = activityUtils.getConditions(activity);
-        if (conditions) genericUtils.setProperty(config, 'cat.conditions', conditions);
-    }
-    const macroConditions = workflowUtils.getMacroConditions(config);
-    if (macroConditions.length) {
-        if (config.cat?.conditions) macroConditions.forEach(c => config.cat.conditions.add(c));
-        else genericUtils.setProperty(config, 'cat.conditions', new Set(macroConditions));
-    }
-    const options = {};
-    await conditionResistanceAndVulnerability(this, config, options);
+    const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
+    if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await saveEvents.situational(this, {config, dialog, message, options, saveId});
-    if (activityUuid) activity = await fromUuid(activityUuid);
     if (activity) await saveEvents.targetSituational(this, {config, dialog, message, options, saveId});
     await saveEvents.context(this, {config, dialog, message, options, saveId});
     const bonusSession = optionalBonus.rollSession();
@@ -206,10 +194,14 @@ async function save(wrapped, config, dialog = {}, message = {}) {
 async function tool(wrapped, config, dialog, message) {
     let options = {};
     let toolId = config.tool;
+    const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
+    if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await toolEvents.situational(this, {config, options, dialog, message, toolId});
+    if (activity) await toolEvents.targetSituational(this, {config, dialog, message, options, toolId});
     await toolEvents.context(this, {config, options, dialog, message, toolId});
     const bonusSession = optionalBonus.rollSession();
     await optionalBonus.rollPreRoll('tool', this, {config, dialog, message, options, toolId}, bonusSession);
+    if (options.auto) dialog.configure = false;
     let roll = await wrapped(config, dialog, {...message, create: false});
     roll = roll?.[0];
     if (!roll) {

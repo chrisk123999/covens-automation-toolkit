@@ -207,12 +207,12 @@ function getWorkflowProperty(workflow, path) {
  */
 function addMacroConditions(workflow, conditions) {
     const existing = getMacroConditions(workflow);
-    if (Array.isArray(conditions)) existing.push(...conditions);
-    else existing.push(conditions);
-    setWorkflowProperty(workflow, 'macroConditions', existing);
+    if (typeof conditions === 'string') existing.add(conditions);
+    else conditions.forEach(c => existing.add(c));
+    setWorkflowProperty(workflow, 'conditions', existing);
 }
 function getMacroConditions(workflow) {
-    return getWorkflowProperty(workflow, 'macroConditions') ?? [];
+    return new Set(getWorkflowProperty(workflow, 'conditions') ?? []);
 }
 async function bonusDamage(workflow, formula, {ignoreCrit = false, damageType = workflow.defaultDamageType} = {}) {
     formula = String(formula);

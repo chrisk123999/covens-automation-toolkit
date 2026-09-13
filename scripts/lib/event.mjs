@@ -33,7 +33,7 @@ class CatEvent {
         let argNames = Object.keys(scope);
         if (argNames.some(k => Number.isNumeric(k))) throw new Error('Illegal numeric Macro parameter passed to execution scope.');
         return {
-            fn: new foundry.utils.AsyncFunction(...argNames, '{' + script + '}\n'),
+            fn: new foundry.utils.AsyncFunction(...argNames, '{' + script + '\n}\n'),
             argValues: Object.values(scope)
         };
     }
@@ -46,7 +46,7 @@ class CatEvent {
         let argNames = Object.keys(scope);
         if (argNames.some(k => Number.isNumeric(k))) throw new Error('Illegal numeric Macro parameter passed to execution scope.');
         return {
-            fn: new Function(...argNames, '{' + script + '}\n'),
+            fn: new Function(...argNames, '{' + script + '\n}\n'),
             argValues: Object.values(scope)
         };
     }

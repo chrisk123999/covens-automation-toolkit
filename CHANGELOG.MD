@@ -13,6 +13,7 @@ getAdvancementSourceKey`.
   - `tokenUtils.canSee`
   - `workflowUtils`: `applyDamage`, `addMacroConditions`, `getMacroConditions`
 - Added `constants.weaponTypes`
+- The `targetSituational` macro pass is now available for checks, saves, and tool rolls.
 ## Update Notes:
 - Added document properties to the Actor CatKit:
   - Feature Resistance: `flags.cat.FR.identifier`
@@ -28,6 +29,8 @@ getAdvancementSourceKey`.
 - Critical hit rules can now be applied to optional bonuses.
 - The mass apply feature now prompts a review of the documents to be updated.
 - Automation version can now be changed in the CatKit on compendium documents. Reload the world to update the automation registry.
+- Condition and feature resistance/vulnerability are now shown in MidiQOL's roll attributions on chat cards.
+- Condition and feature resistance/vulnerability can now trigger on checks, skills, and tools.
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.

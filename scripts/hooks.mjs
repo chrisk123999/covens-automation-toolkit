@@ -1,7 +1,7 @@
 import {constants} from './lib/_module.mjs';
 import * as events from './events/_module.mjs';
 import {queryUtils} from './utilities/_module.mjs';
-import {titlebar, activities, effects, combat, quickConditions} from './handlers/_module.mjs';
+import {titlebar, activities, effects, combat, quickConditions, conditionResistanceAndVulnerability} from './handlers/_module.mjs';
 import {dae, vae, tidy5e, macroautocomplete} from './integration/_modules.mjs';
 export function readyHooks() {
     // Handlers
@@ -35,6 +35,8 @@ export function readyHooks() {
     Hooks.on(constants.workflowHookNames.utilityRollComplete, events.workflowEvents.utilityRollComplete);
     Hooks.on(constants.workflowHookNames.preTargetDamageApplication, events.workflowEvents.preTargetDamageApplication);
     Hooks.on(constants.workflowHookNames.rollFinished, events.workflowEvents.rollFinished);
+    // Condition Resistance / Vulnerability
+    Hooks.on(constants.workflowHookNames.preTargetSave, conditionResistanceAndVulnerability);
     // Rest Events
     Hooks.on(constants.restHookNames.restCompleted, events.restEvents.restCompleted);
     // Item Events

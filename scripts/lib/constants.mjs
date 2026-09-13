@@ -44,6 +44,7 @@ const workflowHookNames = {
     preAttackRollConfig: 'midi-qol.premades.preAttackRollConfig',
     postAttackRoll: 'midi-qol.premades.postWaitForAttackRoll',
     attackRollComplete: 'midi-qol.premades.postAttackRollComplete',
+    preTargetSave: 'midi-qol.preTargetSave',
     savesComplete: 'midi-qol.premades.postSavesComplete',
     damageRollComplete: 'midi-qol.premades.preDamageRollComplete',
     utilityRollComplete: 'midi-qol.premades.preUtilityRollComplete',
