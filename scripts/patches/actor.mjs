@@ -1,7 +1,7 @@
 import {checkEvents, hitDieEvents, saveEvents, skillEvents, toolEvents} from '../events/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 import {conditionResistanceAndVulnerability, optionalBonus} from '../mechanics/_module.mjs';
-import {activityUtils, effectUtils, genericUtils} from '../utilities/_module.mjs';
+import {activityUtils, effectUtils, genericUtils, workflowUtils} from '../utilities/_module.mjs';
 async function check(wrapped, config, dialog = {}, message = {}) {
     const event = config.event;
     const checkId = config.ability;
@@ -136,6 +136,11 @@ async function save(wrapped, config, dialog = {}, message = {}) {
         genericUtils.setProperty(config, 'cat.activity', activity);
         const conditions = activityUtils.getConditions(activity);
         if (conditions) genericUtils.setProperty(config, 'cat.conditions', conditions);
+    }
+    const macroConditions = workflowUtils.getMacroConditions(config);
+    if (macroConditions.length) {
+        if (config.cat?.conditions) macroConditions.forEach(c => config.cat.conditions.add(c));
+        else genericUtils.setProperty(config, 'cat.conditions', new Set(macroConditions));
     }
     const options = {};
     await conditionResistanceAndVulnerability(this, config, options);

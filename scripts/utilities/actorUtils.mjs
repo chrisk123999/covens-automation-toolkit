@@ -124,14 +124,8 @@ function hasSpellSlots(actor, atLeast = 0) {
     return Object.values(actor.system.spells).some(i => i.value && i.level >= atLeast);
 }
 function getSize(actor, returnString) {
-    switch (actor.system.traits.size) {
-        case 'tiny': return returnString ? 'tiny' : 0;
-        case 'sm': return returnString ? 'sm' : 1;
-        case 'med': return returnString ? 'med' : 2;
-        case 'lg': return returnString ? 'lg' : 3;
-        case 'huge': return returnString ? 'huge' : 4;
-        case 'grg': return returnString ? 'grg' : 5;
-    }
+    const traits = actor.system.traits;
+    return returnString ? traits.size : traits.sizeNumeric;
 }
 
 /**

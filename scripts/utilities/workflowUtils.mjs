@@ -194,10 +194,25 @@ function setDamageItemDamage(ditem, damageAmount, adjustRaw = true) {
     }
 }
 function setWorkflowProperty(workflow, path, value) {
-    genericUtils.setProperty(workflow, 'cat.' + path, value);
+    genericUtils.setProperty(workflow, 'workflowOptions.cat.' + path, value);
 }
 function getWorkflowProperty(workflow, path) {
-    return genericUtils.getProperty(workflow, 'cat.' + path);
+    return genericUtils.getProperty(workflow, 'workflowOptions.cat.' + path);
+}
+/**
+ * Mark the workflow with conditions that may be applied programmatically.
+ * Used for condition resistance and vulnerability.
+ * @param {MidiQOL.Workflow} workflow 
+ * @param {string|string[]} conditions 
+ */
+function addMacroConditions(workflow, conditions) {
+    const existing = getMacroConditions(workflow);
+    if (Array.isArray(conditions)) existing.push(...conditions);
+    else existing.push(conditions);
+    setWorkflowProperty(workflow, 'macroConditions', existing);
+}
+function getMacroConditions(workflow) {
+    return getWorkflowProperty(workflow, 'macroConditions') ?? [];
 }
 async function bonusDamage(workflow, formula, {ignoreCrit = false, damageType = workflow.defaultDamageType} = {}) {
     formula = String(formula);
@@ -289,6 +304,8 @@ export default {
     isSustainedRoll,
     setWorkflowProperty,
     getWorkflowProperty,
+    addMacroConditions,
+    getMacroConditions,
     bonusDamage,
     getDamageTypes,
     getCastLevel,

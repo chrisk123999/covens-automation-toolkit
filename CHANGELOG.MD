@@ -11,7 +11,7 @@ getAdvancementSourceKey`.
   - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
   - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`
   - `tokenUtils.canSee`
-  - `workflowUtils.applyDamage`
+  - `workflowUtils`: `applyDamage`, `addMacroConditions`, `getMacroConditions`
 - Added `constants.weaponTypes`
 ## Update Notes:
 - Added document properties to the Actor CatKit:
@@ -32,6 +32,7 @@ getAdvancementSourceKey`.
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.
 - `workflowUtils.modifyDamageAppliedFlat` caps reductions to remaining damage instead of remaining HP. (Ported from CPR 1.5.47).
+- Macros that apply conditions programmatically must mark the workflow with `workflowUtils.addMacroConditions` in order to integrate with condition resistance and vulnerability.
 ## Bug Fixes:
 - Fixed max counter for `selectAmount` dialog input.
 - Effect special durations `damagedByAlly` and `damagedByEnemy` can now be used together.
