@@ -4,12 +4,13 @@
 getAdvancementSourceKey`.
 - Added utils:
   - `activityUtils.correctSpellLink`
-  - `actorUtils.getCR`
+  - `actorUtils`: `getCR`, `getBestSave`, `getBestSkill`, `getBestTool`
   - `automationUtils.getSourceName`
   - `compendiumUtils`: `getEnabledCompendiumIds`, `getSpell`, `selectActor`, `selectSpellFromLists`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
   - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
   - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`
+  - `rollUtils`: `contestedRoll`, `requestRoll`
   - `tokenUtils.canSee`
   - `workflowUtils`: `applyDamage`, `addMacroConditions`, `getMacroConditions`
 - Added `constants.weaponTypes`

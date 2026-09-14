@@ -100,14 +100,52 @@ function getEffectByIdentifier(actor, identifier) {
 /**
  * Get this actor's best ability by modifier, provided a list of ability keys.
  * @param {Actor5e} actor 
- * @param {string[]} abilities
+ * @param {string[]} [abilities]
  * @returns {string}
  */
 function getBestAbility(actor, abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha']) {
     return abilities.reduce((best, key) => {
         if (!actor.system.abilities[key]) return best;
         return actor.system.abilities[key].mod > actor.system.abilities[best].mod ? key : best;
-    });
+    }, abilities[0]);
+}
+/**
+ * Get this actor's best saving throw by modifier, provided a list of ability keys.
+ * @param {Actor5e} actor 
+ * @param {string[]} [abilities]
+ * @returns {string}
+ */
+function getBestSave(actor, abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha']) {
+    return abilities.reduce((best, key) => {
+        if (!actor.system.abilities[key]) return best;
+        return actor.system.abilities[key].save.value > actor.system.abilities[best].save.value ? key : best;
+    }, abilities[0]);
+}
+/**
+ * Get this actor's best skill by modifier, provided a list of skill keys.
+ * @param {Actor5e} actor 
+ * @param {string[]} [skills]
+ * @returns {string}
+ */
+function getBestSkill(actor, skills = Object.keys(CONFIG.DND5E.skills)) {
+    return skills.reduce((best, key) => {
+        if (!actor.system.skills[key]) return best;
+        return actor.system.skills[key].total > actor.system.skills[best].total ? key : best;
+    }, skills[0]);
+}
+/**
+ * Get this actor's best tool by modifier, provided a list of tool keys.
+ * @param {Actor5e} actor 
+ * @param {string[]} [tools]
+ * @returns {string}
+ */
+function getBestTool(actor, tools = Object.keys(CONFIG.DND5E.tools)) {
+    const getMod = key => actor.system.tools[key]?.total ?? actor.system.abilities[CONFIG.DND5E.tools[key].ability]?.mod;
+    return tools.reduce((best, key) => {
+        const mod = getMod(key);
+        if (mod === undefined) return best;
+        return mod > getMod(best) ? key : best;
+    }, tools[0]);
 }
 
 /**
@@ -309,6 +347,9 @@ export default {
     getFirstToken,
     getEffectByIdentifier,
     getBestAbility,
+    getBestSave,
+    getBestSkill,
+    getBestTool,
     checkTrait,
     hasSpellSlots,
     getSize,

@@ -1,3 +1,4 @@
+import {actorUtils, genericUtils, queryUtils} from './_module.mjs';
 const {OperatorTerm, NumericTerm} = foundry.dice.terms;
 /**
  * @typedef {object} CritOptions
@@ -148,6 +149,78 @@ function setTotalWithBonus(roll, total) {
     roll.resetFormula();
     return roll;
 }
+/**
+ * Note - tools will roll '-1' if the associated item is not present on the character sheet.
+ * @param {foundry.documents.TokenDocument} token 
+ * @param {'abil'|'check'|'save'|'test'|'skill'|'tool'|'deathSave'} request 
+ * @param {string} ability Use an ability, skill, or tool abbreviation.
+ * @param {object} [options]
+ * @param {number} [options.rollDC]
+ * @param {boolean} [options.advantage]
+ * @param {boolean} [options.disadvantage]
+ * @param {boolean} [options.fast] Fast forward.
+ * @param {boolean} [options.message] Create a chat card.
+ * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode]
+ * @returns {Promise<dnd5e.dice.D20Roll[]>}
+ */
+async function requestRoll(token, request, ability, {rollDC, advantage, disadvantage, fast = false, message = true, mode = 'public'} = {}) {
+    let data = {
+        saveDetails: {
+            rollDC,
+            advantage,
+            disadvantage,
+            rollType: request,
+            actorUuid: token.uuid,
+            displayOptions: {
+                fastforward: fast,
+                showTargetDC: true,
+                chatMessage: message,
+                rollMode: mode
+            }
+        }
+    };
+    switch(request) {
+        case 'abil':
+        case 'check':
+        case 'save':
+        case 'test': genericUtils.setProperty(data.saveDetails, 'rollAbilities', [ability]); break;
+        case 'skill': genericUtils.setProperty(data.saveDetails, 'rollSkills', [ability]); break;
+        case 'tool': genericUtils.setProperty(data.saveDetails, 'rollTools', [ability]); break;
+        case 'deathSave': break;
+    }
+    return await MidiQOL.socket().executeAsUser('rollAbility', queryUtils.firstOwner(token.actor, true), data);
+}
+/**
+ * Returns a number representing the target's roll total subtracted from the source's roll total.
+ * Returns undefined for actorless tokens or invalid abilities.
+ * @param {object} params
+ * @param {string} params.flavor Text for the results chat card.
+ * @param {boolean} params.message Display results in a chat card.
+ * @param {foundry.documents.TokenDocument} params.sourceToken
+ * @param {foundry.documents.TokenDocument} params.targetToken
+ * @param {'abil'|'test'|'save'|'skill'} params.sourceRollType
+ * @param {'abil'|'test'|'save'|'skill'} params.targetRollType
+ * @param {string[]} params.sourceAbilities
+ * @param {string[]} params.sourceAbilities
+ * @returns {Promise<number|undefined>}
+ */
+async function contestedRoll({sourceToken, targetToken, sourceRollType, targetRollType, sourceAbilities, targetAbilities, message, flavor}) {
+    if (!sourceToken.actor || !targetToken.actor) return;
+    const getBest = (actor, type, choices) => {
+        switch(type) {        
+            case 'abil':
+            case 'test': return actorUtils.getBestAbility(actor, choices);
+            case 'save': return actorUtils.getBestSave(actor, choices);
+            case 'skill': return actorUtils.getBestSkill(actor, choices);
+        }
+    };
+    return (await MidiQOL.contestedRoll({
+        source: {token: sourceToken, rollType: sourceRollType, ability: getBest(sourceToken.actor, sourceRollType, sourceAbilities)},
+        target: {token: targetToken, rollType: targetRollType, ability: getBest(targetToken.actor, targetRollType, targetAbilities)},
+        displayResults: message,
+        flavor
+    }))?.result;
+}
 export default {
     rollDiceSync,
     rollDice,
@@ -158,5 +231,7 @@ export default {
     getChangedDamageRoll,
     hasDuplicateDie,
     replaceRollShowDiscarded,
-    setTotalWithBonus
+    setTotalWithBonus,
+    requestRoll,
+    contestedRoll
 };
