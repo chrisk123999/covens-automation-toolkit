@@ -5,7 +5,7 @@ function abilities(rules) {
     if (rules === '2024') return ['str', 'dex'];
 }
 async function legacyGrappleDC(grapplerActor) {
-    return (await rollUtils.requestRoll(grapplerActor, 'skill', 'ath'))?.total;
+    return (await rollUtils.requestRoll(grapplerActor, 'skill', 'ath'))?.total ?? -99;
 }
 function itemData(sourceEffect, targetEffect, dc, rules, {name, img} = {}) {
     const data = {
@@ -108,7 +108,7 @@ async function createEscapeItem(actor, itemData) {
     if (item) await actorUtils.addFavorites(actor, [item]);
     return item;
 }
-async function sizeCheck(sourceToken, targetToken, identifier, warning) {
+async function sizeCheck(sourceToken, targetToken, identifier, warning = true) {
     if (identifier === 'grapple' && actorUtils.checkTrait(targetToken.actor, 'ci', 'grappled'))
         return warning ? genericUtils.notify('CAT.GrappleShove.GrappleImmune', {type: 'warn'}) : false;
     if (identifier === 'shove-prone' && actorUtils.checkTrait(targetToken.actor, 'ci', 'prone'))
@@ -141,6 +141,7 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
     let sourceEffect, targetEffect;
     if (contest) {
         data.dc ??= await legacyGrappleDC(sourceToken.actor);
+        if (data.dc === -99) return;
         const item = itemData(data.sourceEffectData, data.targetEffectData, data.dc, rules, activity?.item);
         const result = await workflowUtils.syntheticItemDataRoll(item, sourceToken.actor, [targetToken]);
         if (!result?.failedSaves.size) return;

@@ -9,7 +9,7 @@
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
   - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
   - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`
-  - `rollUtils`: `contestedRoll`, `requestRoll`
+  - `rollUtils`: `contestedRoll`, `requestRoll`, `shouldFastForward`
   - `tokenUtils`: `canSee`, `grapple`, `grappleShoveSizeCheck`
   - `workflowUtils`: `applyDamage`, `addMacroConditions`, `getMacroConditions`
 - Added `constants.weaponTypes`

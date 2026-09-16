@@ -163,32 +163,33 @@ function setTotalWithBonus(roll, total) {
  * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode]
  * @returns {Promise<dnd5e.dice.D20Roll>}
  */
-async function requestRoll(actor, request, ability, {rollDC, advantage, disadvantage, fast = false, message = true, mode = 'public'} = {}) {
-    let data = {
+async function requestRoll(actor, request, ability, {rollDC, advantage, disadvantage, fast, message = true, mode = 'public'} = {}) {
+    if (request === 'abil' || request === 'test') request = 'check';
+    const user = queryUtils.firstOwner(actor);
+    fast ??= shouldFastForward(request, user);
+    const data = {
+        displayOptions: {
+            fastForward: fast,
+            showTargetDC: true,
+            chatMessage: message,
+            rollMode: mode
+        },
         saveDetails: {
             rollDC,
             advantage,
             disadvantage,
             rollType: request,
-            actorUuid: actor.uuid,
-            displayOptions: {
-                fastforward: fast,
-                showTargetDC: true,
-                chatMessage: message,
-                rollMode: mode
-            }
+            actorUuid: actor.uuid
         }
     };
     switch(request) {
-        case 'abil':
         case 'check':
-        case 'save':
-        case 'test': genericUtils.setProperty(data.saveDetails, 'rollAbilities', [ability]); break;
+        case 'save': genericUtils.setProperty(data.saveDetails, 'rollAbilities', [ability]); break;
         case 'skill': genericUtils.setProperty(data.saveDetails, 'rollSkills', [ability]); break;
         case 'tool': genericUtils.setProperty(data.saveDetails, 'rollTools', [ability]); break;
         case 'deathSave': break;
     }
-    return (await MidiQOL.socket().executeAsUser('rollAbility', queryUtils.firstOwner(actor, true), data))?.[0];
+    return (await MidiQOL.socket().executeAsUser('rollAbility', user.id, data))?.[0];
 }
 /**
  * Returns a number representing the target's roll total subtracted from the source's roll total.
@@ -221,6 +222,15 @@ async function contestedRoll({sourceToken, targetToken, sourceRollType, targetRo
         flavor
     }))?.result;
 }
+/**
+ * @param {'attack'|'damage'|'check'|'save'|'skill'|'tool'} rollType 
+ * @param {foundry.documents.User} user 
+ * @returns {boolean}
+ */
+function shouldFastForward(rollType, user = game.user) {
+    const settings = MidiQOL.configSettings();
+    return user.isGM ? settings.gmAutoFastForward.includes(rollType) : settings.autoFastForward.includes(rollType);
+}
 export default {
     rollDiceSync,
     rollDice,
@@ -233,5 +243,6 @@ export default {
     replaceRollShowDiscarded,
     setTotalWithBonus,
     requestRoll,
-    contestedRoll
+    contestedRoll,
+    shouldFastForward
 };
