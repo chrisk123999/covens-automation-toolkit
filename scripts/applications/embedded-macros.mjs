@@ -36,7 +36,6 @@ let _eventStructure;
 function getEventStructure() {
     if (_eventStructure) return _eventStructure;
     const c = constants;
-    const rollChecks = Object.values(c.rollPasses).filter(pass => pass !== 'targetSituational');
     const itemBare = ['bulkUpdated', 'munched'];
     const itemScoped = Object.values(c.itemPasses).filter(pass => !itemBare.includes(pass));
     const mk = (list, self, scoped) => list.map(pass => ({pass, self, scoped}));
@@ -44,16 +43,17 @@ function getEventStructure() {
         roll: {scopes: WORKFLOW_SCOPES, passes: mk(Object.values(c.workflowPasses), [], true)},
         combat: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.combatPasses), [], true)},
         move: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.movementPasses), [], true)},
+        grapple: {scopes: [...CREATURE_SCOPES, 'target'], passes: mk(Object.values(c.grapplePasses), [], true)},
         effect: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.effectPasses), ['activeeffect'], true)},
         item: {scopes: CREATURE_SCOPES, passes: [...mk(itemScoped, ['item'], true), ...mk(itemBare, ['item'], false)]},
         region: {scopes: [], passes: mk(Object.values(c.regionPasses), ['region'], false)},
         aura: {scopes: [], passes: mk(Object.values(c.auraPasses), ['item', 'activeeffect', 'actor', 'token', 'activity'], false)},
         rest: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.restPasses), [], true)},
         time: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.timePasses), [], true)},
-        check: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
-        skill: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
+        check: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
+        skill: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
         save: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
-        tool: {scopes: CREATURE_SCOPES, passes: mk(rollChecks, [], true)},
+        tool: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
         summon: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.summonPasses), ['item', 'activity', 'actor', 'activeeffect'], true)},
         called: {scopes: CREATURE_SCOPES, passes: mk(c.calledPasses ? Object.values(c.calledPasses) : ['called'], ['item', 'activity', 'actor', 'activeeffect'], true)}
     };

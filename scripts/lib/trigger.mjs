@@ -70,6 +70,9 @@ class RollTrigger extends Trigger {
 class MoveTrigger extends Trigger {
     static get type() { return 'move'; }
 }
+class GrappleTrigger extends Trigger {
+    static get type() { return 'grapple'; }
+}
 class RegionTrigger extends Trigger {
     static get type() { return 'region'; }
 }
@@ -144,6 +147,7 @@ export default {
     Trigger,
     RollTrigger,
     MoveTrigger,
+    GrappleTrigger,
     RegionTrigger,
     EffectTrigger,
     CombatTrigger,

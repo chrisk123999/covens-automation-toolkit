@@ -481,6 +481,38 @@ class MovementEvent extends CatEvent {
         };
     }
 }
+class GrappleEvent extends CatEvent {
+    constructor(sourceToken, targetToken, pass, {data} = {}) {
+        super(pass);
+        this.name = 'Grapple',
+        this.trigger = Triggers.GrappleTrigger;
+        this.canOverlap = true;
+        this.targetToken = targetToken;
+        this.setContext(sourceToken.actor, {token: sourceToken});
+        this.data = data;
+    }
+    get unsortedTriggers() {
+        const triggers = [];
+        const passName = this.pass.capitalize();
+        if (this.token && CatEvent.hasCatFlag(this.token)) triggers.push(new this.trigger(this.token, 'token' + passName));
+        triggers.push(...super.unsortedTriggers);
+        if (CatEvent.hasCatFlag(this.targetToken)) triggers.push(new this.trigger(this.targetToken, 'target' + passName, {sourceToken: this.targetToken, distances: this.distances}));
+        if (this.targetToken.actor) {
+            triggers.push(...this.getActorTriggers(this.targetToken.actor, 'target' + passName, {sourceToken: this.targetToken, distances: this.distances}));
+            this.targetToken.regions.filter(region => CatEvent.hasCatFlag(region)).forEach(region => {
+                triggers.push(new this.trigger(region, 'target' + passName, {sourceToken: this.targetToken, distances: this.distances}));
+            });
+        }
+        return triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            targetToken: this.targetToken,
+            data: this.data
+        };
+    }
+}
 class RegionEvent extends CatEvent {
     constructor(regions, pass, {tokens, workflow, options, updates, locationData} = {}) {
         super(pass);
@@ -882,6 +914,7 @@ export default {
     PreTargetingWorkflowEvent,
     TokenDamageWorkflowEvent,
     MovementEvent,
+    GrappleEvent,
     RegionEvent,
     EffectEvent,
     CombatEvent,

@@ -31,7 +31,7 @@ function firstOwner(document, useId) {
     }
     return useId ? gmID() : game.users.get(gmID());
 }
-async function query(name, user, queryData, timeout = 300) {
+async function query(name, user, queryData, timeout = 500) {
     return await user.query('cat.' + name, queryData, {timeout});
 }
 export default {

@@ -1,42 +1,39 @@
 # 0.0.8 Release:
 ## API Update Notes:
-- The automation registry can now differentiate between duplicate identifiers, such as 'channel-divinity' from cleric and paladin. See `itemUtils.
-getAdvancementSourceKey`.
+- The automation registry can now differentiate between duplicate identifiers, such as 'channel-divinity' from cleric and paladin. See `itemUtils.getAdvancementSourceKey`.
 - Added utils:
   - `activityUtils.correctSpellLink`
-  - `actorUtils`: `getCR`, `getBestSave`, `getBestSkill`, `getBestTool`
+  - `actorUtils`: `addFavorites`, `removeFavorites`, `getCR`, `getBestSave`, `getBestSkill`, `getBestTool`
   - `automationUtils.getSourceName`
   - `compendiumUtils`: `getEnabledCompendiumIds`, `getSpell`, `selectActor`, `selectSpellFromLists`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
   - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
   - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`
   - `rollUtils`: `contestedRoll`, `requestRoll`
-  - `tokenUtils.canSee`
+  - `tokenUtils`: `canSee`, `grapple`, `grappleShoveSizeCheck`
   - `workflowUtils`: `applyDamage`, `addMacroConditions`, `getMacroConditions`
 - Added `constants.weaponTypes`
 - The `targetSituational` macro pass is now available for checks, saves, and tool rolls.
 ## Update Notes:
-- Added document properties to the Actor CatKit:
+- Actor CatKit: added document properties.
+  - Condition Resistance/Vulnerability: now applies on checks, skills, and tools.
   - Feature Resistance: `flags.cat.FR.identifier`
   - Feature Vulnerability: `flags.cat.FV.identifier`
   - Feature Immunity: `flags.cat.FI.identifier`
   - Feature Failure: `flags.cat.FF.identifier`
   - Use an activity identifier, e.g. turn resistance: `flags.cat.FR.turn-undead | override | wis`.
-- Added document properties to the Item CatKit:
-  - Range Bonus: increase spell or weapon range if restrictions are met.
-- Added disable conditions to the Effect CatKit.
-- Added `zeroHP` special duration to the Effect CatKit.
-- Added a damage type picker in the optional bonus dialog.
-- Critical hit rules can now be applied to optional bonuses.
+  - All of the above are now shown in MidiQOL's roll attributions on chat cards.
+- Item CatKit: added Spell Range Bonus document property.
+- Effect CatKit: added disable conditions and a `zeroHP` special duration.
+- Optional Bonus Dialog: added a damage type picker, critical hit rules, and phases for before and after knowing a D20 result.
 - The mass apply feature now prompts a review of the documents to be updated.
 - Automation version can now be changed in the CatKit on compendium documents. Reload the world to update the automation registry.
-- Condition and feature resistance/vulnerability are now shown in MidiQOL's roll attributions on chat cards.
-- Condition and feature resistance/vulnerability can now trigger on checks, skills, and tools.
+- Added a grapple system, including events for size check, apply and escape. Start a grapple with `tokenUtils.grapple`.
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.
 - `workflowUtils.modifyDamageAppliedFlat` caps reductions to remaining damage instead of remaining HP. (Ported from CPR 1.5.47).
-- Macros that apply conditions programmatically must mark the workflow with `workflowUtils.addMacroConditions` in order to integrate with condition resistance and vulnerability.
+- Condition resistance and vulnerability can work with conditions applied programmatically if the workflow is marked with `workflowUtils.addMacroConditions`.
 ## Bug Fixes:
 - Fixed max counter for `selectAmount` dialog input.
 - Effect special durations `damagedByAlly` and `damagedByEnemy` can now be used together.

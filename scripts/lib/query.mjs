@@ -84,6 +84,38 @@ async function moveToken({uuid, waypoints, options}) {
 async function updateTargets({ids}) {
     canvas.tokens?.setTargets(ids);
 }
+async function addFavorites({actorUuid, entityUuids}) {
+    const actor = await fromUuid(actorUuid);
+    if (!actor?.system.addFavorite) return;
+    const entities = (await Promise.all(entityUuids.map(i => fromUuid(i)))).filter(Boolean);
+    for (const entity of entities) {
+        const type = entity.documentName;
+        if (type === 'Item') {
+            await actor.system.addFavorite({
+                id: foundry.utils.buildRelativeUuid(entity, entity.actor),
+                type: 'item'
+            });
+        } else if (type === 'Activity') {
+            await actor.system.addFavorite({
+                id: entity.relativeUUID,
+                type: 'activity'
+            });
+        }
+    }
+}
+async function removeFavorites({actorUuid, entityUuids}) {
+    const actor = await fromUuid(actorUuid);
+    if (!actor?.system.removeFavorite) return;
+    const entities = await Promise.all(entityUuids.map(i => fromUuid(i)).filter(Boolean));
+    for (const i of entities) {
+        const type = i.documentName;
+        if (type === 'Item') {
+            await actor.system.removeFavorite(foundry.utils.buildRelativeUuid(i, i.actor));
+        } else if (type === 'Activity') {
+            await actor.system.removeFavorite(i.relativeUUID);
+        }
+    }
+}
 function registerQueries() {
     const handlers = {
         createEffects,
@@ -100,7 +132,9 @@ function registerQueries() {
         manualRoll,
         modifyBatch,
         moveToken,
-        updateTargets
+        updateTargets,
+        addFavorites,
+        removeFavorites
     };
     for (const [name, fn] of Object.entries(handlers)) {
         globalThis.CONFIG.queries['cat.' + name] = fn;
@@ -122,5 +156,7 @@ export default {
     manualRoll,
     modifyBatch,
     moveToken,
-    updateTargets
+    updateTargets,
+    addFavorites,
+    removeFavorites
 };

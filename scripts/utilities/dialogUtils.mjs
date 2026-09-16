@@ -518,8 +518,15 @@ async function queuedConfirmDialog(title, content, {userId = game.user.id} = {})
     let selection = await runQueuedDialog(userId, title, content, [], 'yesNo');
     return selection?.buttons;
 }
-async function selectTargetDialog(title, content, targets, {type = 'one', selectOptions = [], skipDeadAndUnconscious = true, coverToken = undefined, reverseCover = false, displayDistance = true, maxAmount = 1, minAmount = 0, userId = game.user.id, buttons = 'okCancel', maxes = {}} = {}) {
-    const inputType = type === 'multiple' ? 'checkbox' : type === 'number' ? 'number' : type === 'select' ? 'selectOption' : type === 'selectAmount' ? 'selectAmount' : 'radio';
+const targetInputTypes = {
+    one: 'radio',
+    multiple: 'checkbox',
+    number: 'number',
+    select: 'selectOption',
+    selectAmount: 'selectAmount'
+};
+async function selectTargetDialog(title, content, targets, {type = 'one', selectOptions = [], skipDeadAndUnconscious = true, coverToken = undefined, reverseCover = false, displayDistance = true, maxAmount = 1, minAmount = 0, userId = game.user.id, buttons = 'okCancel', maxes = {}, tags = {}} = {}) {
+    const inputType = targetInputTypes[type] ?? targetInputTypes.one;
     const inputs = [[inputType]];
     const targetInputs = [];
     const hideNames = game.settings.get('cat', 'hideNames');
@@ -532,7 +539,14 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
         targetInputs.push({
             label,
             name: i.id,
-            options: {image: i.texture.src, isChecked: type !== 'multiple' && targetInputs.length === 0, options: selectOptions, maxAmount: maxes[i.id] ?? maxAmount, minAmount}
+            options: {
+                isChecked: type !== 'multiple' && targetInputs.length === 0,
+                maxAmount: maxes[i.id] ?? maxAmount,
+                options: selectOptions,
+                image: i.texture.src,
+                tags: tags[i.id],
+                minAmount
+            }
         });
     }
     inputs[0].push(targetInputs);

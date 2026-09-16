@@ -977,6 +977,16 @@
     "CompendiumBrowser": {
       "SpellPicker": "Choose spells from the {lists} list:",
       "Title": "CAT Compendium Browser"
+    },
+    "GrappleShove": {
+      "Grapple": "Grapple",                
+      "GrappledBy": "Grappled By {name}",
+      "GrappleEscape": "Escape Grapple",
+      "Grappling": "Grappling {name}",
+      "GrappleImmune": "Target cannot be grappled!",
+      "GrappleSize": "Target is too big to be grappled!",
+      "ShoveSize": "Target is too big to be shoved!",
+      "ShoveProneImmune": "Target cannot be shoved prone!"
     }
   }
 }

@@ -88,13 +88,17 @@ function getFirstToken(actor) {
 }
 
 /**
- * Get the first effect applicable to this actor which matches the provided identifier.
+ * Get the first (or all) effect applicable to this actor which matches the provided identifier.
  * @param {Actor5e} actor 
  * @param {string} identifier 
- * @returns {ActiveEffect|undefined}
+ * @param {object} [options]
+ * @param {boolean} [options.multiple]  Whether to return all effects matching the identifier (default false)
+ * @returns {ActiveEffect|ActiveEffect[]|undefined}
  */
-function getEffectByIdentifier(actor, identifier) {
-    return getEffects(actor).find(i => documentUtils.getIdentifier(i) === identifier);
+function getEffectByIdentifier(actor, identifier, {multiple = false} = {}) {
+    const effects = getEffects(actor);
+    const predicate = item => documentUtils.getIdentifier(item) === identifier;
+    return multiple ? effects.filter(predicate) : effects.find(predicate);
 }
 
 /**
@@ -336,6 +340,42 @@ function getMaxCastLevel(actor) {
 function getCR(actor) {
     return actor.system.details.cr ?? (4 * actor.system.attributes.prof - 7);
 }
+async function addFavorites(actor, entities) {
+    if (!actor?.system.addFavorite) return;
+    if (queryUtils.hasPermission(actor, game.user.id)) {
+        for (const entity of entities) {
+            const type = entity.documentName;
+            if (type === 'Item') {
+                await actor.system.addFavorite({
+                    id: foundry.utils.buildRelativeUuid(entity, entity.actor),
+                    type: 'item' 
+                });
+            } else if (type === 'Activity') {
+                await actor.system.addFavorite({
+                    id: entity.relativeUUID,
+                    type: 'activity'
+                });
+            }
+        }
+    } else {
+        await queryUtils.query('addFavorites', queryUtils.gmUser(), {actorUuid: actor.uuid, entityUuids: entities.map(e => e.uuid)});
+    }
+}
+async function removeFavorites(actor, entities) {
+    if (!actor?.system.removeFavorite) return;
+    if (queryUtils.hasPermission(actor, game.user.id)) {
+        for (const entity of entities) {
+            const type = entity.documentName;
+            if (type === 'Item') {
+                await actor.system.removeFavorite(foundry.utils.buildRelativeUuid(entity, entity.actor));
+            } else if (type === 'Activity') {
+                await actor.system.removeFavorite(entity.relativeUUID);
+            }
+        }
+    } else {
+        await queryUtils.query('removeFavorites', queryUtils.gmUser(), {actorUuid: actor.uuid, entityUuids: entities.map(e => e.uuid)});
+    }
+}
 export default {
     getEffects,
     getGroups,
@@ -367,5 +407,7 @@ export default {
     createActor,
     hasUsedBonusAction,
     getMaxCastLevel,
-    getCR
+    getCR,
+    addFavorites,
+    removeFavorites
 };

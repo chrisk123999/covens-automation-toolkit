@@ -46,11 +46,20 @@ function centerWindow(app, {width = 0, height = 0} = {}) {
 async function enrichHTML(html, rollData) {
     return await foundry.applications.ux.TextEditor.enrichHTML(html, {rollData});
 }
+/**
+ * Evaluate dnd5e's challenge visibility setting.
+ * @param {foundry.documents.Actor} [actor] The actor imposing the roll.
+ * @returns {boolean}
+ */
+function showDC(actor) {
+    return MidiQOL.shouldDisplaySaveDC(actor);
+}
 export default {
     fallbackIcon,
     fadeOut,
     enableWindowDrag,
     bringToFront,
     centerWindow,
-    enrichHTML
+    enrichHTML,
+    showDC
 };

@@ -52,6 +52,13 @@ const workflowHookNames = {
     rollFinished: 'midi-qol.premades.postRollFinished',
     regionPlaced: 'midi-qol.premades.postTemplatePlaced'
 };
+const grapplePasses = {
+    sizeCheck: 'grappleShoveSizeCheck',
+    preGrapple: 'preGrapple',
+    postGrapple: 'postGrapple',
+    preEscape: 'preEscape',
+    postEscape: 'postEscape'
+};
 const movementPasses = {
     moved: 'moved',
     aimTeleport: 'aimTeleport',
@@ -320,6 +327,8 @@ const damageIcons = {
     no: 'icons/svg/cancel.svg'
 };
 const tempConditionIcon = 'icons/magic/time/arrows-circling-green.webp';
+const grappleIcon = 'icons/magic/control/buff-strength-muscle-damage-red.webp';
+const grappleEscapeIcon = 'icons/skills/movement/arrows-up-trio-red.webp';
 const itemIconOverrides = {
     feat: 'systems/dnd5e/icons/svg/items/feature.svg'
 };
@@ -405,6 +414,7 @@ export default {
     rules,
     workflowPasses,
     workflowHookNames,
+    grapplePasses,
     movementPasses,
     movementHookNames,
     effectHookNames,
@@ -443,6 +453,8 @@ export default {
     tokenHookNames,
     massApplyExcludeSources,
     damageIcons,
+    grappleIcon,
+    grappleEscapeIcon,
     tempConditionIcon,
     armorOptions,
     abilityOptions,

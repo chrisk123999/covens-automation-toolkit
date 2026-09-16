@@ -1,5 +1,6 @@
-import {constants, Events} from '../lib/_module.mjs';
 import {crosshairUtils, genericUtils, queryUtils} from './_module.mjs';
+import {grapple as grappleHandler} from '../handlers/_module.mjs';
+import {constants, Events} from '../lib/_module.mjs';
 /**
  * Movement action for drag ruler. 'catForce' does not consume movement.
  * @typedef {'blink'|'burrow'|'catForce'|'climb'|'crawl'|'displace'|'fly'|'jump'|'swim'|'walk'} MovementAction
@@ -201,6 +202,29 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
 function canSee(sourceToken, targetToken) {
     return MidiQOL.canSee(sourceToken, targetToken);
 }
+/**
+ * @param {foundry.documents.TokenDocument} sourceToken 
+ * @param {foundry.documents.TokenDocument} targetToken 
+ * @param {object} [options]
+ * @param {dnd5e.dataModels.activity.BaseActivityData} [options.activity] The initiating activity. Provides effect icons, name, rules, and roll DC.
+ * @param {number} [options.flatDC] Escape DC. If undefined, instead uses the DC from the save on {@link activity}, or prompts {@link sourceToken} for a skill check.
+ * @param {'2024'|'2014'} [options.rules] 2014 for skill checks or 2024 for saving throws. If undefined, uses the rules from {@link activity} or defaults to 2014.
+ * @param {boolean} [options.contest] Roll dice before applying effects.
+ * @param {boolean} [options.checkSize] Enforce size limits.
+ */
+async function grapple(sourceToken, targetToken, {activity, flatDC, rules, contest = true, checkSize = true} = {}) {
+    return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize});
+}
+/**
+ * @param {foundry.documents.TokenDocument} sourceToken 
+ * @param {foundry.documents.TokenDocument[]} targetToken
+ * @param {'grapple'|'shove-push'|'shove-prone'} [identifier] Used to check condition immunities and change the warning message.
+ * @param {boolean} [warning] False hides warnings from a failed size requirement.
+ * @returns {Promise<boolean>}
+ */
+async function grappleShoveSizeCheck(sourceToken, targetToken, identifier = 'grapple', warning = true) {
+    return await grappleHandler.sizeCheck(sourceToken, targetToken, identifier, warning);
+}
 export default {
     getSavedCastData,
     getDistance,
@@ -211,5 +235,7 @@ export default {
     teleportToken,
     displaceToken,
     slideToken,
-    canSee
+    canSee,
+    grapple,
+    grappleShoveSizeCheck
 };

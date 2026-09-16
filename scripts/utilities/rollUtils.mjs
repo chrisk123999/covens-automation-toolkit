@@ -151,7 +151,7 @@ function setTotalWithBonus(roll, total) {
 }
 /**
  * Note - tools will roll '-1' if the associated item is not present on the character sheet.
- * @param {foundry.documents.TokenDocument} token 
+ * @param {foundry.documents.Actor} token 
  * @param {'abil'|'check'|'save'|'test'|'skill'|'tool'|'deathSave'} request 
  * @param {string} ability Use an ability, skill, or tool abbreviation.
  * @param {object} [options]
@@ -161,16 +161,16 @@ function setTotalWithBonus(roll, total) {
  * @param {boolean} [options.fast] Fast forward.
  * @param {boolean} [options.message] Create a chat card.
  * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode]
- * @returns {Promise<dnd5e.dice.D20Roll[]>}
+ * @returns {Promise<dnd5e.dice.D20Roll>}
  */
-async function requestRoll(token, request, ability, {rollDC, advantage, disadvantage, fast = false, message = true, mode = 'public'} = {}) {
+async function requestRoll(actor, request, ability, {rollDC, advantage, disadvantage, fast = false, message = true, mode = 'public'} = {}) {
     let data = {
         saveDetails: {
             rollDC,
             advantage,
             disadvantage,
             rollType: request,
-            actorUuid: token.uuid,
+            actorUuid: actor.uuid,
             displayOptions: {
                 fastforward: fast,
                 showTargetDC: true,
@@ -188,7 +188,7 @@ async function requestRoll(token, request, ability, {rollDC, advantage, disadvan
         case 'tool': genericUtils.setProperty(data.saveDetails, 'rollTools', [ability]); break;
         case 'deathSave': break;
     }
-    return await MidiQOL.socket().executeAsUser('rollAbility', queryUtils.firstOwner(token.actor, true), data);
+    return (await MidiQOL.socket().executeAsUser('rollAbility', queryUtils.firstOwner(actor, true), data))?.[0];
 }
 /**
  * Returns a number representing the target's roll total subtracted from the source's roll total.
