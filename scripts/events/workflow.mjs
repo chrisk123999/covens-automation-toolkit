@@ -16,7 +16,6 @@ async function preambleComplete(workflow) {
     if (event) return;
     event = await new Events.WorkflowEvent(constants.workflowPasses.preambleComplete, workflow).run();
     if (event) return false;
-    await optionalBonus.preambleComplete(workflow);
 }
 async function attackRollConfig(workflow) {
     await regionVisibility(workflow);
@@ -34,7 +33,6 @@ async function attackRollComplete(workflow) {
 }
 async function savesComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.savesComplete, workflow).run();
-    await optionalBonus.savesComplete(workflow);
 }
 async function damageRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.damageRoll, workflow).run();

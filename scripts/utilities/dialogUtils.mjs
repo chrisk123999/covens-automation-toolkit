@@ -205,9 +205,15 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
  * @param {boolean} [options.missed] True once the roll is known to have failed.
  * @returns {Promise<{inputs: Array, hasOptional: boolean}|undefined>}
  */
-async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls, spent, committed = [], outcome, missed} = {}) {
+async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls, spent, committed = [], outcome} = {}) {
     if (!bonuses.length && !committed.length && !rolls?.length) return;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
+    const roll = rolls?.[0];
+    const missed = outcome?.success === false;
+    const attack = !!workflow?.activity?.hasAttack;
+    const outcomeLabel = outcome && _loc(outcome.success
+        ? (attack ? 'CAT.OptionalBonus.Hit' : 'CAT.OptionalBonus.Success')
+        : (attack ? 'CAT.OptionalBonus.Miss' : 'CAT.OptionalBonus.Failure'));
     let rollTotal;
     if (rolls?.length) {
         if (rolls.every(r => r._evaluated)) rollTotal = rolls.reduce((t, r) => t += r.total, 0);
@@ -222,7 +228,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
         ? group.cls.CombineRolls(group.rolls, group.bonuses, {workflow})
         : [];
     const validateAll = context => {
-        for (const group of groups) group.cls.ValidateAll(group.bonuses, {rollTotal, workflow, spent});
+        for (const group of groups) group.cls.ValidateAll(group.bonuses, {rollTotal, workflow, spent, roll, outcome});
         for (const bonusContext of context) {
             const index = bonusContext.name.match(/\d+/)[0];
             const bonus = bonuses[index];
@@ -337,6 +343,8 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
                     onchange: ({fullContext, input, getInputById}) => damageChange({bonus, fullContext, input, getInputById})
                 }
             }]]);
+        for (const [type, fields, options] of bonus.extraInputs)
+            subinputs.push([type, fields.map(f => ({...f, name: name + '.inputs.' + f.name})), options]);
         const tags = [];
         if (bonus.roll) {
             const formula = workflow?.isCritical && bonus instanceof DamageBonus ? DamageBonus.GetCriticalRoll(bonus).formula : bonus.roll.formula;
@@ -388,13 +396,17 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
     const inputs = [];
     for (const group of groups) {
         const isD20 = group.cls === D20Bonus;
-        inputs.push(['formula', group.aggregate, {header: true, total: isD20 ? rollTotal : undefined, outcome: isD20 ? outcome : undefined, muted: !isD20 && missed}]);
+        inputs.push(['formula', group.aggregate, {header: true, total: isD20 ? rollTotal : undefined, outcome: isD20 ? outcomeLabel : undefined, muted: !isD20 && missed}]);
     }
     if (thirdParty.length) inputs.push(['request', thirdParty, {displayAsRows: true, legend: contextual.length + optional.length > 0 ? 'CAT.OptionalBonus.ThirdParty' : ''}]);
     if (optional.length) inputs.push(['checkbox', optional, {displayAsRows: true, legend: contextual.length + thirdParty.length > 0 ? 'CAT.OptionalBonus.Optional' : ''}]);
     if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);
     if (applied.length) inputs.push(['checkbox', applied, {displayAsRows: true, legend: 'CAT.OptionalBonus.Applied'}]);
-    return {inputs, hasOptional: !!(optional.length || thirdParty.length)};
+    const readInputs = results => {
+        for (let i = 0; i < bonuses.length; i++)
+            if (bonuses[i].extraInputs.length) bonuses[i].inputs = results?.['b-' + i]?.inputs ?? {};
+    };
+    return {inputs, hasOptional: !!(optional.length || thirdParty.length), readInputs};
 }
 /**
  * @param {foundry.documents.Actor} actor

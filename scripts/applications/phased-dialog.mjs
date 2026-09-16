@@ -36,7 +36,7 @@ export default class PhasedDialogApp extends DialogApp {
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
-        context.phases = this.#phases.map((phase, i) => ({
+        context.phases = this.#phases.length < 2 ? [] : this.#phases.map((phase, i) => ({
             ...phase,
             active: i === this.#index,
             done: i < this.#index

@@ -27,7 +27,7 @@ export class RegisteredMacros {
         let fnMacro = this.overwriteMacros.get(key) ?? this.fnMacros.get(key);
         if (!fnMacro && rules !== 'all') {
             const allKey = this.#makeMacroKey(source, identifier, 'all');
-            fnMacro = this.overwriteMacros.get(key) ?? this.fnMacros.get(allKey);
+            fnMacro = this.overwriteMacros.get(allKey) ?? this.fnMacros.get(allKey);
         }
         return fnMacro;
     }

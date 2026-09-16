@@ -231,17 +231,7 @@ class CatEvent {
     static hasCatFlag(document) {
         return !!(document.flags?.cat?.macros || document.flags?.cat?.embeddedMacros);
     }
-    get defaultPhase() {
-        return this.pass === constants.workflowPasses.optionalBonusDamage ? constants.bonusPhases.postResult : constants.bonusPhases.preResult;
-    }
-    getPhase(macroConfig) {
-        return macroConfig?.phase ?? this.defaultPhase;
-    }
-    matchesPhase(macroConfig, phase) {
-        const configured = this.getPhase(macroConfig);
-        return Array.isArray(configured) ? configured.includes(phase) : configured === phase;
-    }
-    async run({canOverlap = false, multiResult = false, phase} = {}) {
+    async run({canOverlap = false, multiResult = false} = {}) {
         if (!this.actor) return;
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.actor.name);
         this.canOverlap = canOverlap;
@@ -249,7 +239,6 @@ class CatEvent {
         this._debugEvent();
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
-            if (phase && !this.matchesPhase(trigger.macroConfig, phase)) continue;
             let result;
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);

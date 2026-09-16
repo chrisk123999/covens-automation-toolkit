@@ -1,5 +1,5 @@
 import {activityUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, queryUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
-import {Logging} from './_module.mjs';
+import {constants, Logging} from './_module.mjs';
 const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
 /** @import {DialogHint} from '../applications/dialog.mjs' */
@@ -30,6 +30,8 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  * @property {number} rollTotal The current total of the target roll(s) before adding bonuses, if available.
  * @property {RollBonus[]} otherBonuses Other candidate bonuses for the same target roll.
  * @property {MidiQOL.Worklow} [workflow] The workflow the target roll is part of.
+ * @property {foundry.dice.Roll} [roll] The target roll, once it exists.
+ * @property {{success: boolean, isCritical?: boolean, isFumble?: boolean}} [outcome] The result of the target roll, once known.
  */
 /**
  * @callback CostScalingHandler
@@ -56,14 +58,14 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
 /**
  * @callback OnUse
- * @param {RollBonusHandlerOptions} params
+ * @param {RollBonusHandlerOptions & {inputs: Record<string, any>}} params
  * @returns {Promise}
  */
 
 /**
  * @callback ValidationHandler
  * @param {RollBonusHandlerOptions} params
- * @returns {boolean}
+ * @returns {boolean|string} True if valid. A localization key or string explains why the bonus is disabled.
  */
 
 class RollBonus {
@@ -93,6 +95,8 @@ class RollBonus {
     #identifier;    // String   | Identifier of the bonus.
     #tags;          // Set      | Tags of the bonus.
     #priority;      // Number   | The priority of the bonus, lower runs first.
+    #extraInputs;   // Array    | Additional dialog subinputs, in `dialogUtils` input format.
+    #inputs;        // Object   | Values of the additional subinputs, keyed by field name.
     constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor, autoApproveRequests = false, identifier, tags = [], priority = 50} = {}) {
         this.#document = document;
         this.#getActivity(document);
@@ -112,6 +116,8 @@ class RollBonus {
         this.#identifier = identifier ?? documentUtils.getIdentifier(this.#document);
         this.#tags = new Set (tags);
         this.#priority = Number(priority);
+        this.#extraInputs = [];
+        this.#inputs = {};
     }
 
     _makeHints(list) {
@@ -304,6 +310,17 @@ class RollBonus {
     get initialized() {
         return this.#initialized;
     }
+    /** @type {Array} Additional dialog subinputs, in `dialogUtils` input format. */
+    get extraInputs() {
+        return this.#extraInputs;
+    }
+    /** @type {Record<string, any>} Values of the additional subinputs, keyed by field name. */
+    get inputs() {
+        return this.#inputs;
+    }
+    set inputs(value) {
+        this.#inputs = value;
+    }
 
     /** @param {CostScalingHandler} cost @returns {this} */
     withCostHandler(cost) {
@@ -367,6 +384,14 @@ class RollBonus {
         this.#use = this.constructor.defaultUse;
         return this;
     }
+    /**
+     * Adds dialog subinputs under this bonus. Their values are passed to the {@link OnUse} callback as `inputs`.
+     * @param {Array} inputs Inputs in `dialogUtils` format: `[type, fields, options]`. Field names must not contain dots.
+     * @returns {this} */
+    withInputs(inputs) {
+        this.#extraInputs = dataUtils.toArray(inputs);
+        return this;
+    }
     /** @param {ValidationHandler} validate @returns {this} */
     withValidation(validate) {
         if (typeof validate !== 'function') return this;
@@ -375,9 +400,12 @@ class RollBonus {
     }
 
     _otherScaling({rollTotal, bonus, workflow, otherBonuses}) {}
-    validate(workflow, otherBonuses, rollTotal) {
+    validate(workflow, otherBonuses, rollTotal, {roll, outcome} = {}) {
         if (!this.#validate) return true;
-        return this.#validate({rollTotal, bonus: this, workflow, otherBonuses});
+        const result = this.#validate({rollTotal, bonus: this, workflow, otherBonuses, roll, outcome});
+        if (typeof result !== 'string') return result;
+        this.validateHints.push({label: _loc('CAT.OptionalBonus.Invalid', {reason: _loc(result)})});
+        return false;
     }
     updateScaling(value, workflow, otherBonuses, rollTotal) {
         this.#initialized = true;
@@ -400,7 +428,7 @@ class RollBonus {
     }
     async use(workflow, otherBonuses) {
         if (!this.#use) return;
-        return await this.#use({workflow, bonus: this, otherBonuses});
+        return await this.#use({workflow, bonus: this, otherBonuses, inputs: this.#inputs});
     }
     async request(workflow, otherBonuses, rollTotal) {
         if (!this.#thirdPartyRequest) {
@@ -650,14 +678,16 @@ class RollBonus {
      * @param {number} [options.rollTotal] The current total of the target roll(s) before adding bonuses, if available.
      * @param {MidiQOL.Workflow} [options.workflow]
      * @param {BonusCost} [options.spent] Resources already committed in earlier phases.
+     * @param {foundry.dice.Roll} [options.roll] The target roll, once it exists.
+     * @param {object} [options.outcome] The result of the target roll, once known.
      * @returns {RollBonus[]}
      */
-    static ValidateAll(bonuses, {rollTotal, workflow, spent} = {}) {
+    static ValidateAll(bonuses, {rollTotal, workflow, spent, roll, outcome} = {}) {
         const cumulativeCosts = spent ? genericUtils.deepClone(spent) : {};
         return bonuses.filter(b => {
             b.validateHints = [];
             if (!b.active) return false;
-            if (!b.validate(workflow, bonuses, rollTotal)) {
+            if (!b.validate(workflow, bonuses, rollTotal, {roll, outcome})) {
                 b.active = false;
                 return false;
             }
@@ -754,9 +784,15 @@ class RollBonus {
  * @property {dnd5e.dice.BasicRoll} roll
  */
 export class D20Bonus extends RollBonus {
+    #phase;         // Set      | Dialog phases this bonus is offered in. See `constants.bonusPhases`.
     static get rollClass() { return CONFIG.Dice.BasicRoll; }
-    constructor(document, options) {
-        super(document, options);
+    constructor(document, {phase = constants.bonusPhases.preResult, ...baseOptions} = {}) {
+        super(document, baseOptions);
+        this.#phase = new Set(dataUtils.toArray(phase));
+    }
+    /** @type {Set<string>} */
+    get phase() {
+        return this.#phase;
     }
     static _combineRolls(rolls) {
         const terms = [];
@@ -879,14 +915,4 @@ export class DamageBonus extends RollBonus {
         const formula = rollUtils.getCriticalFormula(bonus.roll.formula, bonus.document, bonus.roll.options.critical);
         return new bonus.rollClass(formula, bonus.roll.data, {...bonus.roll.options, isCritical: true});
     }
-    /**
-     * Filter valid and applicable {@link bonuses}.
-     * @param {DamageBonus[]|Set<DamageBonus>} bonuses
-     * @param {object} [options]
-     * @param {number} [options.rollTotal] The current total of the target roll(s) before adding bonuses, if available.
-     * @param {MidiQOL.Workflow} [options.workflow]
-     * @param {BonusCost} [options.spent] Resources already committed in earlier phases.
-     * @returns {DamageBonus[]}
-     */
-    static ValidateAll(bonuses, {rollTotal, workflow, spent} = {}) { return RollBonus.ValidateAll(bonuses, {rollTotal, workflow, spent}); }
 }
