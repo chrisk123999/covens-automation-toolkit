@@ -289,6 +289,30 @@ async function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutr
     ditem.rawDamageDetail.forEach(i => i.value = 0);
     ditem.rawDamageDetail[0].value = totalDamage;
 }
+
+/**
+ * Grant a target the given modifier for their D20 roll. This is useful:
+ * - for passing this information into synthetic item rolls
+ * - for setting modifers on particular targets during a workflow
+ * @example
+ * // Modern Blight Spell
+ * workflowUtils.grantRollModifier(workflow, 'fail', workflow.targets.first().id, 'creature-type', 'Plant Creature');
+ * // Grapple an incapacitated target
+ * const options = {};
+ * workflowUtils.grantRollModifier(options, 'fail', target.id, 'incapacitated', 'Incapacitated');
+ * await workflowUtils.syntheticItemRoll(grappleItem, actor, [target], {options});
+ * @param {object} options Options object for synthetic item rolls, or MidiQOL Workflow.
+ * @param {'adv'|'dis'|'succeed'|'fail'} type
+ * @param {string} tokenID
+ * @param {string} attributionID Identifier for MidiQOL's roll attribution system.
+ * @param {string} [attributionDisplay] Localized label for display on the chat card.
+ */
+function grantRollModifier(options, type, tokenID, attributionID, attributionDisplay = attributionID) {
+    const mods = getWorkflowProperty(options, 'rollModifiers') ?? {};
+    mods[tokenID] ??= [];
+    mods[tokenID].push({type, identifier: attributionID, display: attributionDisplay});
+    setWorkflowProperty(options, 'rollModifiers', mods);
+}
 export default {
     getActionType,
     isAttackType,
@@ -314,5 +338,6 @@ export default {
     applyDamage,
     applyWorkflowDamage,
     updateTargets,
-    preventZeroHP
+    preventZeroHP,
+    grantRollModifier
 };

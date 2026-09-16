@@ -986,7 +986,8 @@
       "GrappleImmune": "Target cannot be grappled!",
       "GrappleSize": "Target is too big to be grappled!",
       "ShoveSize": "Target is too big to be shoved!",
-      "ShoveProneImmune": "Target cannot be shoved prone!"
+      "ShoveProneImmune": "Target cannot be shoved prone!",
+      "Surrendered": "Attacker Surrendered"
     }
   }
 }

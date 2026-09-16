@@ -5,7 +5,7 @@ function abilities(rules) {
     if (rules === '2024') return ['str', 'dex'];
 }
 async function legacyGrappleDC(grapplerActor) {
-    return (await rollUtils.requestRoll(grapplerActor, 'skill', 'ath'))?.total ?? -99;
+    return (await rollUtils.requestRoll(grapplerActor, 'skill', 'ath'))?.total;
 }
 function itemData(sourceEffect, targetEffect, dc, rules, {name, img} = {}) {
     const data = {
@@ -58,7 +58,7 @@ function sourceEffectData(name, rules, img = constants.grappleIcon) {
             cat: {
                 automation: {rules},
                 identifier: 'grappleSource',
-                specialDuration: ['zeroHP'],
+                specialDuration: ['incapacitated', 'zeroHP'],
                 macros: {move: [{identifier: 'grapple', rules: 'all', source: 'cat'}]}
             },
             dae: {
@@ -108,6 +108,9 @@ async function createEscapeItem(actor, itemData) {
     if (item) await actorUtils.addFavorites(actor, [item]);
     return item;
 }
+function noDCAutoSucceed(options, target) {
+    workflowUtils.grantRollModifier(options, 'succeed', target.id, 'no-grapple-dc', _loc('CAT.GrappleShove.Surrendered'));
+}
 async function sizeCheck(sourceToken, targetToken, identifier, warning = true) {
     if (identifier === 'grapple' && actorUtils.checkTrait(targetToken.actor, 'ci', 'grappled'))
         return warning ? genericUtils.notify('CAT.GrappleShove.GrappleImmune', {type: 'warn'}) : false;
@@ -141,9 +144,12 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
     let sourceEffect, targetEffect;
     if (contest) {
         data.dc ??= await legacyGrappleDC(sourceToken.actor);
-        if (data.dc === -99) return;
+        const options = {};
+        if (data.dc === undefined) noDCAutoSucceed(options, targetToken);
+        if (targetToken.actor.statuses.has('incapacitated'))
+            workflowUtils.grantRollModifier(options, 'fail', targetToken.id, 'incapacitated', _loc('DND5E.ConIncapacitated'));
         const item = itemData(data.sourceEffectData, data.targetEffectData, data.dc, rules, activity?.item);
-        const result = await workflowUtils.syntheticItemDataRoll(item, sourceToken.actor, [targetToken]);
+        const result = await workflowUtils.syntheticItemDataRoll(item, sourceToken.actor, [targetToken], {options});
         if (!result?.failedSaves.size) return;
         sourceEffect = sourceToken.actor.effects.find(e => e.origin?.startsWith(result.item.uuid));
         targetEffect = targetToken.actor.effects.find(e => e.origin?.startsWith(result.item.uuid));
@@ -164,9 +170,12 @@ async function grappleMoved({action, document: effect, token}) {
     if (!info) return;
     const otherToken = token.parent.tokens.get(info.tokenId);
     if (!otherToken) return;
+    // don't auto-remove by normal motion in order to support dragging a grappled creature around without Rideable module
+    // e.g. player moves themselves but does not have permission to move the enemy token
+    const shove = action === 'catForce';
+    const teleport = CONFIG.Token.movement.actions[action]?.teleport;
     const outOfReach = tokenUtils.getDistance(token, otherToken, {wallsBlock: true}) > (info.reach ?? 5);
-    if (outOfReach && action === 'catForce' || CONFIG.Token.movement.actions[action]?.teleport) 
-        await documentUtils.deleteDocument(effect);
+    if (teleport || (shove && outOfReach)) await documentUtils.deleteDocument(effect);
 }
 async function preGrappleEscape({workflow}) {  
     const data = {};
@@ -193,6 +202,7 @@ async function preGrappleEscape({workflow}) {
     const selected = data[choice.id];
     await new Events.GrappleEvent(choice, workflow.token.document, constants.grapplePasses.preEscape, {data: selected}).run();
     selected.dc ??= await legacyGrappleDC(choice.actor);
+    if (selected.dc === undefined) noDCAutoSucceed(workflow, workflow.token);
     workflow.item = itemUtils.syntheticItem(escapeData(selected.dc, selected.rules), workflow.actor);
     workflow.activity = workflow.item.system.activities.get(workflow.activity.id);
     workflowUtils.setWorkflowProperty(workflow, 'grappleEscape', {
