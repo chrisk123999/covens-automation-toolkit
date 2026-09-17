@@ -156,16 +156,31 @@ function negateDamageItemDamage(ditem) {
     ditem.rawDamageDetail.forEach(i => i.value = 0);
 }
 function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', multiplier = 1} = {}) {
+    const active = {type: {}};
+    if (ditem.saved) active.type.saved = true;
     if (multiplier === 'auto') {
-        multiplier = ditem.damageDetail[0].active.multiplier;
+        const {damageImmunityMultiplier, damageResistanceMultiplier, damageVulnerabilityMultiplier} = MidiQOL.configSettings();
+        multiplier = ditem.calcDamageOptions?.midi.saveMultiplier ?? 1;
         const actor = fromUuidSync(ditem.actorUuid);
         if (actor) {
-            if (actorUtils.checkTrait(actor, 'di', type)) modificationAmount = 0;
-            if (actorUtils.checkTrait(actor, 'dr', type)) modificationAmount = Math.floor(modificationAmount / 2);
+            if (actorUtils.checkTrait(actor, 'di', type)) {
+                multiplier *= damageImmunityMultiplier;
+                active.type.immunity = true;
+            }
+            if (actorUtils.checkTrait(actor, 'dr', type)) {
+                multiplier *= damageResistanceMultiplier;
+                active.type.resistance = true;
+            }
+            if (actorUtils.checkTrait(actor, 'dv', type)) {
+                multiplier *= damageVulnerabilityMultiplier;
+                active.type.vulnerability = true;
+            }
         }
     }
+    active.multiplier = multiplier;
+    modificationAmount = Math.trunc(modificationAmount * multiplier);
     if (modificationAmount < 0 && type !== 'healing') modificationAmount = Math.max(modificationAmount, -ditem.totalDamage);
-    MidiQOL.modifyDamageBy({damageItem: ditem, value: modificationAmount, multiplier, type});
+    ditem.damageDetail.push({active, type, value: modificationAmount});
     ditem.rawDamageDetail.push({value: modificationAmount, type});
     const actualTotal = ditem.totalDamage + modificationAmount;
     ditem.totalDamage = actualTotal;
