@@ -1,7 +1,7 @@
 import PhasedDialogApp from '../applications/phased-dialog.mjs';
 import manualRolls from '../handlers/manualRolls.mjs';
 import {constants, D20Bonus, DamageBonus, Events} from '../lib/_module.mjs';
-import {activityUtils, dialogUtils, workflowUtils} from '../utilities/_module.mjs';
+import {dialogUtils, workflowUtils} from '../utilities/_module.mjs';
 
 const phaseLabels = {
     preRoll: 'CAT.OptionalBonus.Phase.PreRoll',
@@ -9,36 +9,31 @@ const phaseLabels = {
     postResult: 'CAT.OptionalBonus.Phase.PostResult'
 };
 
+async function resolveBonusRolls(bonuses, actor, rollClass) {
+    const label = bonuses.map(bonus => bonus.name).join(', ');
+    return await manualRolls.resolveManualRolls(bonuses.map(bonus => bonus.roll), actor, label, {rollClass});
+}
+
 class BonusSession {
     #app;
     #phaseIds;
     #workflow;
     #outcome;
     #spent = {};
+    #bonuses = [];
     #consumed = new Set();
     #pendingD20 = [];
     #dismissed = false;
-    #hasD20;
     #ran = new Set();
     #damageBonuses = [];
     #committed = [];
-    constructor({phaseIds = [], workflow, hasD20 = true} = {}) {
+    constructor({phaseIds = Object.values(constants.bonusPhases), workflow} = {}) {
         this.#phaseIds = phaseIds;
         this.#workflow = workflow;
-        this.#hasD20 = hasD20;
     }
 
     get damageBonuses() {
         return this.#damageBonuses;
-    }
-    get phaseIds() {
-        return this.#phaseIds;
-    }
-    hasRun(phaseId) {
-        return this.#ran.has(phaseId);
-    }
-    rerun(phaseId) {
-        this.#ran.delete(phaseId);
     }
     get outcome() {
         return this.#outcome;
@@ -47,35 +42,33 @@ class BonusSession {
         this.#outcome = value;
     }
 
-    #outcomeLabel(phaseId) {
-        if (phaseId !== constants.bonusPhases.postResult || !this.#outcome) return;
-        const attack = !!this.#workflow?.activity?.hasAttack;
-        return _loc(this.#outcome.success
-            ? (attack ? 'CAT.OptionalBonus.Hit' : 'CAT.OptionalBonus.Success')
-            : (attack ? 'CAT.OptionalBonus.Miss' : 'CAT.OptionalBonus.Failure'));
-    }
-
-    static #key(bonus) {
-        return (bonus.document?.uuid ?? '') + '.' + bonus.identifier;
-    }
-
-    async phase(phaseId, bonuses, {rolls, damageRolls = [], targetActor} = {}) {
-        if (!this.#phaseIds.includes(phaseId) || this.#ran.has(phaseId)) return;
-        this.#ran.add(phaseId);
+    collect(bonuses, {targetActor} = {}) {
         const workflow = this.#workflow;
-        const candidates = [];
         for (const bonus of bonuses) {
             if (!(bonus instanceof D20Bonus) && !(bonus instanceof DamageBonus)) continue;
-            if (!this.#hasD20 && bonus instanceof D20Bonus) continue;
-            if (this.#consumed.has(BonusSession.#key(bonus))) continue;
             if (!bonus.initialized) bonus.initialize(workflow);
             if (targetActor) bonus.targetActor = targetActor;
             if (bonus.maxTargets > 0 && workflow?.targets.size === 1) bonus.maxTargets = 0;
-            candidates.push(bonus);
+            this.#bonuses.push(bonus);
         }
-        const targets = workflow?.targets.map(token => token.document);
-        const built = await dialogUtils.buildBonusInputs(candidates, {rolls, targets, workflow, spent: this.#spent, committed: this.#committed, outcome: this.#outcomeLabel(phaseId), missed: this.#outcome?.success === false, damageRolls: [...damageRolls, ...this.#damageBonuses.map(bonus => bonus.roll)]});
-        if (this.#dismissed || (!built?.hasOptional && !this.#app)) return this.#commit(this.#validate(candidates.filter(b => !b.optional)), candidates);
+    }
+
+    async phase(phaseId, {rolls, damageRolls = [], prompt = true} = {}) {
+        if (this.#ran.has(phaseId)) return;
+        this.#ran.add(phaseId);
+        const workflow = this.#workflow;
+        const roll = rolls?.[0];
+        const candidates = this.#bonuses.filter(bonus => !this.#consumed.has(bonus) && (!(bonus instanceof D20Bonus) || bonus.phase.has(phaseId)));
+        const built = await dialogUtils.buildBonusInputs(candidates, {
+            rolls,
+            targets: workflow?.targets.map(token => token.document),
+            workflow,
+            spent: this.#spent,
+            committed: this.#committed,
+            outcome: this.#outcome,
+            damageRolls: [...damageRolls, ...this.#damageBonuses.map(bonus => bonus.roll)]
+        });
+        if (this.#dismissed || !prompt || !built?.hasOptional) return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll), candidates);
         this.#app ??= new PhasedDialogApp('CAT.OptionalBonus.Title', {
             phases: this.#phaseIds.map(id => ({id, label: phaseLabels[id]}))
         });
@@ -83,17 +76,14 @@ class BonusSession {
         if (!choices) {
             this.#dismissed = true;
             this.#app = undefined;
-            return this.#commit(this.#validate(candidates.filter(b => !b.optional)), candidates);
+            return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll), candidates);
         }
-        return this.#commit(this.#validate(candidates), candidates);
+        built?.readInputs(choices);
+        return this.#commit(this.#validate(candidates, roll), candidates);
     }
 
-    #validate(candidates) {
-        const workflow = this.#workflow;
-        return [
-            ...D20Bonus.ValidateAll(candidates.filter(b => b instanceof D20Bonus), {workflow, spent: this.#spent}),
-            ...DamageBonus.ValidateAll(candidates.filter(b => b instanceof DamageBonus), {workflow, spent: this.#spent})
-        ];
+    #validate(candidates, roll) {
+        return D20Bonus.ValidateAll(candidates, {workflow: this.#workflow, spent: this.#spent, roll, outcome: this.#outcome});
     }
 
     async #commit(active, candidates) {
@@ -102,7 +92,7 @@ class BonusSession {
             .sort((a, b) => b.priority - a.priority);
         D20Bonus.AddCosts(this.#spent, taken);
         for (const bonus of taken) {
-            this.#consumed.add(BonusSession.#key(bonus));
+            this.#consumed.add(bonus);
             this.#committed.push(bonus);
             if (bonus instanceof DamageBonus) {
                 this.#damageBonuses.push(bonus);
@@ -118,9 +108,7 @@ class BonusSession {
         if (!roll || !this.#pendingD20.length) return roll;
         const pending = this.#pendingD20.splice(0).filter(bonus => bonus.roll.formula !== '0');
         if (!pending.length) return roll;
-        const label = pending.map(bonus => bonus.name).join(', ');
-        const rolls = await manualRolls.resolveManualRolls(pending.map(bonus => bonus.roll), actor, label, {rollClass: CONFIG.Dice.BasicRoll});
-        for (const bonusRoll of rolls) {
+        for (const bonusRoll of await resolveBonusRolls(pending, actor, CONFIG.Dice.BasicRoll)) {
             if (!bonusRoll._evaluated) await bonusRoll.evaluate();
             const merged = MidiQOL.addRollTo(roll, bonusRoll);
             merged.data = roll.data;
@@ -139,27 +127,16 @@ function getSession(workflow) {
     return workflowUtils.getWorkflowProperty(workflow, 'optionalBonusSession');
 }
 
-function startSession(workflow, phaseIds, {hasD20 = true} = {}) {
-    const session = new BonusSession({phaseIds, workflow, hasD20});
-    workflowUtils.setWorkflowProperty(workflow, 'optionalBonusSession', session);
-    return session;
-}
-
 function getAttackOutcome(workflow) {
     const roll = workflow.attackRoll;
     if (!roll) return;
-    if (roll.isFumble) return {success: false};
-    if (roll.isCritical) return {success: true};
+    const outcome = {isCritical: roll.isCritical, isFumble: roll.isFumble};
+    if (roll.isFumble) return {...outcome, success: false};
+    if (roll.isCritical) return {...outcome, success: true};
     if (workflow.targets.size !== 1) return;
     const ac = workflow.targets.first().actor?.system.attributes?.ac?.value;
     if (!Number.isNumeric(ac)) return;
-    return {success: (roll.total ?? 0) >= ac};
-}
-
-function getDamagePreview(workflow) {
-    if (workflow.damageRolls?.length) return workflow.damageRolls;
-    if (!workflow.activity?.hasDamage && !workflow.activity?.hasHealing) return [];
-    return activityUtils.getDefaultDamageRolls(workflow.activity) ?? [];
+    return {...outcome, success: (roll.total ?? 0) >= ac};
 }
 
 function getAttackPreview(workflow) {
@@ -170,9 +147,9 @@ function getAttackPreview(workflow) {
     return new CONFIG.Dice.BasicRoll(formula, data ?? {});
 }
 
-async function collectBonuses(workflow, pass, phase, outcome) {
-    const event = new Events.WorkflowEvent(pass, workflow, {phase, outcome});
-    return (await event.run({multiResult: true, canOverlap: true, phase})).filter(i => i.document);
+async function collectBonuses(workflow, pass) {
+    const event = new Events.WorkflowEvent(pass, workflow);
+    return (await event.run({multiResult: true, canOverlap: true})).filter(i => i.document);
 }
 
 async function applyPending(workflow, session) {
@@ -181,96 +158,44 @@ async function applyPending(workflow, session) {
     if (roll !== workflow.attackRoll) await workflow.setAttackRoll(roll);
 }
 
-async function workflowPhase(workflow, session, phase) {
+async function attackPhase(workflow, session, phase, {prompt} = {}) {
     await applyPending(workflow, session);
     const preview = getAttackPreview(workflow);
     const rolls = workflow.attackRoll ? [workflow.attackRoll] : preview ? [preview] : undefined;
-    const outcome = session.outcome;
-    const bonuses = [
-        ...await collectBonuses(workflow, constants.workflowPasses.optionalBonusAttack, phase, outcome),
-        ...await collectBonuses(workflow, constants.workflowPasses.optionalBonusDamage, phase, outcome)
-    ];
-    await session.phase(phase, bonuses, {rolls, damageRolls: getDamagePreview(workflow), targetActor: workflow.actor});
+    await session.phase(phase, {rolls, prompt});
     await applyPending(workflow, session);
 }
 
 async function attackPreRoll(workflow) {
-    const session = startSession(workflow, [constants.bonusPhases.preRoll, constants.bonusPhases.preResult, constants.bonusPhases.postResult]);
-    await workflowPhase(workflow, session, constants.bonusPhases.preRoll);
+    if (!workflow.activity?.hasAttack) return;
+    const session = new BonusSession({workflow});
+    workflowUtils.setWorkflowProperty(workflow, 'optionalBonusSession', session);
+    session.collect(await collectBonuses(workflow, constants.workflowPasses.optionalBonusAttack), {targetActor: workflow.actor});
+    await attackPhase(workflow, session, constants.bonusPhases.preRoll);
 }
 
 async function attack(workflow) {
-    if (!workflow.attackRoll) return;
-    const session = getSession(workflow) ?? startSession(workflow, [constants.bonusPhases.preResult, constants.bonusPhases.postResult]);
-    await workflowPhase(workflow, session, constants.bonusPhases.preResult);
-    session.outcome = getAttackOutcome(workflow);
-    if (!session.outcome) return await session.close();
-    const missed = !session.outcome.success;
-    workflow.hitTargets = session.outcome.success ? new Set(workflow.targets) : new Set();
-    await workflowPhase(workflow, session, constants.bonusPhases.postResult);
-    session.outcome = getAttackOutcome(workflow);
-    if (missed && session.outcome?.success) {
-        workflow.hitTargets = new Set(workflow.targets);
-        session.rerun(constants.bonusPhases.postResult);
-        await workflowPhase(workflow, session, constants.bonusPhases.postResult);
-    }
-    await session.close();
-}
-
-async function preambleComplete(workflow) {
-    if (workflow.activity?.hasAttack) return;
-    if (!workflow.activity?.hasDamage && !workflow.activity?.hasHealing) return;
-    const session = startSession(workflow, [constants.bonusPhases.preRoll, constants.bonusPhases.postResult], {hasD20: false});
-    await workflowPhase(workflow, session, constants.bonusPhases.preRoll);
-}
-
-async function savesComplete(workflow) {
     const session = getSession(workflow);
-    if (!session || workflow.activity?.hasAttack) return;
-    session.outcome = {success: workflow.failedSaves?.size > 0};
-    await workflowPhase(workflow, session, constants.bonusPhases.postResult);
+    if (!session || !workflow.attackRoll) return;
+    const fumble = workflow.attackRoll.isFumble;
+    await attackPhase(workflow, session, constants.bonusPhases.preResult, {prompt: !fumble});
+    session.outcome = getAttackOutcome(workflow);
+    await attackPhase(workflow, session, constants.bonusPhases.postResult, {prompt: !fumble && !session.outcome?.success});
     await session.close();
 }
 
-const rollEvents = {
-    check: 'CheckEvent',
-    save: 'SaveEvent',
-    skill: 'SkillEvent',
-    tool: 'ToolEvent'
-};
-
-function rollSession() {
-    return new BonusSession({phaseIds: [constants.bonusPhases.preRoll, constants.bonusPhases.preResult, constants.bonusPhases.postResult]});
-}
-
-async function rollPhase(type, actor, data, session, phase) {
-    const roll = await session.applyD20(data.roll, actor);
-    const event = new Events[rollEvents[type]](actor, constants.rollPasses.optionalBonus, {...data, roll, phase, outcome: session.outcome});
-    const bonuses = (await event.run({multiResult: true, canOverlap: true, phase})).filter(i => i.document);
-    await session.phase(phase, bonuses, {rolls: roll ? [roll] : undefined, targetActor: actor});
-    return await session.applyD20(roll, actor);
-}
-
-async function rollPreRoll(type, actor, data, session) {
-    await rollPhase(type, actor, data, session, constants.bonusPhases.preRoll);
-}
-
-async function rollResult(type, actor, data, session) {
-    let roll = await rollPhase(type, actor, data, session, constants.bonusPhases.preResult);
-    session.outcome = {success: roll.isSuccess, isCritical: roll.isCritical, isFumble: roll.isFumble};
-    roll = await rollPhase(type, actor, {...data, roll}, session, constants.bonusPhases.postResult);
-    await session.close();
-    return roll;
+function getDamageOutcome(workflow) {
+    if (workflow.activity?.hasAttack) return {success: workflow.hitTargets?.size > 0};
+    if (workflow.activity?.hasSave) return {success: workflow.failedSaves?.size > 0};
 }
 
 async function damage(workflow) {
-    const session = getSession(workflow);
-    if (!session) return;
-    const postResult = constants.bonusPhases.postResult;
-    if (session.phaseIds.includes(postResult) && !session.hasRun(postResult)) {
-        session.outcome = {success: workflow.hitTargets?.size > 0};
-        await workflowPhase(workflow, session, postResult);
-    }
+    await getSession(workflow)?.close();
+    if (!workflow.damageRolls?.length) return;
+    const session = new BonusSession({phaseIds: [constants.bonusPhases.postResult], workflow});
+    session.outcome = getDamageOutcome(workflow);
+    session.collect(await collectBonuses(workflow, constants.workflowPasses.optionalBonusDamage), {targetActor: workflow.actor});
+    await session.phase(constants.bonusPhases.postResult, {damageRolls: workflow.damageRolls});
     await session.close();
     const bonuses = session.damageBonuses;
     if (!bonuses.length) return;
@@ -281,35 +206,34 @@ async function damage(workflow) {
         if (workflow.isCritical) bonus.roll = DamageBonus.GetCriticalRoll(bonus);
         if (bonus.use) await bonus.use(workflow, bonuses);
         if (bonus.roll.formula === '0') continue;
-        if (!bonus.roll._evaluated) await bonus.roll.evaluate();
-        if (bonus.targets.size > 0) {
-            if (bonus.targets.size === workflow.targets.size) {
-                fullRoll.push(bonus.roll);
-                continue;
-            }
+        if (bonus.targets.size > 0 && bonus.targets.size !== workflow.targets.size) {
             targeted.push(bonus);
-            for (const target of bonus.targets) {
-                const type = bonus.roll.options.type ?? defaultDamageType;
-                targetedData[target.uuid] ??= [];
-                let total = bonus.roll.total;
-                if (type === 'healing') total *= -1;
-                targetedData[target.uuid].push({total, type});
-            }
-        } else fullRoll.push(bonus.roll);
+            continue;
+        }
+        if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
+        fullRoll.push(bonus.roll);
     }
     if (fullRoll.length) {
         rolls.push(...fullRoll);
         await workflow.setDamageRolls(rolls);
     }
-    if (targeted.length) {
-        workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', targetedData);
-        for (const bonus of targeted)
-            await bonus.roll.toMessage({
-                flavor: `${bonus.name}: ${Array.from(bonus.targets).map(t => t.name).join(', ')}`,
-                speaker: ChatMessage.implementation.getSpeaker({token: workflow.token}),
-                rollMode: 'roll'
-            });
+    if (!targeted.length) return;
+    const targetedRolls = await resolveBonusRolls(targeted, workflow.actor, CONFIG.Dice.DamageRoll);
+    for (const [i, bonus] of targeted.entries()) {
+        bonus.roll = targetedRolls[i];
+        if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
+        const type = bonus.roll.options.type ?? defaultDamageType;
+        for (const target of bonus.targets) {
+            targetedData[target.uuid] ??= [];
+            targetedData[target.uuid].push({total: type === 'healing' ? -bonus.roll.total : bonus.roll.total, type});
+        }
+        await bonus.roll.toMessage({
+            flavor: `${bonus.name}: ${Array.from(bonus.targets).map(t => t.name).join(', ')}`,
+            speaker: ChatMessage.implementation.getSpeaker({token: workflow.token}),
+            rollMode: 'roll'
+        });
     }
+    workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', targetedData);
 }
 
 async function cleanup(workflow) {
@@ -323,12 +247,43 @@ function applyDamage(workflow, token, ditem) {
     for (const {total, type} of bonuses) workflowUtils.modifyDamageAppliedFlat(ditem, total, {type, multiplier: 'auto'});
 }
 
+const rollEvents = {
+    check: 'CheckEvent',
+    save: 'SaveEvent',
+    skill: 'SkillEvent',
+    tool: 'ToolEvent'
+};
+
+function rollSession() {
+    return new BonusSession();
+}
+
+async function rollPhase(actor, roll, session, phase, {prompt} = {}) {
+    roll = await session.applyD20(roll, actor);
+    await session.phase(phase, {rolls: [roll], prompt});
+    return await session.applyD20(roll, actor);
+}
+
+async function rollPreRoll(type, actor, data, session) {
+    const event = new Events[rollEvents[type]](actor, constants.rollPasses.optionalBonus, data);
+    const bonuses = (await event.run({multiResult: true, canOverlap: true})).filter(i => i.document);
+    session.collect(bonuses, {targetActor: actor});
+    await session.phase(constants.bonusPhases.preRoll);
+}
+
+async function rollResult(type, actor, data, session) {
+    const fumble = type === 'save' && data.roll.isFumble && MidiQOL.checkRule('criticalSaves');
+    let roll = await rollPhase(actor, data.roll, session, constants.bonusPhases.preResult, {prompt: !fumble});
+    session.outcome = {success: roll.isSuccess, isCritical: roll.isCritical, isFumble: roll.isFumble};
+    roll = await rollPhase(actor, roll, session, constants.bonusPhases.postResult, {prompt: !fumble && !session.outcome.success});
+    await session.close();
+    return roll;
+}
+
 export default {
     attack,
     attackPreRoll,
     cleanup,
-    preambleComplete,
-    savesComplete,
     damage,
     applyDamage,
     rollPreRoll,
