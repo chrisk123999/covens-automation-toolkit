@@ -35,9 +35,6 @@ class BonusSession {
     get damageBonuses() {
         return this.#damageBonuses;
     }
-    rerun(phaseId) {
-        this.#ran.delete(phaseId);
-    }
     get outcome() {
         return this.#outcome;
     }
@@ -56,7 +53,7 @@ class BonusSession {
         }
     }
 
-    async phase(phaseId, {rolls, damageRolls = []} = {}) {
+    async phase(phaseId, {rolls, damageRolls = [], prompt = true} = {}) {
         if (this.#ran.has(phaseId)) return;
         this.#ran.add(phaseId);
         const workflow = this.#workflow;
@@ -71,7 +68,7 @@ class BonusSession {
             outcome: this.#outcome,
             damageRolls: [...damageRolls, ...this.#damageBonuses.map(bonus => bonus.roll)]
         });
-        if (this.#dismissed || (!built?.hasOptional && !this.#app)) return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll), candidates);
+        if (this.#dismissed || !prompt || !built?.hasOptional) return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll), candidates);
         this.#app ??= new PhasedDialogApp('CAT.OptionalBonus.Title', {
             phases: this.#phaseIds.map(id => ({id, label: phaseLabels[id]}))
         });
@@ -161,11 +158,11 @@ async function applyPending(workflow, session) {
     if (roll !== workflow.attackRoll) await workflow.setAttackRoll(roll);
 }
 
-async function attackPhase(workflow, session, phase) {
+async function attackPhase(workflow, session, phase, {prompt} = {}) {
     await applyPending(workflow, session);
     const preview = getAttackPreview(workflow);
     const rolls = workflow.attackRoll ? [workflow.attackRoll] : preview ? [preview] : undefined;
-    await session.phase(phase, {rolls});
+    await session.phase(phase, {rolls, prompt});
     await applyPending(workflow, session);
 }
 
@@ -180,17 +177,10 @@ async function attackPreRoll(workflow) {
 async function attack(workflow) {
     const session = getSession(workflow);
     if (!session || !workflow.attackRoll) return;
-    await attackPhase(workflow, session, constants.bonusPhases.preResult);
+    const fumble = workflow.attackRoll.isFumble;
+    await attackPhase(workflow, session, constants.bonusPhases.preResult, {prompt: !fumble});
     session.outcome = getAttackOutcome(workflow);
-    const missed = session.outcome?.success === false;
-    await attackPhase(workflow, session, constants.bonusPhases.postResult);
-    if (missed) {
-        session.outcome = getAttackOutcome(workflow);
-        if (session.outcome?.success) {
-            session.rerun(constants.bonusPhases.postResult);
-            await attackPhase(workflow, session, constants.bonusPhases.postResult);
-        }
-    }
+    await attackPhase(workflow, session, constants.bonusPhases.postResult, {prompt: !fumble && !session.outcome?.success});
     await session.close();
 }
 
@@ -268,9 +258,9 @@ function rollSession() {
     return new BonusSession();
 }
 
-async function rollPhase(actor, roll, session, phase) {
+async function rollPhase(actor, roll, session, phase, {prompt} = {}) {
     roll = await session.applyD20(roll, actor);
-    await session.phase(phase, {rolls: [roll]});
+    await session.phase(phase, {rolls: [roll], prompt});
     return await session.applyD20(roll, actor);
 }
 
@@ -282,9 +272,10 @@ async function rollPreRoll(type, actor, data, session) {
 }
 
 async function rollResult(type, actor, data, session) {
-    let roll = await rollPhase(actor, data.roll, session, constants.bonusPhases.preResult);
+    const fumble = type === 'save' && data.roll.isFumble && MidiQOL.checkRule('criticalSaves');
+    let roll = await rollPhase(actor, data.roll, session, constants.bonusPhases.preResult, {prompt: !fumble});
     session.outcome = {success: roll.isSuccess, isCritical: roll.isCritical, isFumble: roll.isFumble};
-    roll = await rollPhase(actor, roll, session, constants.bonusPhases.postResult);
+    roll = await rollPhase(actor, roll, session, constants.bonusPhases.postResult, {prompt: !fumble && !session.outcome.success});
     await session.close();
     return roll;
 }
