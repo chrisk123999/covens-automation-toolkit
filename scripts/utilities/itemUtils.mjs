@@ -6,13 +6,18 @@ const activityVisibilityLocks = new Map();
 
 /**
  * Returns the DC of the first Save activity on an item, otherwise the save DC of the appropriate ability on the item, otherwise 10
- * @param {Item5e} item 
+ * @param {Item5e} item
  * @returns {number}
  */
 function getSaveDC(item) {
     if (item.hasSave) return item.system.activities.getByType('save')[0].save.dc.value;
     return item.actor?.system?.abilities?.[item.abilityMod]?.dc ?? item?.actor?.system?.attributes?.spell?.dc ?? 10;
 }
+/**
+ * Get the cast data stashed on this item, with its current save DC.
+ * @param {Item5e} item
+ * @returns {{castLevel: number, baseLevel: number, saveDC: number, school: string|undefined}} Levels are -1 when nothing is stashed.
+ */
 function getSavedCastData(item) {
     return {
         castLevel: item.flags.cat?.castData?.castLevel ?? -1,
@@ -21,9 +26,22 @@ function getSavedCastData(item) {
         school: item.flags.cat?.castData?.school
     };
 }
+/**
+ * Find one of this item's activities by its identifier, which midi derives from
+ * `midiProperties.identifier`, falling back to a slug of the activity name.
+ * @param {Item5e} item
+ * @param {string} identifier
+ * @returns {Activity|undefined}
+ */
 function getActivityByIdentifier(item, identifier) {
     return item.system.activities.find(activity => activity.identifier === identifier);
 }
+/**
+ * Build a prepared, unsaved item owned by an actor, for handing a modified copy to a workflow.
+ * @param {object} itemData
+ * @param {foundry.documents.Actor} actor
+ * @returns {Item5e}
+ */
 function syntheticItem(itemData, actor) {
     const item = new CONFIG.Item.documentClass(itemData, {parent: actor});
     item.prepareData();
@@ -31,6 +49,17 @@ function syntheticItem(itemData, actor) {
     item.applyActiveEffects();
     return item;
 }
+/**
+ * Apply an enchantment to an item. The effect data must carry an origin.
+ * @param {Item5e} item
+ * @param {object} effectData Coerced to an enchantment; `transfer` is forced off.
+ * @param {object} [options]
+ * @param {object[]} [options.effects] Additional effects created on the actor, dependent on the enchantment.
+ * @param {object[]} [options.items] Additional items created on the actor, dependent on the enchantment.
+ * @param {object} [options.effectOptions] Passed to the creation when it goes through a GM.
+ * @param {boolean} [options.forceGM] Create through a GM even when the user has permission.
+ * @returns {Promise<ActiveEffect[]|undefined>}
+ */
 async function enchantItem(item, effectData, {effects = [], items = [], effectOptions, forceGM} = {}) {
     if (!effectData.origin) {
         Logging.addMacroError('Enchantments must have an origin!');
@@ -50,6 +79,33 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
     });
     return await effectUtils.createEffects(item, [effectData], {effectOptions, forceGM});
 }
+/**
+ * Create items on an actor, optionally favoriting them and tying their lifetime to a parent document.
+ * @param {foundry.documents.Actor} actor
+ * @param {object[]} itemDatas
+ * @param {object} [options]
+ * @param {boolean} [options.favorite] Add the created items to the actor's favorites.
+ * @param {foundry.abstract.Document} [options.parentEntity] Delete the created items when this document is deleted.
+ * @returns {Promise<foundry.documents.Item[]>}
+ */
+async function createItems(actor, itemDatas, {favorite = false, parentEntity} = {}) {
+    const items = await documentUtils.createEmbeddedDocuments(actor, 'Item', itemDatas);
+    if (parentEntity) await documentUtils.makeDependent(parentEntity, items);
+    if (favorite && actor.system.addFavorite) {
+        for (const item of items) await actor.system.addFavorite({type: 'item', id: foundry.utils.buildRelativeUuid(item, actor)});
+    }
+    return items;
+}
+/**
+ * Reveal activities hidden by `flags.cat.hidden`, through a `catHiddenActivities` enchantment on the item.
+ * Calls against the same item are queued, so concurrent reveals do not clobber one another.
+ * @param {Item5e} item
+ * @param {string[]} identifiers
+ * @param {object} [options]
+ * @param {boolean} [options.ids] Treat {@link identifiers} as activity ids rather than identifiers.
+ * @param {boolean} [options.favorite] Also add the revealed activities to the actor's favorites.
+ * @returns {Promise<ActiveEffect|undefined>} The enchantment holding the overrides.
+ */
 async function unhideActivities(item, identifiers, {ids = false, favorite = false} = {}) {
     const uuid = item.uuid;
     const currentPromise = activityVisibilityLocks.get(uuid) ?? Promise.resolve();
@@ -57,9 +113,11 @@ async function unhideActivities(item, identifiers, {ids = false, favorite = fals
         await currentPromise.catch(() => {});
         let effect = documentUtils.getEffectByIdentifier(item, 'catHiddenActivities');
         const changes = [];
+        const revealed = [];
         identifiers.forEach(identifier => {
             const activity = ids ? item.system.activities.get(identifier) : getActivityByIdentifier(item, identifier);
             if (activity) {
+                revealed.push(activity);
                 changes.push({
                     key: 'system.activities.' + activity.id + '.flags.cat.hidden',
                     type: 'override',
@@ -68,6 +126,7 @@ async function unhideActivities(item, identifiers, {ids = false, favorite = fals
             }
         });
         if (!changes.length) return;
+        if (favorite) await actorUtils.addFavorites(item.actor, revealed);
         if (effect) {
             const currentChanges = effect.toObject().system.changes;
             let needsUpdate = false;
@@ -100,7 +159,16 @@ async function unhideActivities(item, identifiers, {ids = false, favorite = fals
         if (activityVisibilityLocks.get(uuid) === nextPromise) activityVisibilityLocks.delete(uuid);
     }
 }
-async function rehideActivities(item, identifiers = [], {all = false} = {}) {
+/**
+ * Undo {@link unhideActivities}, dropping the whole enchantment once nothing is left revealed.
+ * @param {Item5e} item
+ * @param {string[]} [identifiers]
+ * @param {object} [options]
+ * @param {boolean} [options.all] Re-hide everything, ignoring {@link identifiers}.
+ * @param {boolean} [options.favorite] Also drop the re-hidden activities from the actor's favorites.
+ * @returns {Promise<void>}
+ */
+async function rehideActivities(item, identifiers = [], {all = false, favorite = false} = {}) {
     const uuid = item.uuid;
     const currentPromise = activityVisibilityLocks.get(uuid) ?? Promise.resolve();
     const nextPromise = (async () => {
@@ -118,6 +186,7 @@ async function rehideActivities(item, identifiers = [], {all = false} = {}) {
             if (activity) keysToRemove.push('system.activities.' + activity.id + '.flags.cat.hidden');
         });
         if (!keysToRemove.length) return effect;
+        if (favorite) await actorUtils.removeFavorites(item.actor, identifiers.map(identifier => getActivityByIdentifier(item, identifier)).filter(activity => activity));
         const currentChanges = effect.toObject().system.changes;
         const remainingChanges = currentChanges.filter(c => !keysToRemove.includes(c.key));
         if (remainingChanges.length === currentChanges.length) return effect;
@@ -138,7 +207,7 @@ async function rehideActivities(item, identifiers = [], {all = false} = {}) {
 /**
  * Fetch a key representing the class, race, feat, etc. that granted an item ('type:identifier').
  * This can be set manually on compendium items in the Item CatKit.
- * @param {Item5e} item 
+ * @param {Item5e} item
  * @returns {string|undefined}
  */
 function getAdvancementSourceKey(item) {
@@ -149,7 +218,7 @@ function getAdvancementSourceKey(item) {
 }
 /**
  * Fetch the class, race, feat, etc. that granted an item. Works on actor items only.
- * @param {Item5e} item 
+ * @param {Item5e} item
  * @param {*} [options]
  * @param {boolean} [options.subclass] If true and the advancement source resolves to a subclass, return the base class instead. Default false.
  * @returns {Item5e|undefined}
@@ -168,6 +237,11 @@ function getAdvancementSourceItem(item, {subclass = false} = {}) {
     if (type === 'subclass' && !subclass && source.class) return source.class;
     return source;
 }
+/**
+ * Whether this item is currently active: equipped, and attuned when attunement is required.
+ * @param {Item5e} item
+ * @returns {boolean} True for items that cannot be equipped at all.
+ */
 function getEquipmentState(item) {
     if (item.system.equipped === undefined) return true;
     if (!item.system.equipped) return false;
@@ -185,6 +259,11 @@ function getItemDamageTypes(item) {
     const declaredTypes = new Set(activities.flatMap(activity => activity.damage.parts.flatMap(part => Array.from(part.types))));
     return flavorTypes.union(declaredTypes);
 }
+/**
+ * Remove CAT's generated description block from an item description.
+ * @param {string} html
+ * @returns {string}
+ */
 function stripDescriptionBlock(html) {
     if (!html?.includes('cat-description')) return html;
     const wrapper = globalThis.document.createElement('div');
@@ -192,6 +271,12 @@ function stripDescriptionBlock(html) {
     wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
     return wrapper.innerHTML;
 }
+/**
+ * Replace CAT's generated description block on an item, skipping the update when nothing changed.
+ * @param {Item5e} item
+ * @param {string} content Empty removes the block.
+ * @returns {Promise<void>}
+ */
 async function setDescriptionBlock(item, content) {
     const current = item.system.description?.value ?? '';
     const wrapper = globalThis.document.createElement('div');
@@ -207,12 +292,23 @@ async function setDescriptionBlock(item, content) {
     if (updated === current) return;
     await documentUtils.update(item, {'system.description.value': updated});
 }
+/**
+ * Collect the ids every activity on this item depends on.
+ * @param {Item5e} item
+ * @returns {Set<string>}
+ */
 function getDependencies(item) {
     const dependencies = new Set();
     if (!item.system.activities) return dependencies;
     item.system.activities.forEach(activity => activityUtils.getDependencies(activity).forEach(depId => dependencies.add(depId)));
     return dependencies;
 }
+/**
+ * Whether this spell could be cast right now, accounting for preparation, casting method and
+ * anything its linked activity would consume.
+ * @param {Item5e} item
+ * @returns {boolean} False for anything that is not a spell.
+ */
 function canCast(item) {
     if (item.type !== 'spell') return false;
     const actor = item.actor;
@@ -237,10 +333,10 @@ function canCast(item) {
                 targetItem = actor.items.get(target.target);
             }
             if (Number(targetItem?.system.uses.value ?? 0) < Number(target.value ?? 0)) return false;
-            
+
         } else if (target.type === 'activityUses') {
             if (Number(linkedActivity.uses.value ?? 0) < Number(target.value ?? 0)) return false;
-            
+
         } else if (target.type === 'material') {
             if (Number(actor.items.get(target.target)?.system.quantity ?? 0) < Number(target.value ?? 0)) return false;
         }
@@ -253,6 +349,7 @@ export default {
     getActivityByIdentifier,
     syntheticItem,
     enchantItem,
+    createItems,
     unhideActivities,
     rehideActivities,
     getAdvancementSourceKey,

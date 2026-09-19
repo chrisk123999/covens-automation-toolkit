@@ -162,9 +162,21 @@ function getBestTool(actor, tools = Object.keys(CONFIG.DND5E.tools)) {
 function checkTrait(actor, type, trait) {
     return !!actor.system.traits?.[type]?.value?.has(trait);
 }
+/**
+ * Whether this actor has any spell slot available at or above a given level.
+ * @param {foundry.documents.Actor} actor
+ * @param {number} [atLeast] Minimum slot level.
+ * @returns {boolean}
+ */
 function hasSpellSlots(actor, atLeast = 0) {
     return Object.values(actor.system.spells).some(i => i.value && i.level >= atLeast);
 }
+/**
+ * Get this actor's size.
+ * @param {foundry.documents.Actor} actor
+ * @param {boolean} [returnString] Return the size key rather than its numeric rank.
+ * @returns {string|number}
+ */
 function getSize(actor, returnString) {
     const traits = actor.system.traits;
     return returnString ? traits.size : traits.sizeNumeric;
@@ -236,6 +248,12 @@ function getEquivalentSpellSlotName(actor, level, {canCast = false} = {}) {
     }
 }
 
+/**
+ * Find the `system.spells` key holding slots of a given level, including pact slots.
+ * @param {foundry.documents.Actor} actor
+ * @param {number|string} level
+ * @returns {string|undefined}
+ */
 function getSpellSlotKey(actor, level) {
     if (!actor.system.spells) return;
     if (actor.system.spells[level]) return level;
@@ -293,8 +311,22 @@ function getCastableSpells(actor, {identifiers = []} = {}) {
 function hasUsedReaction(actor) {
     return MidiQOL.hasUsedReaction(actor);
 }
+/**
+ * Get this actor's creature type, falling back to its race.
+ * @param {foundry.documents.Actor} actor
+ * @returns {string}
+ */
 function typeOrRace(actor) {
     return MidiQOL.typeOrRace(actor);
+}
+
+/**
+ * Mark this actor's reaction as used for the current round.
+ * @param {foundry.documents.Actor} actor
+ * @returns {Promise<void>}
+ */
+async function setReactionUsed(actor) {
+    return await MidiQOL.setReactionUsed(actor);
 }
 
 /**
@@ -329,6 +361,11 @@ async function createActor(actorData) {
         return await fromUuid(uuid);
     }
 }
+/**
+ * Get the highest spell slot level this actor has, counting pact slots.
+ * @param {foundry.documents.Actor} actor
+ * @returns {number} Zero when the actor has no slots.
+ */
 function getMaxCastLevel(actor) {
     const spells = actor.system.spells;
     const pactLevel = (spells.pact && spells.pact.max > 0) ? (spells.pact.level || 0) : 0;
@@ -337,9 +374,20 @@ function getMaxCastLevel(actor) {
         return (slot && slot.max > 0) ? Math.max(currentMax, i) : currentMax;
     }, pactLevel);
 }
+/**
+ * Get this actor's challenge rating, derived from proficiency when it has none.
+ * @param {foundry.documents.Actor} actor
+ * @returns {number}
+ */
 function getCR(actor) {
     return actor.system.details.cr ?? (4 * actor.system.attributes.prof - 7);
 }
+/**
+ * Add items or activities to this actor's favorites, delegating to a GM when the user lacks permission.
+ * @param {foundry.documents.Actor} actor
+ * @param {Array<foundry.documents.Item|Activity>} entities
+ * @returns {Promise<void>}
+ */
 async function addFavorites(actor, entities) {
     if (!actor?.system.addFavorite) return;
     if (queryUtils.hasPermission(actor, game.user.id)) {
@@ -361,6 +409,12 @@ async function addFavorites(actor, entities) {
         await queryUtils.query('addFavorites', queryUtils.gmUser(), {actorUuid: actor.uuid, entityUuids: entities.map(e => e.uuid)});
     }
 }
+/**
+ * Remove items or activities from this actor's favorites, delegating to a GM when the user lacks permission.
+ * @param {foundry.documents.Actor} actor
+ * @param {Array<foundry.documents.Item|Activity>} entities
+ * @returns {Promise<void>}
+ */
 async function removeFavorites(actor, entities) {
     if (!actor?.system.removeFavorite) return;
     if (queryUtils.hasPermission(actor, game.user.id)) {
@@ -402,6 +456,7 @@ export default {
     recoverSpellSlots,
     getCastableSpells,
     hasUsedReaction,
+    setReactionUsed,
     typeOrRace,
     getEquippedWeapons,
     createActor,

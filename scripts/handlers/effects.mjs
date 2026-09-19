@@ -104,6 +104,12 @@ async function specialDuration(workflow) {
             outerLoop:
             for (const i of specialDurations) {
                 switch (i) {
+                    case 'damaged':
+                        if (workflow.damageList.find(d => d.targetUuid === token.document.uuid)?.totalDamage > 0) {
+                            remove = true;
+                            break outerLoop;
+                        }
+                        break;
                     case 'damagedByAlly':
                         if (workflow.token.document.disposition === token.document.disposition && workflow.damageList.find(d => d.targetUuid === token.document.uuid)?.totalDamage > 0) {
                             remove = true;
@@ -122,7 +128,7 @@ async function specialDuration(workflow) {
                     case 'attackedByAnotherCreature': {
                         if (!workflow.activity) return;
                         if (!workflowUtils.isAttackType(workflow, 'attack')) break;
-                        const origin = await effectUtils.getOriginActivity(effect)?.item;
+                        const origin = (await effectUtils.getOriginActivity(effect))?.item;
                         if (!origin?.actor) break;
                         if (workflow.actor.id === origin.actor.id) break;
                         remove = true;
@@ -134,7 +140,7 @@ async function specialDuration(workflow) {
                     case 'attackedBySource': {
                         if (!workflow.activity) return;
                         if (!workflowUtils.isAttackType(workflow, 'attack')) break;
-                        const origin = await effectUtils.getOriginActivity(effect)?.item;
+                        const origin = (await effectUtils.getOriginActivity(effect))?.item;
                         if (!origin?.actor) break;
                         if (workflow.actor.id != origin.actor.id) break;
                         remove = true;
@@ -166,6 +172,16 @@ async function specialDuration(workflow) {
                 case 'attackMissed': {
                     if (!workflow.activity || !workflowUtils.isAttackType(workflow, 'attack')) break;
                     if (!workflow.targets.size || workflow.hitTargets.size) break;
+                    remove = true;
+                    break outerLoop;
+                }
+                case 'madeAttack': {
+                    if (!workflowUtils.isAttackType(workflow, 'attack')) break;
+                    remove = true;
+                    break outerLoop;
+                }
+                case 'castSpell': {
+                    if (workflow.item?.type !== 'spell') break;
                     remove = true;
                     break outerLoop;
                 }
@@ -248,6 +264,30 @@ async function specialDurationToolCheck(actor, roll, toolId) {
         if (remove) await documentUtils.deleteDocument(effect);
     }));
 }
+async function updateImages(actor) {
+    const images = actorUtils.getEffects(actor).filter(effect => !effect.disabled && effect.flags.cat?.images)
+        .map(effect => effect.flags.cat.images)
+        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
+    const original = actor.flags.cat?.originalImages;
+    const tokens = actorUtils.getTokens(actor);
+    if (!images) {
+        if (!original) return;
+        await documentUtils.update(actor, {img: original.avatar, 'prototypeToken.texture.src': original.token, 'flags.cat.-=originalImages': null});
+        for (const token of tokens) await documentUtils.update(token, {'texture.src': original.token});
+        return;
+    }
+    if (!original) await documentUtils.update(actor, {'flags.cat.originalImages': {avatar: actor.img, token: actor.prototypeToken.texture.src}});
+    const updates = {};
+    if (images.avatar) updates.img = images.avatar;
+    if (images.token) updates['prototypeToken.texture.src'] = images.token;
+    if (!genericUtils.isEmpty(updates)) await documentUtils.update(actor, updates);
+    if (images.token) for (const token of tokens) await documentUtils.update(token, {'texture.src': images.token});
+}
+async function specialDurationTurn(token, pass, {round, turn} = {}) {
+    const effects = actorUtils.getEffects(token.actor, {includeItemEffects: true}).filter(i => i.flags.cat?.specialDuration?.includes(pass) && !(i.start?.round === round && i.start?.turn === turn));
+    if (!effects.length) return;
+    await documentUtils.deleteEmbeddedDocuments(token.actor, 'ActiveEffect', effects.map(i => i.id));
+}
 async function specialDurationMove(actor) {
     const effects = actorUtils.getEffects(actor, {includeItemEffects: true}).filter(i => i.flags.cat?.specialDuration?.includes('moveFinished'));
     if (!effects.length) return;
@@ -266,14 +306,14 @@ async function unhideActivities(effect) {
     if (!identifiers?.length) return;
     const originActivity = await effectUtils.getOriginActivity(effect);
     if (!originActivity) return;
-    await itemUtils.unhideActivities(originActivity.item, identifiers);
+    await itemUtils.unhideActivities(originActivity.item, identifiers, {favorite: !!effect.flags.cat?.favoriteActivities});
 }
 async function rehideActivities(effect) {
     const identifiers = effect.flags.cat?.unhideActivities;
     if (!identifiers?.length) return;
     const originActivity = await effectUtils.getOriginActivity(effect);
     if (!originActivity) return;
-    await itemUtils.rehideActivities(originActivity.item, identifiers);
+    await itemUtils.rehideActivities(originActivity.item, identifiers, {favorite: !!effect.flags.cat?.favoriteActivities});
 }
 function difficultTerrain(gridSpace, token, options, found) {
     if (!token.actor.flags.cat?.ignoreDifficultTerrain?.tokens) return;
@@ -293,6 +333,8 @@ export default {
     disableConditionStatuses,
     specialDurationToolCheck,
     specialDurationHitPoints,
+    updateImages,
+    specialDurationTurn,
     specialDurationMove,
     specialDurationZeroSpeed,
     createAnimations,

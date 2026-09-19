@@ -1,4 +1,4 @@
-import {activityUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, queryUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, queryUtils, workflowUtils} from '../utilities/_module.mjs';
 import {constants, Logging} from './_module.mjs';
 const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
@@ -109,7 +109,7 @@ class RollBonus {
         this.#optional = optional;
         this.#scalingValue = 0;
         this.#cost = {};
-        this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.());
+        this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.() ?? this.#actor?.getRollData());
         this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
         this.active = !this.#optional;
@@ -912,7 +912,6 @@ export class DamageBonus extends RollBonus {
      */
     static GetCriticalRoll(bonus) {
         if (!bonus.canCrit || bonus.roll.options.isCritical) return bonus.roll.clone();
-        const formula = rollUtils.getCriticalFormula(bonus.roll.formula, bonus.document, bonus.roll.options.critical);
-        return new bonus.rollClass(formula, bonus.roll.data, {...bonus.roll.options, isCritical: true});
+        return new bonus.rollClass(bonus.roll.formula, bonus.roll.data, {...bonus.roll.options, isCritical: true});
     }
 }

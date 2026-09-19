@@ -1,6 +1,6 @@
-import {crosshairUtils, genericUtils, queryUtils} from './_module.mjs';
 import {grapple as grappleHandler} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
+import {crosshairUtils, genericUtils, queryUtils} from './_module.mjs';
 /**
  * Movement action for drag ruler. 'catForce' does not consume movement.
  * @typedef {'blink'|'burrow'|'catForce'|'climb'|'crawl'|'displace'|'fly'|'jump'|'swim'|'walk'} MovementAction
@@ -8,13 +8,37 @@ import {constants, Events} from '../lib/_module.mjs';
 /** @import {Animations} from '../lib/_module.mjs' */
 /** @import {Crosshairs} from '../lib/_module.mjs' */
 
+/**
+ * Get the cast data stashed on this token.
+ * @param {foundry.documents.TokenDocument} token
+ * @returns {object|undefined}
+ */
 function getSavedCastData(token) {
     return token.flags.cat?.castData;
 }
+/**
+ * Measure between two tokens, accounting for their size.
+ * @param {foundry.documents.TokenDocument} token
+ * @param {foundry.documents.TokenDocument} target
+ * @param {object} [options]
+ * @param {boolean} [options.wallsBlock] Return -1 when a wall lies between them.
+ * @param {boolean} [options.checkCover] Include cover in the measurement.
+ * @param {boolean} [options.convertToFt] Convert from grid units to scene units.
+ * @returns {number}
+ */
 function getDistance(token, target, {wallsBlock, checkCover, convertToFt = true} = {}) {
     const distance =  MidiQOL.computeDistance(token.object, target.object, {wallsBlock, includeCover: checkCover});
     return convertToFt ? genericUtils.convertDistance(token.parent, distance) : distance;
 }
+/**
+ * Get the target's cover from the source, taking the greater of its cover condition and its calculated cover.
+ * @param {foundry.documents.TokenDocument} sourceToken
+ * @param {foundry.documents.TokenDocument} targetToken
+ * @param {object} [options]
+ * @param {Activity} [options.activity] Used to ignore cover the activity is configured to bypass.
+ * @param {boolean} [options.displayName] Return a localized label rather than the numeric bonus.
+ * @returns {number|string}
+ */
 function checkCover(sourceToken, targetToken, {activity, displayName}) {
     // TODO replace the following with MidiQOL.getCoverBonus when that becomes available
     const statusCover = targetToken.actor.statuses.has('coverTotal') ? 999 : (targetToken.actor.system.attributes.ac.cover ?? 0);
@@ -29,11 +53,25 @@ function checkCover(sourceToken, targetToken, {activity, displayName}) {
     };
     return _loc('CAT.Common.Cover', {amount: _loc(names[cover]), cover: _loc('DND5E.Cover')});
 }
+/**
+ * Whether two tokens are hostile to one another.
+ * @param {foundry.documents.TokenDocument} source
+ * @param {foundry.documents.TokenDocument} target
+ * @param {object} [options]
+ * @param {number} [options.dispositionA] Override the source's disposition.
+ * @param {number} [options.dispositionB] Override the target's disposition.
+ * @returns {boolean}
+ */
 function isEnemy(source, target, {dispositionA, dispositionB} = {}) {
     dispositionA ??= source.disposition;
     dispositionB ??= target.disposition;
     return (dispositionA >= 0 && dispositionB < 0) || (dispositionA < 0 && dispositionB >= 0);
 }
+/**
+ * Snapshot this token's combat position, for stamping an effect to a particular turn.
+ * @param {foundry.documents.TokenDocument} token
+ * @returns {{inCombat: boolean, combatId: string|null, currentRound: number|null, currentTurn: number|null}}
+ */
 function getCombatData(token) {
     const combat = token.combatant?.combat;
     return {
@@ -43,6 +81,16 @@ function getCombatData(token) {
         currentTurn: combat ? combat.turn : null
     };
 }
+/**
+ * Find tokens within range of this one, excluding hidden tokens.
+ * @param {foundry.documents.TokenDocument} token
+ * @param {number} range Scene units.
+ * @param {object} [options]
+ * @param {'all'|'ally'|'neutral'|'enemy'} [options.disposition] Dispositions relative to the scene, not to {@link token}.
+ * @param {boolean} [options.includeIncapacitated]
+ * @param {boolean} [options.includeToken] Include {@link token} itself.
+ * @returns {foundry.documents.TokenDocument[]}
+ */
 function findNearby(token, range, {disposition = 'all', includeIncapacitated = true, includeToken = false} = {}) {
     const dispositions = {
         all: undefined,
@@ -52,6 +100,14 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
     };
     return MidiQOL.findNearby(dispositions[disposition], token.object, range, {includeIncapacitated, includeToken}).map(placeable => placeable.document).filter(token => !token.hidden);
 }
+/**
+ * Move a token along a path, delegating to a GM when the user lacks permission. Walls constrain the path unless
+ * `options.constrainOptions.ignoreWalls` is set, and a fully blocked move is abandoned.
+ * @param {foundry.documents.TokenDocument} token
+ * @param {object[]} waypoints
+ * @param {object} [options] Passed to {@link foundry.documents.TokenDocument#move}.
+ * @returns {Promise<void>}
+ */
 async function moveToken(token, waypoints, options = {}) {
     if (token.object && options.constrainOptions?.ignoreWalls !== true) {
         const origin = {x: token.x, y: token.y, elevation: token.elevation};
@@ -195,16 +251,16 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
     });
 }
 /**
- * @param {foundry.documents.TokenDocument} sourceToken 
- * @param {foundry.documents.TokenDocument} targetToken 
+ * @param {foundry.documents.TokenDocument} sourceToken
+ * @param {foundry.documents.TokenDocument} targetToken
  * @returns {boolean}
  */
 function canSee(sourceToken, targetToken) {
     return MidiQOL.canSee(sourceToken, targetToken);
 }
 /**
- * @param {foundry.documents.TokenDocument} sourceToken 
- * @param {foundry.documents.TokenDocument} targetToken 
+ * @param {foundry.documents.TokenDocument} sourceToken
+ * @param {foundry.documents.TokenDocument} targetToken
  * @param {object} [options]
  * @param {dnd5e.dataModels.activity.BaseActivityData} [options.activity] The initiating activity. Provides effect icons, name, rules, and roll DC.
  * @param {number} [options.flatDC] Escape DC. If undefined, instead uses the DC from the save on {@link activity}, or prompts {@link sourceToken} for a skill check.
@@ -216,7 +272,7 @@ async function grapple(sourceToken, targetToken, {activity, flatDC, rules, conte
     return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize});
 }
 /**
- * @param {foundry.documents.TokenDocument} sourceToken 
+ * @param {foundry.documents.TokenDocument} sourceToken
  * @param {foundry.documents.TokenDocument[]} targetToken
  * @param {'grapple'|'shove-push'|'shove-prone'} [identifier] Used to check condition immunities and change the warning message.
  * @param {boolean} [warning] False hides warnings from a failed size requirement.
@@ -225,6 +281,22 @@ async function grapple(sourceToken, targetToken, {activity, flatDC, rules, conte
 async function grappleShoveSizeCheck(sourceToken, targetToken, identifier = 'grapple', warning = true) {
     return await grappleHandler.sizeCheck(sourceToken, targetToken, identifier, warning);
 }
+/**
+ * Get the ambient light level at this token's position.
+ * @param {foundry.documents.TokenDocument} token
+ * @returns {'bright'|'dim'|'dark'}
+ */
+function getLightLevel(token) {
+    if (token.parent.environment.globalLight.enabled) return 'bright';
+    const center = Object.values(token.object.center);
+    const lights = canvas.effects.lightSources.filter(source => !(source instanceof foundry.canvas.sources.GlobalLightSource) && source.shape.contains(...center));
+    if (!lights.length) return 'dark';
+    const inBright = lights.some(light => {
+        const {data: {x, y}, ratio} = light;
+        return Math.hypot(center[0] - x, center[1] - y) <= ratio * light.shape.config.radius;
+    });
+    return inBright ? 'bright' : 'dim';
+}
 export default {
     getSavedCastData,
     getDistance,
@@ -232,6 +304,7 @@ export default {
     isEnemy,
     getCombatData,
     findNearby,
+    getLightLevel,
     teleportToken,
     displaceToken,
     slideToken,

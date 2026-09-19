@@ -17,16 +17,47 @@ function getTokenName(token, {hide, counter} = {}) {
     return Number.isNumeric(counter?.value) ? name + '(' + counter.value++ + ')' : name;
 }
 
+/**
+ * Show a dialog, routed through a query when {@link userId} is not the current user.
+ * @param {string} userId
+ * @param {string} title
+ * @param {string} content
+ * @param {Array} inputs Input tree consumed by {@link DialogApp}.
+ * @param {string|Array} [buttons]
+ * @param {object} [config] Application options such as width and height.
+ * @returns {Promise<object|undefined>} Keyed by input name, plus `buttons` for the chosen button.
+ */
 async function runDialog(userId, title, content, inputs, buttons, config) {
     if (userId === game.user.id) return await DialogApp.dialog(title, content, inputs, buttons, config);
     return await queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
 }
+/**
+ * {@link runDialog}, queued so this user is not shown two dialogs at once.
+ * @param {string} userId
+ * @param {string} title
+ * @param {string} content
+ * @param {Array} inputs Input tree consumed by {@link DialogApp}.
+ * @param {string|Array} [buttons]
+ * @param {object} [config] Application options such as width and height.
+ * @returns {Promise<object|undefined>}
+ */
 async function runQueuedDialog(userId, title, content, inputs, buttons, config) {
     if (userId === game.user.id) {
         return await dialogQueue.showDialog(async (...args) => await DialogApp.dialog(...args), title, content, inputs, buttons, config);
     }
     return await queryUtils.query('queuedDialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
 }
+/**
+ * Prompt with a row of buttons.
+ * @param {string} title
+ * @param {string} content
+ * @param {Array<[string, *, object]>} buttons Label, value, then options such as `image`.
+ * @param {object} [options]
+ * @param {boolean} [options.displayAsRows]
+ * @param {string} [options.userId]
+ * @param {'alphabetical'|null} [options.sort]
+ * @returns {Promise<*|false>} The chosen value, or false if dismissed.
+ */
 async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sort = null} = {}) {
     let inputs = [
         ['button', [], {displayAsRows: displayAsRows}]
@@ -38,6 +69,16 @@ async function buttonDialog(title, content, buttons, {displayAsRows = true, user
     let result = await runDialog(userId, title, content, inputs, undefined, {width: 400});
     return result?.buttons ?? false;
 }
+/**
+ * Prompt for a single number.
+ * @param {string} title
+ * @param {string} content
+ * @param {{label: string, name: string, options: object}} [input]
+ * @param {object} [options]
+ * @param {string|Array} [options.buttons]
+ * @param {string} [options.userId]
+ * @returns {Promise<number|undefined>}
+ */
 async function numberDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id} = {}) {
     let inputs = [
         ['number',
@@ -51,6 +92,17 @@ async function numberDialog(title, content, input = {label: 'Label', name: 'iden
     let result = await runDialog(userId, title, content, inputs, buttons);
     return result?.[input.name];
 }
+/**
+ * Prompt for one entry from a dropdown. Bare strings are accepted in place of `{value, label}` pairs.
+ * @param {string} title
+ * @param {string} content
+ * @param {{label: string, name: string, options: object}} [input]
+ * @param {object} [options]
+ * @param {string|Array} [options.buttons]
+ * @param {string} [options.userId]
+ * @param {'alphabetical'|null} [options.sort]
+ * @returns {Promise<*|undefined>} The chosen value.
+ */
 async function selectDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id, sort = null} = {}) {
     if (!input.options) input.options = {};
     let inputOptions = input.options.options ?? [];
@@ -72,6 +124,33 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
     let result = await runDialog(userId, title, content, inputs, buttons);
     return result?.[input.name];
 }
+/**
+ * Prompt for one or more documents. Accepts world documents and compendium index entries.
+ * @param {string} title
+ * @param {string} content
+ * @param {Array<foundry.abstract.Document|object>} documents
+ * @param {object} [options]
+ * @param {number} [options.max] Total selectable. Above one, the result is an array.
+ * @param {boolean} [options.displayTooltips] Show each document's description on hover.
+ * @param {'alphabetical'|'cr'|'level'|null} [options.sort]
+ * @param {string} [options.userId]
+ * @param {boolean} [options.addNoneDocument] Append a `None` entry.
+ * @param {boolean} [options.showCR] Append each document's challenge rating to its label.
+ * @param {boolean} [options.showSpellLevel] Append each document's spell level to its label.
+ * @param {boolean} [options.showUses] Append each document's remaining uses to its label.
+ * @param {boolean} [options.displayReference] Add a link opening the document's sheet.
+ * @param {boolean} [options.combobox] Render as a searchable combobox.
+ * @param {boolean} [options.checkbox] Render as checkboxes rather than an amount per document.
+ * @param {object} [options.weights] Per-document cost against {@link max}, keyed by document.
+ * @param {object} [options.maxes] Per-document maximum, keyed by document.
+ * @param {Function} [options.validate] Receives the current selection; a falsy return blocks confirmation.
+ * @param {object} [options.tags] Per-document label tags, keyed by document.
+ * @param {object} [options.selects] Per-document dropdown, keyed by document.
+ * @param {Set} [options.locked] Documents that cannot be deselected.
+ * @param {string[]} [options.keys] Override the keys documents are identified by, in the same order.
+ * @param {object} [options.labels] Override document labels, keyed by document.
+ * @returns {Promise<foundry.abstract.Document|Array<{document: foundry.abstract.Document, key: string, amount: number, select: *}>|false>}
+ */
 async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}, validate = null, tags = {}, selects = {}, locked = new Set(), keys = null, labels = {}} = {}) {
     let sortCmp = sort === 'alphabetical' ? (a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
         : sort === 'cr' ? (a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0)
@@ -442,6 +521,17 @@ async function selectSpellSlots(actor, title, content, {maxAmount, maxAmountMode
     const slots = result.filter(r => r.amount > 0).map(r => ({key: r.key, amount: r.amount}));
     return slots.length ? slots : false;
 }
+/**
+ * Prompt for one damage type, with the system's icons.
+ * @param {string[]} damageTypes
+ * @param {string} title
+ * @param {string} content
+ * @param {object} [options]
+ * @param {boolean} [options.addNo] Append a decline button returning false.
+ * @param {string} [options.userId]
+ * @param {'alphabetical'|null} [options.sort]
+ * @returns {Promise<string|false>}
+ */
 async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id, sort = null} = {}) {
     if (!damageTypes?.length) return false;
     let buttons = damageTypes.map(t => {
@@ -452,6 +542,18 @@ async function selectDamageType(damageTypes, title, content, {addNo = false, use
     if (addNo) buttons.push(['No', false, {image: constants.damageIcons.no}]);
     return await buttonDialog(title, content, buttons, {userId});
 }
+/**
+ * Prompt for hit dice across this actor's classes, and optionally other items with uses.
+ * @param {foundry.documents.Actor} actor
+ * @param {string} title
+ * @param {string} content
+ * @param {object} [options]
+ * @param {number} [options.max] Total dice selectable.
+ * @param {string} [options.userId]
+ * @param {Array<Item5e>} [options.additionalItems] Items with remaining uses, offered alongside the classes.
+ * @param {boolean} [options.recover] Offer spent dice to recover rather than remaining dice to spend.
+ * @returns {Promise<Array|false>} False when nothing is available or the prompt is dismissed.
+ */
 async function selectHitDie(actor, title, content, {max = 1, userId = game.user.id, additionalItems = [], recover = false} = {}) {
     let documents = actor.items.filter(i => {
         if (i.type !== 'class') return false;
@@ -501,31 +603,95 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
         amount: Number(value)
     }));
 }
+/**
+ * Ask a yes or no question.
+ * @param {string} title
+ * @param {string} content
+ * @param {object} [options]
+ * @param {string} [options.userId]
+ * @param {string|Array} [options.buttons]
+ * @returns {Promise<boolean|undefined>}
+ */
 async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
     const config = {width: content?.length > 100 ? 600 : undefined};
     let selection = await runDialog(userId, title, content, [], buttons, config);
     return selection?.buttons;
 }
+/**
+ * Ask whether to use a document.
+ * @param {foundry.abstract.Document} document
+ * @param {object} [options]
+ * @param {string} [options.userId]
+ * @param {string|Array} [options.buttons]
+ * @returns {Promise<boolean|undefined>}
+ */
 async function confirmUseItem(document, {userId = game.user.id, buttons = 'yesNo'} = {}) {
     let content = _loc('CAT.Dialog.Use', {document: document.name});
     return await confirm('COMMON.Confirm', content, {userId, buttons});
 }
+/**
+ * Ask whether to use a document at an additional resource cost.
+ * @param {foundry.abstract.Document} document
+ * @param {number} quantity
+ * @param {string} resource
+ * @param {object} [options]
+ * @param {string} [options.userId]
+ * @param {string|Array} [options.buttons]
+ * @returns {Promise<boolean|undefined>}
+ */
 async function confirmUseExtraCost(document, quantity, resource, {userId = game.user.id, buttons = 'yesNo'} = {}) {
     let content = _loc('CAT.Dialog.UseExtraCost', {document: document.name, quantity, resource});
     return await confirm('COMMON.Confirm', content, {userId, buttons});
 }
+/**
+ * Ask whether to use a document, showing what the roll would become.
+ * @param {foundry.abstract.Document} document
+ * @param {number} rollTotal
+ * @param {object} [options]
+ * @param {string} [options.userId]
+ * @param {string|Array} [options.buttons]
+ * @returns {Promise<boolean|undefined>}
+ */
 async function confirmUseRollTotal(document, rollTotal, {userId = game.user.id, buttons = 'yesNo'} = {}) {
     const content = _loc('CAT.Dialog.UseRollTotal', {document: document.name, rollTotal});
     return await confirm('COMMON.Confirm', content, {userId, buttons});
 }
+/**
+ * Ask whether to use a document against a named roll, showing what that roll would become.
+ * @param {foundry.abstract.Document} document
+ * @param {string} name What the roll belongs to.
+ * @param {number} rollTotal
+ * @param {object} [options]
+ * @param {string} [options.userId]
+ * @param {string|Array} [options.buttons]
+ * @returns {Promise<boolean|undefined>}
+ */
 async function confirmUseForRollTotal(document, name, rollTotal, {userId = game.user.id, buttons = 'yesNo'} = {}) {
     const content = _loc('CAT.Dialog.UseForRollTotal', {document: document.name, name, rollTotal});
     return await confirm('COMMON.Confirm', content, {userId, buttons});
 }
+/**
+ * Ask whether to use a document to recover another document's uses.
+ * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} documentWithUses
+ * @param {object} [options]
+ * @param {number} [options.spent] Override the spent count shown.
+ * @param {string} [options.userId]
+ * @param {string|Array} [options.buttons]
+ * @returns {Promise<boolean|undefined>}
+ */
 async function confirmRecoverUses(document, documentWithUses, {spent, userId = game.user.id, buttons = 'yesNo'} = {}) {
     const uses = (documentWithUses.system ?? documentWithUses).uses;
     return await confirm('COMMON.Confirm', _loc('CAT.Dialog.UseRecover', {document: document.name, spent: spent ?? uses?.spent ?? 0, max: uses?.max ?? 0, resource: documentWithUses.name}), {userId, buttons});
 }
+/**
+ * {@link confirm}, queued so this user is not shown two dialogs at once.
+ * @param {string} title
+ * @param {string} content
+ * @param {object} [options]
+ * @param {string} [options.userId]
+ * @returns {Promise<boolean|undefined>}
+ */
 async function queuedConfirmDialog(title, content, {userId = game.user.id} = {}) {
     let selection = await runQueuedDialog(userId, title, content, [], 'yesNo');
     return selection?.buttons;
@@ -537,7 +703,28 @@ const targetInputTypes = {
     select: 'selectOption',
     selectAmount: 'selectAmount'
 };
-async function selectTargetDialog(title, content, targets, {type = 'one', selectOptions = [], skipDeadAndUnconscious = true, coverToken = undefined, reverseCover = false, displayDistance = true, maxAmount = 1, minAmount = 0, userId = game.user.id, buttons = 'okCancel', maxes = {}, tags = {}} = {}) {
+/**
+ * Prompt for one or more tokens, optionally assigning an amount to each.
+ * @param {string} title
+ * @param {string} content
+ * @param {foundry.documents.TokenDocument[]} targets
+ * @param {object} [options]
+ * @param {'one'|'multiple'|'number'|'select'|'selectAmount'} [options.type] Radio, checkboxes, a number, a dropdown, or a number per target.
+ * @param {object[]} [options.selectOptions] Per-target dropdown options.
+ * @param {boolean} [options.skipDeadAndUnconscious] Adds a checkbox, returned as `skip`.
+ * @param {foundry.documents.TokenDocument} [options.coverToken] Show each target's cover from this token.
+ * @param {boolean} [options.reverseCover] Measure cover from the target to {@link coverToken} instead.
+ * @param {boolean} [options.displayDistance] Append the distance from {@link coverToken} to each label.
+ * @param {number} [options.maxAmount] Total that may be assigned across all targets.
+ * @param {number} [options.minAmount] Minimum per target.
+ * @param {boolean} [options.requireTotal] Disable Confirm until {@link maxAmount} is fully assigned.
+ * @param {string} [options.userId] The user who sees the dialog.
+ * @param {string} [options.buttons]
+ * @param {object} [options.maxes] Per-target override of {@link maxAmount}, keyed by token id.
+ * @param {object} [options.tags] Per-target label tags, keyed by token id.
+ * @returns {Promise<{result: foundry.documents.TokenDocument|foundry.documents.TokenDocument[]|{document: foundry.documents.TokenDocument, value: number}[], skip: boolean}|null>}
+ */
+async function selectTargetDialog(title, content, targets, {type = 'one', selectOptions = [], skipDeadAndUnconscious = true, coverToken = undefined, reverseCover = false, displayDistance = true, maxAmount = 1, minAmount = 0, requireTotal = false, userId = game.user.id, buttons = 'okCancel', maxes = {}, tags = {}} = {}) {
     const inputType = targetInputTypes[type] ?? targetInputTypes.one;
     const inputs = [[inputType]];
     const targetInputs = [];
@@ -562,7 +749,7 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
         });
     }
     inputs[0].push(targetInputs);
-    inputs[0].push({displayAsRows: true, radioName: 'targets', totalMax: maxAmount});
+    inputs[0].push({displayAsRows: true, radioName: 'targets', totalMax: maxAmount, requireTotal});
     if (skipDeadAndUnconscious) inputs.push(['checkbox', [{label: _loc('CAT.Dialog.SkipDeadAndUnconscious'), name: 'skip', options: {isChecked: true}}]]);
     const selection = await runDialog(userId, title, content, inputs, buttons, {width: 500});
     if (!selection || selection.buttons === false) return null;
@@ -580,6 +767,17 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
     }
     return {result, skip};
 }
+/**
+ * Prompt for individual dice across evaluated rolls, skipping deterministic terms.
+ * @param {foundry.dice.Roll[]} [rolls]
+ * @param {string} title
+ * @param {string} content
+ * @param {object} [options]
+ * @param {number} [options.max] Total dice selectable.
+ * @param {string} [options.userId]
+ * @param {string|Array} [options.buttons]
+ * @returns {Promise<string[]|false>} Keys shaped `rollIndex-termIndex-resultIndex`.
+ */
 async function selectDie(rolls = [], title, content, {max = 1, userId = game.user.id, buttons = 'okCancel'} = {}) {
     let dice = [];
     for (let i = 0; i < rolls.length; i++) {

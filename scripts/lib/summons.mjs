@@ -86,7 +86,7 @@ export class SummonsManager {
         disposition ??= summon.ownerToken?.disposition ?? summon.owner.prototypeToken.disposition;
         genericUtils.setProperty(actorData, 'prototypeToken.disposition', disposition);
         if (items.length) {
-            updates.items ??= [];
+            updates.items ??= actorData.items;
             await Promise.all(items.map(async itemInfo => this.#processItem(summon, updates, itemInfo)));
         }
         if (size) {
@@ -117,9 +117,8 @@ export class SummonsManager {
     }
     async #processItem(summon, updates, itemInfo) {
         const {uuid, matchDC, matchAttack, description, equipped, attuned, method, prepared, usesMax, usesRecovery, usesRechargeFormula} = itemInfo;
-        const sourceItem = await fromUuid(uuid);
-        if (!sourceItem) return;
-        const itemData = sourceItem.toObject();
+        const itemData = uuid ? (await fromUuid(uuid))?.toObject() : genericUtils.duplicate(itemInfo);
+        if (!itemData) return;
         delete itemData._id;
         if (description) itemData.system.description.value = description;
         if (Object.hasOwn(itemData.system, 'equipped') && equipped !== false) genericUtils.setProperty(itemData, 'system.equipped', true);

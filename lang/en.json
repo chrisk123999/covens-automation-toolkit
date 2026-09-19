@@ -520,6 +520,11 @@
           "endOfWorkflow": "End of workflow",
           "forceSave": "Forced a save",
           "attackMissed": "Attack missed",
+          "madeAttack": "Made an attack",
+          "castSpell": "Cast a spell",
+          "turnStart": "Start of this creature's turn",
+          "turnEnd": "End of this creature's turn",
+          "damaged": "Took damage",
           "damagedByAlly": "Damaged by ally",
           "damagedByEnemy": "Damaged by enemy",
           "hitByAnotherCreature": "Hit by another creature",
@@ -533,6 +538,7 @@
           "tempMaxHP": "Temporary max HP lost",
           "Groups": {
             "Workflow": "Workflow",
+            "Turn": "Turn",
             "Movement": "Movement",
             "HitPoints": "Hit Points",
             "ConditionAdded": "Condition Added",
@@ -979,7 +985,7 @@
       "Title": "CAT Compendium Browser"
     },
     "GrappleShove": {
-      "Grapple": "Grapple",                
+      "Grapple": "Grapple",
       "GrappledBy": "Grappled By {name}",
       "GrappleEscape": "Escape Grapple",
       "Grappling": "Grappling {name}",
