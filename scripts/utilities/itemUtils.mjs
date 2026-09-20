@@ -91,9 +91,7 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
 async function createItems(actor, itemDatas, {favorite = false, parentEntity} = {}) {
     const items = await documentUtils.createEmbeddedDocuments(actor, 'Item', itemDatas);
     if (parentEntity) await documentUtils.makeDependent(parentEntity, items);
-    if (favorite && actor.system.addFavorite) {
-        for (const item of items) await actor.system.addFavorite({type: 'item', id: foundry.utils.buildRelativeUuid(item, actor)});
-    }
+    if (favorite) await actorUtils.addFavorites(actor, items);
     return items;
 }
 /**
