@@ -109,7 +109,7 @@ class RollBonus {
         this.#optional = optional;
         this.#scalingValue = 0;
         this.#cost = {};
-        this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.());
+        this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.() ?? this.#actor?.getRollData());
         this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
         this.active = !this.#optional;

@@ -12,6 +12,21 @@ const getSizeIndex = (token) => {
     if (w === 3) return 4;
     return 5;
 };
+/**
+ * Show a crosshair, optionally bounded to a range from a token.
+ * @param {object} [options]
+ * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check, and the default icon.
+ * @param {number} [options.maxRange] Scene units. Without one, the crosshair is unbounded and placed freely.
+ * @param {object} [options.crosshairsConfig] Passed to {@link Crosshairs.showCrosshairs}.
+ * @param {object} [options.centerpoint] Measure from here instead of the token's centre, skipping width compensation.
+ * @param {boolean} [options.drawBoundries] Draw the range boundary.
+ * @param {boolean} [options.checkOverlap] Reject a placement overlapping another token.
+ * @param {object} [options.customCallbacks] Merged over the internal crosshair callbacks.
+ * @param {boolean} [options.trackDistance] Show the live distance from the origin.
+ * @param {number} [options.fudgeDistance] Extra slack in scene units, on top of the token's own width compensation.
+ * @param {Function[]} [options.validityFunctions] Each receives the crosshair; any falsy return rejects the placement.
+ * @returns {Promise<object>} The crosshair result.
+ */
 async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, drawBoundries = true, checkOverlap = true, customCallbacks, trackDistance = true, fudgeDistance = 0, validityFunctions = []} = {}) {
     const tokenImg = token?.texture?.src ?? token?.document?.texture?.src;
     crosshairsConfig = crosshairsConfig || {icon: tokenImg};
@@ -50,7 +65,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
             
             if (maxRange) {
                 distance = canvas.grid.measurePath([centerpoint, crosshairs]).distance.toNearest(0.01);
-                distance = Math.max(0, distance - widthAdjust);
+                distance = Math.max(0, distance - widthAdjust - fudgeDistance);
                 let isOverlapping = false;
                 if (checkOverlap) {
                     const cx = crosshairs.position.x;

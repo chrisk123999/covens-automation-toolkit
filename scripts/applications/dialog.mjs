@@ -602,6 +602,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             hasSubinputs: options.some(o => o.subinputs?.length),
             isSelectAmount: true,
             totalMax: opts?.totalMax,
+            requireTotal: opts?.requireTotal,
             options,
             header: opts?.header,
             legend: opts?.legend
@@ -772,7 +773,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         const context = await super._prepareContext(options);
         if (!this.#context) this.#formatInputs();
         const detached = options.window?.attach ? false : options.window?.detach ? true : !!this.window.windowId;
-        return {...context, ...this.#context, title: this.windowTitle, detached};
+        const blockConfirm = this.#context.inputs.some(i => i.requireTotal && i.currentSpent < i.totalMax);
+        return {...context, ...this.#context, title: this.windowTitle, detached, blockConfirm};
     }
 
     // Cap each option's max so combined weighted amounts stay under totalMax.

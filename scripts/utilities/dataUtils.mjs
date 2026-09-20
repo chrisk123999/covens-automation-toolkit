@@ -49,10 +49,12 @@ function setIdentifier(documentData, identifier) {
  * @property {string[]} specialDuration Deletes effect.
  * @property {string[]} disableCondition Disables effect.
  * @property {string[]} unhideActivities
+ * @property {boolean} favoriteActivities Also favorite the activities named by {@link unhideActivities}.
  * @property {VaeEntry[]} vae
  * @property {'2014'|'2024'|'all'} rules
  * @property {object} copyConfigs Duplicate macro configurations from another document onto this effect.
  * @property {foundry.abstract.Document} parentEntity A dependent parent for this effect.
+ * @property {string} activityUuid The activity this effect came from, so later macros can trace it back.
  */
 /**
  * Attach CAT data to an effect before creation.
@@ -60,7 +62,7 @@ function setIdentifier(documentData, identifier) {
  * @param {CatEffectData} [options]
  * @returns {object} Modified effectData.
  */
-function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, copyConfigs, parentEntity} = {}) {
+function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, favoriteActivities, copyConfigs, parentEntity, activityUuid} = {}) {
     if (removeMacros?.length) {
         removeMacros.forEach(macroGroup => {
             if (!macroGroup.macros?.length) return;
@@ -93,12 +95,19 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
     if (specialDuration) genericUtils.setProperty(effectData, 'flags.cat.specialDuration', specialDuration);
     if (disableCondition) genericUtils.setProperty(effectData, 'flags.cat.disableCondition', disableCondition);
     if (unhideActivities) genericUtils.setProperty(effectData, 'flags.cat.unhideActivities', unhideActivities);
+    if (favoriteActivities) genericUtils.setProperty(effectData, 'flags.cat.favoriteActivities', true);
     if (createAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, config: createAnimationOptions});
     if (deleteAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions});
+    if (activityUuid) genericUtils.setProperty(effectData, 'flags.cat.activityUuid', activityUuid);
     if (copyConfigs) genericUtils.setProperty(effectData, 'flags.cat.config', genericUtils.mergeObject(effectData.flags.cat?.config ?? {}, copyConfigs));
     return effectData;
 }
 
+/**
+ * Coerce a value into an array. Splits comma-separated strings and unwraps any iterable.
+ * @param {*} data
+ * @returns {Array}
+ */
 function toArray(data) {
     if (data === undefined || data === null) return [];
     if (Array.isArray(data)) return data;

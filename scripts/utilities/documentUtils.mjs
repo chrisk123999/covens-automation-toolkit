@@ -1,12 +1,25 @@
-import {activityUtils, actorUtils, dataUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
+import {activityUtils, actorUtils, dataUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
 /** @import {CatEffectData} from './dataUtils.mjs' */
 /** @import {EffectDurationData} from '@client/documents/_types.mjs' */
 function getRules(document, {documentType = document.documentName} = {}) {
     return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
+/**
+ * Get the module that registered this document's automation.
+ * @param {foundry.abstract.Document} document
+ * @returns {string|undefined}
+ */
 function getSource(document) {
     return document.flags.cat?.automation?.source;
 }
+/**
+ * Get the identifier macros use to look this document up. Activities and items use their system identifier;
+ * everything else uses the CAT flag, falling back to a slug of the name.
+ * @param {foundry.abstract.Document} document
+ * @param {object} [options]
+ * @param {string} [options.documentType] Override the type used to pick where the identifier lives.
+ * @returns {string|undefined}
+ */
 function getIdentifier(document, {documentType = document.documentName} = {}) {
     switch (documentType) {
         case 'Activity': return document.identifier;
@@ -14,9 +27,19 @@ function getIdentifier(document, {documentType = document.documentName} = {}) {
         default: return document.flags.cat?.identifier ?? document.name.slugify();
     }
 }
+/**
+ * Get the version of the automation registered on this document.
+ * @param {foundry.abstract.Document} document
+ * @returns {string|undefined}
+ */
 function getVersion(document) {
     return document.flags.cat?.automation?.version;
 }
+/**
+ * Get the cast data stashed on any supported document type.
+ * @param {foundry.abstract.Document} document
+ * @returns {{castLevel: number, baseLevel: number, saveDC: number}} Values are -1 when nothing is stashed.
+ */
 function getSavedCastData(document) {
     let castData;
     switch(document.documentName) {
@@ -33,6 +56,16 @@ function getSavedCastData(document) {
         saveDC: -1
     };
 }
+/**
+ * Delete embedded documents, delegating to a GM when the user lacks permission.
+ * @param {foundry.abstract.Document} document
+ * @param {string} type Embedded document name, such as `ActiveEffect`.
+ * @param {string[]} ids
+ * @param {object} [options]
+ * @param {boolean} [options.forceGM] Delete through a GM even when the user has permission.
+ * @param {object} [options.options] Passed to the deletion.
+ * @returns {Promise<foundry.abstract.Document[]|undefined>}
+ */
 async function deleteEmbeddedDocuments(document, type, ids, {forceGM = false, options} = {}) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let documents;
@@ -45,6 +78,14 @@ async function deleteEmbeddedDocuments(document, type, ids, {forceGM = false, op
     }
     return documents;
 }
+/**
+ * Delete a document, delegating to a GM when the user lacks permission.
+ * @param {foundry.abstract.Document} document
+ * @param {object} [options]
+ * @param {object} [options.options] Passed to the deletion.
+ * @param {boolean} [options.forceGM] Delete through a GM even when the user has permission.
+ * @returns {Promise<foundry.abstract.Document>} The now deleted document.
+ */
 async function deleteDocument(document, {options, forceGM = false} = {}) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     if (hasPermission && !forceGM) {
@@ -54,6 +95,14 @@ async function deleteDocument(document, {options, forceGM = false} = {}) {
     }
     return document;
 }
+/**
+ * Create embedded documents, delegating to a GM when the user lacks permission.
+ * @param {foundry.abstract.Document} document
+ * @param {string} type Embedded document name, such as `Item`.
+ * @param {object[]} updates
+ * @param {object} [options]
+ * @returns {Promise<foundry.abstract.Document[]|undefined>}
+ */
 async function createEmbeddedDocuments(document, type, updates, options) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     if (hasPermission) {
@@ -63,6 +112,13 @@ async function createEmbeddedDocuments(document, type, updates, options) {
         return await Promise.all(uuids.map(async uuid => await fromUuid(uuid)));
     }
 }
+/**
+ * Update a document, delegating to a GM when the user lacks permission.
+ * @param {foundry.abstract.Document} document
+ * @param {object} updates
+ * @param {object} [options]
+ * @returns {Promise<foundry.abstract.Document|undefined>} Only returned when the update went through a GM.
+ */
 async function update(document, updates, options) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     if (hasPermission) {
@@ -72,6 +128,14 @@ async function update(document, updates, options) {
         return await fromUuid(uuid);
     }
 }
+/**
+ * Update embedded documents, delegating to a GM when the user lacks permission.
+ * @param {foundry.abstract.Document} document
+ * @param {string} type Embedded document name, such as `Token`.
+ * @param {object[]} updates Each entry needs an `_id`.
+ * @param {object} [options]
+ * @returns {Promise<foundry.abstract.Document[]>}
+ */
 async function updateEmbeddedDocuments(document, type, updates, options) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     if (hasPermission) {
@@ -81,6 +145,14 @@ async function updateEmbeddedDocuments(document, type, updates, options) {
         return await Promise.all(uuids.map(async uuid => await fromUuid(uuid)));
     }
 }
+/**
+ * Set a flag on a document, delegating to a GM when the user lacks permission.
+ * @param {foundry.abstract.Document} document
+ * @param {string} scope Module id owning the flag.
+ * @param {string} key
+ * @param {*} value
+ * @returns {Promise<foundry.abstract.Document>}
+ */
 async function setFlag(document, scope, key, value) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     if (hasPermission) {
@@ -90,6 +162,15 @@ async function setFlag(document, scope, key, value) {
         return await fromUuid(uuid);
     }
 }
+/**
+ * Get an effect on this document by its identifier.
+ * @param {foundry.abstract.Document} document
+ * @param {string} identifier
+ * @param {object} [options]
+ * @param {boolean} [options.multiple] Return every match rather than the first.
+ * @param {boolean} [options.includeItemEffects]
+ * @returns {ActiveEffect|ActiveEffect[]|undefined}
+ */
 function getEffectByIdentifier(document, identifier, {multiple, includeItemEffects} = {}) {
     const predicate = effect => getIdentifier(effect) === identifier;
     let effects;
@@ -101,10 +182,21 @@ function getEffectByIdentifier(document, identifier, {multiple, includeItemEffec
     if (!multiple) return effects.find(predicate);
     return effects.filter(predicate);
 }
+/**
+ * Tie documents to a parent so they are deleted along with it.
+ * @param {foundry.abstract.Document} parentDocument
+ * @param {foundry.abstract.Document[]} [childDocuments]
+ * @returns {Promise<void>}
+ */
 async function makeDependent(parentDocument, childDocuments = []) {
     if (!childDocuments.length) return;
     await Promise.all(childDocuments.map(async document => MidiQOL.addDependent(parentDocument, document)));
 }
+/**
+ * Run several document operations in one batch, applied all or nothing, delegating to a GM when the user lacks permission.
+ * @param {DatabaseWriteOperation[]} operations
+ * @returns {Promise<Array<foundry.abstract.Document[]>>}
+ */
 async function modifyBatch(operations) {
     if (queryUtils.isTheGM()) {
         return await foundry.documents.modifyBatch(operations);
@@ -122,12 +214,12 @@ async function modifyBatch(operations) {
 /**
  * Build an effect based on one attached to an item.
  * @param {foundry.documents.Item|dnd5e.dataModels.activity.BaseActivityData} document An item or activity from which to fetch an effect by {@link id}.
- * @param {string} id 
+ * @param {string} id
  * @param {object} [options]
  * @param {EffectDurationData} [options.duration] Effect duration, fetched from {@link document} if absent.
  * @param {foundry.documents.Item} [options.concentrationItem] An item used to fetch a concentration effect, which is assigned as the origin for this effect.
  * @param {CatEffectData} [options.catData] See {@link CatEffectData}
- * @returns 
+ * @returns
  */
 function getEffectData(document, id, {duration, concentrationItem, ...catData} = {}) {
     const sourceEffect = document.item ? document.item.effects.get(id) : document.effects.get(id);
@@ -135,11 +227,24 @@ function getEffectData(document, id, {duration, concentrationItem, ...catData} =
     const effectData = sourceEffect.toObject();
     delete effectData._id;
     effectData.origin = !concentrationItem ? sourceEffect.uuid : effectUtils.getConcentrationEffect(document.actor, document.item ?? document)?.uuid;
-    if (document.documentName === 'Activity' && !duration) effectData.duration = activityUtils.getEffectDuration(document);  
+    if (document.documentName === 'Activity' && !duration) effectData.duration = activityUtils.getEffectDuration(document);
     if (duration) effectData.duration = duration;
     return dataUtils.buildEffectData(effectData, catData);
 }
-function getBaseEffectData(document, {name, img, origin, identifier, activityUuid, changes = [], duration, ...buildOptions} = {}) {
+/**
+ * Build effect data from scratch, rather than from an effect already on a document.
+ * @param {foundry.abstract.Document} document An activity supplies the duration when one is not passed.
+ * @param {object} [options]
+ * @param {string} [options.name]
+ * @param {string} [options.img]
+ * @param {string} [options.origin]
+ * @param {string} [options.identifier] The CAT identifier other macros will look this effect up by.
+ * @param {object[]} [options.changes]
+ * @param {EffectDurationData} [options.duration]
+ * @param {CatEffectData} [options.buildOptions] See {@link CatEffectData}
+ * @returns {object} Effect data ready for creation.
+ */
+function getBaseEffectData(document, {name, img, origin, identifier, changes = [], duration, ...buildOptions} = {}) {
     const effectData = {
         name,
         img,
@@ -152,7 +257,6 @@ function getBaseEffectData(document, {name, img, origin, identifier, activityUui
         effectData.duration = activityUtils.getEffectDuration(document);
     }
     if (identifier) dataUtils.setIdentifier(effectData, identifier);
-    if (activityUuid) genericUtils.setProperty(effectData, 'flags.cat.activityUuid', activityUuid);
     return dataUtils.buildEffectData(effectData, buildOptions);
 }
 export default {

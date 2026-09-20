@@ -36,7 +36,8 @@
     {{#if buttons.length}}
         <footer class="cat-dialog-footer">
             {{#each buttons}}
-                <button type="submit" data-action="confirm" name="{{name}}">{{localize label}}</button>
+                <button type="submit" data-action="confirm" name="{{name}}"
+                    {{#if (and @root.blockConfirm (eq name "true"))}}disabled{{/if}}>{{localize label}}</button>
             {{/each}}
         </footer>
     {{/if}}

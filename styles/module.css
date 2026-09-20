@@ -7,12 +7,12 @@
     --cat-bg-surface: rgb(27 29 36 / 92%);
     --cat-border-focus: rgb(85 170 255);
     --cat-border-light: rgb(201 199 184 / 18%);
-    --cat-icon-d4: url('/icons/svg/d4-grey.svg');
-    --cat-icon-d6: url('/icons/svg/d6-grey.svg');
-    --cat-icon-d8: url('/icons/svg/d8-grey.svg');
     --cat-icon-d10: url('/icons/svg/d10-grey.svg');
     --cat-icon-d12: url('/icons/svg/d12-grey.svg');
     --cat-icon-d20: url('/icons/svg/d20-grey.svg');
+    --cat-icon-d4: url('/icons/svg/d4-grey.svg');
+    --cat-icon-d6: url('/icons/svg/d6-grey.svg');
+    --cat-icon-d8: url('/icons/svg/d8-grey.svg');
     --cat-radius-lg: 0.5rem;
     --cat-radius-md: 0.25rem;
     --cat-radius-sm: 0.188rem;
@@ -254,6 +254,16 @@
 .cat-settings-priority .cat-priority-toggle:hover {
     border-color: var(--cat-border-focus);
     background: var(--cat-bg-hover);
+}
+
+.cat-dialog-footer button[disabled] {
+    opacity: 0.55;
+    cursor: auto;
+}
+
+.cat-dialog-footer button[disabled]:hover {
+    border-color: var(--cat-border-light);
+    background: var(--cat-bg-input);
 }
 
 .cat-source-pill {

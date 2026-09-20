@@ -77,7 +77,7 @@ function formula(wrapped) {
             activity: parent,
             document: parent,
             item: parent.item,
-            partIndex: this._index,
+            partIndex: this._index ?? 0,
             activityIdentifier: parent.identifier,
             identifier: parent.item.system.identifier
         };
