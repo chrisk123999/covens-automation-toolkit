@@ -55,9 +55,6 @@ function setIdentifier(documentData, identifier) {
  * @property {object} copyConfigs Duplicate macro configurations from another document onto this effect.
  * @property {foundry.abstract.Document} parentEntity A dependent parent for this effect.
  * @property {string} activityUuid The activity this effect came from, so later macros can trace it back.
- * @property {string} avatarImg Replace the actor's portrait while this effect is active.
- * @property {string} tokenImg Replace the actor's token image while this effect is active.
- * @property {number} imgPriority Highest priority wins when several effects replace images.
  */
 /**
  * Attach CAT data to an effect before creation.
@@ -65,7 +62,7 @@ function setIdentifier(documentData, identifier) {
  * @param {CatEffectData} [options]
  * @returns {object} Modified effectData.
  */
-function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, favoriteActivities, copyConfigs, parentEntity, activityUuid, avatarImg, tokenImg, imgPriority = 50} = {}) {
+function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, favoriteActivities, copyConfigs, parentEntity, activityUuid} = {}) {
     if (removeMacros?.length) {
         removeMacros.forEach(macroGroup => {
             if (!macroGroup.macros?.length) return;
@@ -102,7 +99,6 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
     if (createAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.create', {...createAnimation, config: createAnimationOptions});
     if (deleteAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions});
     if (activityUuid) genericUtils.setProperty(effectData, 'flags.cat.activityUuid', activityUuid);
-    if (avatarImg || tokenImg) genericUtils.setProperty(effectData, 'flags.cat.images', {avatar: avatarImg, token: tokenImg, priority: imgPriority});
     if (copyConfigs) genericUtils.setProperty(effectData, 'flags.cat.config', genericUtils.mergeObject(effectData.flags.cat?.config ?? {}, copyConfigs));
     return effectData;
 }

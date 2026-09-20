@@ -1,4 +1,4 @@
-import {effectUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
+import {genericUtils, queryUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {auraEvents} from '../events/_module.mjs';
 import {effects} from '../handlers/_module.mjs';
@@ -38,7 +38,6 @@ async function createActiveEffect(effect, options, userId) {
     }
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await effects.specialDurationZeroSpeed(effect.parent);
     effectAnimations(effect, true);
-    if (effect.parent instanceof Actor && effect.flags.cat?.images) await effects.updateImages(effect.parent);
     await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
     await auraEvents.effect(effect, options);
 }
@@ -51,7 +50,6 @@ async function deleteActiveEffect(effect, options, userId) {
         await effects.disableConditionStatuses(effect, false);
     }
     effectAnimations(effect, false);
-    if (effect.parent instanceof Actor && effect.flags.cat?.images) await effects.updateImages(effect.parent);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
     await auraEvents.effect(effect, options);
 }
@@ -61,7 +59,6 @@ async function updateActiveEffect(effect, updates, options, userId) {
     const prevActive = genericUtils.getProperty(options, 'cat.previous.active');
     if (effect.active !== prevActive) {
         effectAnimations(effect, effect.active);
-        if (effect.flags.cat?.images) await effects.updateImages(effectUtils.getActor(effect));
         if (effect.statuses.size) await effects.disableConditionStatuses(effect, effect.active);
         if (effect.flags.cat?.macros?.aura) await auraEvents.effect(effect, options);
     }

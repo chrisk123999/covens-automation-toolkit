@@ -264,25 +264,6 @@ async function specialDurationToolCheck(actor, roll, toolId) {
         if (remove) await documentUtils.deleteDocument(effect);
     }));
 }
-async function updateImages(actor) {
-    const images = actorUtils.getEffects(actor).filter(effect => !effect.disabled && effect.flags.cat?.images)
-        .map(effect => effect.flags.cat.images)
-        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
-    const original = actor.flags.cat?.originalImages;
-    const tokens = actorUtils.getTokens(actor);
-    if (!images) {
-        if (!original) return;
-        await documentUtils.update(actor, {img: original.avatar, 'prototypeToken.texture.src': original.token, 'flags.cat.-=originalImages': null});
-        for (const token of tokens) await documentUtils.update(token, {'texture.src': original.token});
-        return;
-    }
-    if (!original) await documentUtils.update(actor, {'flags.cat.originalImages': {avatar: actor.img, token: actor.prototypeToken.texture.src}});
-    const updates = {};
-    if (images.avatar) updates.img = images.avatar;
-    if (images.token) updates['prototypeToken.texture.src'] = images.token;
-    if (!genericUtils.isEmpty(updates)) await documentUtils.update(actor, updates);
-    if (images.token) for (const token of tokens) await documentUtils.update(token, {'texture.src': images.token});
-}
 async function specialDurationTurn(token, pass, {round, turn} = {}) {
     const effects = actorUtils.getEffects(token.actor, {includeItemEffects: true}).filter(i => i.flags.cat?.specialDuration?.includes(pass) && !(i.start?.round === round && i.start?.turn === turn));
     if (!effects.length) return;
@@ -333,7 +314,6 @@ export default {
     disableConditionStatuses,
     specialDurationToolCheck,
     specialDurationHitPoints,
-    updateImages,
     specialDurationTurn,
     specialDurationMove,
     specialDurationZeroSpeed,

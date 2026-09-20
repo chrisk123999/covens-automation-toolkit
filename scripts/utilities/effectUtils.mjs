@@ -18,7 +18,7 @@ function getCastData(effect) {
  * @param {CatEffectData} [options.catData] Applied to every effect in the batch. See {@link CatEffectData}
  * @returns {Promise<ActiveEffect[]|undefined>}
  */
-async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities, favoriteActivities, parentEntity, avatarImg, tokenImg, imgPriority} = {}) {
+async function createEffects(document, effectDatas, {forceGM = false, macros, effectOptions, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, vae, unhideActivities, favoriteActivities, parentEntity} = {}) {
     const data = effectDatas.map(e => {
         const targetIdentifier = e.flags?.cat?.identifier ?? e.name?.slugify();
         let thisMacros = [];
@@ -29,7 +29,7 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
                 thisMacros.push({type: macroGroup.type, macros: applicableMacros});
             });
         }
-        return dataUtils.buildEffectData(e, {macros: thisMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities, favoriteActivities, parentEntity, avatarImg, tokenImg, imgPriority});
+        return dataUtils.buildEffectData(e, {macros: thisMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities, favoriteActivities, parentEntity});
     });
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
