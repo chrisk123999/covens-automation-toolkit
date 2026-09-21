@@ -20,17 +20,17 @@ function getSummons(actor) {
 function getSummonData(actor) {
     return constants.summons.getSummonData(actor);
 }
-function getSummonBySource(document) {
+function getSummonsBySource(document) {
     return constants.summons.getSummonsBySource(document);
 }
 function placeSummons(summons, range, {token} = {}) {
     return constants.summons.placeSummons(summons, range, {token});
 }
 async function placeAllSourceSummons(document, range, {token} = {}) {
-    return await placeSummons(getSummonBySource(document), range, {token});
+    return await placeSummons(getSummonsBySource(document), range, {token});
 }
 async function recallAllSourceSummons(document) {
-    return await Promise.all(getSummonBySource(document).map(async summon => summon.recall()));
+    return await Promise.all(getSummonsBySource(document).map(async summon => summon.recall()));
 }
 function getSummonsByIdentifier(identifier, {actor} = {}) {
     return constants.summons.getSummonsByIdentifier(identifier, {actor});
@@ -43,7 +43,7 @@ export default {
     getSummons,
     getSummonData,
     deleteSummon,
-    getSummonBySource,
+    getSummonsBySource,
     placeSummons,
     placeAllSourceSummons,
     recallAllSourceSummons,
