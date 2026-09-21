@@ -1,7 +1,6 @@
 import PhasedDialogApp from '../applications/phased-dialog.mjs';
-import manualRolls from '../handlers/manualRolls.mjs';
 import {constants, D20Bonus, DamageBonus, Events} from '../lib/_module.mjs';
-import {dialogUtils, workflowUtils} from '../utilities/_module.mjs';
+import {dialogUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
 
 const phaseLabels = {
     preRoll: 'CAT.OptionalBonus.Phase.PreRoll',
@@ -11,7 +10,7 @@ const phaseLabels = {
 
 async function resolveBonusRolls(bonuses, actor, rollClass) {
     const label = bonuses.map(bonus => bonus.name).join(', ');
-    return await manualRolls.resolveManualRolls(bonuses.map(bonus => bonus.roll), actor, label, {rollClass});
+    return await rollUtils.resolveManualRolls(bonuses.map(bonus => bonus.roll), actor, label, {rollClass});
 }
 
 class BonusSession {

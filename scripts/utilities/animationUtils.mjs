@@ -2,13 +2,36 @@ import {constants, ColorMatrix} from '../lib/_module.mjs';
 import {genericUtils} from './_module.mjs';
 const minSequencerVersion = '3.6.0';
 let shownSequencerWarning = false;
+/**
+ * Look up a registered animation, treating 'none' as unset.
+ * @param {object} reference
+ * @param {string} reference.source
+ * @param {string} reference.identifier
+ * @returns {object|undefined}
+ */
 function getAnimation({source, identifier}) {
     if (!source || !identifier || source === 'none' || identifier === 'none') return;
     return constants.animations.getAnimation(source, identifier);
 }
+/**
+ * Preload animation files for all clients.
+ * @param {string[]} animations
+ * @param {object} [options]
+ * @param {boolean} [options.showProgressBar]
+ * @returns {Promise<boolean>}
+ */
 async function preloadAnimations(animations, {showProgressBar} = {}) {
     return await Sequencer.Preloader.preloadForClients(animations, showProgressBar);
 }
+/**
+ * Play a ranged attack effect stretched from one token to another.
+ * @param {foundry.documents.TokenDocument} sourceToken
+ * @param {foundry.documents.TokenDocument} targetToken
+ * @param {string} animation Sequencer database path or file path.
+ * @param {object} [options]
+ * @param {string} [options.sound]
+ * @param {boolean} [options.missed] Play the miss variant.
+ */
 function simpleAttack(sourceToken, targetToken, animation, {sound, missed = false} = {}) {
     /* eslint-disable indent */
     new Sequence()
@@ -23,6 +46,17 @@ function simpleAttack(sourceToken, targetToken, animation, {sound, missed = fals
         .play();
     /* eslint-enable indent */
 }
+/**
+ * Build animation config colour options, gating non-free colours behind requirements.
+ * @param {Record<string, string>} colorMap Colour keys mapped to their labels.
+ * @param {object} [options]
+ * @param {string[]} [options.freeColors] Colours offered without requirements.
+ * @param {string} [options.labelPrefix]
+ * @param {boolean} [options.random] Offer a random colour option.
+ * @param {boolean} [options.cycle] Offer a cycling colour option.
+ * @param {string[]} [options.requirements] Modules required by the gated colours.
+ * @returns {Record<string, object>}
+ */
 function buildColorOptions(colorMap, {freeColors = [], labelPrefix = '', random, cycle, requirements = []} = {}) {
     const options = {};
     for (const [key, label] of Object.entries(colorMap)) {
@@ -33,6 +67,10 @@ function buildColorOptions(colorMap, {freeColors = [], labelPrefix = '', random,
     if (cycle) options.cycle = {label: labelPrefix + 'Cycle', requirements};
     return options;
 }
+/**
+ * Credit details for Eskie's animation assets.
+ * @returns {{name: string, discord: string, patreon: string}}
+ */
 function getEskieCredits() {
     return {
         name: 'Eskie',
@@ -40,34 +78,51 @@ function getEskieCredits() {
         patreon: 'https://www.patreon.com/c/EskieEffects'
     };
 }
+/**
+ * Whether Sequencer is active and new enough, warning once if it is outdated.
+ * @returns {boolean}
+ */
 function sequencerCheck() {
     let sequencer = game.modules.get('sequencer');
     if (!sequencer?.active) return false;
     if (genericUtils.isNewerVersion(minSequencerVersion, sequencer.version)) {
         if (!shownSequencerWarning) {
             shownSequencerWarning = true;
-            let sequencerAlert = genericUtils.format('CAT.Error.OutdatedSequencer', {minSequencerVersion});
-            genericUtils.notify(sequencerAlert, 'warn');
+            genericUtils.notify('CAT.Error.OutdatedSequencer', {type: 'warn', format: {minSequencerVersion}});
         }
         return false;
     }
     return true;
 }
+/**
+ * Which JB2A module is active, warning if both are.
+ * @returns {'patreon'|'free'|false}
+ */
 function jb2aCheck() {
     let patreon = game.modules.get('jb2a_patreon')?.active;
     let free = game.modules.get('JB2A_DnD5e')?.active;
     if (patreon && free) {
-        genericUtils.notify('CAT.Troubleshooter.BothJB2A', 'warn', {localize: true});
+        genericUtils.notify('CAT.Troubleshooter.BothJB2A', {type: 'warn'});
         return 'patreon';
     }
     if (patreon) return 'patreon';
     if (free) return 'free';
     return false;
 }
+/**
+ * Whether Animated Spell Effects: Cartoon is active.
+ * @returns {boolean}
+ */
 function aseCheck() {
     let isActive = game.modules.get('animated-spell-effects-cartoon')?.active;
     return isActive;
 }
+/**
+ * Colour matrix filter values recolouring an animation, or the default matrix if either key is unknown.
+ * @param {string} animation A key of ColorMatrix.animations.
+ * @param {string} color A key of ColorMatrix.colors.
+ * @returns {object}
+ */
 function colorMatrix(animation, color) {
     if (!Object.keys(ColorMatrix.animations).includes(animation)) return ColorMatrix.defaultMatrix;
     if (!Object.keys(ColorMatrix.colors).includes(color)) return ColorMatrix.defaultMatrix;

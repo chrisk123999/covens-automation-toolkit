@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {uiUtils} from '../utilities/_module.mjs';
+import {genericUtils, uiUtils} from '../utilities/_module.mjs';
 import {macroautocomplete} from '../integration/_modules.mjs';
 
 const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
@@ -214,7 +214,7 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
     static #confirm() {
         const macro = this.#macro;
         if (!macro.name?.trim() || !macro.event || !macro.pass) {
-            ui.notifications.error(_loc('CAT.MEDKIT.EmbeddedMacros.Invalid', {name: macro.name?.trim() || '?'}));
+            genericUtils.notify('CAT.MEDKIT.EmbeddedMacros.Invalid', {type: 'error', format: {name: macro.name?.trim() || '?'}});
             return;
         }
         const {required, optional} = getPassFields(this.#documentType, macro.event, macro.pass);

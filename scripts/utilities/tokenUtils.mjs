@@ -109,9 +109,12 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
  * @returns {Promise<void>}
  */
 async function moveToken(token, waypoints, options = {}) {
-    if (token.object && options.constrainOptions?.ignoreWalls !== true) {
+    const constrainOptions = {...options.constrainOptions};
+    constrainOptions.ignoreTokens ??= waypoints.every(({action = token.movementAction}) => action === 'catForce' || CONFIG.Token.movement.actions[action]?.teleport === true);
+    options = {...options, constrainOptions};
+    if (token.object && constrainOptions.ignoreWalls !== true) {
         const origin = {x: token.x, y: token.y, elevation: token.elevation};
-        const [path] = token.object.constrainMovementPath([origin, ...waypoints], {...options.constrainOptions, preview: false});
+        const [path] = token.object.constrainMovementPath([origin, ...waypoints], {...constrainOptions, preview: false});
         if (!path.some(waypoint => !waypoint.intermediate && (waypoint.x !== token.x || waypoint.y !== token.y))) return;
     }
     const hasPermission = queryUtils.hasPermission(token, game.user.id);

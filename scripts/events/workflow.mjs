@@ -38,8 +38,8 @@ async function damageRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.damageRoll, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.damageRollBonuses, workflow).run();
     await optionalBonus.damage(workflow);
-    await new Events.WorkflowEvent(constants.workflowPasses.damageRollComplete, workflow).run();
     await manualRolls.manualDamageRolls(workflow);
+    await new Events.WorkflowEvent(constants.workflowPasses.damageRollComplete, workflow).run();
     if (game.settings.get('cat', 'diceSoNice') && game.modules.get('dice-so-nice')?.active) await diceSoNice.damageRollComplete(workflow);
 }
 async function utilityRollComplete(workflow) {

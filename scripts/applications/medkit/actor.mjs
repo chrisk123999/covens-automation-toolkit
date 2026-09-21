@@ -1,4 +1,5 @@
 import MedkitApp from './base.mjs';
+import {genericUtils} from '../../utilities/_module.mjs';
 const {fields} = foundry.data;
 
 export default class ActorMedkit extends MedkitApp {
@@ -188,7 +189,7 @@ export default class ActorMedkit extends MedkitApp {
         const flags = this._getFlags();
         const identifiers = (flags[flagKey] ??= {});
         if (identifiers[id]) {
-            ui.notifications.error(_loc('CAT.MEDKIT.FeatureRollMode.Duplicate', {identifier: id}));
+            genericUtils.notify('CAT.MEDKIT.FeatureRollMode.Duplicate', {type: 'error', format: {identifier: id}});
             return;
         }
         identifiers[id] = true;

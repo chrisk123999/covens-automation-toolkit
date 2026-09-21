@@ -1,5 +1,23 @@
 import {CatCompendiumBrowser} from '../applications/_module.mjs';
 import {genericUtils, itemUtils} from './_module.mjs';
+/**
+ * Prompt the compendium browser for a selection of documents.
+ * @param {string} tab The browser tab to open, e.g. 'spells' or 'monsters'.
+ * @param {object} [options]
+ * @param {string[]} [options.packIds] Restrict the browser to these compendiums.
+ * @param {Function} [options.filterPredicate]
+ * @param {object[]} [options.filters] Additional filters, see dnd5e.Filter.
+ * @param {object} [options.lockedFilters] Filters the user cannot change.
+ * @param {string[]} [options.exceptionIdentifiers] Identifiers offered despite failing other filters.
+ * @param {string[]} [options.exceptionUuids] Uuids offered despite failing other filters.
+ * @param {number} [options.minAmount]
+ * @param {number} [options.maxAmount]
+ * @param {string} [options.title]
+ * @param {string} [options.hint]
+ * @param {string} [options.icon]
+ * @param {object} [options.position]
+ * @returns {Promise<foundry.abstract.Document[]|undefined>}
+ */
 async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filters, lockedFilters, exceptionIdentifiers, exceptionUuids, minAmount = 1, maxAmount, title, hint, icon, position} = {}) {
     const options = {
         tab,
@@ -22,6 +40,18 @@ async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filte
     if (!results?.size) return;
     return (await Promise.all(Array.from(results).map(uuid => fromUuid(uuid)))).filter(Boolean);
 }
+/**
+ * Fetch a compendium document by its system or CAT identifier.
+ * @param {string} packId
+ * @param {string} identifier
+ * @param {object} [options]
+ * @param {boolean} [options.object] Return an object rather than a document.
+ * @param {string} [options.description] Set the description.
+ * @param {string} [options.translate] A localization key for the document and effect names.
+ * @param {number} [options.flatAttack] Set a flat attack bonus.
+ * @param {number} [options.flatDC] Set a flat save DC.
+ * @returns {Promise<foundry.abstract.Document|object|undefined>}
+ */
 async function getDocumentByIdentifier(packId, identifier, {object = false, description, translate, flatAttack, flatDC} = {}) {
     const pack = game.packs.get(packId);
     if (!pack) return;
@@ -60,6 +90,12 @@ async function getDocumentByIdentifier(packId, identifier, {object = false, desc
     }
     return await fromUuid(found.uuid);
 }
+/**
+ * Fetch a compendium document by exact name.
+ * @param {string} packId
+ * @param {string} name
+ * @returns {Promise<foundry.abstract.Document|undefined>}
+ */
 async function getDocumentByName(packId, name) {
     const pack = game.packs.get(packId);
     if (!pack) return;
@@ -68,9 +104,20 @@ async function getDocumentByName(packId, name) {
     if (!found) return;
     return await fromUuid(found.uuid);
 }
+/**
+ * Build a compendium browser filter object from a list of keys.
+ * @param {string[]} list
+ * @param {boolean} [include] False to exclude the listed keys instead.
+ * @returns {Record<string, number>}
+ */
 function makeBrowserFilter(list, include = true) {
     return list.reduce((obj, key) => (obj[key] = include ? 1 : -1, obj), {});
 }
+/**
+ * Pack ids for an enabled compendium setting, in priority order.
+ * @param {string} settingKey A CAT setting holding compendium configuration, e.g. 'spellCompendiums'.
+ * @returns {string[]}
+ */
 function getEnabledCompendiumIds(settingKey) {
     return Object.entries(game.settings.get('cat', settingKey) ?? {})
         .filter(s => s[1].enabled)
@@ -155,8 +202,35 @@ async function selectActor({amount = 1, minCR, maxCR, creatureTypes, excludeMove
     return result;
 }
 /**
+ * Find the compendium uuid of a document by its identifier, without building a copy of it.
+ * @param {string} packId
+ * @param {string} identifier
+ * @returns {Promise<string|undefined>}
+ */
+async function getDocumentUuidByIdentifier(packId, identifier) {
+    const pack = game.packs.get(packId);
+    if (!pack) return;
+    const index = await pack.getIndex({fields: ['system.identifier', 'flags.cat.identifier']});
+    return index.find(i => i.system.identifier === identifier || i.flags.cat?.identifier === identifier)?.uuid;
+}
+/**
+ * Find the compendium uuid of a spell by its identifier, searching the configured spell compendiums in order.
+ * @param {string} identifier
+ * @param {object} [options]
+ * @param {string[]} [options.packIds] Search these compendiums instead of the configured ones.
+ * @returns {Promise<string|undefined>}
+ */
+async function getSpellUuid(identifier, {packIds} = {}) {
+    if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
+    if (!packIds.length) return genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
+    for (const id of packIds) {
+        const uuid = await getDocumentUuidByIdentifier(id, identifier);
+        if (uuid) return uuid;
+    }
+}
+/**
  * Fetch a compendium spell by identifier.
- * @param {string} identifier 
+ * @param {string} identifier
  * @param {object} [options]
  * @param {string[]} [options.packIds] Pack ids to search instead of the spell compendiums configured in settings.
  * @param {boolean} [options.object] Return an object rather than a document.
@@ -177,6 +251,8 @@ async function getSpell(identifier, {packIds, object = false, description, trans
 export default {
     selectFromCompendiumBrowser,
     getDocumentByIdentifier,
+    getDocumentUuidByIdentifier,
+    getSpellUuid,
     getDocumentByName,
     selectSpellFromLists,
     selectActor,

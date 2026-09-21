@@ -21,7 +21,7 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
         this.#titleName = titleName ?? '';
         this.#attribute = constants.alternateAttributes[type];
         this.#entry = entry ?? this.#attribute?.validate().cleaned;
-        if (!this.#attribute) ui.notifications.error(_loc('CAT.MEDKIT.DocProps.NotDefined', {type}));
+        if (!this.#attribute) genericUtils.notify('CAT.MEDKIT.DocProps.NotDefined', {type: 'error', format: {type}});
     }
 
     static DEFAULT_OPTIONS = {
@@ -126,7 +126,7 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
             else parseArray(field, path, splitCsv);
         }
         const entry = genericUtils.expandObject(formData.object);
-        if (!entry.value?.length) return ui.notifications.error(_loc('CAT.MEDKIT.DocProps.InvalidValue'));
+        if (!entry.value?.length) return genericUtils.notify('CAT.MEDKIT.DocProps.InvalidValue', {type: 'error'});
         if (this.#onSubmit?.(entry) !== false) this.close();
     }
 

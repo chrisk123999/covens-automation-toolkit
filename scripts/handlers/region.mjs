@@ -23,6 +23,8 @@ function placed(region) {
     if (embeddedMacros) sourceUpdates.flags.cat.embeddedMacros = embeddedMacros;
     const visibility = activity.flags.cat?.placed?.region?.visibility;
     if (visibility) sourceUpdates.flags.cat.visibility = visibility;
+    const regionVisibility = activity.flags.cat?.placed?.region?.regionVisibility;
+    if (regionVisibility !== undefined) sourceUpdates.visibility = regionVisibility;
     const effects = activity.flags.cat?.placed?.region?.effects;
     if (effects) sourceUpdates.flags.cat.effects = effects;
     const activities = activity.flags.cat?.placed?.region?.activities;

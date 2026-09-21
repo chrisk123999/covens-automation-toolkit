@@ -2,7 +2,7 @@ import {documentUtils, effectUtils, itemUtils} from './_module.mjs';
 
 /**
  * Get the save DC of the activity, if a save, otherwise infer a save DC from the activity's ability, default 10.
- * @param {Activity} activity 
+ * @param {Activity} activity
  * @returns {number}
  */
 function getSaveDC(activity) {
@@ -12,7 +12,7 @@ function getSaveDC(activity) {
 
 /**
  * Get save DC, cast & base levels flagged on the activity (if present, else -1 for the latter values).
- * @param {Activity} activity 
+ * @param {Activity} activity
  * @returns {{castLevel: number; baseLevel: number; saveDC: number}}
  */
 function getSavedCastData(activity) {
@@ -26,7 +26,7 @@ function getSavedCastData(activity) {
 
 /**
  * Get a set of status effect IDs which this activity may convey via its assigned Active Effects.
- * @param {Activity} activity 
+ * @param {Activity} activity
  * @returns {Set<string>}
  */
 function getConditions(activity) {
@@ -50,7 +50,7 @@ function getConditions(activity) {
 /**
  * Get a new object of activity data with the existing activity's damage data partially replaced.
  * @param {Activity} activity               The activity to use as a base
- * @param {string|DamageData} formulaOrObj  What new damage to use 
+ * @param {string|DamageData} formulaOrObj  What new damage to use
  * @param {object} [options]                Additional Options
  * @param {string[]} [options.types]        What damage types to use (will use existing if not provided)
  * @param {number} [specificIndex]          Which index of damage parts to replace (defaults to 0)
@@ -115,9 +115,37 @@ function getDamageModifiedActivityData(activity, formulaOrObj, {types = [], spec
 }
 
 /**
+ * Get a new object of activity data with the existing activity's consumption cost replaced.
+ * @param {Activity} activity              The activity to use as a base
+ * @param {number|string} value            The new cost
+ * @param {object} [options]               Additional Options
+ * @param {number} [options.specificIndex] Which index of consumption targets to replace (defaults to 0)
+ * @returns {object|undefined}             Undefined when the activity has no such consumption target
+ */
+function getConsumptionModifiedActivityData(activity, value, {specificIndex = 0} = {}) {
+    const activityData = activity.toObject();
+    if (!activityData.consumption?.targets?.[specificIndex]) return;
+    activityData.consumption.targets[specificIndex].value = String(value);
+    return activityData;
+}
+
+/**
+ * Get a new object of activity data with the existing activity's save DC replaced by a flat value.
+ * @param {Activity} activity  The activity to use as a base
+ * @param {number|string} dc   The new save DC
+ * @returns {object|undefined} Undefined when the activity has no save
+ */
+function getSaveDCModifiedActivityData(activity, dc) {
+    const activityData = activity.toObject();
+    if (!activityData.save) return;
+    activityData.save.dc = {calculation: '', formula: String(dc)};
+    return activityData;
+}
+
+/**
  * Create an in-memory activity based on activity data & an item. Does not modify the item itself.
- * @param {object} activityData 
- * @param {Item} item 
+ * @param {object} activityData
+ * @param {Item} item
  * @returns {Activity}
  */
 function syntheticActivity(activityData, item) {
@@ -129,7 +157,7 @@ function syntheticActivity(activityData, item) {
 
 /**
  * Get the activity's duration data.
- * @param {Activity} activity 
+ * @param {Activity} activity
  * @returns {object}
  */
 function getEffectDuration(activity) {
@@ -138,7 +166,7 @@ function getEffectDuration(activity) {
 
 /**
  * Get the activity's duration in seconds.
- * @param {Activity} activity 
+ * @param {Activity} activity
  * @returns {number|undefined}
  */
 function getDuration(activity) {
@@ -147,7 +175,7 @@ function getDuration(activity) {
 
 /**
  * Get a set of the activity's "item use" consumption target IDs
- * @param {Activity} activity 
+ * @param {Activity} activity
  * @returns {Set<string>}
  */
 function getDependencies(activity) {
@@ -159,16 +187,26 @@ function getDependencies(activity) {
     return dependencies;
 }
 
+/**
+ * Whether the activity still uses its type's default icon.
+ * @param {dnd5e.documents.activity.Activity} activity
+ * @returns {boolean}
+ */
 function hasDefaultIcon(activity) {
     return activity.img === activity.constructor.metadata.img;
 }
 
+/**
+ * Whether the activity still uses its type's default name.
+ * @param {dnd5e.documents.activity.Activity} activity
+ * @returns {boolean}
+ */
 function hasDefaultName(activity) {
     return activity.name === _loc(activity.constructor.metadata.title);
 }
 
 /**
- * @param {dnd5e.dataModels.activity.BaseActivityData} activity 
+ * @param {dnd5e.dataModels.activity.BaseActivityData} activity
  * @param {object} [options]
  * @param {'oneHanded'|'twoHanded'|'offhand'|'ranged'|'thrown'|'thrown-offhand'} [options.attackMode] A key from CONFIG.DND5E.attackModes.
  * @param {number} [options.scaling]
@@ -192,11 +230,13 @@ function getDefaultDamageRolls(activity, {attackMode, scaling = 0, simplify = tr
 }
 
 /**
- * @param {dnd5e.dataModels.activity.BaseActivityData} activity 
+ * @param {dnd5e.dataModels.activity.BaseActivityData} activity
  * @param {foundry.documents.Item} spell
  */
 async function correctSpellLink(activity, spell) {
-    return await documentUtils.update(activity, {'spell.uuid': spell.uuid});
+    const uuid = typeof spell === 'string' ? spell : spell?.uuid;
+    if (!uuid || activity.spell.uuid === uuid) return;
+    return await documentUtils.update(activity, {'spell.uuid': uuid});
 }
 
 export default {
@@ -204,6 +244,8 @@ export default {
     getSavedCastData,
     getConditions,
     getDamageModifiedActivityData,
+    getConsumptionModifiedActivityData,
+    getSaveDCModifiedActivityData,
     syntheticActivity,
     getEffectDuration,
     getDuration,

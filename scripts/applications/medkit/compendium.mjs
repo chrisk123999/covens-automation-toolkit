@@ -1,4 +1,5 @@
 import MedkitApp from './base.mjs';
+import {genericUtils} from '../../utilities/_module.mjs';
 
 export default class CompendiumMedkit extends MedkitApp {
     static DEFAULT_OPTIONS = {
@@ -29,6 +30,6 @@ export default class CompendiumMedkit extends MedkitApp {
     /** @this {CompendiumMedkit} */
     static async #massApply() {
         // TODO: needs a pack-aware updater.
-        ui.notifications.warn(_loc('CAT.MEDKIT.MassApply.CompendiumPending'));
+        genericUtils.notify('CAT.MEDKIT.MassApply.CompendiumPending', {type: 'warn'});
     }
 }
