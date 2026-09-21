@@ -32,7 +32,7 @@ async function placeAllSourceSummons(document, range, {token} = {}) {
 async function recallAllSourceSummons(document) {
     return await Promise.all(getSummonBySource(document).map(async summon => summon.recall()));
 }
-async function getSummonsByIdentifier(identifier, {actor} = {}) {
+function getSummonsByIdentifier(identifier, {actor} = {}) {
     return constants.summons.getSummonsByIdentifier(identifier, {actor});
 }
 export default {
