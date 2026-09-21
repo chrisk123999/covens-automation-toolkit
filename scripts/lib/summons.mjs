@@ -26,13 +26,14 @@ export class SummonsManager {
             const created = summonData.created;
             const duration = summonData.duration;
             const animation = summonData.animation;
-            const sourceDocument = summonData.sourceDocument ? await fromUuid(summonData.sourceDocument) : undefined;;
+            const sourceDocument = summonData.sourceDocument ? await fromUuid(summonData.sourceDocument) : undefined;
             const parent = summonData.parent ? await fromUuid(summonData.parent) : undefined;
             const sounds = summonData.sounds;
             const initiative = summonData.initiative;
             const dismissAtZero = summonData.dismissAtZero;
+            const identifier = summonData.identifier;
             if (!owner || !sourceActor || created === undefined) return;
-            return new Summon(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero});
+            return new Summon(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero, identifier});
         }))).filter(Boolean);
         resolvedSummons.forEach(summon => this.#summons.set(summon.actor.id, summon));
     }
@@ -111,7 +112,8 @@ export class SummonsManager {
             sourceDocument: sourceDocument?.uuid,
             sounds,
             initiative: summon.initiative,
-            dismissAtZero: summon.dismissAtZero
+            dismissAtZero: summon.dismissAtZero,
+            identifier: summon.identifier
         });
         return await actorUtils.createActor(actorData);
     }
@@ -326,6 +328,10 @@ export class SummonsManager {
     getSummonsBySource(document) {
         return this.summons.filter(summon => summon.sourceDocument?.uuid === document.uuid);
     }
+    getSummonsByIdentifier(identifier, {actor} = {}) {
+        if (actor) return this.getSummons(actor).filter(summon => summon.identifier === identifier);
+        return this.summons.filter(summon => summon.identifier === identifier);
+    }
     async placeSummons(summons, range, {token} = {}) {
         if (!summons.length) return;
         const spawnedTokens = [];
@@ -343,7 +349,7 @@ export class SummonsManager {
     }
 }
 export class Summon {
-    constructor(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero} = {}) {
+    constructor(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero, identifier} = {}) {
         this.sourceActorUuid = sourceActor.uuid;
         this.ownerUuid = owner.uuid;
         this.actor = actor;
@@ -356,6 +362,7 @@ export class Summon {
         this.sounds = sounds ?? {};
         this.initiative = initiative;
         this.dismissAtZero = dismissAtZero ?? false;
+        this.identifier = identifier ?? documentUtils.getIdentifier(sourceActor);
     }
     get token() {
         return actorUtils.getFirstToken(this.actor);
