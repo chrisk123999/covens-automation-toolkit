@@ -64,7 +64,6 @@
 - Fixed a crash with saving throws on MidiQOL overtimes. (Thanks Skyl3lazer)
 - Fixed class scale duplication when an automation is applied.
 - Alternate Attribute for damage roll modifiers will work without also using an alternate damage formula.
-
 - Manual damage rolls resolve before the `damageRollComplete` pass.
 - Outdated Sequencer and duplicate JB2A notifications render as warnings.
 - The Compendiums menu lists packs from packages that are also automation sources.
