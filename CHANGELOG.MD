@@ -21,7 +21,7 @@
   - Feature Vulnerability: `flags.cat.FV.identifier`
   - Feature Immunity: `flags.cat.FI.identifier`
   - Feature Failure: `flags.cat.FF.identifier`
-  - Use an activity identifier, e.g. turn resistance: `flags.cat.FR.turn-undead | override | wis`.
+  - Use an activity identifier, e.g. turn resistance: `flags.cat.FR.turn-undead | custom | wis`.
   - All of the above are now shown in MidiQOL's roll attributions on chat cards.
 - Item CatKit: added Spell Range Bonus document property.
 - Effect CatKit: added disable conditions and a `zeroHP` special duration.
