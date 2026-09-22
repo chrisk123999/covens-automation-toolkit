@@ -234,9 +234,7 @@ function getDefaultDamageRolls(activity, {attackMode, scaling = 0, simplify = tr
  * @param {foundry.documents.Item} spell
  */
 async function correctSpellLink(activity, spell) {
-    const uuid = typeof spell === 'string' ? spell : spell?.uuid;
-    if (!uuid || activity.spell.uuid === uuid) return;
-    return await documentUtils.update(activity, {'spell.uuid': uuid});
+    return await documentUtils.update(activity, {'spell.uuid': spell.uuid});
 }
 
 export default {

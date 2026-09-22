@@ -942,7 +942,13 @@
     "Movement": {
       "Forced": "Forced Movement"
     },
+    "Config": {
+      "AvatarImg": "Portrait Image",
+      "ImgPriority": "Image Priority",
+      "TokenImg": "Token Image"
+    },
     "Error": {
+      "MissingCostActivity": "This feature is missing its cost activity!",
       "NoMonsterCompendiums": "You do not have any monster compendiums enabled in settings!",
       "NoSpellCompendiums": "You do not have any spell compendiums enabled in settings!",
       "OutdatedSequencer": "Sequencer is out of date! In order to use animations, CAT requires a minimum of version {minSequencerVersion}"

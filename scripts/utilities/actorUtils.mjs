@@ -1,5 +1,5 @@
 /** @import Actor5e from '../../dnd5e/module/documents/actor/actor.mjs'; */
-import {dataUtils, documentUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
+import {documentUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
 
 /**
  * Get all applicable effects on an actor, optionally including item-applied enchantments (not by default).
@@ -195,14 +195,28 @@ function getEffectByStatusID(actor, id) {
 /**
  * Get an item (or all items) on this actor which match the provided identifier.
  * @param {Actor5e} actor
- * @param {string|string[]} identifier A single identifier, or a list of aliases for the same thing.
+ * @param {string} identifier
  * @param {object} [options]
  * @param {string} [options.type] The item type to find. Possible values are the keys of CONFIG.Item.typeLabels.
  * @param {boolean} [options.multiple]  Whether to return all items matching the identifier (default false)
  * @returns {Item|Item[]|undefined}
  */
 function getItemByIdentifier(actor, identifier, {multiple = false, type} = {}) {
-    const identifiers = dataUtils.toArray(identifier);
+    const predicate = item => documentUtils.getIdentifier(item) === identifier;
+    let collection = actor.items;
+    if (type && actor.itemTypes[type]) collection = actor.itemTypes[type];
+    return multiple ? collection.filter(predicate) : collection.find(predicate);
+}
+/**
+ * Get an item (or all items) on this actor which match any of the provided identifiers.
+ * @param {Actor5e} actor
+ * @param {string[]} identifiers A list of aliases for the same thing.
+ * @param {object} [options]
+ * @param {string} [options.type] The item type to find. Possible values are the keys of CONFIG.Item.typeLabels.
+ * @param {boolean} [options.multiple]  Whether to return all items matching the identifiers (default false)
+ * @returns {Item|Item[]|undefined}
+ */
+function getItemByIdentifiers(actor, identifiers, {multiple = false, type} = {}) {
     const predicate = item => identifiers.includes(documentUtils.getIdentifier(item));
     let collection = actor.items;
     if (type && actor.itemTypes[type]) collection = actor.itemTypes[type];
@@ -451,6 +465,7 @@ export default {
     getEffectByStatusID,
     applyConditions,
     getItemByIdentifier,
+    getItemByIdentifiers,
     getEquivalentSpellSlotName,
     getSpellSlotKey,
     spendSpellSlots,

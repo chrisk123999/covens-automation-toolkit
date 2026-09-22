@@ -86,6 +86,18 @@ async function syntheticActivityDataRoll(activityData, item, targets, {config = 
     const activity = activityUtils.syntheticActivity(activityData, item);
     return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot});
 }
+/**
+ * Spend an activity's consumption at a scaled amount without triggering its parent.
+ * @param {Item5e} item
+ * @param {string} activityIdentifier The hidden cost activity.
+ * @param {number} amount
+ */
+async function spendScaledCost(item, activityIdentifier, amount) {
+    const activity = itemUtils.getActivityByIdentifier(item, activityIdentifier);
+    const activityData = activity ? activityUtils.getConsumptionModifiedActivityData(activity, amount) : undefined;
+    if (!activityData) return genericUtils.notify('CAT.Error.MissingCostActivity', {type: 'warn'});
+    return await syntheticActivityDataRoll(activityData, item, []);
+}
 async function completeItemUse(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = false, autoDamage} = {}) {
     const defaultConfig = {
         consumeUsage,
@@ -334,6 +346,7 @@ export default {
     completeActivityUse,
     syntheticActivityRoll,
     syntheticActivityDataRoll,
+    spendScaledCost,
     completeItemUse,
     syntheticItemRoll,
     syntheticItemDataRoll,
