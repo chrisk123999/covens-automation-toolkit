@@ -6,5 +6,10 @@
                 {{> "modules/cat/templates/medkit/shared/option-field.hbs" option}}
             {{/each}}
         </fieldset>
+    {{else}}
+        <fieldset data-section="config-none">
+            <legend>{{localize "CAT.MEDKIT.TABS.Configuration"}}</legend>
+            <p class="hint">{{localize "CAT.MEDKIT.Configuration.None"}}</p>
+        </fieldset>
     {{/each}}
 </section>

@@ -12,9 +12,12 @@ const CONFIG = Object.freeze({
     id: 'ddb-importer',
     skipStartup: true
 });
+function getSetting(key) {
+    if (!game.modules.get(CONFIG.id)?.active || !game.settings.settings.has(CONFIG.id + '.' + key)) return;
+    return game.settings.get(CONFIG.id, key);
+}
 function getCompendiumIds() {
-    if (!game.modules.get('ddb-importer')?.active) return [];
-    return COMPENDIUM_SETTINGS.map(setting => game.settings.get('ddb-importer', setting)).filter(Boolean);
+    return COMPENDIUM_SETTINGS.map(getSetting).filter(Boolean);
 }
 async function registerAutomations(module) {
     constants.automations.registerSourceName(CONFIG.id, module.title);
@@ -41,10 +44,7 @@ async function registerAutomations(module) {
     Logging.groupEnd();
 }
 async function registerScales(module) {
-    const settings = [
-        'entity-class-compendium'
-    ];
-    const packs = settings.map(setting => game.settings.get(CONFIG.id, setting));
+    const packs = ['entity-class-compendium'].map(getSetting).filter(Boolean);
     Logging.group('D&D Beyond Importer Scales');
     await Promise.all(packs.map(async id => {
         const pack = game.packs.get(id);

@@ -4,6 +4,13 @@
         {{formGroup fields.hidden name="flags.cat.hidden" value=hidden hint=(localize "CAT.MEDKIT.Activity.Hidden.Hint")}}
     </fieldset>
 
+    {{#if showSpellIdentifier}}
+        <fieldset data-section="spell-identifier">
+            <legend>{{localize "CAT.MEDKIT.Activity.SpellIdentifier.Label"}}</legend>
+            {{formGroup fields.spellIdentifier name="flags.cat.spellIdentifier" value=spellIdentifier hint=(localize "CAT.MEDKIT.Activity.SpellIdentifier.Hint")}}
+        </fieldset>
+    {{/if}}
+
     {{#if showOtherAbilities}}
         <fieldset data-section="other-abilities">
             <legend>{{localize "CAT.MEDKIT.DocProps.otherAbilities.Label"}}</legend>

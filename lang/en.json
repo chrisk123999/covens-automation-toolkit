@@ -458,7 +458,11 @@
         }
       },
       "Activity": {
-        "Hidden": {
+        "SpellIdentifier": {
+        "Label": "Spell Identifier",
+        "Hint": "The spell this cast activity links to. On a CatKit update the link is swapped to the first match in your Spell compendiums."
+      },
+      "Hidden": {
           "Label": "Hidden Activity",
           "Hint": "Hide this activity from the activity-use selection dialog."
         },

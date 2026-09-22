@@ -56,9 +56,12 @@ export default class ActivityMedkit extends MedkitApp {
         context.fields = {
             hidden: new fields.BooleanField({label: _loc('CAT.MEDKIT.Activity.Hidden.Label')}),
             magicalDarkness: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.MagicalDarkness.Label')}),
-            obscured: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.Obscured.Label')})
+            obscured: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.Obscured.Label')}),
+            spellIdentifier: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.SpellIdentifier.Label')})
         };
         context.hidden = flags.hidden ?? false;
+        context.showSpellIdentifier = (this.document.type ?? this.document.metadata?.type) === 'cast';
+        context.spellIdentifier = flags.spellIdentifier ?? '';
         const placed = flags.placed?.region ?? {};
         context.magicalDarkness = placed.visibility?.magicalDarkness ?? false;
         context.obscured = placed.visibility?.obscured ?? false;

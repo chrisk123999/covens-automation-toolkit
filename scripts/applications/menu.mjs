@@ -136,12 +136,10 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     #buildPackPriority(input) {
         const sources = input.value ?? {};
-        const registered = new Set(Object.keys(constants.automations?.sourceNames ?? {}));
         const packTag = _loc('CAT.Settings.AutomationSources.PackTag');
         const rows = [];
         for (const pack of game.packs) {
             if (pack.metadata.type !== input.packType) continue;
-            if (registered.has(pack.metadata.packageName)) continue;
             if (input.packFilter === 'spells' && !this.#spellPacks.has(pack.metadata.id)) continue;
             if (input.packFilter === 'items' && this.#spellPacks.has(pack.metadata.id)) continue;
             const cfg = sources[pack.metadata.id] ?? {};
@@ -252,7 +250,8 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
         for (const pack of game.packs) {
             if (pack.metadata.type !== 'Item') continue;
             const index = await pack.getIndex({fields: ['type']});
-            if (index.size && index.contents.every(entry => entry.type === 'spell')) this.#spellPacks.add(pack.metadata.id);
+            const spells = index.contents.filter(entry => entry.type === 'spell').length;
+            if (spells * 2 > index.size) this.#spellPacks.add(pack.metadata.id);
         }
     }
 

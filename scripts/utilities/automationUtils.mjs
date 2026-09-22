@@ -148,6 +148,15 @@ function getAppliedOrPreferredAutomation(item) {
         if (match) return match;
     }
 }
+async function relinkCastActivities(documentData) {
+    for (const activity of Object.values(documentData.system?.activities ?? {})) {
+        if (activity.type !== 'cast') continue;
+        const identifier = activity.flags?.cat?.spellIdentifier || (await fromUuid(activity.spell?.uuid))?.identifier;
+        if (!identifier) continue;
+        const uuid = await compendiumUtils.getSpellUuid(identifier);
+        if (uuid) activity.spell.uuid = uuid;
+    }
+}
 async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet} = {}) {
     let automation;
     const identifier = documentUtils.getIdentifier(item);
@@ -193,6 +202,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
             documentData.effects.push(enchantment);
         }
     }
+    await relinkCastActivities(documentData);
     const actor = item.actor;
     await documentUtils.update(item, documentData, {recursive: false, diff: false});
     if (actor) await updateScales(item, {automation});

@@ -202,6 +202,32 @@ async function selectActor({amount = 1, minCR, maxCR, creatureTypes, excludeMove
     return result;
 }
 /**
+ * Find the compendium uuid of a document by its identifier, without loading the document.
+ * @param {string} packId
+ * @param {string} identifier
+ * @returns {Promise<string|undefined>}
+ */
+async function getDocumentUuidByIdentifier(packId, identifier) {
+    const pack = game.packs.get(packId);
+    if (!pack) return;
+    const index = await pack.getIndex({fields: ['system.identifier', 'flags.cat.identifier']});
+    return index.find(i => i.system.identifier === identifier || i.flags.cat?.identifier === identifier)?.uuid;
+}
+/**
+ * Find the compendium uuid of a spell by its identifier, searching the configured spell compendiums in priority order.
+ * @param {string} identifier
+ * @param {object} [options]
+ * @param {string[]} [options.packIds] Search these compendiums instead of the configured ones.
+ * @returns {Promise<string|undefined>}
+ */
+async function getSpellUuid(identifier, {packIds} = {}) {
+    if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
+    for (const id of packIds) {
+        const uuid = await getDocumentUuidByIdentifier(id, identifier);
+        if (uuid) return uuid;
+    }
+}
+/**
  * Fetch a compendium spell by identifier.
  * @param {string} identifier
  * @param {object} [options]
@@ -224,6 +250,8 @@ async function getSpell(identifier, {packIds, object = false, description, trans
 export default {
     selectFromCompendiumBrowser,
     getDocumentByIdentifier,
+    getDocumentUuidByIdentifier,
+    getSpellUuid,
     getDocumentByName,
     selectSpellFromLists,
     selectActor,

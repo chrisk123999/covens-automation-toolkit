@@ -2,18 +2,31 @@
 ## API Update Notes:
 - The automation registry can now differentiate between duplicate identifiers, such as 'channel-divinity' from cleric and paladin. See `itemUtils.getAdvancementSourceKey`.
 - Added utils:
-  - `activityUtils.correctSpellLink`
-  - `actorUtils`: `addFavorites`, `removeFavorites`, `getCR`, `getBestSave`, `getBestSkill`, `getBestTool`
+  - `activityUtils`: `correctSpellLink`, `getConsumptionModifiedActivityData`, `getSaveDCModifiedActivityData`
+  - `actorUtils`: `addFavorites`, `removeFavorites`, `getCR`, `getBestSave`, `getBestSkill`, `getBestTool`, `getItemByIdentifiers`, `setReactionUsed`
   - `automationUtils.getSourceName`
-  - `compendiumUtils`: `getEnabledCompendiumIds`, `getSpell`, `selectActor`, `selectSpellFromLists`
+  - `compendiumUtils`: `getDocumentUuidByIdentifier`, `getEnabledCompendiumIds`, `getSpell`, `getSpellUuid`, `selectActor`, `selectSpellFromLists`
   - `dialogUtils.selectSpellSlot` replaced with `dialogUtils.selectSpellSlots`
+  - `effectUtils`: `getImageConfig`, `pushImageChanges`
+  - `itemUtils.createItems`
   - `itemUtils.getSourceClass` replaced with `itemUtils.getAdvancementSourceItem`
   - `itemUtils.getSourceClassIdentifier` replaced with `itemUtils.getAdvancementSourceKey`
-  - `rollUtils`: `contestedRoll`, `requestRoll`, `shouldFastForward`
-  - `tokenUtils`: `canSee`, `grapple`, `grappleShoveSizeCheck`
-  - `workflowUtils`: `applyDamage`, `addMacroConditions`, `getMacroConditions`
+  - `regionUtils.getActivity`
+  - `rollUtils`: `contestedRoll`, `requestRoll`, `resolveManualRolls`, `shouldFastForward`
+  - `tokenUtils`: `canSee`, `getLightLevel`, `grapple`, `grappleShoveSizeCheck`
+  - `workflowUtils`: `applyDamage`, `addMacroConditions`, `getMacroConditions`, `spendScaledCost`
 - Added `constants.weaponTypes`
 - The `targetSituational` macro pass is now available for checks, saves, and tool rolls.
+- `dataUtils.buildEffectData` accepts `avatarImg`, `tokenImg` and `imgPriority`.
+- `documentUtils.getBaseEffectData` accepts `system`, for `system.changes`.
+- `documentUtils.getEffectData` carries `activityUuid`.
+- `dialogUtils.selectDocumentDialog` accepts `checked`. `selectTargetDialog` and `selectAmount` accept `requireTotal`.
+- `genericUtils.notify` forwards Foundry's `format` option.
+- `rollUtils.rollDice` gains an opt-in `manual` flag.
+- Added effect special durations: `turnStart`, `turnEnd`, `madeAttack`, `castSpell`, `damaged`
+- Optional bonuses are collected once per spot rather than once per dialog phase. `phase` is now a `D20Bonus` constructor option and `RollBonus.withInputs` adds dialog subinputs.
+- Region activities can set the core region visibility with `flags.cat.placed.region.coreVisibility`.
+- Cast activities are relinked to the first match in the configured spell compendiums when an automation is applied or updated.
 ## Update Notes:
 - Actor CatKit: added document properties.
   - Condition Resistance/Vulnerability: now applies on checks, skills, and tools.
@@ -29,11 +42,22 @@
 - The mass apply feature now prompts a review of the documents to be updated.
 - Automation version can now be changed in the CatKit on compendium documents. Reload the world to update the automation registry.
 - Added a grapple system, including events for size check, apply and escape. Start a grapple with `tokenUtils.grapple`.
+- Effects can override an actor's portrait and token image by priority, restored when the last one is removed.
+- Effect CatKit: added a Turn group to the special duration picker.
+- Tokens with a `devilsSight` or `truesight` sense range are no longer blinded by darkness.
+- CatKit: select options are localized and a blank option sorts first.
+- Activity CatKit: added Spell Identifier document property for cast activities.
+- Item CatKit: the Configuration tab shows a notice when an automation has no options.
 ## API Bug Fixes:
 - Fixed registry for custom automation compendiums. (Thanks Darsh)
 - `workflowUtils.isSustainedRoll` no longer incorrectly flags standard spell or cantrip casts.
 - `workflowUtils.modifyDamageAppliedFlat` caps reductions to remaining damage instead of remaining HP. (Ported from CPR 1.5.47).
 - Condition resistance and vulnerability can work with conditions applied programmatically if the workflow is marked with `workflowUtils.addMacroConditions`.
+- `itemUtils.unhideActivities` implements its `favorite` option, as does `rehideActivities`.
+- `DamageBonus` falls back to the actor's roll data.
+- Summon item updates preserve the source actor's items and accept inline item data.
+- `crosshairUtils` compensates for token width against a caller supplied fudge distance.
+- `tokenUtils.moveToken` no longer stops forced movement and teleports on creatures in the path.
 ## Bug Fixes:
 - Fixed max counter for `selectAmount` dialog input.
 - Effect special durations `damagedByAlly` and `damagedByEnemy` can now be used together.
@@ -41,6 +65,11 @@
 - Fixed class scale duplication when an automation is applied.
 - Alternate Attribute for damage roll modifiers will work without also using an alternate damage formula.
 
+- Manual damage rolls resolve before the `damageRollComplete` pass.
+- Outdated Sequencer and duplicate JB2A notifications render as warnings.
+- The Compendiums menu lists packs from packages that are also automation sources.
+- The Compendiums menu sorts a pack into the Spells tab when most of its contents are spells.
+- The D&D Beyond Importer integration no longer throws when its compendium settings are not registered.
 # 0.0.7 Release:
 ## API Update Notes:
 - Added a combined optional bonus dialog. Choose from all bonuses available for a roll and request bonuses from allies.
