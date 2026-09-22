@@ -1,4 +1,4 @@
-import {dataUtils, documentUtils, queryUtils} from './_module.mjs';
+import {automationUtils, dataUtils, documentUtils, queryUtils} from './_module.mjs';
 /**
  * Get the cast data stashed on this effect by CAT or midi.
  * @param {ActiveEffect} effect
@@ -133,6 +133,40 @@ async function resetDuration(effect) {
         'duration.expired': false
     });
 }
+function getImageKey(identifier, key) {
+    return identifier ? identifier + key.charAt(0).toUpperCase() + key.slice(1) : key;
+}
+/**
+ * Macro config entries for the portrait and token images an effect applies. See {@link pushImageChanges}.
+ * @param {object} [options]
+ * @param {string} [options.identifier] Prefixes the image keys, for documents with more than one image set.
+ * @param {string} [options.avatarLabel]
+ * @param {string} [options.tokenLabel]
+ * @returns {object}
+ */
+function getImageConfig({identifier, avatarLabel = 'CAT.Config.AvatarImg', tokenLabel = 'CAT.Config.TokenImg'} = {}) {
+    return {
+        [getImageKey(identifier, 'tokenImg')]: {default: '', type: 'file', label: tokenLabel, category: 'visuals'},
+        [getImageKey(identifier, 'avatarImg')]: {default: '', type: 'file', label: avatarLabel, category: 'visuals'},
+        imgPriority: {default: 50, type: 'number', label: 'CAT.Config.ImgPriority', category: 'visuals'}
+    };
+}
+/**
+ * Add the document's configured portrait and token images to effect data as override changes.
+ * @param {object} effectData
+ * @param {foundry.abstract.Document} document The document carrying {@link getImageConfig} values.
+ * @param {object} [options]
+ * @param {string} [options.identifier] The image set to use.
+ * @returns {object} The same effect data.
+ */
+function pushImageChanges(effectData, document, {identifier} = {}) {
+    const avatarImg = automationUtils.getConfigValue(document, getImageKey(identifier, 'avatarImg'));
+    const tokenImg = automationUtils.getConfigValue(document, getImageKey(identifier, 'tokenImg'));
+    const priority = automationUtils.getConfigValue(document, 'imgPriority');
+    if (avatarImg) effectData.system.changes.push({key: 'img', type: 'override', value: avatarImg, priority});
+    if (tokenImg) effectData.system.changes.push({key: 'token.texture.src', type: 'override', value: tokenImg, priority});
+    return effectData;
+}
 export default {
     getCastData,
     createEffects,
@@ -141,5 +175,7 @@ export default {
     getOriginActivitySync,
     getConcentrationEffect,
     getActor,
-    resetDuration
+    resetDuration,
+    getImageConfig,
+    pushImageChanges
 };

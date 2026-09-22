@@ -239,7 +239,7 @@ function getEffectData(document, id, {duration, concentrationItem, ...catData} =
  * @param {string} [options.img]
  * @param {string} [options.origin]
  * @param {string} [options.identifier] The CAT identifier other macros will look this effect up by.
- * @param {object[]} [options.changes]
+ * @param {object[]} [options.changes] Stored as `system.changes`.
  * @param {EffectDurationData} [options.duration]
  * @param {CatEffectData} [options.buildOptions] See {@link CatEffectData}
  * @returns {object} Effect data ready for creation.
@@ -249,7 +249,7 @@ function getBaseEffectData(document, {name, img, origin, identifier, changes = [
         name,
         img,
         origin,
-        changes
+        system: {changes}
     };
     if (duration) {
         effectData.duration = duration;

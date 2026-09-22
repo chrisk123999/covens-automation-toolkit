@@ -1,3 +1,4 @@
+import CatRollResolver from '../applications/dice/roll-resolver.mjs';
 import {actorUtils, genericUtils, queryUtils} from './_module.mjs';
 const {OperatorTerm, NumericTerm} = foundry.dice.terms;
 /**
@@ -25,7 +26,7 @@ const {OperatorTerm, NumericTerm} = foundry.dice.terms;
  */
 
 /**
- * @param {string} formula 
+ * @param {string} formula
  * @param {object} [options]
  * @param {foundry.abstract.Document} [options.document]
  * @param {EvaluateOptions & {strict?: boolean}} [options.options]
@@ -35,22 +36,49 @@ function rollDiceSync(formula, {document, options: {strict = false, maximize = f
     return new Roll(formula, document?.getRollData()).evaluateSync({strict, maximize, minimize});
 }
 /**
- * @param {string} formula 
+ * Replace rolls with manually entered results when manual rolls are enabled for the actor.
+ * @param {foundry.dice.Roll[]} rolls
+ * @param {foundry.documents.Actor} actor
+ * @param {string} label Shown as the heading of the manual roll prompt.
+ * @param {object} [options]
+ * @param {typeof foundry.dice.Roll} [options.rollClass]
+ * @returns {Promise<foundry.dice.Roll[]>}
+ */
+async function resolveManualRolls(rolls, actor, label, {rollClass = CONFIG.Dice.DamageRoll} = {}) {
+    if (!game.settings.get('cat', 'manualRollsEnabled') || !CatRollResolver.shouldForce(actor)) return rolls;
+    const newRolls = rolls.map(roll => roll.options.cat?.noManualRoll ? roll : new rollClass(roll.formula, roll.data, roll.options));
+    const toRoll = newRolls.filter(roll => !roll.options.cat?.noManualRoll);
+    if (!toRoll.length) return rolls;
+    await CatRollResolver.fulfillBatch(toRoll, label, {prompt: true});
+    for (const roll of toRoll) await roll.evaluate({allowInteractive: false});
+    return newRolls;
+}
+/**
+ * @param {string} formula
  * @param {object} [options]
  * @param {foundry.abstract.Document} [options.document]
  * @param {boolean} [options.message]
  * @param {string} [options.flavor]
  * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode]
+ * @param {boolean} [options.manual] Prompt for a manually entered result when manual rolls are enabled.
  * @param {EvaluateOptions} [options.options]
  * @returns {Promise<foundry.dice.Roll>}
  */
-async function rollDice(formula, {document, message, flavor, mode = 'public', options: {maximize = false, minimize = false} = {}} = {}) {
-    const roll = await new Roll(formula, document?.getRollData()).evaluate({maximize, minimize});
+async function rollDice(formula, {document, message, flavor, mode = 'public', manual = false, options: {maximize = false, minimize = false} = {}} = {}) {
+    let roll = new Roll(formula, document?.getRollData());
+    let resolved = false;
+    if (manual) {
+        const actor = document?.actor ?? document;
+        const [manualRoll] = await resolveManualRolls([roll], actor, flavor, {rollClass: Roll});
+        resolved = manualRoll !== roll;
+        roll = manualRoll;
+    }
+    if (!resolved) await roll.evaluate({maximize, minimize});
     if (message) return {message: await roll.toMessage({flavor}, {rollMode: mode}), roll};
     return roll;
 }
 /**
- * @param {foundry.dice.Roll[]} rolls 
+ * @param {foundry.dice.Roll[]} rolls
  * @returns {number}
  */
 function getRollsTotal(rolls) {
@@ -58,17 +86,17 @@ function getRollsTotal(rolls) {
 }
 
 /**
- * @param {string} formula 
- * @param {foundry.abstract.Document} document 
+ * @param {string} formula
+ * @param {foundry.abstract.Document} document
  * @param {CritOptions} [options]
  * @returns {string}
  */
 function getCriticalFormula(formula, document, {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}) {
     return new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {isCritical: true, critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical}}).formula;
 }
-/** 
- * @param {string} formula 
- * @param {foundry.abstract.Document} document 
+/**
+ * @param {string} formula
+ * @param {foundry.abstract.Document} document
  * @param {DamageOptions} [options]
  * @param {EvaluateOptions} [evaluateOptions]
  * @returns {Promise<dnd5e.dice.DamageRoll>}
@@ -79,15 +107,34 @@ async function damageRoll(formula, document, {critOptions: {bonusDamage, bonusDi
         flavor, isCritical, properties, type
     }).evaluate({maximize, minimize});
 }
+/**
+ * Rebuild a damage roll with every flavoured term retyped.
+ * @param {CONFIG.Dice.DamageRoll} origRoll
+ * @param {string} newType A key of CONFIG.DND5E.damageTypes.
+ * @returns {Promise<CONFIG.Dice.DamageRoll>}
+ */
 async function getChangedDamageRoll(origRoll, newType) {
     return await new CONFIG.Dice.DamageRoll(origRoll.terms.map(i => i.expression + (i.flavor?.length ? '[' + newType + ']' : '')).join(''), origRoll.data, foundry.utils.mergeObject(origRoll.options, {type: newType}, {inplace: false})).evaluate();
 }
+/**
+ * Append a formula to an existing roll, preserving the original roll data.
+ * @param {foundry.dice.Roll} roll
+ * @param {string|number} formula
+ * @param {object} [options]
+ * @param {object} [options.rollData] Roll data for the appended formula.
+ * @returns {Promise<foundry.dice.Roll>}
+ */
 async function addToRoll(roll, formula, {rollData} = {}) {
     const bonusRoll = await new Roll(String(formula), rollData).evaluate();
     const newRoll = MidiQOL.addRollTo(roll, bonusRoll);
     newRoll.data = roll.data;
     return newRoll;
 }
+/**
+ * Whether any die result is repeated across the given rolls.
+ * @param {foundry.dice.Roll[]} rolls
+ * @returns {boolean}
+ */
 function hasDuplicateDie(rolls) {
     function hasDuplicate(arr) {
         let seen = new Set();
@@ -103,8 +150,8 @@ function hasDuplicateDie(rolls) {
 }
 /**
  * Discard all terms in {@link roll}. Use the terms and total from {@link newRoll}.
- * @param {foundry.dice.Roll} roll 
- * @param {foundry.dice.Roll} newRoll 
+ * @param {foundry.dice.Roll} roll
+ * @param {foundry.dice.Roll} newRoll
  * @returns {foundry.dice.Roll}
  */
 function replaceRollShowDiscarded(roll, newRoll) {
@@ -116,7 +163,7 @@ function replaceRollShowDiscarded(roll, newRoll) {
         }
     }
     roll.terms.push(
-        new OperatorTerm({operator: '+'}), 
+        new OperatorTerm({operator: '+'}),
         ...newRoll.terms
     );
     roll._formula = newRoll.formula;
@@ -125,7 +172,7 @@ function replaceRollShowDiscarded(roll, newRoll) {
 }
 /**
  * Discards rolled terms and brings the total to the given value by adding a bonus.
- * @param {foundry.dice.Roll} roll 
+ * @param {foundry.dice.Roll} roll
  * @param {number} total
  * @returns {foundry.dice.Roll}
  */
@@ -151,8 +198,8 @@ function setTotalWithBonus(roll, total) {
 }
 /**
  * Note - tools will roll '-1' if the associated item is not present on the character sheet.
- * @param {foundry.documents.Actor} token 
- * @param {'abil'|'check'|'save'|'test'|'skill'|'tool'|'deathSave'} request 
+ * @param {foundry.documents.Actor} token
+ * @param {'abil'|'check'|'save'|'test'|'skill'|'tool'|'deathSave'} request
  * @param {string} ability Use an ability, skill, or tool abbreviation.
  * @param {object} [options]
  * @param {number} [options.rollDC]
@@ -208,7 +255,7 @@ async function requestRoll(actor, request, ability, {rollDC, advantage, disadvan
 async function contestedRoll({sourceToken, targetToken, sourceRollType, targetRollType, sourceAbilities, targetAbilities, message, flavor}) {
     if (!sourceToken.actor || !targetToken.actor) return;
     const getBest = (actor, type, choices) => {
-        switch(type) {        
+        switch(type) {
             case 'abil':
             case 'test': return actorUtils.getBestAbility(actor, choices);
             case 'save': return actorUtils.getBestSave(actor, choices);
@@ -223,8 +270,8 @@ async function contestedRoll({sourceToken, targetToken, sourceRollType, targetRo
     }))?.result;
 }
 /**
- * @param {'attack'|'damage'|'check'|'save'|'skill'|'tool'} rollType 
- * @param {foundry.documents.User} user 
+ * @param {'attack'|'damage'|'check'|'save'|'skill'|'tool'} rollType
+ * @param {foundry.documents.User} user
  * @returns {boolean}
  */
 function shouldFastForward(rollType, user = game.user) {
@@ -234,6 +281,7 @@ function shouldFastForward(rollType, user = game.user) {
 export default {
     rollDiceSync,
     rollDice,
+    resolveManualRolls,
     getRollsTotal,
     getCriticalFormula,
     addToRoll,

@@ -147,11 +147,12 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
  * @param {object} [options.tags] Per-document label tags, keyed by document.
  * @param {object} [options.selects] Per-document dropdown, keyed by document.
  * @param {Set} [options.locked] Documents that cannot be deselected.
+ * @param {Set} [options.checked] Documents that start selected, for re-opening a saved choice.
  * @param {string[]} [options.keys] Override the keys documents are identified by, in the same order.
  * @param {object} [options.labels] Override document labels, keyed by document.
  * @returns {Promise<foundry.abstract.Document|Array<{document: foundry.abstract.Document, key: string, amount: number, select: *}>|false>}
  */
-async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}, validate = null, tags = {}, selects = {}, locked = new Set(), keys = null, labels = {}} = {}) {
+async function selectDocumentDialog(title, content, documents, {max = 1, displayTooltips = false, sort = null, userId = game.user.id, addNoneDocument = false, showCR = false, showSpellLevel = false, showUses = false, displayReference = false, combobox = false, checkbox = false, weights = {}, maxes = {}, validate = null, tags = {}, selects = {}, locked = new Set(), checked = new Set(), keys = null, labels = {}} = {}) {
     let sortCmp = sort === 'alphabetical' ? (a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
         : sort === 'cr' ? (a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0)
             : sort === 'level' ? (a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
@@ -252,7 +253,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
                 hint: checkbox ? tag : undefined,
                 select: checkbox ? selects?.[id] : undefined,
                 locked: isLocked,
-                isChecked: isLocked,
+                isChecked: isLocked || checked.has(id),
                 minAmount: 0,
                 maxAmount: maxes?.[id] ?? max,
                 weight: weights?.[id] ?? 1

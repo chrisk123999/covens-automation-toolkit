@@ -1,4 +1,4 @@
-import {queryUtils, uiUtils} from '../../utilities/_module.mjs';
+import {genericUtils, queryUtils, uiUtils} from '../../utilities/_module.mjs';
 const {RollResolver} = foundry.applications.dice;
 
 export default class CatRollResolver extends RollResolver {
@@ -421,7 +421,7 @@ export default class CatRollResolver extends RollResolver {
         if (!this.rendered) return term.randomFace();
         if (term.results.filter(result => result.rerolled || result.exploded).length >= 10) {
             if (!term._catDepthCapped) {
-                ui.notifications.error(_loc('CAT.Manual.RerollDepth'));
+                genericUtils.notify('CAT.Manual.RerollDepth', {type: 'error'});
                 term._catDepthCapped = true;
             }
             return term.randomFace();

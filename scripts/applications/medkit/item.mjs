@@ -1,6 +1,6 @@
 import MedkitApp from './base.mjs';
 import {constants} from '../../lib/_module.mjs';
-import {documentUtils, automationUtils, itemUtils} from '../../utilities/_module.mjs';
+import {documentUtils, automationUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
 import DocPropertyEditorApp from '../doc-property-editor.mjs';
 const {fields} = foundry.data;
 
@@ -206,7 +206,7 @@ export default class ItemMedkit extends MedkitApp {
         const dcMap = (flags.classDifficultyClass ??= {});
         const attackMap = (flags.classAttackBonus ??= {});
         if (dcMap[id] || attackMap[id]) {
-            ui.notifications.error(_loc('CAT.MEDKIT.ClassBonus.Duplicate', {identifier: id}));
+            genericUtils.notify('CAT.MEDKIT.ClassBonus.Duplicate', {type: 'error', format: {identifier: id}});
             return;
         }
         dcMap[id] = {value: 0};
@@ -259,12 +259,12 @@ export default class ItemMedkit extends MedkitApp {
     #writeDocProp(type, entry, original) {
         const attribute = constants.alternateAttributes[type];
         if (!attribute) {
-            ui.notifications.error(_loc('CAT.MEDKIT.DocProps.NotDefined', {type}));
+            genericUtils.notify('CAT.MEDKIT.DocProps.NotDefined', {type: 'error', format: {type}});
             return false;
         }
         const {cleaned, valid, failure} = attribute.validate(this.document, entry);
         if (!valid) {
-            ui.notifications.error(failure.toString());
+            genericUtils.notify(failure.toString(), {type: 'error', localize: false});
             return false;
         }
         const flags = this._getFlags();

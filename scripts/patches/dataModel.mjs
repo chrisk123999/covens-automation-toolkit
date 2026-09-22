@@ -142,6 +142,12 @@ function defineSchema(wrapped, ...args) {
     schema.attributes.fields.senses.fields.ranges.initialKeys.devilsSight = 'CAT.Senses.DevilsSight';
     return schema;
 }
+function visionSourceData(wrapped, ...args) {
+    const data = wrapped(...args);
+    const ranges = this.actor?.system.attributes?.senses?.ranges;
+    if (ranges?.devilsSight || ranges?.truesight) data.priority = 1;
+    return data;
+}
 function armorClass(wrapped, rollData) {
     wrapped(rollData);
     const ac = this.attributes.ac;
@@ -277,7 +283,8 @@ const patches = [
     {path: 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass',         fn: armorClass,     wrapType: 'MIXED'},
     {path: 'dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', fn: acLabel,        wrapType: 'MIXED'},
     {path: 'dnd5e.dataModels.shared.DamageData.prototype.scaledFormula',        fn: scaledFormula,  wrapType: 'OVERRIDE'},
-    {path: 'dnd5e.dataModels.shared.RangeField.prepareData',                    fn: range,          wrapType: 'MIXED'}
+    {path: 'dnd5e.dataModels.shared.RangeField.prepareData',                    fn: range,          wrapType: 'MIXED'},
+    {path: 'foundry.canvas.placeables.Token.prototype._getVisionSourceData',    fn: visionSourceData, wrapType: 'WRAPPER'}
 ];
 function patch(enabled) {
     if (enabled) {

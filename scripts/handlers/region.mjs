@@ -1,9 +1,7 @@
 import {activityUtils, actorUtils, documentUtils, genericUtils, regionUtils, tokenUtils, workflowUtils, combatUtils} from '../utilities/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 function placed(region) {
-    const originUuid = region.flags.dnd5e?.origin;
-    if (!originUuid) return;
-    const activity = fromUuidSync(originUuid, {strict: false});
+    const activity = regionUtils.getActivity(region);
     if (!activity) return;
     const sourceUpdates = {
         flags: {
@@ -23,6 +21,8 @@ function placed(region) {
     if (embeddedMacros) sourceUpdates.flags.cat.embeddedMacros = embeddedMacros;
     const visibility = activity.flags.cat?.placed?.region?.visibility;
     if (visibility) sourceUpdates.flags.cat.visibility = visibility;
+    const coreVisibility = activity.flags.cat?.placed?.region?.coreVisibility;
+    if (coreVisibility !== undefined) sourceUpdates.visibility = coreVisibility;
     const effects = activity.flags.cat?.placed?.region?.effects;
     if (effects) sourceUpdates.flags.cat.effects = effects;
     const activities = activity.flags.cat?.placed?.region?.activities;
@@ -41,9 +41,7 @@ async function updateRegionEffects(token, currentRegions = []) {
             const identifier = documentUtils.getIdentifier(region);
             const effectIds = region.flags.cat?.effects;
             if (!effectIds?.length) return [];
-            const originUuid = region.flags.dnd5e?.origin;
-            if (!originUuid) return [];
-            const activity = await fromUuid(originUuid);
+            const activity = regionUtils.getActivity(region);
             if (!activity) return [];
             const item = activity.item;
             const resolvedEffects = effectIds.map(id => {
@@ -51,7 +49,7 @@ async function updateRegionEffects(token, currentRegions = []) {
                 if (!sourceEffect) return;
                 const effectData = sourceEffect.toObject();
                 delete effectData._id;
-                effectData.origin = originUuid; 
+                effectData.origin = activity.uuid;
                 effectData.showIcon = 2;
                 genericUtils.setProperty(effectData, 'flags.cat.regionIdentifier', identifier);
                 genericUtils.setProperty(effectData, 'flags.cat.castData', castData);

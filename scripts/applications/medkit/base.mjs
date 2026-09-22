@@ -270,7 +270,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         const COMBOBOX_THRESHOLD = 8;
         const sortedOptions = () => {
             const opts = typeof descriptor.options === 'function' ? descriptor.options() : (descriptor.options ?? []);
-            return [...opts].sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+            return opts.map(o => ({...o, label: _loc(o.label)})).sort((a, b) => (b.value === '') - (a.value === '') || a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
         };
         switch (type) {
             case 'checkbox': option.field = new fields.BooleanField({label}); break;
@@ -853,7 +853,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.#reacquireDocument();
         const after = documentUtils.getVersion(this.#document);
         const identifier = documentUtils.getIdentifier(this.#document) ?? this.#document.name;
-        ui.notifications.info(_loc('CAT.MEDKIT.Notif.Updated', {identifier, before: before ?? '?', after: after ?? '?'}));
+        genericUtils.notify('CAT.MEDKIT.Notif.Updated', {format: {identifier, before: before ?? '?', after: after ?? '?'}});
         this.#hydrateState();
         this.render();
     }
@@ -868,7 +868,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (!pick) return;
         this.#selectedSource = pick.source;
         await this._commit();
-        ui.notifications.info(_loc('CAT.MEDKIT.Notif.Applied', {source: constants.automations.getSourceName?.(pick.source) ?? pick.source, version: pick.version ?? '?'}));
+        genericUtils.notify('CAT.MEDKIT.Notif.Applied', {format: {source: constants.automations.getSourceName?.(pick.source) ?? pick.source, version: pick.version ?? '?'}});
         this.render();
     }
 
@@ -880,7 +880,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (!pick) return;
         this.#selectedSource = pick.source;
         await this._commit();
-        ui.notifications.info(_loc('CAT.MEDKIT.Notif.Applied', {source: constants.automations.getSourceName?.(pick.source) ?? pick.source, version: pick.version ?? '?'}));
+        genericUtils.notify('CAT.MEDKIT.Notif.Applied', {format: {source: constants.automations.getSourceName?.(pick.source) ?? pick.source, version: pick.version ?? '?'}});
         this.render();
     }
 
@@ -1036,17 +1036,17 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             }
         };
         rawItems.forEach(visit);
-        if (!sortedItems.length) return ui.notifications.warn('CAT.MEDKIT.MassApply.NoUpdates');
-        if (cycleDetected) ui.notifications.warn('CAT.MEDKIT.MassApply.CycleWarning');
+        if (!sortedItems.length) return genericUtils.notify('CAT.MEDKIT.MassApply.NoUpdates', {type: 'warn'});
+        if (cycleDetected) genericUtils.notify('CAT.MEDKIT.MassApply.CycleWarning', {type: 'warn'});
         const choices = await this.#massApplyPrompt(sortedItems);
         if (!choices) return;
-        ui.notifications.info('CAT.MEDKIT.MassApply.Started');
+        genericUtils.notify('CAT.MEDKIT.MassApply.Started');
         for (const entry of sortedItems) {
             const options = choices[this.#massApplyID(entry.item)];
             if (!options.included) continue;
             await automationUtils.updateItem(entry.item, {source: options.source});
         }
-        ui.notifications.info('CAT.MEDKIT.MassApply.Done');
+        genericUtils.notify('CAT.MEDKIT.MassApply.Done');
         this.render();
     }
 
@@ -1127,7 +1127,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.#openEmbeddedEditor(undefined, flat => {
             const list = (this.#flags.embeddedMacros ??= []);
             if (list.some(entry => entry.name === flat.name)) {
-                ui.notifications.error(_loc('CAT.MEDKIT.EmbeddedMacros.Duplicate', {name: flat.name}));
+                genericUtils.notify('CAT.MEDKIT.EmbeddedMacros.Duplicate', {type: 'error', format: {name: flat.name}});
                 return false;
             }
             list.push(flatToEmbedded(flat));
@@ -1142,7 +1142,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (!list[index]) return;
         this.#openEmbeddedEditor(embeddedToFlat(list[index]), flat => {
             if (list.some((entry, i) => i !== index && entry.name === flat.name)) {
-                ui.notifications.error(_loc('CAT.MEDKIT.EmbeddedMacros.Duplicate', {name: flat.name}));
+                genericUtils.notify('CAT.MEDKIT.EmbeddedMacros.Duplicate', {type: 'error', format: {name: flat.name}});
                 return false;
             }
             list[index] = flatToEmbedded(flat);
@@ -1164,7 +1164,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         const entry = input?.value?.trim();
         if (!path || !entry) return;
         if (group.dataset.validate === 'uuid' && !fromUuidSync(entry)) {
-            ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
+            genericUtils.notify('CAT.MEDKIT.Documents.InvalidUuid', {type: 'error'});
             return;
         }
         const current = foundry.utils.getProperty(this.#flags, path) ?? this.#listValues[path] ?? [];
@@ -1248,7 +1248,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             this.#bindDrop(el, async uuid => {
                 const path = el.dataset.flagPath;
                 if (!path) return;
-                if (!fromUuidSync(uuid)) return ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
+                if (!fromUuidSync(uuid)) return genericUtils.notify('CAT.MEDKIT.Documents.InvalidUuid', {type: 'error'});
                 const current = foundry.utils.getProperty(this.#flags, path) ?? [];
                 if (current.includes(uuid)) return;
                 foundry.utils.setProperty(this.#flags, path, [...current, uuid]);
@@ -1265,8 +1265,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             const kind = field === 'sourceActorUuid' ? 'Actor' : 'Item';
             this.#bindDrop(el, async uuid => {
                 const doc = await fromUuid(uuid);
-                if (!doc) return ui.notifications.error(_loc('CAT.MEDKIT.Documents.InvalidUuid'));
-                if (doc.documentName !== kind) return ui.notifications.warn(_loc('CAT.MEDKIT.Documents.WrongType', {type: kind}));
+                if (!doc) return genericUtils.notify('CAT.MEDKIT.Documents.InvalidUuid', {type: 'error'});
+                if (doc.documentName !== kind) return genericUtils.notify('CAT.MEDKIT.Documents.WrongType', {type: 'warn', format: {type: kind}});
                 const index = Number(indexStr);
                 const list = foundry.utils.getProperty(this.#flags, listPath) ?? [];
                 list[index] = kind === 'Actor'

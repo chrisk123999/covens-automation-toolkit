@@ -1,3 +1,7 @@
+function getActivity(region) {
+    const originUuid = region.flags.dnd5e?.origin;
+    if (originUuid) return fromUuidSync(originUuid, {strict: false});
+}
 function getCastData(region) {
     return region.flags.cat?.castData;
 }
@@ -40,6 +44,7 @@ function isMagicalDarkness(region) {
 }
 function getShapeAnchor(shape) {
     if (!shape) return {x: 0, y: 0};
+    if (shape.type === 'emanation') return getShapeAnchor(shape.base);
     if (shape.type === 'polygon' || shape.points) {
         return {x: shape.points[0] ?? 0, y: shape.points[1] ?? 0};
     }
@@ -99,6 +104,7 @@ function getRegionMovementTokens(region, locationData) {
     return results;
 }
 export default {
+    getActivity,
     getCastData,
     rayIntersectsRegion,
     getIntersections,
