@@ -975,6 +975,7 @@
       "Invalid": "Bonus disabled: {reason}",
       "InvalidResources": "not enough resources!",
       "Miss": "Miss",
+      "NoDC": "No DC",
       "NoRequest": "bonus has no request handler!",
       "Optional": "Optional Bonuses",
       "Phase": {

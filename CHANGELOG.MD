@@ -1,3 +1,7 @@
+# 0.0.9 Release:
+## API Update Notes:
+- Swapped the order of D20 events `bonus` and `optionalBonus`. `bonus` is now the final event in which the roll can be changed and should be used for rerolls.
+
 # 0.0.8 Release:
 ## API Update Notes:
 - The automation registry can now differentiate between duplicate identifiers, such as 'channel-divinity' from cleric and paladin. See `itemUtils.getAdvancementSourceKey`.

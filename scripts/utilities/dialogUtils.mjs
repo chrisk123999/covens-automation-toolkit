@@ -291,9 +291,10 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
     const roll = rolls?.[0];
     const missed = outcome?.success === false;
     const attack = !!workflow?.activity?.hasAttack;
-    const outcomeLabel = outcome && _loc(outcome.success
-        ? (attack ? 'CAT.OptionalBonus.Hit' : 'CAT.OptionalBonus.Success')
-        : (attack ? 'CAT.OptionalBonus.Miss' : 'CAT.OptionalBonus.Failure'));
+    const outcomeLabel = outcome && _loc(outcome.noDC ? 'CAT.OptionalBonus.NoDC' :
+        outcome.success
+            ? (attack ? 'CAT.OptionalBonus.Hit' : 'CAT.OptionalBonus.Success')
+            : (attack ? 'CAT.OptionalBonus.Miss' : 'CAT.OptionalBonus.Failure'));
     let rollTotal;
     if (rolls?.length) {
         if (rolls.every(r => r._evaluated)) rollTotal = rolls.reduce((t, r) => t += r.total, 0);
