@@ -197,7 +197,7 @@ function hasDefaultIcon(activity) {
 }
 
 /**
- * Whether the activity still uses its type's default name.
+ * Whether the activity still uses the default name for its type.
  * @param {dnd5e.documents.activity.Activity} activity Activity to read from.
  * @returns {boolean}
  */

@@ -4,7 +4,7 @@
 ## API Update Notes:
 - Swapped the order of D20 events `bonus` and `optionalBonus`. `bonus` is now the final event in which the roll can be changed and should be used for rerolls.
 - Added utils:
-  - `tokenUtils.canSense`
+  - `tokenUtils`: `canSense`, `movementSpent`
 - `tokenUtils.teleportToken` accepts `options` and passes them to the animation's macros, so a teleport animation's own config now reaches it.
 - JSDoc added across `automationUtils`, `workflowUtils` and `documentUtils`.
 ## API Bug Fixes:

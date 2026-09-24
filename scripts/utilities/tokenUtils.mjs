@@ -313,6 +313,17 @@ function getLightLevel(token) {
     });
     return inBright ? 'bright' : 'dim';
 }
+/**
+ * Get the movement spent by this token for the current round in combat. Movement history is not stored outside of combat.
+ * @param {foundry.documents.TokenDocument} token
+ * @param {boolean} [getRemaining] Return spent movement subtracted from max speed.
+ * @returns {number}
+ */
+function movementSpent(token, getRemaining = false) {
+    const max = token.actor.system.attributes.movement.max;
+    const spent = token.measureMovementPath(token.movementHistory).cost;
+    return getRemaining ? Math.max(max - spent, 0) : spent;
+}
 export default {
     getSavedCastData,
     getDistance,
@@ -327,5 +338,6 @@ export default {
     canSee,
     canSense,
     grapple,
-    grappleShoveSizeCheck
+    grappleShoveSizeCheck,
+    movementSpent
 };
