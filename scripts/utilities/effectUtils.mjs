@@ -1,7 +1,7 @@
 import {automationUtils, dataUtils, documentUtils, queryUtils} from './_module.mjs';
 /**
  * Get the cast data stashed on this effect by CAT or midi.
- * @param {ActiveEffect} effect
+ * @param {ActiveEffect} effect Effect to read from.
  * @returns {object|undefined}
  */
 function getCastData(effect) {
@@ -9,9 +9,9 @@ function getCastData(effect) {
 }
 /**
  * Create effects on a document, delegating to a GM when the user lacks permission.
- * @param {foundry.abstract.Document} document
- * @param {object[]} effectDatas
- * @param {object} [options]
+ * @param {foundry.abstract.Document} document Document the effects are created on.
+ * @param {object[]} effectDatas Effect data to create.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.forceGM] Create through a GM even when the user has permission.
  * @param {MacroGroup[]} [options.macros] Entries may carry an `effectIdentifier` to target one effect in the batch.
  * @param {object} [options.effectOptions] Passed to the creation when it goes through a GM.
@@ -44,7 +44,7 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
 }
 /**
  * Collect the status condition keys this effect applies through `macro.CE`, `macro.CUB` or `StatusEffect` changes.
- * @param {ActiveEffect} effect
+ * @param {ActiveEffect} effect Effect to read from.
  * @returns {Set<string>}
  */
 function getConditions(effect) {
@@ -64,9 +64,8 @@ function getConditions(effect) {
     return conditions;
 }
 /**
- * Resolve the activity that created this effect, preferring the stamped uuid and otherwise walking
- * the effect's origin back to the activity that carries it.
- * @param {ActiveEffect} effect
+ * Resolve the activity that created this effect, preferring the stamped uuid.
+ * @param {ActiveEffect} effect Effect to read from.
  * @returns {Promise<Activity|undefined>}
  */
 async function getOriginActivity(effect) {
@@ -86,7 +85,7 @@ async function getOriginActivity(effect) {
 }
 /**
  * Synchronous {@link getOriginActivity}, limited to documents already in memory.
- * @param {ActiveEffect} effect
+ * @param {ActiveEffect} effect Effect to read from.
  * @returns {Activity|undefined}
  */
 function getOriginActivitySync(effect) {
@@ -105,8 +104,8 @@ function getOriginActivitySync(effect) {
 }
 /**
  * Get the concentration effect this actor holds for an item.
- * @param {foundry.documents.Actor} actor
- * @param {foundry.documents.Item} item
+ * @param {foundry.documents.Actor} actor Actor holding the concentration.
+ * @param {foundry.documents.Item} item Item being concentrated on.
  * @returns {ActiveEffect|undefined}
  */
 function getConcentrationEffect(actor, item) {
@@ -114,7 +113,7 @@ function getConcentrationEffect(actor, item) {
 }
 /**
  * Get the actor this effect sits on, whether it is applied to the actor or to one of its items.
- * @param {ActiveEffect} effect
+ * @param {ActiveEffect} effect Effect to read from.
  * @returns {foundry.documents.Actor|undefined}
  */
 function getActor(effect) {
@@ -124,7 +123,7 @@ function getActor(effect) {
 }
 /**
  * Set the effect start time to the current world time or combat turn.
- * @param {foundry.documents.ActiveEffect} effect
+ * @param {foundry.documents.ActiveEffect} effect Effect to read from.
  * @returns {Promise<foundry.documents.ActiveEffect>}
  */
 async function resetDuration(effect) {
@@ -133,15 +132,21 @@ async function resetDuration(effect) {
         'duration.expired': false
     });
 }
+/**
+ * Build the config key an effect's image setting is stored under.
+ * @param {string} [identifier] Prefix, for documents that apply more than one image set.
+ * @param {string} key Image key, such as tokenImg or avatarImg.
+ * @returns {string} The key itself when no identifier is given.
+ */
 function getImageKey(identifier, key) {
     return identifier ? identifier + key.charAt(0).toUpperCase() + key.slice(1) : key;
 }
 /**
  * Macro config entries for the portrait and token images an effect applies. See {@link pushImageChanges}.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {string} [options.identifier] Prefixes the image keys, for documents with more than one image set.
- * @param {string} [options.avatarLabel]
- * @param {string} [options.tokenLabel]
+ * @param {string} [options.avatarLabel] Label for the portrait image setting.
+ * @param {string} [options.tokenLabel] Label for the token image setting.
  * @returns {object}
  */
 function getImageConfig({identifier, avatarLabel = 'CAT.Config.AvatarImg', tokenLabel = 'CAT.Config.TokenImg'} = {}) {
@@ -153,9 +158,9 @@ function getImageConfig({identifier, avatarLabel = 'CAT.Config.AvatarImg', token
 }
 /**
  * Add the document's configured portrait and token images to effect data as override changes.
- * @param {object} effectData
+ * @param {object} effectData Effect data to write into, which is mutated.
  * @param {foundry.abstract.Document} document The document carrying {@link getImageConfig} values.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {string} [options.identifier] The image set to use.
  * @returns {object} The same effect data.
  */

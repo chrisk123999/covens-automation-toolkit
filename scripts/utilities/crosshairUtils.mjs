@@ -14,7 +14,7 @@ const getSizeIndex = (token) => {
 };
 /**
  * Show a crosshair, optionally bounded to a range from a token.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check, and the default icon.
  * @param {number} [options.maxRange] Scene units. Without one, the crosshair is unbounded and placed freely.
  * @param {object} [options.crosshairsConfig] Passed to {@link Crosshairs.showCrosshairs}.

@@ -4,11 +4,12 @@ import constants from '../lib/constants.mjs';
 import {automationUtils, queryUtils, tokenUtils, uiUtils} from './_module.mjs';
 
 /**
- * @param {foundry.documents.TokenDocument} token
- * @param {object} [options]
- * @param {boolean} [options.hide]
- * @param {object} [options.counter]
- * @param {number} [options.counter.value]
+ * A token's name for display, replaced with a generic label when names are hidden.
+ * @param {foundry.documents.TokenDocument} token Token to name.
+ * @param {object} [options] Additional options.
+ * @param {boolean} [options.hide] Replace the name with a generic label.
+ * @param {object} [options.counter] Running count used to number hidden names.
+ * @param {number} [options.counter.value] Next number to use.
  * @returns
  */
 function getTokenName(token, {hide, counter} = {}) {
@@ -19,11 +20,11 @@ function getTokenName(token, {hide, counter} = {}) {
 
 /**
  * Show a dialog, routed through a query when {@link userId} is not the current user.
- * @param {string} userId
- * @param {string} title
- * @param {string} content
+ * @param {string} userId User the dialog is shown to.
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
  * @param {Array} inputs Input tree consumed by {@link DialogApp}.
- * @param {string|Array} [buttons]
+ * @param {string|Array} [buttons] Button set, or button definitions.
  * @param {object} [config] Application options such as width and height.
  * @returns {Promise<object|undefined>} Keyed by input name, plus `buttons` for the chosen button.
  */
@@ -33,11 +34,11 @@ async function runDialog(userId, title, content, inputs, buttons, config) {
 }
 /**
  * {@link runDialog}, queued so this user is not shown two dialogs at once.
- * @param {string} userId
- * @param {string} title
- * @param {string} content
+ * @param {string} userId User the dialog is shown to.
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
  * @param {Array} inputs Input tree consumed by {@link DialogApp}.
- * @param {string|Array} [buttons]
+ * @param {string|Array} [buttons] Button set, or button definitions.
  * @param {object} [config] Application options such as width and height.
  * @returns {Promise<object|undefined>}
  */
@@ -49,13 +50,13 @@ async function runQueuedDialog(userId, title, content, inputs, buttons, config) 
 }
 /**
  * Prompt with a row of buttons.
- * @param {string} title
- * @param {string} content
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
  * @param {Array<[string, *, object]>} buttons Label, value, then options such as `image`.
- * @param {object} [options]
- * @param {boolean} [options.displayAsRows]
- * @param {string} [options.userId]
- * @param {'alphabetical'|null} [options.sort]
+ * @param {object} [options] Additional options.
+ * @param {boolean} [options.displayAsRows] Lay the buttons out in rows.
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {'alphabetical'|null} [options.sort] How the entries are ordered.
  * @returns {Promise<*|false>} The chosen value, or false if dismissed.
  */
 async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sort = null} = {}) {
@@ -71,19 +72,19 @@ async function buttonDialog(title, content, buttons, {displayAsRows = true, user
 }
 /**
  * Prompt for a single number.
- * @param {string} title
- * @param {string} content
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
  * @param {{label: string, name: string, options: object}} [input]
- * @param {object} [options]
- * @param {string|Array} [options.buttons]
- * @param {string} [options.userId]
+ * @param {object} [options] Additional options.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
+ * @param {string} [options.userId] User the dialog is shown to.
  * @returns {Promise<number|undefined>}
  */
 async function numberDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id} = {}) {
     let inputs = [
         ['number',
             [{
-                label: input.label,
+                label: _loc(input.label),
                 name: input.name,
                 options: input.options
             }]
@@ -94,13 +95,13 @@ async function numberDialog(title, content, input = {label: 'Label', name: 'iden
 }
 /**
  * Prompt for one entry from a dropdown. Bare strings are accepted in place of `{value, label}` pairs.
- * @param {string} title
- * @param {string} content
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
  * @param {{label: string, name: string, options: object}} [input]
- * @param {object} [options]
- * @param {string|Array} [options.buttons]
- * @param {string} [options.userId]
- * @param {'alphabetical'|null} [options.sort]
+ * @param {object} [options] Additional options.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {'alphabetical'|null} [options.sort] How the entries are ordered.
  * @returns {Promise<*|undefined>} The chosen value.
  */
 async function selectDialog(title, content, input = {label: 'Label', name: 'identifier', options: {}}, {buttons = 'okCancel', userId = game.user.id, sort = null} = {}) {
@@ -115,7 +116,7 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
     let inputs = [
         ['selectOption',
             [{
-                label: input.label,
+                label: _loc(input.label),
                 name: input.name,
                 options: input.options
             }]
@@ -126,14 +127,14 @@ async function selectDialog(title, content, input = {label: 'Label', name: 'iden
 }
 /**
  * Prompt for one or more documents. Accepts world documents and compendium index entries.
- * @param {string} title
- * @param {string} content
- * @param {Array<foundry.abstract.Document|object>} documents
- * @param {object} [options]
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
+ * @param {Array<foundry.abstract.Document|object>} documents Documents to choose between.
+ * @param {object} [options] Additional options.
  * @param {number} [options.max] Total selectable. Above one, the result is an array.
  * @param {boolean} [options.displayTooltips] Show each document's description on hover.
- * @param {'alphabetical'|'cr'|'level'|null} [options.sort]
- * @param {string} [options.userId]
+ * @param {'alphabetical'|'cr'|'level'|null} [options.sort] How the entries are ordered.
+ * @param {string} [options.userId] User the dialog is shown to.
  * @param {boolean} [options.addNoneDocument] Append a `None` entry.
  * @param {boolean} [options.showCR] Append each document's challenge rating to its label.
  * @param {boolean} [options.showSpellLevel] Append each document's spell level to its label.
@@ -166,7 +167,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
     let docKey = d => isCompendiumDoc ? (d.uuid ?? d.actor?.uuid) : (d.id ?? d._id ?? d.actor?.id);
     let resolveDoc = async key => isCompendiumDoc ? await fromUuid(key) : documents.find(d => docKey(d) === key);
     let ordinal = n => {
-        if (n === 0) return _loc('DND5E.SpellCantrip') || 'Cantrip';
+        if (n === 0) return _loc('DND5E.SpellCantrip');
         let s = ['th', 'st', 'nd', 'rd'], v = n % 100;
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
@@ -273,12 +274,12 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
 }
 /**
  * Builds the input tree for one optional bonus dialog phase.
- * @param {DamageBonus[]|D20Bonus[]} bonuses
- * @param {object} [options]
+ * @param {DamageBonus[]|D20Bonus[]} bonuses Bonuses offered in this phase.
+ * @param {object} [options] Additional options.
  * @param {foundry.dice.Roll[]} [options.rolls] The d20 roll(s) to which selected bonuses will be added.
  * @param {foundry.dice.Roll[]} [options.damageRolls] Damage roll(s) already built for this workflow.
- * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets]
- * @param {MidiQOL.Workflow} [options.workflow]
+ * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets] Tokens the roll is aimed at.
+ * @param {MidiQOL.Workflow} [options.workflow] Workflow the bonuses belong to.
  * @param {BonusCost} [options.spent] Resources committed in earlier phases.
  * @param {DamageBonus[]|D20Bonus[]} [options.committed] Bonuses already applied in earlier phases.
  * @param {string} [options.outcome] Localized hit/miss or success/failure label, once it is known.
@@ -490,12 +491,13 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
     return {inputs, hasOptional: !!(optional.length || thirdParty.length), readInputs};
 }
 /**
- * @param {foundry.documents.Actor} actor
- * @param {string} title
- * @param {string} content
- * @param {object} [options]
+ * Prompt for spell slots to spend or recover.
+ * @param {foundry.documents.Actor} actor Actor the resources belong to.
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.recover] If true, select missing slots. If false, select available slots.
- * @param {number} [options.maxAmount]
+ * @param {number} [options.maxAmount] Most slots that may be chosen.
  * @param {'count'|'level'} [options.maxAmountMode] 'count' mode selects a number of spell slots. 'level' mode selects a combined total of slot levels.
  * @returns {Promise<{key: string, amount: number}[]>}
  */
@@ -525,13 +527,13 @@ async function selectSpellSlots(actor, title, content, {maxAmount, maxAmountMode
 }
 /**
  * Prompt for one damage type, with the system's icons.
- * @param {string[]} damageTypes
- * @param {string} title
- * @param {string} content
- * @param {object} [options]
+ * @param {string[]} damageTypes Damage types to choose between.
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.addNo] Append a decline button returning false.
- * @param {string} [options.userId]
- * @param {'alphabetical'|null} [options.sort]
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {'alphabetical'|null} [options.sort] How the entries are ordered.
  * @returns {Promise<string|false>}
  */
 async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id, sort = null} = {}) {
@@ -546,12 +548,12 @@ async function selectDamageType(damageTypes, title, content, {addNo = false, use
 }
 /**
  * Prompt for hit dice across this actor's classes, and optionally other items with uses.
- * @param {foundry.documents.Actor} actor
- * @param {string} title
- * @param {string} content
- * @param {object} [options]
+ * @param {foundry.documents.Actor} actor Actor the resources belong to.
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
+ * @param {object} [options] Additional options.
  * @param {number} [options.max] Total dice selectable.
- * @param {string} [options.userId]
+ * @param {string} [options.userId] User the dialog is shown to.
  * @param {Array<Item5e>} [options.additionalItems] Items with remaining uses, offered alongside the classes.
  * @param {boolean} [options.recover] Offer spent dice to recover rather than remaining dice to spend.
  * @returns {Promise<Array|false>} False when nothing is available or the prompt is dismissed.
@@ -607,11 +609,11 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
 }
 /**
  * Ask a yes or no question.
- * @param {string} title
- * @param {string} content
- * @param {object} [options]
- * @param {string} [options.userId]
- * @param {string|Array} [options.buttons]
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
  * @returns {Promise<boolean|undefined>}
  */
 async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
@@ -621,10 +623,10 @@ async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'
 }
 /**
  * Ask whether to use a document.
- * @param {foundry.abstract.Document} document
- * @param {object} [options]
- * @param {string} [options.userId]
- * @param {string|Array} [options.buttons]
+ * @param {foundry.abstract.Document} document Document being used, which names and illustrates the prompt.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
  * @returns {Promise<boolean|undefined>}
  */
 async function confirmUseItem(document, {userId = game.user.id, buttons = 'yesNo'} = {}) {
@@ -633,12 +635,12 @@ async function confirmUseItem(document, {userId = game.user.id, buttons = 'yesNo
 }
 /**
  * Ask whether to use a document at an additional resource cost.
- * @param {foundry.abstract.Document} document
- * @param {number} quantity
- * @param {string} resource
- * @param {object} [options]
- * @param {string} [options.userId]
- * @param {string|Array} [options.buttons]
+ * @param {foundry.abstract.Document} document Document being used, which names and illustrates the prompt.
+ * @param {number} quantity How much of the resource would be spent.
+ * @param {string} resource Resource that would be spent.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
  * @returns {Promise<boolean|undefined>}
  */
 async function confirmUseExtraCost(document, quantity, resource, {userId = game.user.id, buttons = 'yesNo'} = {}) {
@@ -647,11 +649,11 @@ async function confirmUseExtraCost(document, quantity, resource, {userId = game.
 }
 /**
  * Ask whether to use a document, showing what the roll would become.
- * @param {foundry.abstract.Document} document
- * @param {number} rollTotal
- * @param {object} [options]
- * @param {string} [options.userId]
- * @param {string|Array} [options.buttons]
+ * @param {foundry.abstract.Document} document Document being used, which names and illustrates the prompt.
+ * @param {number} rollTotal Total shown so the player can judge the choice.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
  * @returns {Promise<boolean|undefined>}
  */
 async function confirmUseRollTotal(document, rollTotal, {userId = game.user.id, buttons = 'yesNo'} = {}) {
@@ -660,12 +662,12 @@ async function confirmUseRollTotal(document, rollTotal, {userId = game.user.id, 
 }
 /**
  * Ask whether to use a document against a named roll, showing what that roll would become.
- * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} document Document being used, which names and illustrates the prompt.
  * @param {string} name What the roll belongs to.
- * @param {number} rollTotal
- * @param {object} [options]
- * @param {string} [options.userId]
- * @param {string|Array} [options.buttons]
+ * @param {number} rollTotal Total shown so the player can judge the choice.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
  * @returns {Promise<boolean|undefined>}
  */
 async function confirmUseForRollTotal(document, name, rollTotal, {userId = game.user.id, buttons = 'yesNo'} = {}) {
@@ -674,12 +676,12 @@ async function confirmUseForRollTotal(document, name, rollTotal, {userId = game.
 }
 /**
  * Ask whether to use a document to recover another document's uses.
- * @param {foundry.abstract.Document} document
- * @param {foundry.abstract.Document} documentWithUses
- * @param {object} [options]
+ * @param {foundry.abstract.Document} document Document being used, which names and illustrates the prompt.
+ * @param {foundry.abstract.Document} documentWithUses Document whose uses are recovered.
+ * @param {object} [options] Additional options.
  * @param {number} [options.spent] Override the spent count shown.
- * @param {string} [options.userId]
- * @param {string|Array} [options.buttons]
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
  * @returns {Promise<boolean|undefined>}
  */
 async function confirmRecoverUses(document, documentWithUses, {spent, userId = game.user.id, buttons = 'yesNo'} = {}) {
@@ -688,10 +690,10 @@ async function confirmRecoverUses(document, documentWithUses, {spent, userId = g
 }
 /**
  * {@link confirm}, queued so this user is not shown two dialogs at once.
- * @param {string} title
- * @param {string} content
- * @param {object} [options]
- * @param {string} [options.userId]
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.userId] User the dialog is shown to.
  * @returns {Promise<boolean|undefined>}
  */
 async function queuedConfirmDialog(title, content, {userId = game.user.id} = {}) {
@@ -707,10 +709,10 @@ const targetInputTypes = {
 };
 /**
  * Prompt for one or more tokens, optionally assigning an amount to each.
- * @param {string} title
- * @param {string} content
- * @param {foundry.documents.TokenDocument[]} targets
- * @param {object} [options]
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
+ * @param {foundry.documents.TokenDocument[]} targets Tokens to choose between.
+ * @param {object} [options] Additional options.
  * @param {'one'|'multiple'|'number'|'select'|'selectAmount'} [options.type] Radio, checkboxes, a number, a dropdown, or a number per target.
  * @param {object[]} [options.selectOptions] Per-target dropdown options.
  * @param {boolean} [options.skipDeadAndUnconscious] Adds a checkbox, returned as `skip`.
@@ -721,7 +723,7 @@ const targetInputTypes = {
  * @param {number} [options.minAmount] Minimum per target.
  * @param {boolean} [options.requireTotal] Disable Confirm until {@link maxAmount} is fully assigned.
  * @param {string} [options.userId] The user who sees the dialog.
- * @param {string} [options.buttons]
+ * @param {string} [options.buttons] Button set for the dialog.
  * @param {object} [options.maxes] Per-target override of {@link maxAmount}, keyed by token id.
  * @param {object} [options.tags] Per-target label tags, keyed by token id.
  * @returns {Promise<{result: foundry.documents.TokenDocument|foundry.documents.TokenDocument[]|{document: foundry.documents.TokenDocument, value: number}[], skip: boolean}|null>}
@@ -771,13 +773,13 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
 }
 /**
  * Prompt for individual dice across evaluated rolls, skipping deterministic terms.
- * @param {foundry.dice.Roll[]} [rolls]
- * @param {string} title
- * @param {string} content
- * @param {object} [options]
+ * @param {foundry.dice.Roll[]} [rolls] Rolls whose dice may be chosen.
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the inputs.
+ * @param {object} [options] Additional options.
  * @param {number} [options.max] Total dice selectable.
- * @param {string} [options.userId]
- * @param {string|Array} [options.buttons]
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @param {string|Array} [options.buttons] Button set for the dialog.
  * @returns {Promise<string[]|false>} Keys shaped `rollIndex-termIndex-resultIndex`.
  */
 async function selectDie(rolls = [], title, content, {max = 1, userId = game.user.id, buttons = 'okCancel'} = {}) {

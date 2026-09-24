@@ -26,7 +26,7 @@ export class RegisteredScales {
     scales = new Map();
     sources = new Set();
     getScaleByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, classIdentifier} = {}) {
-        const predicate = scale => (rules === 'all' || scale.rules === rules) && (source === 'all' || scale.source === source) && (!classIdentifier || scale.classIdentifier === classIdentifier);
+        const predicate = scale => (rules === 'all' || scale.rules === 'all' || scale.rules === rules) && (source === 'all' || scale.source === source) && (!classIdentifier || scale.classIdentifier === classIdentifier);
         const list = this.scales.get(identifier) ?? [];
         return multiple ? list.filter(predicate) : list.find(predicate);
     }

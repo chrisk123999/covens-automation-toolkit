@@ -160,14 +160,16 @@ class CatEvent {
                 groupedTriggers[name] = unsortedTriggers.filter(trigger => trigger.name === name);
             });
             names.forEach(name => {
-                let maxLevel = Math.max(...groupedTriggers[name].map(trigger => trigger.castData.castLevel));
-                let maxDC = Math.max(...groupedTriggers[name].map(trigger => trigger.castData.saveDC));
-                let maxDCTrigger = groupedTriggers[name].find(trigger => trigger.castData.saveDC === maxDC);
+                const group = groupedTriggers[name];
+                if (group.length === 1) return winningTriggers.add(group[0]);
+                let maxLevel = Math.max(...group.map(trigger => trigger.castData.castLevel));
+                let maxDC = Math.max(...group.map(trigger => trigger.castData.saveDC));
+                let maxDCTrigger = group.find(trigger => trigger.castData.saveDC === maxDC);
                 let selectedTrigger;
                 if (maxDCTrigger.castData.castLevel === maxLevel) {
                     selectedTrigger = maxDCTrigger;
                 } else {
-                    selectedTrigger = groupedTriggers[name].find(j => j.castData.castLevel === maxLevel);
+                    selectedTrigger = group.find(j => j.castData.castLevel === maxLevel);
                 }
                 winningTriggers.add(selectedTrigger);
             });

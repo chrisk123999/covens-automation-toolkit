@@ -10,7 +10,7 @@ import {crosshairUtils, genericUtils, queryUtils} from './_module.mjs';
 
 /**
  * Get the cast data stashed on this token.
- * @param {foundry.documents.TokenDocument} token
+ * @param {foundry.documents.TokenDocument} token Token to read from.
  * @returns {object|undefined}
  */
 function getSavedCastData(token) {
@@ -18,9 +18,9 @@ function getSavedCastData(token) {
 }
 /**
  * Measure between two tokens, accounting for their size.
- * @param {foundry.documents.TokenDocument} token
- * @param {foundry.documents.TokenDocument} target
- * @param {object} [options]
+ * @param {foundry.documents.TokenDocument} token Token to read from.
+ * @param {foundry.documents.TokenDocument} target Token measured to.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.wallsBlock] Return -1 when a wall lies between them.
  * @param {boolean} [options.checkCover] Include cover in the measurement.
  * @param {boolean} [options.convertToFt] Convert from grid units to scene units.
@@ -32,9 +32,9 @@ function getDistance(token, target, {wallsBlock, checkCover, convertToFt = true}
 }
 /**
  * Get the target's cover from the source, taking the greater of its cover condition and its calculated cover.
- * @param {foundry.documents.TokenDocument} sourceToken
- * @param {foundry.documents.TokenDocument} targetToken
- * @param {object} [options]
+ * @param {foundry.documents.TokenDocument} sourceToken Token acting.
+ * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
+ * @param {object} [options] Additional options.
  * @param {Activity} [options.activity] Used to ignore cover the activity is configured to bypass.
  * @param {boolean} [options.displayName] Return a localized label rather than the numeric bonus.
  * @returns {number|string}
@@ -55,9 +55,9 @@ function checkCover(sourceToken, targetToken, {activity, displayName}) {
 }
 /**
  * Whether two tokens are hostile to one another.
- * @param {foundry.documents.TokenDocument} source
- * @param {foundry.documents.TokenDocument} target
- * @param {object} [options]
+ * @param {foundry.documents.TokenDocument} source Token whose disposition is compared.
+ * @param {foundry.documents.TokenDocument} target Token measured to.
+ * @param {object} [options] Additional options.
  * @param {number} [options.dispositionA] Override the source's disposition.
  * @param {number} [options.dispositionB] Override the target's disposition.
  * @returns {boolean}
@@ -69,7 +69,7 @@ function isEnemy(source, target, {dispositionA, dispositionB} = {}) {
 }
 /**
  * Snapshot this token's combat position, for stamping an effect to a particular turn.
- * @param {foundry.documents.TokenDocument} token
+ * @param {foundry.documents.TokenDocument} token Token to read from.
  * @returns {{inCombat: boolean, combatId: string|null, currentRound: number|null, currentTurn: number|null}}
  */
 function getCombatData(token) {
@@ -83,11 +83,11 @@ function getCombatData(token) {
 }
 /**
  * Find tokens within range of this one, excluding hidden tokens.
- * @param {foundry.documents.TokenDocument} token
+ * @param {foundry.documents.TokenDocument} token Token to read from.
  * @param {number} range Scene units.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {'all'|'ally'|'neutral'|'enemy'} [options.disposition] Dispositions relative to the scene, not to {@link token}.
- * @param {boolean} [options.includeIncapacitated]
+ * @param {boolean} [options.includeIncapacitated] Include tokens that are incapacitated.
  * @param {boolean} [options.includeToken] Include {@link token} itself.
  * @returns {foundry.documents.TokenDocument[]}
  */
@@ -101,10 +101,9 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
     return MidiQOL.findNearby(dispositions[disposition], token.object, range, {includeIncapacitated, includeToken}).map(placeable => placeable.document).filter(token => !token.hidden);
 }
 /**
- * Move a token along a path, delegating to a GM when the user lacks permission. Walls constrain the path unless
- * `options.constrainOptions.ignoreWalls` is set, and a fully blocked move is abandoned.
- * @param {foundry.documents.TokenDocument} token
- * @param {object[]} waypoints
+ * Move a token along a path, delegating to a GM when the user lacks permission.
+ * @param {foundry.documents.TokenDocument} token Token to read from.
+ * @param {object[]} waypoints Positions to move through, in order.
  * @param {object} [options] Passed to {@link foundry.documents.TokenDocument#move}.
  * @returns {Promise<void>}
  */
@@ -127,13 +126,13 @@ async function moveToken(token, waypoints, options = {}) {
 /**
  * Teleport a token to a chosen position. Always uses {@link MovementAction} displace.
  * @param {foundry.documents.TokenDocument} token The token document to teleport.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {Crosshairs} [options.destination] Data for crosshair result (see {@link Crosshairs.prototype.toObject}). A new crosshair is prompted if {@link destination} is undefined.
  * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
  * @param {number} [options.range] Maximum distance in scene units.
  * @returns {Promise<undefined>}
  */
-async function teleportToken(token, {destination, animation, range = 30} = {}) {
+async function teleportToken(token, {destination, animation, options = {}, range = 30} = {}) {
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
@@ -143,7 +142,7 @@ async function teleportToken(token, {destination, animation, range = 30} = {}) {
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
-    if (preAnimation) await preAnimation(token, {destination});
+    if (preAnimation) await preAnimation(token, {destination, ...options});
     await moveToken(token, [
         {
             x: destination.x,
@@ -152,13 +151,13 @@ async function teleportToken(token, {destination, animation, range = 30} = {}) {
         }
     ]);
     const postAnimation = animation?.macros?.postAnimation;
-    if (postAnimation) await postAnimation(token, {destination});
+    if (postAnimation) await postAnimation(token, {destination, ...options});
     await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run();
 }
 /**
  * Move a token to a chosen position.
  * @param {foundry.documents.TokenDocument} token The token document to move.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {Crosshairs} [options.destination] Data for crosshair result (see {@link Crosshairs.prototype.toObject}). A new crosshair is prompted if {@link destination} is undefined.
  * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
  * @param {foundry.documents.TokenDocument} [options.sourceToken] Origin of the movement.
@@ -190,7 +189,7 @@ async function displaceToken(token, {sourceToken, destination, animation, range 
 /**
  * Push a token in a given direction.
  * @param {foundry.documents.TokenDocument} token The token document to push.
- * @param {object} options
+ * @param {object} options Additional options.
  * @param {foundry.canvas.geometry.Ray} [options.ray] Direction for the push. If not provided, {@link sourceToken} is used to create a ray directly away from {@link token}.
  * @param {foundry.documents.TokenDocument} [options.sourceToken] Origin of the push. Must be provided if {@link ray} is undefined.
  * @param {MovementAction} [options.action] See {@link MovementAction}.
@@ -254,17 +253,30 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
     });
 }
 /**
- * @param {foundry.documents.TokenDocument} sourceToken
- * @param {foundry.documents.TokenDocument} targetToken
+ * Whether this token can see the target, by any means.
+ * @param {foundry.documents.TokenDocument} sourceToken Token acting.
+ * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
  * @returns {boolean}
  */
 function canSee(sourceToken, targetToken) {
     return MidiQOL.canSee(sourceToken, targetToken);
 }
 /**
- * @param {foundry.documents.TokenDocument} sourceToken
- * @param {foundry.documents.TokenDocument} targetToken
- * @param {object} [options]
+ * Can this token perceive the target through the given detection modes?
+ * @param {foundry.documents.TokenDocument} sourceToken Token acting.
+ * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
+ * @param {string[]} [senseModes] Detection mode ids to test, or `['all']` for any.
+ * @returns {boolean}
+ */
+function canSense(sourceToken, targetToken, senseModes = ['all']) {
+    if (!senseModes.length) return false;
+    return MidiQOL.canSense(sourceToken, targetToken, senseModes);
+}
+/**
+ * Run a grapple attempt between two tokens, applying the condition on success.
+ * @param {foundry.documents.TokenDocument} sourceToken Token acting.
+ * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
+ * @param {object} [options] Additional options.
  * @param {dnd5e.dataModels.activity.BaseActivityData} [options.activity] The initiating activity. Provides effect icons, name, rules, and roll DC.
  * @param {number} [options.flatDC] Escape DC. If undefined, instead uses the DC from the save on {@link activity}, or prompts {@link sourceToken} for a skill check.
  * @param {'2024'|'2014'} [options.rules] 2014 for skill checks or 2024 for saving throws. If undefined, uses the rules from {@link activity} or defaults to 2014.
@@ -275,8 +287,9 @@ async function grapple(sourceToken, targetToken, {activity, flatDC, rules, conte
     return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize});
 }
 /**
- * @param {foundry.documents.TokenDocument} sourceToken
- * @param {foundry.documents.TokenDocument[]} targetToken
+ * Whether the target is small enough to be grappled or shoved by this token.
+ * @param {foundry.documents.TokenDocument} sourceToken Token acting.
+ * @param {foundry.documents.TokenDocument[]} targetToken Token being acted on.
  * @param {'grapple'|'shove-push'|'shove-prone'} [identifier] Used to check condition immunities and change the warning message.
  * @param {boolean} [warning] False hides warnings from a failed size requirement.
  * @returns {Promise<boolean>}
@@ -286,7 +299,7 @@ async function grappleShoveSizeCheck(sourceToken, targetToken, identifier = 'gra
 }
 /**
  * Get the ambient light level at this token's position.
- * @param {foundry.documents.TokenDocument} token
+ * @param {foundry.documents.TokenDocument} token Token to read from.
  * @returns {'bright'|'dim'|'dark'}
  */
 function getLightLevel(token) {
@@ -312,6 +325,7 @@ export default {
     displaceToken,
     slideToken,
     canSee,
+    canSense,
     grapple,
     grappleShoveSizeCheck
 };

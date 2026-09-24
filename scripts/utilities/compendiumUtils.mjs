@@ -3,19 +3,19 @@ import {genericUtils, itemUtils} from './_module.mjs';
 /**
  * Prompt the compendium browser for a selection of documents.
  * @param {string} tab The browser tab to open, e.g. 'spells' or 'monsters'.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {string[]} [options.packIds] Restrict the browser to these compendiums.
- * @param {Function} [options.filterPredicate]
+ * @param {Function} [options.filterPredicate] Receives each index entry; only entries returning true are offered.
  * @param {object[]} [options.filters] Additional filters, see dnd5e.Filter.
  * @param {object} [options.lockedFilters] Filters the user cannot change.
  * @param {string[]} [options.exceptionIdentifiers] Identifiers offered despite failing other filters.
  * @param {string[]} [options.exceptionUuids] Uuids offered despite failing other filters.
- * @param {number} [options.minAmount]
- * @param {number} [options.maxAmount]
- * @param {string} [options.title]
- * @param {string} [options.hint]
- * @param {string} [options.icon]
- * @param {object} [options.position]
+ * @param {number} [options.minAmount] Fewest documents that may be chosen.
+ * @param {number} [options.maxAmount] Most documents that may be chosen.
+ * @param {string} [options.title] Window title.
+ * @param {string} [options.hint] Hint shown above the list.
+ * @param {string} [options.icon] Window icon.
+ * @param {object} [options.position] Initial window position.
  * @returns {Promise<foundry.abstract.Document[]|undefined>}
  */
 async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filters, lockedFilters, exceptionIdentifiers, exceptionUuids, minAmount = 1, maxAmount, title, hint, icon, position} = {}) {
@@ -42,9 +42,9 @@ async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filte
 }
 /**
  * Fetch a compendium document by its system or CAT identifier.
- * @param {string} packId
- * @param {string} identifier
- * @param {object} [options]
+ * @param {string} packId Compendium to search.
+ * @param {string} identifier Identifier to match.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.object] Return an object rather than a document.
  * @param {string} [options.description] Set the description.
  * @param {string} [options.translate] A localization key for the document and effect names.
@@ -92,8 +92,8 @@ async function getDocumentByIdentifier(packId, identifier, {object = false, desc
 }
 /**
  * Fetch a compendium document by exact name.
- * @param {string} packId
- * @param {string} name
+ * @param {string} packId Compendium to search.
+ * @param {string} name Document name to match.
  * @returns {Promise<foundry.abstract.Document|undefined>}
  */
 async function getDocumentByName(packId, name) {
@@ -106,7 +106,7 @@ async function getDocumentByName(packId, name) {
 }
 /**
  * Build a compendium browser filter object from a list of keys.
- * @param {string[]} list
+ * @param {string[]} list Values the filter accepts.
  * @param {boolean} [include] False to exclude the listed keys instead.
  * @returns {Record<string, number>}
  */
@@ -126,11 +126,10 @@ function getEnabledCompendiumIds(settingKey) {
 }
 /**
  * Open the compendium browser for a choice of spell from the provided classes.
- * Spell lists are taken from the DND5E registry.
  * @param {string[]} listKeys Class list keys in the form 'type:identifier'. Allowed types are defined in CONFIG.DND5E.spellListTypes.
- * @param {object} [options]
- * @param {string} [options.icon]
- * @param {string} [options.title]
+ * @param {object} [options] Additional options.
+ * @param {string} [options.icon] Window icon.
+ * @param {string} [options.title] Window title.
  * @param {object[]} [options.filters] Additional filters, see dnd5e.Filter.
  * @param {number} [options.amount] The number of spells that can be chosen.
  * @param {number} [options.minLevel] The minimum spell level offered as an option.
@@ -168,9 +167,9 @@ async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, p
 }
 /**
  * Open the compendium browser for a choice of actor document.
- * @param {object} [options]
- * @param {string} [options.icon]
- * @param {string} [options.title]
+ * @param {object} [options] Additional options.
+ * @param {string} [options.icon] Window icon.
+ * @param {string} [options.title] Window title.
  * @param {object[]} [options.filters] Additional filters, see dnd5e.Filter.
  * @param {number} [options.amount] The number of actors that can be chosen.
  * @param {number} [options.minCR] The minimum challenge rating offered as an option.
@@ -203,8 +202,8 @@ async function selectActor({amount = 1, minCR, maxCR, creatureTypes, excludeMove
 }
 /**
  * Find the compendium uuid of a document by its identifier, without loading the document.
- * @param {string} packId
- * @param {string} identifier
+ * @param {string} packId Compendium to search.
+ * @param {string} identifier Identifier to match.
  * @returns {Promise<string|undefined>}
  */
 async function getDocumentUuidByIdentifier(packId, identifier) {
@@ -215,8 +214,8 @@ async function getDocumentUuidByIdentifier(packId, identifier) {
 }
 /**
  * Find the compendium uuid of a spell by its identifier, searching the configured spell compendiums in priority order.
- * @param {string} identifier
- * @param {object} [options]
+ * @param {string} identifier Identifier to match.
+ * @param {object} [options] Additional options.
  * @param {string[]} [options.packIds] Search these compendiums instead of the configured ones.
  * @returns {Promise<string|undefined>}
  */
@@ -229,8 +228,8 @@ async function getSpellUuid(identifier, {packIds} = {}) {
 }
 /**
  * Fetch a compendium spell by identifier.
- * @param {string} identifier
- * @param {object} [options]
+ * @param {string} identifier Identifier to match.
+ * @param {object} [options] Additional options.
  * @param {string[]} [options.packIds] Pack ids to search instead of the spell compendiums configured in settings.
  * @param {boolean} [options.object] Return an object rather than a document.
  * @param {string} [options.description] Set the description.

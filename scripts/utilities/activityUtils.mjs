@@ -2,7 +2,7 @@ import {documentUtils, effectUtils, itemUtils} from './_module.mjs';
 
 /**
  * Get the save DC of the activity, if a save, otherwise infer a save DC from the activity's ability, default 10.
- * @param {Activity} activity
+ * @param {Activity} activity Activity to read from.
  * @returns {number}
  */
 function getSaveDC(activity) {
@@ -12,7 +12,7 @@ function getSaveDC(activity) {
 
 /**
  * Get save DC, cast & base levels flagged on the activity (if present, else -1 for the latter values).
- * @param {Activity} activity
+ * @param {Activity} activity Activity to read from.
  * @returns {{castLevel: number; baseLevel: number; saveDC: number}}
  */
 function getSavedCastData(activity) {
@@ -26,7 +26,7 @@ function getSavedCastData(activity) {
 
 /**
  * Get a set of status effect IDs which this activity may convey via its assigned Active Effects.
- * @param {Activity} activity
+ * @param {Activity} activity Activity to read from.
  * @returns {Set<string>}
  */
 function getConditions(activity) {
@@ -144,8 +144,8 @@ function getSaveDCModifiedActivityData(activity, dc) {
 
 /**
  * Create an in-memory activity based on activity data & an item. Does not modify the item itself.
- * @param {object} activityData
- * @param {Item} item
+ * @param {object} activityData Activity data to build an in-memory activity from.
+ * @param {Item} item Item the in-memory activity belongs to.
  * @returns {Activity}
  */
 function syntheticActivity(activityData, item) {
@@ -157,7 +157,7 @@ function syntheticActivity(activityData, item) {
 
 /**
  * Get the activity's duration data.
- * @param {Activity} activity
+ * @param {Activity} activity Activity to read from.
  * @returns {object}
  */
 function getEffectDuration(activity) {
@@ -166,7 +166,7 @@ function getEffectDuration(activity) {
 
 /**
  * Get the activity's duration in seconds.
- * @param {Activity} activity
+ * @param {Activity} activity Activity to read from.
  * @returns {number|undefined}
  */
 function getDuration(activity) {
@@ -175,7 +175,7 @@ function getDuration(activity) {
 
 /**
  * Get a set of the activity's "item use" consumption target IDs
- * @param {Activity} activity
+ * @param {Activity} activity Activity to read from.
  * @returns {Set<string>}
  */
 function getDependencies(activity) {
@@ -189,7 +189,7 @@ function getDependencies(activity) {
 
 /**
  * Whether the activity still uses its type's default icon.
- * @param {dnd5e.documents.activity.Activity} activity
+ * @param {dnd5e.documents.activity.Activity} activity Activity to read from.
  * @returns {boolean}
  */
 function hasDefaultIcon(activity) {
@@ -198,7 +198,7 @@ function hasDefaultIcon(activity) {
 
 /**
  * Whether the activity still uses its type's default name.
- * @param {dnd5e.documents.activity.Activity} activity
+ * @param {dnd5e.documents.activity.Activity} activity Activity to read from.
  * @returns {boolean}
  */
 function hasDefaultName(activity) {
@@ -206,10 +206,11 @@ function hasDefaultName(activity) {
 }
 
 /**
- * @param {dnd5e.dataModels.activity.BaseActivityData} activity
- * @param {object} [options]
+ * The damage rolls this activity would produce, before any workflow changes.
+ * @param {dnd5e.dataModels.activity.BaseActivityData} activity Activity to read from.
+ * @param {object} [options] Additional options.
  * @param {'oneHanded'|'twoHanded'|'offhand'|'ranged'|'thrown'|'thrown-offhand'} [options.attackMode] A key from CONFIG.DND5E.attackModes.
- * @param {number} [options.scaling]
+ * @param {number} [options.scaling] Scaling steps applied before the damage is read.
  * @param {boolean} [options.simplify] Combine like dice terms, respecting damage type and properties.
  * @returns {dnd5e.dice.DamageRoll[]} Unevaluated damage rolls.
  */
@@ -230,8 +231,9 @@ function getDefaultDamageRolls(activity, {attackMode, scaling = 0, simplify = tr
 }
 
 /**
- * @param {dnd5e.dataModels.activity.BaseActivityData} activity
- * @param {foundry.documents.Item} spell
+ * Point a cast activity at a different copy of its spell.
+ * @param {dnd5e.dataModels.activity.BaseActivityData} activity Activity to read from.
+ * @param {foundry.documents.Item} spell Spell the cast activity should point at.
  */
 async function correctSpellLink(activity, spell) {
     return await documentUtils.update(activity, {'spell.uuid': spell.uuid});

@@ -26,9 +26,10 @@ const {OperatorTerm, NumericTerm} = foundry.dice.terms;
  */
 
 /**
- * @param {string} formula
- * @param {object} [options]
- * @param {foundry.abstract.Document} [options.document]
+ * Roll a formula synchronously, for data preparation and other places that cannot await.
+ * @param {string} formula Formula to roll.
+ * @param {object} [options] Additional options.
+ * @param {foundry.abstract.Document} [options.document] Document supplying roll data.
  * @param {EvaluateOptions & {strict?: boolean}} [options.options]
  * @returns {foundry.dice.Roll}
  */
@@ -37,11 +38,11 @@ function rollDiceSync(formula, {document, options: {strict = false, maximize = f
 }
 /**
  * Replace rolls with manually entered results when manual rolls are enabled for the actor.
- * @param {foundry.dice.Roll[]} rolls
- * @param {foundry.documents.Actor} actor
+ * @param {foundry.dice.Roll[]} rolls Rolls to work with.
+ * @param {foundry.documents.Actor} actor Actor the rolls belong to.
  * @param {string} label Shown as the heading of the manual roll prompt.
- * @param {object} [options]
- * @param {typeof foundry.dice.Roll} [options.rollClass]
+ * @param {object} [options] Additional options.
+ * @param {typeof foundry.dice.Roll} [options.rollClass] Roll class the manual rolls are rebuilt as.
  * @returns {Promise<foundry.dice.Roll[]>}
  */
 async function resolveManualRolls(rolls, actor, label, {rollClass = CONFIG.Dice.DamageRoll} = {}) {
@@ -54,14 +55,15 @@ async function resolveManualRolls(rolls, actor, label, {rollClass = CONFIG.Dice.
     return newRolls;
 }
 /**
- * @param {string} formula
- * @param {object} [options]
- * @param {foundry.abstract.Document} [options.document]
- * @param {boolean} [options.message]
- * @param {string} [options.flavor]
- * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode]
+ * Roll a formula, optionally posting it to chat.
+ * @param {string} formula Formula to roll.
+ * @param {object} [options] Additional options.
+ * @param {foundry.abstract.Document} [options.document] Document supplying roll data.
+ * @param {boolean} [options.message] Post the roll to chat.
+ * @param {string} [options.flavor] Flavour text for the chat card.
+ * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode] Roll visibility mode.
  * @param {boolean} [options.manual] Prompt for a manually entered result when manual rolls are enabled.
- * @param {EvaluateOptions} [options.options]
+ * @param {EvaluateOptions} [options.options] Evaluation options.
  * @returns {Promise<foundry.dice.Roll>}
  */
 async function rollDice(formula, {document, message, flavor, mode = 'public', manual = false, options: {maximize = false, minimize = false} = {}} = {}) {
@@ -78,7 +80,8 @@ async function rollDice(formula, {document, message, flavor, mode = 'public', ma
     return roll;
 }
 /**
- * @param {foundry.dice.Roll[]} rolls
+ * Add up the totals of several rolls.
+ * @param {foundry.dice.Roll[]} rolls Rolls to work with.
  * @returns {number}
  */
 function getRollsTotal(rolls) {
@@ -86,21 +89,35 @@ function getRollsTotal(rolls) {
 }
 
 /**
- * @param {string} formula
- * @param {foundry.abstract.Document} document
- * @param {CritOptions} [options]
+ * The formula this damage would use on a critical hit.
+ * @param {string} formula Formula to roll.
+ * @param {foundry.abstract.Document} document Document supplying roll data.
+ * @param {CritOptions} [options] Critical and damage handling.
  * @returns {string}
  */
 function getCriticalFormula(formula, document, {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}) {
     return new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {isCritical: true, critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical}}).formula;
 }
 /**
- * @param {string} formula
- * @param {foundry.abstract.Document} document
- * @param {DamageOptions} [options]
- * @param {EvaluateOptions} [evaluateOptions]
- * @returns {Promise<dnd5e.dice.DamageRoll>}
- * */
+ * Roll damage from a formula, using a document for roll data.
+ * @param {string|number} formula Damage formula to roll.
+ * @param {foundry.abstract.Document} document Document supplying roll data, usually an item or activity.
+ * @param {object} [options] Additional options.
+ * @param {object} [options.critOptions] Critical handling, matching dnd5e's DamageRoll critical config.
+ * @param {string} [options.critOptions.bonusDamage] Formula added on a critical hit.
+ * @param {number} [options.critOptions.bonusDice] Extra dice added on a critical hit.
+ * @param {number} [options.critOptions.multiplier] How many times the dice are multiplied.
+ * @param {boolean} [options.critOptions.multiplyNumeric] Also multiply flat terms.
+ * @param {boolean} [options.critOptions.powerfulCritical] Maximize the extra dice.
+ * @param {string} [options.flavor] Flavour shown on the roll.
+ * @param {boolean} [options.isCritical] Roll this as a critical hit.
+ * @param {string[]} [options.properties] Item properties carried onto the roll.
+ * @param {string} [options.type] Damage type.
+ * @param {object} [evaluateOptions] Evaluation options, such as maximize and minimize.
+ * @param {boolean} [evaluateOptions.maximize] Take the highest result on every die.
+ * @param {boolean} [evaluateOptions.minimize] Take the lowest result on every die.
+ * @returns {Promise<CONFIG.Dice.DamageRoll>} The evaluated roll.
+ */
 async function damageRoll(formula, document, {critOptions: {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}, flavor, isCritical, properties, type} = {}, {maximize, minimize} = {}) {
     return await new CONFIG.Dice.DamageRoll(String(formula), document.getRollData(), {
         critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical},
@@ -109,7 +126,7 @@ async function damageRoll(formula, document, {critOptions: {bonusDamage, bonusDi
 }
 /**
  * Rebuild a damage roll with every flavoured term retyped.
- * @param {CONFIG.Dice.DamageRoll} origRoll
+ * @param {CONFIG.Dice.DamageRoll} origRoll Roll to rebuild.
  * @param {string} newType A key of CONFIG.DND5E.damageTypes.
  * @returns {Promise<CONFIG.Dice.DamageRoll>}
  */
@@ -118,9 +135,9 @@ async function getChangedDamageRoll(origRoll, newType) {
 }
 /**
  * Append a formula to an existing roll, preserving the original roll data.
- * @param {foundry.dice.Roll} roll
- * @param {string|number} formula
- * @param {object} [options]
+ * @param {foundry.dice.Roll} roll Roll to work with.
+ * @param {string|number} formula Formula to roll.
+ * @param {object} [options] Additional options.
  * @param {object} [options.rollData] Roll data for the appended formula.
  * @returns {Promise<foundry.dice.Roll>}
  */
@@ -132,7 +149,7 @@ async function addToRoll(roll, formula, {rollData} = {}) {
 }
 /**
  * Whether any die result is repeated across the given rolls.
- * @param {foundry.dice.Roll[]} rolls
+ * @param {foundry.dice.Roll[]} rolls Rolls to work with.
  * @returns {boolean}
  */
 function hasDuplicateDie(rolls) {
@@ -150,8 +167,8 @@ function hasDuplicateDie(rolls) {
 }
 /**
  * Discard all terms in {@link roll}. Use the terms and total from {@link newRoll}.
- * @param {foundry.dice.Roll} roll
- * @param {foundry.dice.Roll} newRoll
+ * @param {foundry.dice.Roll} roll Roll to work with.
+ * @param {foundry.dice.Roll} newRoll Roll whose results replace the original.
  * @returns {foundry.dice.Roll}
  */
 function replaceRollShowDiscarded(roll, newRoll) {
@@ -172,8 +189,8 @@ function replaceRollShowDiscarded(roll, newRoll) {
 }
 /**
  * Discards rolled terms and brings the total to the given value by adding a bonus.
- * @param {foundry.dice.Roll} roll
- * @param {number} total
+ * @param {foundry.dice.Roll} roll Roll to work with.
+ * @param {number} total Total to force the roll to.
  * @returns {foundry.dice.Roll}
  */
 function setTotalWithBonus(roll, total) {
@@ -198,16 +215,16 @@ function setTotalWithBonus(roll, total) {
 }
 /**
  * Note - tools will roll '-1' if the associated item is not present on the character sheet.
- * @param {foundry.documents.Actor} token
- * @param {'abil'|'check'|'save'|'test'|'skill'|'tool'|'deathSave'} request
+ * @param {foundry.documents.Actor} token Actor the roll is requested from.
+ * @param {'abil'|'check'|'save'|'test'|'skill'|'tool'|'deathSave'} request Kind of roll to request.
  * @param {string} ability Use an ability, skill, or tool abbreviation.
- * @param {object} [options]
- * @param {number} [options.rollDC]
- * @param {boolean} [options.advantage]
- * @param {boolean} [options.disadvantage]
+ * @param {object} [options] Additional options.
+ * @param {number} [options.rollDC] DC the roll is checked against.
+ * @param {boolean} [options.advantage] Roll with advantage.
+ * @param {boolean} [options.disadvantage] Roll with disadvantage.
  * @param {boolean} [options.fast] Fast forward.
  * @param {boolean} [options.message] Create a chat card.
- * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode]
+ * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode] Roll visibility mode.
  * @returns {Promise<dnd5e.dice.D20Roll>}
  */
 async function requestRoll(actor, request, ability, {rollDC, advantage, disadvantage, fast, message = true, mode = 'public'} = {}) {
@@ -239,17 +256,16 @@ async function requestRoll(actor, request, ability, {rollDC, advantage, disadvan
     return (await MidiQOL.socket().executeAsUser('rollAbility', user.id, data))?.[0];
 }
 /**
- * Returns a number representing the target's roll total subtracted from the source's roll total.
- * Returns undefined for actorless tokens or invalid abilities.
- * @param {object} params
+ * Returns a number representing the target's roll total subtracted from the source's roll total, or undefined for actorless tokens and invalid abilities.
+ * @param {object} params Contest settings.
  * @param {string} params.flavor Text for the results chat card.
  * @param {boolean} params.message Display results in a chat card.
- * @param {foundry.documents.TokenDocument} params.sourceToken
- * @param {foundry.documents.TokenDocument} params.targetToken
- * @param {'abil'|'test'|'save'|'skill'} params.sourceRollType
- * @param {'abil'|'test'|'save'|'skill'} params.targetRollType
- * @param {string[]} params.sourceAbilities
- * @param {string[]} params.sourceAbilities
+ * @param {foundry.documents.TokenDocument} params.sourceToken Token making the contest.
+ * @param {foundry.documents.TokenDocument} params.targetToken Token opposing it.
+ * @param {'abil'|'test'|'save'|'skill'} params.sourceRollType Kind of roll the source makes.
+ * @param {'abil'|'test'|'save'|'skill'} params.targetRollType Kind of roll the target makes.
+ * @param {string[]} params.sourceAbilities Abilities or skills the source may use; the best is chosen.
+ * @param {string[]} params.targetAbilities Abilities or skills the target may use; the best is chosen.
  * @returns {Promise<number|undefined>}
  */
 async function contestedRoll({sourceToken, targetToken, sourceRollType, targetRollType, sourceAbilities, targetAbilities, message, flavor}) {
@@ -270,8 +286,9 @@ async function contestedRoll({sourceToken, targetToken, sourceRollType, targetRo
     }))?.result;
 }
 /**
- * @param {'attack'|'damage'|'check'|'save'|'skill'|'tool'} rollType
- * @param {foundry.documents.User} user
+ * Whether midi's settings skip the roll dialog for this user.
+ * @param {'attack'|'damage'|'check'|'save'|'skill'|'tool'} rollType Kind of roll being made.
+ * @param {foundry.documents.User} user User the roll belongs to.
  * @returns {boolean}
  */
 function shouldFastForward(rollType, user = game.user) {
