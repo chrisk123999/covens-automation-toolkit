@@ -6,7 +6,7 @@ const activityVisibilityLocks = new Map();
 
 /**
  * Returns the DC of the first Save activity on an item, otherwise the save DC of the appropriate ability on the item, otherwise 10
- * @param {Item5e} item
+ * @param {Item5e} item Item to read from.
  * @returns {number}
  */
 function getSaveDC(item) {
@@ -15,7 +15,7 @@ function getSaveDC(item) {
 }
 /**
  * Get the cast data stashed on this item, with its current save DC.
- * @param {Item5e} item
+ * @param {Item5e} item Item to read from.
  * @returns {{castLevel: number, baseLevel: number, saveDC: number, school: string|undefined}} Levels are -1 when nothing is stashed.
  */
 function getSavedCastData(item) {
@@ -29,8 +29,8 @@ function getSavedCastData(item) {
 /**
  * Find one of this item's activities by its identifier, which midi derives from
  * `midiProperties.identifier`, falling back to a slug of the activity name.
- * @param {Item5e} item
- * @param {string} identifier
+ * @param {Item5e} item Item to read from.
+ * @param {string} identifier Activity identifier to match.
  * @returns {Activity|undefined}
  */
 function getActivityByIdentifier(item, identifier) {
@@ -38,8 +38,8 @@ function getActivityByIdentifier(item, identifier) {
 }
 /**
  * Build a prepared, unsaved item owned by an actor, for handing a modified copy to a workflow.
- * @param {object} itemData
- * @param {foundry.documents.Actor} actor
+ * @param {object} itemData Item data to build an in-memory item from.
+ * @param {foundry.documents.Actor} actor Actor the items belong to.
  * @returns {Item5e}
  */
 function syntheticItem(itemData, actor) {
@@ -51,9 +51,9 @@ function syntheticItem(itemData, actor) {
 }
 /**
  * Apply an enchantment to an item. The effect data must carry an origin.
- * @param {Item5e} item
+ * @param {Item5e} item Item to read from.
  * @param {object} effectData Coerced to an enchantment; `transfer` is forced off.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {object[]} [options.effects] Additional effects created on the actor, dependent on the enchantment.
  * @param {object[]} [options.items] Additional items created on the actor, dependent on the enchantment.
  * @param {object} [options.effectOptions] Passed to the creation when it goes through a GM.
@@ -81,9 +81,9 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
 }
 /**
  * Create items on an actor, optionally favoriting them and tying their lifetime to a parent document.
- * @param {foundry.documents.Actor} actor
- * @param {object[]} itemDatas
- * @param {object} [options]
+ * @param {foundry.documents.Actor} actor Actor the items belong to.
+ * @param {object[]} itemDatas Item data to create.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.favorite] Add the created items to the actor's favorites.
  * @param {foundry.abstract.Document} [options.parentEntity] Delete the created items when this document is deleted.
  * @returns {Promise<foundry.documents.Item[]>}
@@ -96,10 +96,9 @@ async function createItems(actor, itemDatas, {favorite = false, parentEntity} = 
 }
 /**
  * Reveal activities hidden by `flags.cat.hidden`, through a `catHiddenActivities` enchantment on the item.
- * Calls against the same item are queued, so concurrent reveals do not clobber one another.
- * @param {Item5e} item
- * @param {string[]} identifiers
- * @param {object} [options]
+ * @param {Item5e} item Item to read from.
+ * @param {string[]} identifiers Activity identifiers to act on.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.ids] Treat {@link identifiers} as activity ids rather than identifiers.
  * @param {boolean} [options.favorite] Also add the revealed activities to the actor's favorites.
  * @returns {Promise<ActiveEffect|undefined>} The enchantment holding the overrides.
@@ -159,9 +158,9 @@ async function unhideActivities(item, identifiers, {ids = false, favorite = fals
 }
 /**
  * Undo {@link unhideActivities}, dropping the whole enchantment once nothing is left revealed.
- * @param {Item5e} item
- * @param {string[]} [identifiers]
- * @param {object} [options]
+ * @param {Item5e} item Item to read from.
+ * @param {string[]} [identifiers] Activity identifiers to act on.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.all] Re-hide everything, ignoring {@link identifiers}.
  * @param {boolean} [options.favorite] Also drop the re-hidden activities from the actor's favorites.
  * @returns {Promise<void>}
@@ -204,8 +203,7 @@ async function rehideActivities(item, identifiers = [], {all = false, favorite =
 }
 /**
  * Fetch a key representing the class, race, feat, etc. that granted an item ('type:identifier').
- * This can be set manually on compendium items in the Item CatKit.
- * @param {Item5e} item
+ * @param {Item5e} item Item to read from.
  * @returns {string|undefined}
  */
 function getAdvancementSourceKey(item) {
@@ -216,8 +214,8 @@ function getAdvancementSourceKey(item) {
 }
 /**
  * Fetch the class, race, feat, etc. that granted an item. Works on actor items only.
- * @param {Item5e} item
- * @param {*} [options]
+ * @param {Item5e} item Item to read from.
+ * @param {*} [options] Passed through to dnd5e's advancement lookup.
  * @param {boolean} [options.subclass] If true and the advancement source resolves to a subclass, return the base class instead. Default false.
  * @returns {Item5e|undefined}
  */
@@ -237,7 +235,7 @@ function getAdvancementSourceItem(item, {subclass = false} = {}) {
 }
 /**
  * Whether this item is currently active: equipped, and attuned when attunement is required.
- * @param {Item5e} item
+ * @param {Item5e} item Item to read from.
  * @returns {boolean} True for items that cannot be equipped at all.
  */
 function getEquipmentState(item) {
@@ -248,7 +246,7 @@ function getEquipmentState(item) {
 }
 /**
  * Get every damage type an item can deal across its attack, damage and save activities, including flavor-declared types.
- * @param {Item5e} item
+ * @param {Item5e} item Item to read from.
  * @returns {Set<string>}
  */
 function getItemDamageTypes(item) {
@@ -259,7 +257,7 @@ function getItemDamageTypes(item) {
 }
 /**
  * Remove CAT's generated description block from an item description.
- * @param {string} html
+ * @param {string} html Description html to work on.
  * @returns {string}
  */
 function stripDescriptionBlock(html) {
@@ -270,8 +268,39 @@ function stripDescriptionBlock(html) {
     return wrapper.innerHTML;
 }
 /**
+ * Bake an item's damage and save data into bare enrichers so a kept description still resolves after its activities are replaced.
+ * @param {string} html Description html to work on.
+ * @param {Item5e} item The item the description currently belongs to.
+ * @returns {string}
+ */
+function resolveDescriptionEnrichers(html, item) {
+    if (!html?.includes('[[/')) return html;
+    const activities = item.system?.activities;
+    if (!activities) return html;
+    if (html.includes('[[/damage]]')) {
+        const parts = activities.find(entry => entry.damage?.parts?.length)?.damage.parts ?? [];
+        const config = parts.map(part => {
+            const types = Array.from(part.types ?? []).join('|');
+            return [part.formula, types ? 'type=' + types : ''].filter(Boolean).join(' ');
+        }).filter(Boolean).join(' & ');
+        if (config) html = html.replaceAll('[[/damage]]', '[[/damage ' + config + ']]');
+    }
+    if (html.includes('[[/save]]')) {
+        const save = activities.find(entry => entry.save?.ability?.size)?.save;
+        const abilities = Array.from(save?.ability ?? []).join('|');
+        if (abilities) {
+            const dc = save.dc.calculation === 'spellcasting' ? '@attributes.spell.dc'
+                : save.dc.calculation in CONFIG.DND5E.abilities ? '@abilities.' + save.dc.calculation + '.dc'
+                    : save.dc.formula;
+            const config = ['ability=' + abilities, dc ? 'dc=' + dc : ''].filter(Boolean).join(' ');
+            html = html.replaceAll('[[/save]]', '[[/save ' + config + ']]');
+        }
+    }
+    return html;
+}
+/**
  * Replace CAT's generated description block on an item, skipping the update when nothing changed.
- * @param {Item5e} item
+ * @param {Item5e} item Item to read from.
  * @param {string} content Empty removes the block.
  * @returns {Promise<void>}
  */
@@ -292,7 +321,7 @@ async function setDescriptionBlock(item, content) {
 }
 /**
  * Collect the ids every activity on this item depends on.
- * @param {Item5e} item
+ * @param {Item5e} item Item to read from.
  * @returns {Set<string>}
  */
 function getDependencies(item) {
@@ -302,9 +331,8 @@ function getDependencies(item) {
     return dependencies;
 }
 /**
- * Whether this spell could be cast right now, accounting for preparation, casting method and
- * anything its linked activity would consume.
- * @param {Item5e} item
+ * Whether this spell could be cast right now, accounting for preparation, casting method and anything its linked activity would consume.
+ * @param {Item5e} item Item to read from.
  * @returns {boolean} False for anything that is not a spell.
  */
 function canCast(item) {
@@ -355,6 +383,7 @@ export default {
     getEquipmentState,
     getItemDamageTypes,
     stripDescriptionBlock,
+    resolveDescriptionEnrichers,
     setDescriptionBlock,
     getDependencies,
     canCast

@@ -29,7 +29,7 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  * @property {RollBonus} bonus The current bonus.
  * @property {number} rollTotal The current total of the target roll(s) before adding bonuses, if available.
  * @property {RollBonus[]} otherBonuses Other candidate bonuses for the same target roll.
- * @property {MidiQOL.Worklow} [workflow] The workflow the target roll is part of.
+ * @property {MidiQOL.Workflow} [workflow] The workflow the target roll is part of.
  * @property {foundry.dice.Roll} [roll] The target roll, once it exists.
  * @property {{success: boolean, isCritical?: boolean, isFumble?: boolean}} [outcome] The result of the target roll, once known.
  */
@@ -322,13 +322,17 @@ class RollBonus {
         this.#inputs = value;
     }
 
-    /** @param {CostScalingHandler} cost @returns {this} */
+    /**
+     * @param {CostScalingHandler} cost
+     * @returns {this}
+     * */
     withCostHandler(cost) {
         if (typeof cost !== 'function') return this;
         this.#costScaling = cost;
         return this;
     }
-    /** Collects action economy and consumption targets from {@link RollBonus.activity|this.activity}.
+    /**
+     * Collects action economy and consumption targets from {@link RollBonus.activity|this.activity}.
      * @param {dnd5e.dataModels.activity.BaseActivityData} [activity] Optionally change the activity for this bonus.
      * @param {foundry.documents.Actor} [actor] Optionally change the actor who provides resources for this bonus.
      * @returns {this} */
@@ -350,7 +354,8 @@ class RollBonus {
         this.#thirdPartyRequest = request;
         return this;
     }
-    /** Sends a basic confirmation prompt to the source of the bonus that displays the current roll total.
+    /**
+     * Sends a basic confirmation prompt to the source of the bonus that displays the current roll total.
      * @param {foundry.documents.Actor} [actor] Optionally change the actor who provides resources for this bonus.
      * @param {foundry.documents.Actor} [targetActor] Optionally change the actor who benefits from this bonus.
      * @returns {this} */
@@ -420,7 +425,7 @@ class RollBonus {
     }
     /**
      * Runs all handlers to initialize costs, hints, and scaling.
-     * @param {MidiQOL.Worklow} [workflow]
+     * @param {MidiQOL.Workflow} [workflow]
      * */
     initialize(workflow) {
         this.updateScaling(0, workflow);
@@ -601,6 +606,8 @@ class RollBonus {
     static async defaultRequest({rollTotal, bonus, workflow, otherBonuses}) {
         if (!RollBonus.CheckCost(bonus)) return {result: false, reason: _loc('CAT.OptionalBonus.InvalidResources')};
         if (bonus.autoApproveRequests) return {result: true, reason: _loc('CAT.Dialog.Request.Automatic')};
+        const user = queryUtils.firstOwner(bonus.actor);
+        if (user.id === game.user.id) return {result: true, reason: _loc('CAT.Dialog.Request.Automatic')};
         const name = bonus.targetActor?.name ?? _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally');
         const document = {name: `${bonus.name} (+${bonus.roll.formula})`};
         if (Number.isNumeric(rollTotal)) {
@@ -612,7 +619,6 @@ class RollBonus {
             });
             if (diceTerms.length) rollTotal = `${rollTotal} + ${diceTerms.join(' + ')}`;
         }
-        const user = queryUtils.firstOwner(bonus.actor);
         const result = await dialogUtils.confirmUseForRollTotal(document, name, rollTotal, {userId: user.id});
         return result ? result : {result, reason: `${user.name} ${_loc('CAT.Dialog.Request.Declined')}`};
     }

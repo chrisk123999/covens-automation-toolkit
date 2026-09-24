@@ -598,6 +598,10 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     #animationSubOptions(source, identifier, selection) {
         if (!selection?.source || !selection?.identifier) return [];
+        if (!source || !identifier) {
+            const stored = this.#flags.animationConfig?.[selection.source]?.[selection.identifier] ?? {};
+            return this.#animationConfigOptions(selection, stored, `animationConfig.${selection.source}.${selection.identifier}`);
+        }
         const stored = this.#flags.animationGenericConfig?.[source]?.[identifier]?.[selection.source]?.[selection.identifier] ?? {};
         return this.#animationConfigOptions(selection, stored, `animationGenericConfig.${source}.${identifier}.${selection.source}.${selection.identifier}`);
     }
@@ -819,6 +823,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         }
         await documentUtils.update(this.#document, updates);
         this.#reacquireDocument();
+        if (this.#document.documentName === 'Item' && this.#document.actor) await automationUtils.updateScales(this.#document);
         this.#hydrateState();
     }
 

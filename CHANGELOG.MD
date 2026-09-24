@@ -1,6 +1,24 @@
 # 0.0.9 Release:
+## Update Notes:
+- Added setting: Fix Description Enrichers. When an automation update keeps an item's existing description, bare `[[/damage]]` and `[[/save]]` enrichers are rewritten from the item. Off by default, since it edits description text.
 ## API Update Notes:
 - Swapped the order of D20 events `bonus` and `optionalBonus`. `bonus` is now the final event in which the roll can be changed and should be used for rerolls.
+- Added utils:
+  - `tokenUtils.canSense`
+- `tokenUtils.teleportToken` accepts `options` and passes them to the animation's macros, so a teleport animation's own config now reaches it.
+- JSDoc added across `automationUtils`, `workflowUtils` and `documentUtils`.
+## API Bug Fixes:
+- Class scales resolve from subclass items, not just class items.
+- A `rules: 'all'` scale now matches on both 2014 and 2024 actors.
+- Region macros never ran for a region placed by anything other than a spell. Cast data is defaulted rather than partially written, and a trigger that is alone in its group is no longer entered into the overlap contest it cannot win.
+- `automationUtils.getAnimationConfig` passed its arguments through in the wrong order, so no animation config stored on an item ever resolved.
+- The CatKit wrote a macro's animation config to a path nothing reads, so the values neither displayed nor applied.
+- The CatKit re-injects registered scales when its config is saved, so changing a class or subclass identifier moves the scale.
+- `tokenUtils.canSense` treats an empty sense list as no senses. MidiQOL treats it as no filter.
+- Third party bonus requests no longer ask you to approve your own decision when the bonus belongs to an actor you own.
+- `workflowUtils.completeItemUse` and `completeActivityUse` no longer throw when MidiQOL declines the use and returns nothing.
+- Summoned items no longer throw when the summoning spell was granted by a feat rather than a class.
+- `dialogUtils.selectDialog` and `numberDialog` localize their input label.
 
 # 0.0.8 Release:
 ## API Update Notes:

@@ -9,4 +9,9 @@ declare global {
     const _loc = game.i18n.localize;
 
     const canvas: Canvas;
+
+    namespace MidiQOL {
+        class Workflow {}
+        class DamageOnlyWorkflow {}
+    }
 }

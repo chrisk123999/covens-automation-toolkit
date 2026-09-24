@@ -3,9 +3,9 @@ import {documentUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_
 
 /**
  * Get all applicable effects on an actor, optionally including item-applied enchantments (not by default).
- * @param {Actor5e} actor
- * @param {object} [options]
- * @param {boolean} [options.includeItemEffects]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {object} [options] Additional options.
+ * @param {boolean} [options.includeItemEffects] Also include effects on the actor's items.
  * @returns {ActiveEffect[]}
  */
 function getEffects(actor, {includeItemEffects = false} = {}) {
@@ -17,7 +17,7 @@ function getEffects(actor, {includeItemEffects = false} = {}) {
 
 /**
  * Get all Group actors in the world which contain this actor as a member.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {Actor5e[]}
  */
 function getGroups(actor) {
@@ -26,7 +26,7 @@ function getGroups(actor) {
 
 /**
  * Get CAT-flagged cast data on an actor.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {{castLevel?: number; baseLevel?: number; saveDC?: number}|undefined}
  */
 function getSavedCastData(actor) {
@@ -35,7 +35,7 @@ function getSavedCastData(actor) {
 
 /**
  * Given an Encounter actor, get all unique base actors of the Encounter; quantity is ignored.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {Actor5e[]}
  */
 async function getEncounterMembers(actor) {
@@ -44,7 +44,7 @@ async function getEncounterMembers(actor) {
 
 /**
  * Get all Encounter actors in the world which contain this actor as a member.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {Actor5e[]}
  */
 function getEncounters(actor) {
@@ -54,9 +54,9 @@ function getEncounters(actor) {
 /**
  * Get all Vehicle actors in the world which contain this actor in any of the provided positions.
  * Default positions are any of "crew", "passenger", and "draft"
- * @param {Actor5e} actor
- * @param {object} [options]
- * @param {string[]} [options.positions]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {object} [options] Additional options.
+ * @param {string[]} [options.positions] Crew positions to include.
  * @returns
  */
 function getVehicles(actor, {positions = ['crew', 'passenger', 'draft']} = {}) {
@@ -71,7 +71,7 @@ function getVehicles(actor, {positions = ['crew', 'passenger', 'draft']} = {}) {
 
 /**
  * Get all active tokens representing this actor in the current scene.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {TokenDocument[]}
  */
 function getTokens(actor) {
@@ -80,7 +80,7 @@ function getTokens(actor) {
 
 /**
  * Get the first active token representing this actor in the current scene.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {TokenDocument|undefined}
  */
 function getFirstToken(actor) {
@@ -89,9 +89,9 @@ function getFirstToken(actor) {
 
 /**
  * Get the first (or all) effect applicable to this actor which matches the provided identifier.
- * @param {Actor5e} actor
- * @param {string} identifier
- * @param {object} [options]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string} identifier Identifier to match.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.multiple]  Whether to return all effects matching the identifier (default false)
  * @returns {ActiveEffect|ActiveEffect[]|undefined}
  */
@@ -103,8 +103,8 @@ function getEffectByIdentifier(actor, identifier, {multiple = false} = {}) {
 
 /**
  * Get this actor's best ability by modifier, provided a list of ability keys.
- * @param {Actor5e} actor
- * @param {string[]} [abilities]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string[]} [abilities] Abilities to choose between; the best is returned.
  * @returns {string}
  */
 function getBestAbility(actor, abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha']) {
@@ -115,8 +115,8 @@ function getBestAbility(actor, abilities = ['str', 'dex', 'con', 'int', 'wis', '
 }
 /**
  * Get this actor's best saving throw by modifier, provided a list of ability keys.
- * @param {Actor5e} actor
- * @param {string[]} [abilities]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string[]} [abilities] Abilities to choose between; the best is returned.
  * @returns {string}
  */
 function getBestSave(actor, abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha']) {
@@ -127,8 +127,8 @@ function getBestSave(actor, abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha
 }
 /**
  * Get this actor's best skill by modifier, provided a list of skill keys.
- * @param {Actor5e} actor
- * @param {string[]} [skills]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string[]} [skills] Skills to choose between; the best is returned.
  * @returns {string}
  */
 function getBestSkill(actor, skills = Object.keys(CONFIG.DND5E.skills)) {
@@ -139,8 +139,8 @@ function getBestSkill(actor, skills = Object.keys(CONFIG.DND5E.skills)) {
 }
 /**
  * Get this actor's best tool by modifier, provided a list of tool keys.
- * @param {Actor5e} actor
- * @param {string[]} [tools]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string[]} [tools] Tools to choose between; the best is returned.
  * @returns {string}
  */
 function getBestTool(actor, tools = Object.keys(CONFIG.DND5E.tools)) {
@@ -164,7 +164,7 @@ function checkTrait(actor, type, trait) {
 }
 /**
  * Whether this actor has any spell slot available at or above a given level.
- * @param {foundry.documents.Actor} actor
+ * @param {foundry.documents.Actor} actor Actor to act on.
  * @param {number} [atLeast] Minimum slot level.
  * @returns {boolean}
  */
@@ -173,7 +173,7 @@ function hasSpellSlots(actor, atLeast = 0) {
 }
 /**
  * Get this actor's size.
- * @param {foundry.documents.Actor} actor
+ * @param {foundry.documents.Actor} actor Actor to act on.
  * @param {boolean} [returnString] Return the size key rather than its numeric rank.
  * @returns {string|number}
  */
@@ -184,8 +184,8 @@ function getSize(actor, returnString) {
 
 /**
  * Get the active effect created explicitly to convey a given status effect on this actor, if any.
- * @param {Actor5e} actor
- * @param {string} id
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string} id Status effect id to match.
  * @returns {ActiveEffect|undefined}
  */
 function getEffectByStatusID(actor, id) {
@@ -194,9 +194,9 @@ function getEffectByStatusID(actor, id) {
 
 /**
  * Get an item (or all items) on this actor which match the provided identifier.
- * @param {Actor5e} actor
- * @param {string} identifier
- * @param {object} [options]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string} identifier Identifier to match.
+ * @param {object} [options] Additional options.
  * @param {string} [options.type] The item type to find. Possible values are the keys of CONFIG.Item.typeLabels.
  * @param {boolean} [options.multiple]  Whether to return all items matching the identifier (default false)
  * @returns {Item|Item[]|undefined}
@@ -209,9 +209,9 @@ function getItemByIdentifier(actor, identifier, {multiple = false, type} = {}) {
 }
 /**
  * Get an item (or all items) on this actor which match any of the provided identifiers.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @param {string[]} identifiers A list of aliases for the same thing.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {string} [options.type] The item type to find. Possible values are the keys of CONFIG.Item.typeLabels.
  * @param {boolean} [options.multiple]  Whether to return all items matching the identifiers (default false)
  * @returns {Item|Item[]|undefined}
@@ -226,9 +226,9 @@ function getItemByIdentifiers(actor, identifiers, {multiple = false, type} = {})
 /**
  * Create active effects on this actor for each provided condition id, unless the actor is immune or already has
  * a dedicated effect for conveying the condition.
- * @param {Actor5e} actor
- * @param {string[]} conditions
- * @param {object} [options]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string[]} conditions Condition ids to apply.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.overlay]   Whether to show the icon as an overlay (default false)
  * @returns {Promise<ActiveEffect>}
  */
@@ -249,9 +249,9 @@ async function applyConditions(actor, conditions, {overlay = false} = {}) {
 
 /**
  * Get the slot name (e.g. "spell2") corresponding to a given cast level.
- * @param {Actor5e} actor
- * @param {number} level
- * @param {object} [options]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {number} level Spell level.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.canCast]   Whether to return only if the actor is able to cast a spell of this slot (default false)
  * @returns {string|undefined}
  */
@@ -265,8 +265,8 @@ function getEquivalentSpellSlotName(actor, level, {canCast = false} = {}) {
 
 /**
  * Find the `system.spells` key holding slots of a given level, including pact slots.
- * @param {foundry.documents.Actor} actor
- * @param {number|string} level
+ * @param {foundry.documents.Actor} actor Actor to act on.
+ * @param {number|string} level Spell level.
  * @returns {string|undefined}
  */
 function getSpellSlotKey(actor, level) {
@@ -277,10 +277,10 @@ function getSpellSlotKey(actor, level) {
 
 /**
  * Spend spell slots of a given level or slot key (e.g. 2 or "pact").
- * @param {Actor5e} actor
- * @param {number|string} level
- * @param {object} [options]
- * @param {number} [options.amount]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {number|string} level Spell level.
+ * @param {object} [options] Additional options.
+ * @param {number} [options.amount] Number of slots.
  * @returns {Promise<void>}
  */
 async function spendSpellSlots(actor, level, {amount = 1} = {}) {
@@ -294,10 +294,10 @@ async function spendSpellSlots(actor, level, {amount = 1} = {}) {
 
 /**
  * Recover spell slots of a given level or slot key (e.g. 2 or "pact").
- * @param {Actor5e} actor
- * @param {number|string} level
- * @param {object} [options]
- * @param {number} [options.amount]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {number|string} level Spell level.
+ * @param {object} [options] Additional options.
+ * @param {number} [options.amount] Number of slots.
  * @returns {Promise<void>}
  */
 async function recoverSpellSlots(actor, level, {amount = 1} = {}) {
@@ -307,9 +307,9 @@ async function recoverSpellSlots(actor, level, {amount = 1} = {}) {
 /**
  * Get all spells which are currently castable by the actor, considering each spell's consumption, optionally
  * filtering by a list of provided identifiers.
- * @param {Actor5e} actor
- * @param {object} [options]
- * @param {string[]} [options.identifiers]
+ * @param {Actor5e} actor Actor to act on.
+ * @param {object} [options] Additional options.
+ * @param {string[]} [options.identifiers] Only spells with these identifiers.
  * @returns {Item[]}
  */
 function getCastableSpells(actor, {identifiers = []} = {}) {
@@ -320,7 +320,7 @@ function getCastableSpells(actor, {identifiers = []} = {}) {
 
 /**
  * Return whether this actor has used their reaction.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {boolean}
  */
 function hasUsedReaction(actor) {
@@ -328,7 +328,7 @@ function hasUsedReaction(actor) {
 }
 /**
  * Get this actor's creature type, falling back to its race.
- * @param {foundry.documents.Actor} actor
+ * @param {foundry.documents.Actor} actor Actor to act on.
  * @returns {string}
  */
 function typeOrRace(actor) {
@@ -337,7 +337,7 @@ function typeOrRace(actor) {
 
 /**
  * Mark this actor's reaction as used for the current round.
- * @param {foundry.documents.Actor} actor
+ * @param {foundry.documents.Actor} actor Actor to act on.
  * @returns {Promise<void>}
  */
 async function setReactionUsed(actor) {
@@ -346,7 +346,7 @@ async function setReactionUsed(actor) {
 
 /**
  * Return whether this actor has used their bonus action.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {boolean}
  */
 function hasUsedBonusAction(actor) {
@@ -355,7 +355,7 @@ function hasUsedBonusAction(actor) {
 
 /**
  * Get all equipped weapons on this actor.
- * @param {Actor5e} actor
+ * @param {Actor5e} actor Actor to act on.
  * @returns {Item[]}
  */
 function getEquippedWeapons(actor) {
@@ -364,7 +364,7 @@ function getEquippedWeapons(actor) {
 
 /**
  * Given actor data, create an actor. Socket to the GM if necessary.
- * @param {object} actorData
+ * @param {object} actorData Actor data to create.
  * @returns {Actor5e}
  */
 async function createActor(actorData) {
@@ -378,7 +378,7 @@ async function createActor(actorData) {
 }
 /**
  * Get the highest spell slot level this actor has, counting pact slots.
- * @param {foundry.documents.Actor} actor
+ * @param {foundry.documents.Actor} actor Actor to act on.
  * @returns {number} Zero when the actor has no slots.
  */
 function getMaxCastLevel(actor) {
@@ -391,7 +391,7 @@ function getMaxCastLevel(actor) {
 }
 /**
  * Get this actor's challenge rating, derived from proficiency when it has none.
- * @param {foundry.documents.Actor} actor
+ * @param {foundry.documents.Actor} actor Actor to act on.
  * @returns {number}
  */
 function getCR(actor) {
@@ -399,8 +399,8 @@ function getCR(actor) {
 }
 /**
  * Add items or activities to this actor's favorites, delegating to a GM when the user lacks permission.
- * @param {foundry.documents.Actor} actor
- * @param {Array<foundry.documents.Item|Activity>} entities
+ * @param {foundry.documents.Actor} actor Actor to act on.
+ * @param {Array<foundry.documents.Item|Activity>} entities Items or activities to favourite.
  * @returns {Promise<void>}
  */
 async function addFavorites(actor, entities) {
@@ -426,8 +426,8 @@ async function addFavorites(actor, entities) {
 }
 /**
  * Remove items or activities from this actor's favorites, delegating to a GM when the user lacks permission.
- * @param {foundry.documents.Actor} actor
- * @param {Array<foundry.documents.Item|Activity>} entities
+ * @param {foundry.documents.Actor} actor Actor to act on.
+ * @param {Array<foundry.documents.Item|Activity>} entities Items or activities to favourite.
  * @returns {Promise<void>}
  */
 async function removeFavorites(actor, entities) {
@@ -445,6 +445,11 @@ async function removeFavorites(actor, entities) {
         await queryUtils.query('removeFavorites', queryUtils.gmUser(), {actorUuid: actor.uuid, entityUuids: entities.map(e => e.uuid)});
     }
 }
+/**
+ * Whether this actor is at or below half its hit point maximum.
+ * @param {Actor5e} actor Actor to check.
+ * @returns {boolean}
+ */
 function isBloodied(actor) {
     return actor.system.attributes.hp.value <= Math.floor(actor.system.attributes.hp.max / 2);
 }

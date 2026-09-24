@@ -38,6 +38,11 @@ const settings = {
         default: true,
         menu: 'devtools'
     },
+    fixDescriptionEnrichers: {
+        type: Boolean,
+        default: false,
+        menu: 'automation'
+    },
     automationSources: {
         type: Object,
         menu: 'automation',

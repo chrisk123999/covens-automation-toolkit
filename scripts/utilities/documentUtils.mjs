@@ -1,22 +1,28 @@
 import {activityUtils, actorUtils, dataUtils, effectUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
 /** @import {CatEffectData} from './dataUtils.mjs' */
 /** @import {EffectDurationData} from '@client/documents/_types.mjs' */
+/**
+ * The rules edition this document belongs to. Items carry it on their source data; everything else carries it on the automation flag.
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.documentType] Override the type used to pick where the rules live.
+ * @returns {'2014'|'2024'|'all'|undefined}
+ */
 function getRules(document, {documentType = document.documentName} = {}) {
     return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
 }
 /**
  * Get the module that registered this document's automation.
- * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} document Document to act on.
  * @returns {string|undefined}
  */
 function getSource(document) {
     return document.flags.cat?.automation?.source;
 }
 /**
- * Get the identifier macros use to look this document up. Activities and items use their system identifier;
- * everything else uses the CAT flag, falling back to a slug of the name.
- * @param {foundry.abstract.Document} document
- * @param {object} [options]
+ * Get the identifier macros use to look this document up.
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @param {object} [options] Additional options.
  * @param {string} [options.documentType] Override the type used to pick where the identifier lives.
  * @returns {string|undefined}
  */
@@ -29,7 +35,7 @@ function getIdentifier(document, {documentType = document.documentName} = {}) {
 }
 /**
  * Get the version of the automation registered on this document.
- * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} document Document to act on.
  * @returns {string|undefined}
  */
 function getVersion(document) {
@@ -37,7 +43,7 @@ function getVersion(document) {
 }
 /**
  * Get the cast data stashed on any supported document type.
- * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} document Document to act on.
  * @returns {{castLevel: number, baseLevel: number, saveDC: number}} Values are -1 when nothing is stashed.
  */
 function getSavedCastData(document) {
@@ -50,18 +56,19 @@ function getSavedCastData(document) {
         case 'ActiveEffect': castData = effectUtils.getCastData(document); break;
         case 'Region': castData = regionUtils.getCastData(document); break;
     }
-    return castData ?? {
+    return {
         castLevel: -1,
         baseLevel: -1,
-        saveDC: -1
+        saveDC: -1,
+        ...castData
     };
 }
 /**
  * Delete embedded documents, delegating to a GM when the user lacks permission.
- * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} document Document to act on.
  * @param {string} type Embedded document name, such as `ActiveEffect`.
- * @param {string[]} ids
- * @param {object} [options]
+ * @param {string[]} ids Ids of the embedded documents to delete.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.forceGM] Delete through a GM even when the user has permission.
  * @param {object} [options.options] Passed to the deletion.
  * @returns {Promise<foundry.abstract.Document[]|undefined>}
@@ -80,8 +87,8 @@ async function deleteEmbeddedDocuments(document, type, ids, {forceGM = false, op
 }
 /**
  * Delete a document, delegating to a GM when the user lacks permission.
- * @param {foundry.abstract.Document} document
- * @param {object} [options]
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @param {object} [options] Additional options.
  * @param {object} [options.options] Passed to the deletion.
  * @param {boolean} [options.forceGM] Delete through a GM even when the user has permission.
  * @returns {Promise<foundry.abstract.Document>} The now deleted document.
@@ -97,10 +104,10 @@ async function deleteDocument(document, {options, forceGM = false} = {}) {
 }
 /**
  * Create embedded documents, delegating to a GM when the user lacks permission.
- * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} document Document to act on.
  * @param {string} type Embedded document name, such as `Item`.
- * @param {object[]} updates
- * @param {object} [options]
+ * @param {object[]} updates Document data to apply.
+ * @param {object} [options] Additional options.
  * @returns {Promise<foundry.abstract.Document[]|undefined>}
  */
 async function createEmbeddedDocuments(document, type, updates, options) {
@@ -114,9 +121,9 @@ async function createEmbeddedDocuments(document, type, updates, options) {
 }
 /**
  * Update a document, delegating to a GM when the user lacks permission.
- * @param {foundry.abstract.Document} document
- * @param {object} updates
- * @param {object} [options]
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @param {object} updates Document data to apply.
+ * @param {object} [options] Additional options.
  * @returns {Promise<foundry.abstract.Document|undefined>} Only returned when the update went through a GM.
  */
 async function update(document, updates, options) {
@@ -130,10 +137,10 @@ async function update(document, updates, options) {
 }
 /**
  * Update embedded documents, delegating to a GM when the user lacks permission.
- * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} document Document to act on.
  * @param {string} type Embedded document name, such as `Token`.
  * @param {object[]} updates Each entry needs an `_id`.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @returns {Promise<foundry.abstract.Document[]>}
  */
 async function updateEmbeddedDocuments(document, type, updates, options) {
@@ -147,10 +154,10 @@ async function updateEmbeddedDocuments(document, type, updates, options) {
 }
 /**
  * Set a flag on a document, delegating to a GM when the user lacks permission.
- * @param {foundry.abstract.Document} document
+ * @param {foundry.abstract.Document} document Document to act on.
  * @param {string} scope Module id owning the flag.
- * @param {string} key
- * @param {*} value
+ * @param {string} key Flag key, below the scope.
+ * @param {*} value Value to store.
  * @returns {Promise<foundry.abstract.Document>}
  */
 async function setFlag(document, scope, key, value) {
@@ -164,11 +171,11 @@ async function setFlag(document, scope, key, value) {
 }
 /**
  * Get an effect on this document by its identifier.
- * @param {foundry.abstract.Document} document
- * @param {string} identifier
- * @param {object} [options]
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @param {string} identifier Identifier to match.
+ * @param {object} [options] Additional options.
  * @param {boolean} [options.multiple] Return every match rather than the first.
- * @param {boolean} [options.includeItemEffects]
+ * @param {boolean} [options.includeItemEffects] Also search the effects on the actor's items.
  * @returns {ActiveEffect|ActiveEffect[]|undefined}
  */
 function getEffectByIdentifier(document, identifier, {multiple, includeItemEffects} = {}) {
@@ -184,8 +191,8 @@ function getEffectByIdentifier(document, identifier, {multiple, includeItemEffec
 }
 /**
  * Tie documents to a parent so they are deleted along with it.
- * @param {foundry.abstract.Document} parentDocument
- * @param {foundry.abstract.Document[]} [childDocuments]
+ * @param {foundry.abstract.Document} parentDocument Document the others depend on.
+ * @param {foundry.abstract.Document[]} [childDocuments] Documents deleted alongside the parent.
  * @returns {Promise<void>}
  */
 async function makeDependent(parentDocument, childDocuments = []) {
@@ -194,7 +201,7 @@ async function makeDependent(parentDocument, childDocuments = []) {
 }
 /**
  * Run several document operations in one batch, applied all or nothing, delegating to a GM when the user lacks permission.
- * @param {DatabaseWriteOperation[]} operations
+ * @param {DatabaseWriteOperation[]} operations Write operations to run together.
  * @returns {Promise<Array<foundry.abstract.Document[]>>}
  */
 async function modifyBatch(operations) {
@@ -214,8 +221,8 @@ async function modifyBatch(operations) {
 /**
  * Build an effect based on one attached to an item.
  * @param {foundry.documents.Item|dnd5e.dataModels.activity.BaseActivityData} document An item or activity from which to fetch an effect by {@link id}.
- * @param {string} id
- * @param {object} [options]
+ * @param {string} id Id of the effect on the source document.
+ * @param {object} [options] Additional options.
  * @param {EffectDurationData} [options.duration] Effect duration, fetched from {@link document} if absent.
  * @param {foundry.documents.Item} [options.concentrationItem] An item used to fetch a concentration effect, which is assigned as the origin for this effect.
  * @param {CatEffectData} [options.catData] See {@link CatEffectData}
@@ -234,13 +241,13 @@ function getEffectData(document, id, {duration, concentrationItem, ...catData} =
 /**
  * Build effect data from scratch, rather than from an effect already on a document.
  * @param {foundry.abstract.Document} document An activity supplies the duration when one is not passed.
- * @param {object} [options]
- * @param {string} [options.name]
- * @param {string} [options.img]
- * @param {string} [options.origin]
+ * @param {object} [options] Additional options.
+ * @param {string} [options.name] Effect name.
+ * @param {string} [options.img] Effect icon.
+ * @param {string} [options.origin] Uuid the effect originates from.
  * @param {string} [options.identifier] The CAT identifier other macros will look this effect up by.
  * @param {object[]} [options.changes] Stored as `system.changes`.
- * @param {EffectDurationData} [options.duration]
+ * @param {EffectDurationData} [options.duration] Effect duration data.
  * @param {CatEffectData} [options.buildOptions] See {@link CatEffectData}
  * @returns {object} Effect data ready for creation.
  */

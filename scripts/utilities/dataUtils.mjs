@@ -1,16 +1,16 @@
 import {genericUtils} from './_module.mjs';
 /**
  * Set document rules in the correct location. Does not perform updates.
- * @param {object | foundry.abstract.Document} documentData
- * @param {'2024' | '2014'} rules 
+ * @param {object | foundry.abstract.Document} documentData Document or document data to write the rules onto.
+ * @param {'2024' | '2014'} rules Rules edition to set.
  */
 function setRules(documentData, rules) {
     genericUtils.setProperty(documentData, 'flags.cat.automation.rules', rules);
 }
 /**
  * Set document identifier in the correct location. Does not perform updates.
- * @param {object | foundry.abstract.Document} documentData
- * @param {string} identifier 
+ * @param {object | foundry.abstract.Document} documentData Document or document data to write the identifier onto.
+ * @param {string} identifier Identifier macros will look this document up by.
  */
 function setIdentifier(documentData, identifier) {
     genericUtils.setProperty(documentData, 'flags.cat.identifier', identifier);
@@ -33,7 +33,7 @@ function setIdentifier(documentData, identifier) {
  */
 /**
  * @typedef {object} VaeEntry
- * @property {'use'} type 
+ * @property {'use'} type
  * @property {string} name
  * @property {string} itemIdentifier
  * @property {string} [activityIdentifier]
@@ -58,8 +58,8 @@ function setIdentifier(documentData, identifier) {
  */
 /**
  * Attach CAT data to an effect before creation.
- * @param {object} effectData 
- * @param {CatEffectData} [options]
+ * @param {object} effectData Effect data to build on, which is mutated and returned.
+ * @param {CatEffectData} [options] CAT effect settings to apply.
  * @returns {object} Modified effectData.
  */
 function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, favoriteActivities, copyConfigs, parentEntity, activityUuid} = {}) {
@@ -105,7 +105,7 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
 
 /**
  * Coerce a value into an array. Splits comma-separated strings and unwraps any iterable.
- * @param {*} data
+ * @param {*} data Value to wrap. Arrays are returned as they are.
  * @returns {Array}
  */
 function toArray(data) {

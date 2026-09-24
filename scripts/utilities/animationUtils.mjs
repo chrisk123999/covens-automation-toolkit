@@ -4,9 +4,9 @@ const minSequencerVersion = '3.6.0';
 let shownSequencerWarning = false;
 /**
  * Look up a registered animation, treating 'none' as unset.
- * @param {object} reference
- * @param {string} reference.source
- * @param {string} reference.identifier
+ * @param {object} reference Animation selection.
+ * @param {string} reference.source Module that registered the animation.
+ * @param {string} reference.identifier Animation identifier.
  * @returns {object|undefined}
  */
 function getAnimation({source, identifier}) {
@@ -15,9 +15,9 @@ function getAnimation({source, identifier}) {
 }
 /**
  * Preload animation files for all clients.
- * @param {string[]} animations
- * @param {object} [options]
- * @param {boolean} [options.showProgressBar]
+ * @param {string[]} animations Sequencer database paths to preload.
+ * @param {object} [options] Additional options.
+ * @param {boolean} [options.showProgressBar] Show Sequencer’s preload progress bar.
  * @returns {Promise<boolean>}
  */
 async function preloadAnimations(animations, {showProgressBar} = {}) {
@@ -25,11 +25,11 @@ async function preloadAnimations(animations, {showProgressBar} = {}) {
 }
 /**
  * Play a ranged attack effect stretched from one token to another.
- * @param {foundry.documents.TokenDocument} sourceToken
- * @param {foundry.documents.TokenDocument} targetToken
+ * @param {foundry.documents.TokenDocument} sourceToken Token making the attack.
+ * @param {foundry.documents.TokenDocument} targetToken Token being attacked.
  * @param {string} animation Sequencer database path or file path.
- * @param {object} [options]
- * @param {string} [options.sound]
+ * @param {object} [options] Additional options.
+ * @param {string} [options.sound] Sound file played with the animation.
  * @param {boolean} [options.missed] Play the miss variant.
  */
 function simpleAttack(sourceToken, targetToken, animation, {sound, missed = false} = {}) {
@@ -49,9 +49,9 @@ function simpleAttack(sourceToken, targetToken, animation, {sound, missed = fals
 /**
  * Build animation config colour options, gating non-free colours behind requirements.
  * @param {Record<string, string>} colorMap Colour keys mapped to their labels.
- * @param {object} [options]
+ * @param {object} [options] Additional options.
  * @param {string[]} [options.freeColors] Colours offered without requirements.
- * @param {string} [options.labelPrefix]
+ * @param {string} [options.labelPrefix] Localization prefix the colour labels are appended to.
  * @param {boolean} [options.random] Offer a random colour option.
  * @param {boolean} [options.cycle] Offer a cycling colour option.
  * @param {string[]} [options.requirements] Modules required by the gated colours.

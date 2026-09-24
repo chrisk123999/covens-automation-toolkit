@@ -139,8 +139,13 @@ export class SummonsManager {
             updates.items.push(itemData);
             return;
         }
-        const save = sourceClass.system.spellcasting.save;
-        const attack = sourceClass.system.spellcasting.attack;
+        const spellcasting = sourceClass.system.spellcasting;
+        if (!spellcasting) {
+            updates.items.push(itemData);
+            return;
+        }
+        const save = spellcasting.save;
+        const attack = spellcasting.attack;
         Object.values(itemData.system.activities).forEach(activityData => {
             if (matchDC && activityData.type === 'save') genericUtils.setProperty(activityData, 'save.dc', {
                 calculation: '',
