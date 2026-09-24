@@ -99,13 +99,6 @@ function getCriticalFormula(formula, document, {bonusDamage, bonusDice, multipli
     return new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {isCritical: true, critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical}}).formula;
 }
 /**
- * @param {string} formula Formula to roll.
- * @param {foundry.abstract.Document} document Document supplying roll data.
- * @param {DamageOptions} [options] Critical and damage handling.
- * @param {EvaluateOptions} [evaluateOptions] Evaluation options, such as maximize and minimize.
- * @returns {Promise<dnd5e.dice.DamageRoll>}
- * */
-/**
  * Roll damage from a formula, using a document for roll data.
  * @param {string|number} formula Damage formula to roll.
  * @param {foundry.abstract.Document} document Document supplying roll data, usually an item or activity.
