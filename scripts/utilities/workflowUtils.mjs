@@ -280,7 +280,7 @@ function negateDamageItemDamage(ditem) {
     ditem.rawDamageDetail.forEach(i => i.value = 0);
 }
 /**
- * Add or subtract a flat amount of damage on one target, recalculating the resulting hit points.
+ * Add or subtract a flat amount of damage on one target, recalculating the resulting hit points. Use in the `damageFlatReductions` or `damagePercentReductions` macro passes.
  * @param {object} ditem Midi damage item, from workflow.damageList.
  * @param {number} modificationAmount Negative to reduce damage. Reductions are capped at the damage dealt.
  * @param {object} [options] Additional options.
