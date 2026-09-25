@@ -1,8 +1,8 @@
 import quickConditions from '../handlers/quickConditions.mjs';
-import {documentUtils, genericUtils, uiUtils} from '../utilities/_module.mjs';
-const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+import {documentUtils, uiUtils} from '../utilities/_module.mjs';
+import CatApp from './cat-app.mjs';
 const {Collection} = foundry.utils;
-export default class QuickConditions extends HandlebarsApplicationMixin(ApplicationV2) {
+export default class QuickConditions extends CatApp {
     constructor(data) {
         super({id: 'cat-quick-conditions-window'});
         this.windowTitle = _loc('CAT.QuickConditions.Title');
@@ -21,9 +21,20 @@ export default class QuickConditions extends HandlebarsApplicationMixin(Applicat
         form: {handler: QuickConditions.formHandler, submitOnChange: false, closeOnSubmit: false},
         actions: {add: QuickConditions.add, remove: QuickConditions.remove}
     };
+    static INITIAL_SIZE = {width: 700, height: 480};
+
     static PARTS = {
-        body: {template: 'modules/cat/templates/quick-conditions.hbs', scrollable: ['.cat-embedded-macros-body']}
+        header: CatApp.HEADER_PART,
+        body: {template: 'modules/cat/templates/quick-conditions/body.hbs', scrollable: ['']},
+        footer: CatApp.FOOTER_PART
     };
+
+    get footerButtons() {
+        return [
+            {label: 'CAT.Generic.Cancel', icon: 'fa-solid fa-xmark', type: 'button', action: 'close', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
+            {label: 'CAT.Generic.Ok', icon: 'fa-solid fa-check'}
+        ];
+    }
     static formHandler(event, form, formData) {
         if (this.data.entity) documentUtils.update(this.data.entity, {[this.data.fieldId]: this.value});
         this.close();
@@ -162,13 +173,13 @@ export default class QuickConditions extends HandlebarsApplicationMixin(Applicat
                     });
                     rows.push({
                         id: conditionKey,
-                        class: 'quick-conditions-group-condition cat-row-center',
+                        class: 'quick-conditions-group-condition center',
                         inputs
                     });
                 } else {
                     rows.push({
                         id: term + '-text',
-                        class: 'quick-conditions-group-condition cat-row-center',
+                        class: 'quick-conditions-group-condition center',
                         inputs: [opInput, {
                             id: 'text-' + i,
                             name: 'text-' + i,
@@ -308,20 +319,8 @@ export default class QuickConditions extends HandlebarsApplicationMixin(Applicat
         this.formatInputs();
         return this.context;
     }
-    async _preClose(options) {
-        options.animate = false;
-        await uiUtils.fadeOut(this.element);
-    }
     bringToFront() {
         uiUtils.bringToFront(this);
-    }
-    _onRender(context, options) {
-        super._onRender(context, options);
-        uiUtils.enableWindowDrag(this, '.cat-embedded-macros-header', {ignore: 'button, a, input, select, textarea, [data-action], multi-select'});
-        if (options.isFirstRender) {
-            this.bringToFront();
-            uiUtils.centerWindow(this, {width: 700, height: 480});
-        }
     }
     async _onChangeForm(formConfig, event) {
         let targetInput = event.target;

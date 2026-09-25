@@ -1,8 +1,8 @@
-import {constants} from './lib/_module.mjs';
 import * as events from './events/_module.mjs';
+import {activities, combat, conditionResistanceAndVulnerability, contextmenu, effects, quickConditions} from './handlers/_module.mjs';
+import {dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
+import {constants} from './lib/_module.mjs';
 import {queryUtils} from './utilities/_module.mjs';
-import {titlebar, activities, effects, combat, quickConditions, conditionResistanceAndVulnerability} from './handlers/_module.mjs';
-import {dae, vae, tidy5e, macroautocomplete} from './integration/_modules.mjs';
 export function readyHooks() {
     // Handlers
     Hooks.on(constants.miscHookNames.itemUseActivitySelect, activities.hiddenActivities);
@@ -11,16 +11,16 @@ export function readyHooks() {
     Hooks.on(constants.miscHookNames.daeSetFieldData, dae.addFlags);
     Hooks.on(constants.miscHookNames.vaeCreateEffectButtons, vae.createEffectButton);
     // Sheet Rendering
-    Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, titlebar.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsActivitySheet, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, contextmenu.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsActivitySheet, contextmenu.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.renderActivitySheet, quickConditions.onRender);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsActorSheetV2, titlebar.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsCompendium, titlebar.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsItemSheet5e, titlebar.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsLevelConfig, titlebar.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsRegionConfig, titlebar.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsSceneConfig, titlebar.appendHeaderControl);
-    Hooks.on(constants.sheetHookNames.getHeaderControlsTokenConfig, titlebar.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsActorSheetV2, contextmenu.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsCompendium, contextmenu.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsItemSheet5e, contextmenu.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsLevelConfig, contextmenu.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsRegionConfig, contextmenu.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsSceneConfig, contextmenu.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.getHeaderControlsTokenConfig, contextmenu.appendHeaderControl);
     // Combat Rendering
     Hooks.on(constants.miscHookNames.renderCombatTracker, combat.renderCombatTracker);
     // Workflow Events
@@ -87,6 +87,14 @@ export function readyHooks() {
     }
 }
 export function initHooks() {
+    // Context Menus
+    Hooks.on(constants.contextMenuHookNames.getActorContextOptions, contextmenu.appendEntryOption);
+    Hooks.on(constants.contextMenuHookNames.getItemContextOptions, contextmenu.appendEntryOption);
+    Hooks.on(constants.contextMenuHookNames.getSceneContextOptions, contextmenu.appendEntryOption);
+    Hooks.on(constants.contextMenuHookNames.getCompendiumContextOptions, contextmenu.appendPackOption);
+    Hooks.on(constants.contextMenuHookNames.getSheetItemContextOptions, contextmenu.appendDocumentOption);
+    Hooks.on(constants.contextMenuHookNames.getSheetEffectContextOptions, contextmenu.appendDocumentOption);
+    Hooks.on(constants.contextMenuHookNames.getSheetActivityContextOptions, contextmenu.appendActivityOption);
     // Handlers
     Hooks.on(constants.miscHookNames.applyActiveEffect, effects.applyActiveEffect);
     // Integration

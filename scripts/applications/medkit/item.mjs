@@ -1,7 +1,7 @@
-import MedkitApp from './base.mjs';
 import {constants} from '../../lib/_module.mjs';
-import {documentUtils, automationUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
+import {automationUtils, documentUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
 import DocPropertyEditorApp from '../doc-property-editor.mjs';
+import MedkitApp from './base.mjs';
 const {fields} = foundry.data;
 
 export default class ItemMedkit extends MedkitApp {
@@ -23,8 +23,8 @@ export default class ItemMedkit extends MedkitApp {
         configuration: {template: 'modules/cat/templates/medkit/item/configuration.hbs'},
         generic: {template: 'modules/cat/templates/medkit/shared/generic.hbs'},
         embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
-        docprops: {template: 'modules/cat/templates/medkit/item/docprops.hbs'},
-        macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'}
+        macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'},
+        docprops: {template: 'modules/cat/templates/medkit/item/docprops.hbs'}
     };
 
     static TABS = {
@@ -34,8 +34,8 @@ export default class ItemMedkit extends MedkitApp {
                 {id: 'configuration', icon: 'fa-solid fa-wrench', label: 'CAT.MEDKIT.TABS.Configuration'},
                 {id: 'generic', icon: 'fa-solid fa-toolbox', label: 'CAT.MEDKIT.TABS.Generic'},
                 {id: 'embedded', icon: 'fa-solid fa-feather-pointed', label: 'CAT.MEDKIT.TABS.Embedded'},
-                {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'},
-                {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'}
+                {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'},
+                {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'}
             ],
             initial: 'automation'
         }
@@ -143,6 +143,7 @@ export default class ItemMedkit extends MedkitApp {
         context.otherRulesAutomationAvailable = !availableAutomations.length && otherRulesAutomations.length > 0;
 
         context.configurationCategories = this._prepareConfigurationCategories(currAutomation);
+        context.automationTree = await this._prepareAutomationTree();
 
         const genericData = this._prepareGenericFeatures();
         context.genericChoices = genericData.choices;
@@ -175,7 +176,7 @@ export default class ItemMedkit extends MedkitApp {
                 type,
                 label: _loc(`CAT.MEDKIT.DocProps.Props.${type}.Label`),
                 attributes: (flags.alternateAttributes?.[type] ?? []).map((attr, index) => ({
-                    index, 
+                    index,
                     valueSummary: attribute.getValueSummary(attr.value),
                     restrictionSummary: Object.entries(attr.restrictions).filter(r => !!r[1]).map(r => _loc(`CAT.MEDKIT.DocProps.Restrictions.${r[0]}.Label`)).join(', ')
                 }))

@@ -1,12 +1,9 @@
 import MedkitApp from './base.mjs';
-import {genericUtils} from '../../utilities/_module.mjs';
+import {dialogUtils, genericUtils} from '../../utilities/_module.mjs';
 
 export default class CompendiumMedkit extends MedkitApp {
     static DEFAULT_OPTIONS = {
-        id: 'medkit-window-compendium',
-        actions: {
-            massApply: CompendiumMedkit.#massApply
-        }
+        id: 'medkit-window-compendium'
     };
 
     static PARTS = {
@@ -21,15 +18,24 @@ export default class CompendiumMedkit extends MedkitApp {
         }
     };
 
-    async _prepareContext(options) {
-        const context = await super._prepareContext(options);
-        context.buttons = [ {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Close', name: 'close', icon: 'fa-solid fa-xmark'} ];
-        return context;
+    get footerButtons() {
+        return [ {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Close', name: 'close', icon: 'fa-solid fa-xmark'} ];
     }
 
-    /** @this {CompendiumMedkit} */
-    static async #massApply() {
-        // TODO: needs a pack-aware updater.
-        genericUtils.notify('CAT.MEDKIT.MassApply.CompendiumPending', {type: 'warn'});
+    _getMassApplyItems() {
+        return this.document.getDocuments();
+    }
+
+    async _canMassApply() {
+        const pack = this.document;
+        if (pack.locked) {
+            genericUtils.notify('CAT.MEDKIT.MassApply.PackLocked', {type: 'warn', format: {pack: pack.metadata.label}});
+            return false;
+        }
+        if (pack.metadata.packageType === 'world') return true;
+        return !!await dialogUtils.confirm(
+            _loc('CAT.MEDKIT.MassApply.PackTitle'),
+            _loc('CAT.MEDKIT.MassApply.PackWarning', {pack: pack.metadata.label, package: pack.metadata.packageName})
+        );
     }
 }

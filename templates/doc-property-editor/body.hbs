@@ -1,0 +1,56 @@
+<div class="body">
+    <div class="standard-form">
+        {{#if valueChoices}}
+            <div class="form-group">
+                <label for="cat-docprop-value">{{valueLabel}}</label>
+                <div class="form-fields">
+                    <cat-multi-combobox input-id="cat-docprop-value" name="{{valuePath}}">
+                        {{#each valueChoices}}
+                            <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
+                        {{/each}}
+                    </cat-multi-combobox>
+                </div>
+                <p class="hint">{{valueHint}}</p>
+            </div>
+        {{else}}
+            {{formGroup valueField value=value name=valuePath hint=valueHint label=valueLabel}}
+        {{/if}}
+        <fieldset>
+            <legend>{{localize "CAT.MEDKIT.DocProps.Restrictions.Legend"}}</legend>
+            <p class="hint">{{localize "CAT.MEDKIT.DocProps.Restrictions.Hint"}}</p>
+            {{#each restrictions as |r|}}
+                {{#if r.options}}
+                    <div class="form-group">
+                        <label for="cat-docprop-{{r.key}}">{{r.label}}</label>
+                        <div class="form-fields">
+                            <cat-multi-combobox input-id="cat-docprop-{{r.key}}" name="{{r.valuePath}}">
+                                {{#each r.options}}
+                                    <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
+                                {{/each}}
+                            </cat-multi-combobox>
+                        </div>
+                        <div class="toggles">
+                            {{#if r.invertPath}}
+                                <label class="checkbox">
+                                    <input class="cat-docprop-invert" type="checkbox" name="{{r.invertPath}}"
+                                        {{#if r.invert}}checked{{/if}}>
+                                    {{localize "CAT.MEDKIT.DocProps.Restrictions.Invert"}}
+                                </label>
+                            {{/if}}
+                            {{#if r.requireAllPath}}
+                                <label class="checkbox">
+                                    <input type="checkbox" name="{{r.requireAllPath}}"
+                                        {{#if r.requireAll}}checked{{/if}}>
+                                    <span id="cat-docprop-requireAllLabel-{{r.key}}">{{r.requireAllLabel}}</span>
+                                </label>
+                            {{/if}}
+                        </div>
+                        <p class="hint" id="cat-docprop-hint-{{r.key}}">{{r.hint}}</p>
+                    </div>
+                {{else}}
+                    {{formGroup r.field value=r.value name=r.valuePath hint=r.hint label=r.label}}
+                {{/if}}
+            {{/each}}
+        </fieldset>
+    </div>
+</div>

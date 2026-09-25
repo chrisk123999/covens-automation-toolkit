@@ -395,11 +395,12 @@ function getMacroConditions(workflow) {
  * @param {object} [options] Additional options.
  * @param {boolean} [options.ignoreCrit] Do not double the dice on a critical hit.
  * @param {string} [options.damageType] Defaults to the workflow's own damage type.
+ * @param {string} [options.source] What granted this damage, shown as attribution on manual rolls.
  */
-async function bonusDamage(workflow, formula, {ignoreCrit = false, damageType = workflow.defaultDamageType} = {}) {
+async function bonusDamage(workflow, formula, {ignoreCrit = false, damageType = workflow.defaultDamageType, source} = {}) {
     formula = String(formula);
     if (workflow.isCritical && !ignoreCrit) formula = rollUtils.getCriticalFormula(formula, workflow.activity);
-    const roll = await new CONFIG.Dice.DamageRoll(formula, workflow.activity.getRollData(), {type: damageType}).evaluate();
+    const roll = await new CONFIG.Dice.DamageRoll(formula, workflow.activity.getRollData(), {type: damageType, cat: {source}}).evaluate();
     workflow.damageRolls.push(roll);
     await workflow.setDamageRolls(workflow.damageRolls);
 }

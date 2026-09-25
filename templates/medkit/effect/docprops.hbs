@@ -1,13 +1,14 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     {{> "modules/cat/templates/medkit/shared/identifier-field.hbs"}}
 
     <fieldset data-section="conditions">
         <legend>{{localize "CAT.MEDKIT.Effect.Conditions.Label"}}</legend>
-        <div class="form-group cat-multi-combobox-group">
+        <div class="form-group combo">
             <label>{{localize "CAT.MEDKIT.Effect.Conditions.Label"}}</label>
             <cat-multi-combobox input-id="cat-medkit-effect-conditions" name="flags.cat.conditions">
                 {{#each conditionChoices}}
-                    <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                    <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                 {{/each}}
             </cat-multi-combobox>
         </div>
@@ -16,13 +17,13 @@
 
     <fieldset data-section="special-durations">
         <legend>{{localize "CAT.MEDKIT.Effect.SpecialDuration.Label"}}</legend>
-        <div class="form-group cat-multi-combobox-group">
+        <div class="form-group combo">
             <label>{{localize "CAT.MEDKIT.Effect.SpecialDuration.Label"}}</label>
             <cat-multi-combobox input-id="cat-medkit-effect-durations" name="flags.cat.specialDuration">
                 {{#each specialDurationGroups}}
                     <optgroup label="{{label}}">
                         {{#each options}}
-                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                            <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                         {{/each}}
                     </optgroup>
                 {{/each}}
@@ -33,13 +34,13 @@
 
     <fieldset data-section="disable-conditions">
         <legend>{{localize "CAT.MEDKIT.Effect.DisableCondition.Label"}}</legend>
-        <div class="form-group cat-multi-combobox-group">
+        <div class="form-group combo">
             <label>{{localize "CAT.MEDKIT.Effect.DisableCondition.Label"}}</label>
             <cat-multi-combobox input-id="cat-medkit-disable-conditions" name="flags.cat.disableCondition">
                 {{#each disableConditionGroups}}
                     <optgroup label="{{label}}">
                         {{#each options}}
-                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                            <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                         {{/each}}
                     </optgroup>
                 {{/each}}

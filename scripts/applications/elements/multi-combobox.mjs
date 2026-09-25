@@ -53,16 +53,12 @@ export default class CatMultiCombobox extends HTMLElement {
         this.#hidden.type = 'hidden';
         this.#hidden.name = name;
         this.#hidden.value = '';
-
         this.#chipsWrap = document.createElement('div');
-        this.#chipsWrap.className = 'cat-multi-combobox-chips';
-
+        this.#chipsWrap.className = 'chips';
         this.#icon = document.createElement('i');
-        this.#icon.className = 'fas fa-magnifying-glass cat-combobox-icon';
-
+        this.#icon.className = 'fas fa-magnifying-glass';
         this.#input = document.createElement('input');
         this.#input.type = 'text';
-        this.#input.classList.add('cat-combobox-input');
         this.#input.placeholder = placeholder;
         this.#input.autocomplete = 'off';
         this.#input.spellcheck = false;
@@ -70,10 +66,10 @@ export default class CatMultiCombobox extends HTMLElement {
         if (inputId) this.#input.id = inputId;
 
         this.#counter = document.createElement('span');
-        this.#counter.className = 'cat-multi-combobox-counter';
+        this.#counter.className = 'counter';
 
         const field = document.createElement('div');
-        field.classList.add('cat-combobox-field');
+        field.classList.add('field');
         field.append(this.#icon, this.#input, this.#counter);
 
         this.#list = document.createElement('ul');
@@ -97,8 +93,8 @@ export default class CatMultiCombobox extends HTMLElement {
         });
         this.#chipsWrap.addEventListener('click', this.#onChipsClick.bind(this));
         this.#chipsWrap.addEventListener('input', this.#onChipsInput.bind(this));
-        this.#chipsWrap.addEventListener('mouseover', e => this.#tokenHover(e, '.cat-multi-combobox-chip', true));
-        this.#chipsWrap.addEventListener('mouseout', e => this.#tokenHover(e, '.cat-multi-combobox-chip', false));
+        this.#chipsWrap.addEventListener('mouseover', e => this.#tokenHover(e, '.chip', true));
+        this.#chipsWrap.addEventListener('mouseout', e => this.#tokenHover(e, '.chip', false));
         document.addEventListener('mousedown', this.#onDocumentMousedown);
     }
 
@@ -177,7 +173,7 @@ export default class CatMultiCombobox extends HTMLElement {
             const opt = this.#options.find(o => o.value === value);
             if (!opt) continue;
             const chip = document.createElement('div');
-            chip.className = 'cat-multi-combobox-chip';
+            chip.className = 'chip';
             chip.dataset.value = value;
             if (opt.image) {
                 const img = document.createElement('img');
@@ -202,19 +198,19 @@ export default class CatMultiCombobox extends HTMLElement {
             }
             if (this.#amountsMode) {
                 const numWrap = document.createElement('div');
-                numWrap.className = 'cat-multi-combobox-num';
+                numWrap.className = 'num';
                 const num = document.createElement('input');
                 num.type = 'number';
-                num.className = 'cat-multi-combobox-amount';
+                num.className = 'amount';
                 num.min = '1';
                 if (opt.max != null) num.max = String(opt.max);
                 num.value = String(amount);
                 num.dataset.value = value;
                 const stepper = document.createElement('div');
-                stepper.className = 'cat-multi-combobox-stepper';
+                stepper.className = 'stepper';
                 const up = document.createElement('button');
                 up.type = 'button';
-                up.className = 'cat-multi-combobox-step-up';
+                up.className = 'up';
                 up.dataset.value = value;
                 up.tabIndex = -1;
                 up.innerHTML = '<i class="fas fa-caret-up"></i>';
@@ -223,7 +219,7 @@ export default class CatMultiCombobox extends HTMLElement {
                 if (totalCap || perCap) up.disabled = true;
                 const down = document.createElement('button');
                 down.type = 'button';
-                down.className = 'cat-multi-combobox-step-down';
+                down.className = 'down';
                 down.dataset.value = value;
                 down.tabIndex = -1;
                 down.innerHTML = '<i class="fas fa-caret-down"></i>';
@@ -234,7 +230,7 @@ export default class CatMultiCombobox extends HTMLElement {
             }
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.className = 'cat-multi-combobox-remove';
+            removeBtn.className = 'remove';
             removeBtn.dataset.value = value;
             removeBtn.tabIndex = -1;
             removeBtn.innerHTML = '<i class="fas fa-xmark"></i>';
@@ -307,25 +303,25 @@ export default class CatMultiCombobox extends HTMLElement {
     }
 
     #onChipsClick(event) {
-        const removeBtn = event.target.closest('.cat-multi-combobox-remove');
+        const removeBtn = event.target.closest('.remove');
         if (removeBtn) {
             event.preventDefault();
             this.#toggle(removeBtn.dataset.value);
             return;
         }
-        const up = event.target.closest('.cat-multi-combobox-step-up');
+        const up = event.target.closest('.up');
         if (up) {
             event.preventDefault();
             this.#step(up.dataset.value, 1);
             return;
         }
-        const down = event.target.closest('.cat-multi-combobox-step-down');
+        const down = event.target.closest('.down');
         if (down) {
             event.preventDefault();
             this.#step(down.dataset.value, -1);
             return;
         }
-        const chip = event.target.closest('.cat-multi-combobox-chip');
+        const chip = event.target.closest('.chip');
         if (chip) {
             const token = canvas.tokens.get(chip.dataset.value);
             if (token) canvas.ping(token.center);
@@ -363,7 +359,7 @@ export default class CatMultiCombobox extends HTMLElement {
     }
 
     #onChipsInput(event) {
-        const num = event.target.closest('.cat-multi-combobox-amount');
+        const num = event.target.closest('.amount');
         if (!num) return;
         const value = num.dataset.value;
         const opt = this.#options.find(o => o.value === value);

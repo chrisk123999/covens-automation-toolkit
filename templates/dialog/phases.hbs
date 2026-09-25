@@ -1,0 +1,6 @@
+<nav class="phase">
+    {{#each phases}}
+        <span class="tab-link{{#if active}} active{{/if}}{{#if done}} done{{/if}}" {{#if active}} aria-current="step"
+            {{/if}}>{{localize label}}</span>
+    {{/each}}
+</nav>

@@ -37,42 +37,31 @@ export default class CatCombobox extends HTMLElement {
         this.#hidden.type = 'hidden';
         this.#hidden.name = name;
         this.#hidden.value = value;
-
         this.#icon = document.createElement('i');
-        this.#icon.className = 'fas fa-magnifying-glass cat-combobox-icon';
-
+        this.#icon.className = 'fas fa-magnifying-glass';
         this.#image = document.createElement('img');
-        this.#image.className = 'cat-combobox-selected-image';
         this.#image.hidden = true;
-
         this.#input = document.createElement('input');
         this.#input.type = 'text';
-        this.#input.classList.add('cat-combobox-input');
         this.#input.placeholder = placeholder;
         this.#input.autocomplete = 'off';
         this.#input.spellcheck = false;
         const inputId = this.getAttribute('input-id');
         if (inputId) this.#input.id = inputId;
-
         this.#clear = document.createElement('button');
         this.#clear.type = 'button';
-        this.#clear.classList.add('cat-combobox-clear');
         this.#clear.innerHTML = '<i class="fas fa-xmark"></i>';
         this.#clear.tabIndex = -1;
         this.#clear.hidden = true;
-
         const wrap = document.createElement('div');
-        wrap.classList.add('cat-combobox-field');
+        wrap.classList.add('field');
         wrap.append(this.#icon, this.#image, this.#input, this.#clear);
-
         this.#list = document.createElement('ul');
         this.#list.classList.add('cat-combobox-options');
         this.#list.hidden = true;
-
         this.append(this.#hidden, wrap, this.#list);
         this.#renderOptions('');
         if (value) this.#applyInitialValue(value);
-
         this.#input.addEventListener('input', this.#onInput.bind(this));
         this.#input.addEventListener('focus', this.#openPopover.bind(this));
         this.#input.addEventListener('mousedown', this.#onInputMousedown.bind(this));
@@ -107,7 +96,7 @@ export default class CatCombobox extends HTMLElement {
         }
         const fa = option ? uiUtils.fallbackIcon(option.value) : null;
         this.#image.hidden = true;
-        this.#icon.className = `${fa ?? 'fas fa-magnifying-glass'} cat-combobox-icon`;
+        this.#icon.className = `${fa ?? 'fas fa-magnifying-glass'}`;
         this.#icon.hidden = false;
     }
 

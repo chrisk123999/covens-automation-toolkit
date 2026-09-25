@@ -1,0 +1,39 @@
+<div class="body">
+    <div class="standard-form cat-quick-conditions">
+        <div class="form-group">
+            <textarea id="cat-condition-value" rows="3" placeholder="{{localize data.data.placeholder}}"
+                readonly>{{data.data.value}}</textarea>
+        </div>
+        <div id="edit" class="form-group flex-col">
+            {{#each inputs.edit}}
+                <div class="{{class}}" id="{{id}}">
+                    {{#each inputs}}
+                        {{#if (eq type 'label')}}
+                            {{{cat-labelP this}}}
+                        {{else if (eq type 'button')}}
+                            {{{cat-button this}}}
+                        {{else if (eq type 'select')}}
+                            {{{cat-selectDetailed this}}}
+                        {{else if (eq type 'selectMultiple')}}
+                            {{{cat-selectMultiple this}}}
+                        {{else if (eq type 'content')}}
+                            {{{cat-contentP this}}}
+                        {{else if (eq type 'number')}}
+                            {{{cat-numberInput this}}}
+                        {{else if (eq type 'text')}}
+                            {{{cat-textInput this}}}
+                        {{/if}}
+                    {{/each}}
+                </div>
+            {{/each}}
+        </div>
+        {{#if inputs.add.length}}
+            <fieldset id="add" class="quick-conditions-fieldset-add">
+                <legend id="add-legend">{{localize 'CAT.QuickConditions.Legend'}}</legend>
+                {{#each inputs.add}}
+                    {{{cat-button this}}}
+                {{/each}}
+            </fieldset>
+        {{/if}}
+    </div>
+</div>

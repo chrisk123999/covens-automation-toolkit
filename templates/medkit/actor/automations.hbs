@@ -1,11 +1,29 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     <fieldset data-section="actor-automations">
         <legend>{{localize "CAT.MEDKIT.Actor.Automations"}}</legend>
-        {{formGroup fields.name name="flags.cat.identifier" value=identifierOverride hint=(localize "CAT.MEDKIT.Actor.Name.Hint")}}
-        {{formGroup fields.ignoreActor name="flags.cat.ignoreActor" value=ignoreActor hint=(localize "CAT.MEDKIT.Actor.IgnoreActor.Hint")}}
+        {{#if automationCounts}}
+            <div class="counts">
+                {{#each automationCounts}}
+                    <div class="count" data-medkit-status="{{status}}" {{#if names}} data-tooltip="{{names}}" {{/if}}>
+                        <span class="value">{{count}}</span>
+                        <span class="label">{{localize label}}</span>
+                    </div>
+                {{/each}}
+            </div>
+        {{/if}}
+
         <button type="button" data-action="massApply" data-tooltip="{{localize 'CAT.MEDKIT.MassApply.Tooltip'}}">
             <i class="fa-solid fa-download"></i>
             {{localize "CAT.MEDKIT.MassApply.Button"}}
         </button>
+        {{formGroup fields.name name="flags.cat.identifier" value=identifierOverride hint=(localize "CAT.MEDKIT.Actor.Name.Hint")}}
+        {{formGroup fields.ignoreActor name="flags.cat.ignoreActor" value=ignoreActor hint=(localize "CAT.MEDKIT.Actor.IgnoreActor.Hint")}}
     </fieldset>
+    {{#if automationTree.rows.length}}
+        <fieldset data-section="automation-tree">
+            <legend>{{localize "CAT.MEDKIT.Tree.Legend"}}</legend>
+            {{> "modules/cat/templates/medkit/shared/automation-tree.hbs" tree=automationTree}}
+        </fieldset>
+    {{/if}}
 </section>

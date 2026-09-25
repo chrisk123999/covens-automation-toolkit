@@ -10,6 +10,7 @@ const phaseLabels = {
 
 async function resolveBonusRolls(bonuses, actor, rollClass) {
     const label = bonuses.map(bonus => bonus.name).join(', ');
+    for (const bonus of bonuses) bonus.roll.options.cat = {...bonus.roll.options.cat, source: bonus.name};
     return await rollUtils.resolveManualRolls(bonuses.map(bonus => bonus.roll), actor, label, {rollClass});
 }
 

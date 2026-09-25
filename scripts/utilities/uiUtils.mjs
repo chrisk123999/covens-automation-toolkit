@@ -24,22 +24,128 @@ async function fadeOut(element, timeout = 250) {
         setTimeout(done, timeout);
     });
 }
+
 /**
- * Let an application be dragged by an element that is not its header, ignoring interactive controls inside it.
+ * Restore a window's remembered position.
+ * @param {object} options Application options, or the initial options being built.
+ * @returns {object|undefined} Stored {left, top, width, height}, if any.
+ */
+function storedWindowPosition(options) {
+    const key = windowPositionKey(options);
+    return key ? game.settings.get('cat', 'windowPositions')?.[key] : undefined;
+}
+/**
+ * The key a window's position is stored under, or null when each instance is its own window.
+ * @param {object} options Application options.
+ * @returns {string|null}
+ */
+function windowPositionKey(options) {
+    const id = options?.id;
+    return id && !id.includes('{id}') ? id : null;
+}
+/**
+ * Restore a remembered position onto a window's initial options, leaving auto-sized axes auto.
+ * @param {object} options Initial application options, mutated in place.
+ */
+function applyStoredWindowPosition(options) {
+    const stored = storedWindowPosition(options);
+    if (!stored) return;
+    const position = options.position;
+    if (Number.isFinite(stored.left)) position.left = stored.left;
+    if (Number.isFinite(stored.top)) position.top = stored.top;
+    if (Number.isFinite(stored.width) && position.width !== 'auto') position.width = stored.width;
+    if (Number.isFinite(stored.height) && position.height !== 'auto') position.height = stored.height;
+}
+/**
+ * Remember where a window was left, debounced so a drag writes once.
+ * @param {foundry.applications.api.ApplicationV2} app Application to act on.
+ * @param {object} position Current application position.
+ */
+const rememberWindowPosition = foundry.utils.debounce((app, position) => {
+    const key = windowPositionKey(app.options);
+    if (!key) return;
+    const {left, top, width, height} = position;
+    if (!Number.isFinite(left) || !Number.isFinite(top)) return;
+    const all = {...game.settings.get('cat', 'windowPositions')};
+    all[key] = {left, top, width, height};
+    game.settings.set('cat', 'windowPositions', all);
+}, 500);
+/**
+ * Let an application be dragged by an element that is not its header, bound to the app element so re-renders do not re-wire it.
  * @param {foundry.applications.api.ApplicationV2} app Application to make draggable.
- * @param {string} handleSelector CSS selector for the drag handle within the app.
+ * @param {string} [handleSelector] CSS selector for the drag handle within the app.
  * @param {object} [options] Additional options.
  * @param {string} [options.ignore] CSS selector for descendants that should not start a drag.
+ * @param {boolean} [options.resizable] Add a corner grabber that resizes the window.
  */
-function enableWindowDrag(app, handleSelector, {ignore = 'button, a, input, select, textarea, [data-action]'} = {}) {
-    const handle = app.element?.querySelector(handleSelector);
-    if (!handle || handle.dataset.dragWired === '1') return;
-    handle.dataset.dragWired = '1';
-    const drag = new foundry.applications.ux.Draggable.implementation(app, app.element, handle, false);
+function enableWindowDrag(app, handleSelector = ':scope > header', {ignore = 'button, a, input, select, textarea, [data-action], cat-multi-combobox, multi-select, .resize-handle', resizable = true} = {}) {
+    const element = app.element;
+    if (!element || element.dataset.dragWired === '1' || !element.querySelector(handleSelector)) return;
+    element.dataset.dragWired = '1';
+    if (resizable && !element.querySelector(':scope > .resize-handle')) {
+        const grabber = document.createElement('div');
+        grabber.className = 'resize-handle';
+        grabber.setAttribute('aria-label', _loc('CAT.Generic.Resize'));
+        element.append(grabber);
+    }
+    app._onResize ??= () => {};
+    const drag = new foundry.applications.ux.Draggable.implementation(app, element, element, resizable ? {selector: ':scope > .resize-handle'} : false);
+    element.classList.remove('draggable', 'resizable');
     const orig = drag._onDragMouseDown.bind(drag);
     drag._onDragMouseDown = event => {
+        if (!element.querySelector(handleSelector)?.contains(event.target)) return;
         if (event.target.closest(ignore)) return;
         orig(event);
+    };
+}
+/**
+ * Detach an application into its own popout, or re-attach it when it is already detached.
+ * @param {foundry.applications.api.ApplicationV2} app Application to act on.
+ * @returns {Promise<*>}
+ */
+async function toggleDetached(app) {
+    if (app.window.windowId) await app.attachWindow();
+    else {
+        const rect = app.element.getBoundingClientRect();
+        const chromeWidth = (window.outerWidth - window.innerWidth) || 16;
+        const chromeHeight = (window.outerHeight - window.innerHeight) || 80;
+        await app.detachWindow({position: {
+            width: Math.round(rect.width) + chromeWidth,
+            height: Math.round(rect.height) + chromeHeight
+        }});
+    }
+    return app.render({parts: ['header']});
+}
+/**
+ * The `toggleDetach` action handler every CAT window registers.
+ * @this {foundry.applications.api.ApplicationV2}
+ * @returns {Promise<*>}
+ */
+function onToggleDetach() {
+    return toggleDetached(this);
+}
+/**
+ * Whether a window is detached, reading the pending state from the render options first.
+ * @param {foundry.applications.api.ApplicationV2} app Application to act on.
+ * @param {object} [options] Render options.
+ * @returns {boolean}
+ */
+function isDetached(app, options) {
+    if (options?.window?.attach) return false;
+    if (options?.window?.detach) return true;
+    return !!app.window.windowId;
+}
+/**
+ * Header context for the detach button, so its label and glyph match the window's state.
+ * @param {foundry.applications.api.ApplicationV2} app Application to act on.
+ * @param {object} [options] Render options.
+ * @returns {{detachLabel: string, detachIcon: string}}
+ */
+function detachContext(app, options) {
+    const detached = isDetached(app, options);
+    return {
+        detachLabel: detached ? 'APPLICATION.ACTIONS.Attach' : 'APPLICATION.ACTIONS.Detach',
+        detachIcon: detached ? 'fa-arrow-down-to-square' : 'fa-arrow-up-right-from-square'
     };
 }
 /**
@@ -88,6 +194,13 @@ export default {
     fallbackIcon,
     fadeOut,
     enableWindowDrag,
+    toggleDetached,
+    onToggleDetach,
+    isDetached,
+    detachContext,
+    storedWindowPosition,
+    applyStoredWindowPosition,
+    rememberWindowPosition,
     bringToFront,
     centerWindow,
     enrichHTML,

@@ -1,24 +1,28 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     {{#if hero}}
-        <div class="cat-medkit-hero" data-variant="{{hero.variant}}" data-medkit-status="{{hero.medkitStatus}}">
-            <i class="{{hero.icon}} cat-medkit-hero-icon"></i>
-            <div class="cat-medkit-hero-text">
-                <h2 class="cat-medkit-hero-heading">{{hero.heading}}</h2>
-                <p class="cat-medkit-hero-copy">{{hero.copy}}</p>
+        <div class="hero" data-variant="{{hero.variant}}" data-medkit-status="{{hero.medkitStatus}}">
+            <i class="{{hero.icon}}"></i>
+            <div class="text">
+                <h2>{{hero.heading}}</h2>
+                <p>{{hero.copy}}</p>
             </div>
             {{#if hero.isAvailable}}
-                <div class="cat-medkit-hero-controls">
+                <div class="controls">
                     <select name="heroSourcePick">
                         {{#each hero.sources}}
-                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                            <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                         {{/each}}
                     </select>
-                    <button type="button" class="cat-medkit-hero-cta" data-action="applyAvailable" data-tooltip="{{localize 'CAT.MEDKIT.Hero.Available.CTA'}}" aria-label="{{localize 'CAT.MEDKIT.Hero.Available.CTA'}}">
+                    <button type="button" class="cta" data-action="applyAvailable"
+                        data-tooltip="{{localize 'CAT.MEDKIT.Hero.Available.CTA'}}"
+                        aria-label="{{localize 'CAT.MEDKIT.Hero.Available.CTA'}}">
                         <i class="fa-solid fa-check"></i>
                     </button>
                 </div>
             {{else if hero.cta}}
-                <button type="button" class="cat-medkit-hero-cta" data-action="{{hero.cta.action}}"{{#if hero.cta.tab}} data-tab="{{hero.cta.tab}}"{{/if}}>
+                <button type="button" class="cta" data-action="{{hero.cta.action}}" {{#if hero.cta.tab}}
+                    data-tab="{{hero.cta.tab}}" {{/if}}>
                     {{hero.cta.label}}
                 </button>
             {{/if}}
@@ -33,7 +37,8 @@
             <p class="hint">{{localize "CAT.MEDKIT.RulesToggle.NotApplicable"}}</p>
         {{/if}}
         {{#if otherRulesAutomationAvailable}}
-            <p class="hint">{{localize "CAT.MEDKIT.RulesToggle.OtherRulesAvailable" otherRulesLabel=otherRulesLabel}}</p>
+            <p class="hint">{{localize "CAT.MEDKIT.RulesToggle.OtherRulesAvailable" otherRulesLabel=otherRulesLabel}}
+            </p>
         {{/if}}
     </fieldset>
 
@@ -53,7 +58,7 @@
     {{#if notes}}
         <fieldset data-section="notes">
             <legend>{{localize "CAT.MEDKIT.Notes.Label"}}</legend>
-            <p class="cat-medkit-notes">{{notes}}</p>
+            <p class="notes">{{notes}}</p>
         </fieldset>
     {{/if}}
 </section>

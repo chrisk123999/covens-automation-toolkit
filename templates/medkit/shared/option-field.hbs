@@ -2,88 +2,106 @@
     {{formGroup field name=name value=value hint=i18nOption dataset=(ifThen tooltip (object tooltip=tooltip))}}
 {{else if isCombobox}}
     <div class="form-group">
-        <label{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{label}}</label>
-        <div class="form-fields">
-            <cat-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
-                {{#if allowBlank}}<option value=""></option>{{/if}}
-                {{#each choices}}
-                    <option value="{{value}}" data-image="{{image}}"{{#if invert}} data-invert="true"{{/if}}>{{label}}</option>
-                {{/each}}
-            </cat-combobox>
-            {{#if compendiumPicker}}
-                <button type="button" class="cat-compendium-pick" data-action="openCompendiumActor" data-flag-name="{{name}}" data-summon-max="{{compendiumMax}}" data-tooltip="{{localize 'CAT.MEDKIT.Summons.CompendiumPick'}}">
-                    <i class="fa-solid fa-book-open"></i>
-                </button>
-            {{/if}}
-            {{#if compendiumItemPicker}}
-                <button type="button" class="cat-compendium-pick" data-action="openCompendiumItem" data-flag-name="{{name}}" data-tooltip="{{localize 'CAT.MEDKIT.Summons.ItemCompendiumPick'}}">
-                    <i class="fa-solid fa-book-open"></i>
-                </button>
-            {{/if}}
-        </div>
+        <label{{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>{{label}}</label>
+            <div class="form-fields">
+                <cat-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
+                    {{#if allowBlank}}
+                        <option value=""></option>
+                    {{/if}}
+                    {{#each choices}}
+                        <option value="{{value}}" data-image="{{image}}" {{#if invert}} data-invert="true" {{/if}}>
+                            {{label}}
+                        </option>
+                    {{/each}}
+                </cat-combobox>
+                {{#if compendiumPicker}}
+                    <button type="button" data-action="openCompendiumActor" data-flag-name="{{name}}"
+                        data-summon-max="{{compendiumMax}}"
+                        data-tooltip="{{localize 'CAT.MEDKIT.Summons.CompendiumPick'}}">
+                        <i class="fa-solid fa-book-open"></i>
+                    </button>
+                {{/if}}
+                {{#if compendiumItemPicker}}
+                    <button type="button" data-action="openCompendiumItem" data-flag-name="{{name}}"
+                        data-tooltip="{{localize 'CAT.MEDKIT.Summons.ItemCompendiumPick'}}">
+                        <i class="fa-solid fa-book-open"></i>
+                    </button>
+                {{/if}}
+            </div>
     </div>
 {{else if isMultiCombobox}}
     <div class="form-group">
-        <label{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{label}}</label>
-        <div class="form-fields">
-            <cat-multi-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}">
-                {{#each choices}}
-                    <option value="{{value}}" data-image="{{image}}"{{#if invert}} data-invert="true"{{/if}} data-tag="{{tag}}"{{#if selected}} selected{{/if}}>{{label}}</option>
-                {{/each}}
-            </cat-multi-combobox>
-        </div>
+        <label{{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>{{label}}</label>
+            <div class="form-fields">
+                <cat-multi-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}">
+                    {{#each choices}}
+                        <option value="{{value}}" data-image="{{image}}" {{#if invert}} data-invert="true" {{/if}}
+                            data-tag="{{tag}}" {{#if selected}} selected{{/if}}>{{label}}</option>
+                    {{/each}}
+                </cat-multi-combobox>
+            </div>
     </div>
 {{else if isSequencerFile}}
     <div class="form-group">
-        <label{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{label}}</label>
-        <div class="form-fields">
-            <file-picker input-id="cat-medkit-opt-{{key}}" name="{{name}}" type="{{fileType}}" value="{{value}}"></file-picker>
-            <button type="button" class="cat-sequencer-db" data-action="openSequencerDb" data-tooltip="{{localize 'CAT.MEDKIT.Sequencer.Browse'}}">
-                <i class="fa-solid fa-photo-film"></i>
-            </button>
-        </div>
+        <label{{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>{{label}}</label>
+            <div class="form-fields">
+                <file-picker input-id="cat-medkit-opt-{{key}}" name="{{name}}" type="{{fileType}}"
+                    value="{{value}}"></file-picker>
+                <button type="button" data-action="openSequencerDb"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Sequencer.Browse'}}">
+                    <i class="fa-solid fa-photo-film"></i>
+                </button>
+            </div>
     </div>
 {{else if isAnimationSelect}}
     <div class="form-group">
-        <label{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{label}}</label>
-        <div class="form-fields">
-            <cat-combobox data-animation-select input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
-                <option value=""></option>
-                {{#each choices}}
-                    <option value="{{value}}" data-image="{{image}}">{{label}}</option>
-                {{/each}}
-            </cat-combobox>
-        </div>
-        {{#if animationCredits.length}}
-            <p class="hint">{{localize "CAT.MEDKIT.Animation.Credits"}}{{#each animationCredits}} {{name}}{{#if discord}} <a href="{{discord}}" target="_blank" rel="noopener" data-tooltip="{{localize 'CAT.MEDKIT.Animation.Discord'}}"><i class="fa-brands fa-discord"></i></a>{{/if}}{{#if patreon}} <a href="{{patreon}}" target="_blank" rel="noopener" data-tooltip="{{localize 'CAT.MEDKIT.Animation.Patreon'}}"><i class="fa-brands fa-patreon"></i></a>{{/if}}{{/each}}</p>
-        {{/if}}
+        <label{{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>{{label}}</label>
+            <div class="form-fields">
+                <cat-combobox data-animation-select input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
+                    <option value=""></option>
+                    {{#each choices}}
+                        <option value="{{value}}" data-image="{{image}}">{{label}}</option>
+                    {{/each}}
+                </cat-combobox>
+            </div>
+            {{#if animationCredits.length}}
+                <p class="hint">{{localize "CAT.MEDKIT.Animation.Credits"}}{{#each animationCredits}}
+                        {{name}}{{#if discord}} <a href="{{discord}}" target="_blank" rel="noopener"
+                                data-tooltip="{{localize 'CAT.MEDKIT.Animation.Discord'}}"><i
+                                    class="fa-brands fa-discord"></i></a>{{/if}}{{#if patreon}} <a href="{{patreon}}"
+                                target="_blank" rel="noopener"
+                                data-tooltip="{{localize 'CAT.MEDKIT.Animation.Patreon'}}"><i
+                                    class="fa-brands fa-patreon"></i></a>{{/if}}{{/each}}</p>
+            {{/if}}
     </div>
     {{#if animationOptions.length}}
-        <fieldset class="cat-generic-animation-options" data-section="animation-suboptions">
+        <div class="suboptions" data-section="animation-suboptions">
             {{#each animationOptions}}
                 {{> "modules/cat/templates/medkit/shared/option-field.hbs" this}}
             {{/each}}
-        </fieldset>
+        </div>
     {{/if}}
 {{else if isSummonSelect}}
-    <div class="cat-summon-list" data-flag-path="{{configPath}}" data-max="{{max}}">
+    <div class="summons" data-flag-path="{{configPath}}" data-max="{{max}}">
         {{#each summonEntries}}
-            <fieldset class="cat-generic-summon-options" data-section="summon-entry">
+            <fieldset data-section="summon-entry">
                 <legend>
                     <span>{{legend}}</span>
-                    <button type="button" data-action="removeSummonEntry" data-index="{{index}}" data-tooltip="{{localize 'Remove'}}">
+                    <button type="button" data-action="removeSummonEntry" data-index="{{index}}"
+                        data-tooltip="{{localize 'COMMON.Delete'}}">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </legend>
                 {{#each fields}}
                     {{> "modules/cat/templates/medkit/shared/option-field.hbs" this}}
                 {{/each}}
-                <div class="cat-summon-item-list" data-flag-path="{{items.base}}">
+                <div class="summon-items" data-flag-path="{{items.base}}">
                     {{#each items.entries}}
-                        <fieldset class="cat-generic-summon-item" data-section="summon-item">
+                        <fieldset data-section="summon-item">
                             <legend>
                                 <span>{{legend}}</span>
-                                <button type="button" data-action="removeSummonItem" data-index="{{index}}" data-tooltip="{{localize 'Remove'}}">
+                                <button type="button" data-action="removeSummonItem" data-index="{{index}}"
+                                    data-tooltip="{{localize 'COMMON.Delete'}}">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </legend>
@@ -92,35 +110,36 @@
                             {{/each}}
                         </fieldset>
                     {{/each}}
-                    <button type="button" class="cat-summon-add" data-action="addSummonItem">
+                    <button type="button" data-action="addSummonItem">
                         <i class="fa-solid fa-plus"></i> {{localize "CAT.MEDKIT.Summons.AddItem"}}
                     </button>
                 </div>
             </fieldset>
         {{/each}}
         {{#if canAdd}}
-            <button type="button" class="cat-summon-add" data-action="addSummonEntry">
+            <button type="button" data-action="addSummonEntry">
                 <i class="fa-solid fa-plus"></i> {{localize "CAT.MEDKIT.Summons.Add"}}
             </button>
         {{/if}}
     </div>
 {{else if isList}}
-    <div class="form-group cat-medkit-documents" data-flag-path="{{configPath}}" data-validate="{{validate}}">
-        <label{{#if tooltip}} data-tooltip="{{tooltip}}"{{/if}}>{{label}}</label>
-        <div class="form-fields">
-            <input id="cat-medkit-opt-{{key}}" type="text" placeholder="{{localize placeholder}}">
-            <button type="button" data-action="addListEntry" data-tooltip="{{localize addTooltip}}">
-                <i class="fa-solid fa-plus"></i>
-            </button>
-        </div>
+    <div class="form-group documents" data-flag-path="{{configPath}}" data-validate="{{validate}}">
+        <label{{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>{{label}}</label>
+            <div class="form-fields">
+                <input id="cat-medkit-opt-{{key}}" type="text" placeholder="{{localize placeholder}}">
+                <button type="button" data-action="addListEntry" data-tooltip="{{localize addTooltip}}">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
     </div>
     {{#if entries.length}}
-        <ul class="cat-medkit-document-list" data-flag-path="{{configPath}}">
+        <ul class="doc-list" data-flag-path="{{configPath}}">
             {{#each entries}}
                 <li>
                     {{#if img}}<img src="{{img}}">{{/if}}
                     <span>{{label}}</span>
-                    <button type="button" data-action="removeListEntry" data-value="{{value}}" data-tooltip="{{localize 'Remove'}}">
+                    <button type="button" data-action="removeListEntry" data-value="{{value}}"
+                        data-tooltip="{{localize 'COMMON.Delete'}}">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </li>

@@ -149,6 +149,15 @@ const itemHookNames = {
     munched: 'ddb-importer.characterProcessDataComplete',
     preUpdateItem: 'preUpdateItem'
 };
+const contextMenuHookNames = {
+    getActorContextOptions: 'getActorContextOptions',
+    getItemContextOptions: 'getItemContextOptions',
+    getSceneContextOptions: 'getSceneContextOptions',
+    getCompendiumContextOptions: 'getCompendiumContextOptions',
+    getSheetItemContextOptions: 'dnd5e.getItemContextOptions',
+    getSheetEffectContextOptions: 'dnd5e.getActiveEffectContextOptions',
+    getSheetActivityContextOptions: 'dnd5e.getItemActivityContext'
+};
 const sheetHookNames = {
     getHeaderControlsActiveEffectConfig: 'getHeaderControlsActiveEffectConfig',
     getHeaderControlsActivitySheet: 'getHeaderControlsActivitySheet',
@@ -435,6 +444,7 @@ export default {
     timePasses,
     actorHookNames,
     MEDKIT_STATUSES,
+    contextMenuHookNames,
     attacks,
     meleeAttacks,
     rangedAttacks,

@@ -1,46 +1,49 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     <p class="hint">{{localize docPropHint}}</p>
 
     {{#if alternateAttributes.length}}
         {{#each alternateAttributes as |a|}}
-        <fieldset data-section="{{a.type}}">
-            <legend>{{label}}</legend>
-            {{#if attributes.length}}
-                <ul class="cat-medkit-embedded-list">
-                    {{#each attributes}}
-                        <li>
-                            <span class="cat-medkit-embedded-name">{{valueSummary}}</span>
-                            <span class="cat-medkit-embedded-meta">{{restrictionSummary}}</span>
-                            <button type="button" data-action="editDocProp" data-prop="{{a.type}}" data-index="{{index}}" data-tooltip="{{localize 'CAT.MEDKIT.Embedded.Edit'}}">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button type="button" data-action="removeDocProp" data-prop="{{a.type}}" data-index="{{index}}" data-tooltip="{{localize 'Remove'}}">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </li>
-                    {{/each}}
-                </ul>
-            {{else}}
-                <p class="hint">{{localize "CAT.MEDKIT.DocProps.Empty"}}</p>
-            {{/if}}
-            <button type="button" data-action="addDocProp" data-prop="{{a.type}}">
-                <i class="fa-solid fa-plus"></i>
-                {{localize "CAT.MEDKIT.DocProps.Add"}}
-            </button>
-        </fieldset>
+            <fieldset data-section="{{a.type}}">
+                <legend>{{label}}</legend>
+                {{#if attributes.length}}
+                    <ul class="embedded-list">
+                        {{#each attributes}}
+                            <li>
+                                <span class="name">{{valueSummary}}</span>
+                                <span class="meta">{{restrictionSummary}}</span>
+                                <button type="button" data-action="editDocProp" data-prop="{{a.type}}"
+                                    data-index="{{index}}" data-tooltip="{{localize 'CAT.MEDKIT.Embedded.Edit'}}">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button type="button" data-action="removeDocProp" data-prop="{{a.type}}"
+                                    data-index="{{index}}" data-tooltip="{{localize 'COMMON.Delete'}}">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </li>
+                        {{/each}}
+                    </ul>
+                {{else}}
+                    <p class="hint">{{localize "CAT.MEDKIT.DocProps.Empty"}}</p>
+                {{/if}}
+                <button type="button" data-action="addDocProp" data-prop="{{a.type}}">
+                    <i class="fa-solid fa-plus"></i>
+                    {{localize "CAT.MEDKIT.DocProps.Add"}}
+                </button>
+            </fieldset>
         {{/each}}
     {{/if}}
     <fieldset data-section="class-bonuses">
         <legend>{{localize "CAT.MEDKIT.ClassBonus.Label"}}</legend>
         <p class="hint">{{localize "CAT.MEDKIT.ClassBonus.Hint"}}</p>
-        <div class="cat-class-bonus-add" data-class-bonus-add>
+        <div class="bonus-add" data-class-bonus-add>
             <input type="text" placeholder="{{localize 'CAT.MEDKIT.ClassBonus.AddPlaceholder'}}">
             <button type="button" data-action="addClassBonus" data-tooltip="{{localize 'CAT.MEDKIT.ClassBonus.Add'}}">
                 <i class="fa-solid fa-plus"></i>
             </button>
         </div>
         {{#if classBonuses.rows.length}}
-            <table class="cat-table">
+            <table>
                 <thead>
                     <tr>
                         <th>{{localize "CAT.MEDKIT.ClassBonus.Class"}}</th>
@@ -53,10 +56,13 @@
                     {{#each classBonuses.rows}}
                         <tr>
                             <td>{{identifier}}</td>
-                            <td><input type="number" name="flags.cat.classDifficultyClass.{{identifier}}.value" value="{{dc}}"></td>
-                            <td><input type="number" name="flags.cat.classAttackBonus.{{identifier}}.value" value="{{attack}}"></td>
+                            <td><input type="number" name="flags.cat.classDifficultyClass.{{identifier}}.value"
+                                    value="{{dc}}"></td>
+                            <td><input type="number" name="flags.cat.classAttackBonus.{{identifier}}.value"
+                                    value="{{attack}}"></td>
                             <td>
-                                <button type="button" data-action="removeClassBonus" data-key="{{identifier}}" data-tooltip="{{localize 'Remove'}}">
+                                <button type="button" data-action="removeClassBonus" data-key="{{identifier}}"
+                                    data-tooltip="{{localize 'COMMON.Delete'}}">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </td>

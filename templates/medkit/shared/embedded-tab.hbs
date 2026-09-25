@@ -1,16 +1,19 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     <fieldset data-section="embedded">
         <legend>{{localize "CAT.MEDKIT.Sections.Embedded"}}</legend>
         {{#if embeddedMacros.length}}
-            <ul class="cat-medkit-embedded-list">
+            <ul class="embedded-list">
                 {{#each embeddedMacros}}
                     <li>
-                        <span class="cat-medkit-embedded-name">{{name}}</span>
-                        <span class="cat-medkit-embedded-meta">{{event}}{{#if pass}} / {{pass}}{{/if}}</span>
-                        <button type="button" data-action="editEmbeddedMacro" data-index="{{index}}" data-tooltip="{{localize 'CAT.MEDKIT.Embedded.Edit'}}">
+                        <span class="name">{{name}}</span>
+                        <span class="meta">{{event}}{{#if pass}} / {{pass}}{{/if}}</span>
+                        <button type="button" data-action="editEmbeddedMacro" data-index="{{index}}"
+                            data-tooltip="{{localize 'CAT.MEDKIT.Embedded.Edit'}}">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button type="button" data-action="removeEmbeddedMacro" data-index="{{index}}" data-tooltip="{{localize 'Remove'}}">
+                        <button type="button" data-action="removeEmbeddedMacro" data-index="{{index}}"
+                            data-tooltip="{{localize 'COMMON.Delete'}}">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </li>

@@ -1,0 +1,9 @@
+<footer>
+    {{#each buttons}}
+        <button type="{{#if type}}{{type}}{{else}}submit{{/if}}" {{#if action}} data-action="{{action}}"
+            {{/if}}{{#if name}} name="{{name}}" {{/if}}{{#if tooltip}} data-tooltip="{{localize tooltip}}"
+            {{/if}}{{#if disabled}} disabled{{/if}}>
+            {{#if icon}}<i class="{{icon}}"></i> {{/if}}{{localize label}}
+        </button>
+    {{/each}}
+</footer>

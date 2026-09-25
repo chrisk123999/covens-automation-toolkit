@@ -1,0 +1,61 @@
+<div id="menu-app" class="body standard-form">
+    {{#if tabbed}}
+        <nav>
+            {{#each inputs}}
+                <a class="tab-link{{#if @first}} active{{/if}}" data-tab="{{name}}">{{label}}</a>
+            {{/each}}
+        </nav>
+    {{/if}}
+    {{#each inputs}}
+        {{#if ../tabbed}}
+            <section class="tab-panel{{#if @first}} active{{/if}}" data-tab-panel="{{name}}">
+        {{/if}}
+        {{#if useHelper}}
+            {{#each options}}
+                {{formGroup field name=name value=value}}
+            {{/each}}
+        {{else if isPriority}}
+            <div class="priority" data-source-setting="{{name}}" data-pack-setting="{{packSetting}}">
+                {{#unless ../tabbed}}{{#if label}}
+                        <h3>{{label}}</h3>
+                    {{/if}}{{/unless}}
+                {{#if hint}}
+                    <p class="hint">{{hint}}</p>
+                {{/if}}
+                <ul data-list="enabled">
+                    {{#each enabledRows}}
+                        <li class="row" draggable="true" data-source-id="{{id}}" data-kind="{{kind}}">
+                            <span class="pill">{{kindLabel}}</span>
+                            <span class="name">{{name}}</span>
+                            <input type="number" class="rank" value="{{priority}}" draggable="false">
+                            <button type="button" draggable="false" data-priority-action="disable"
+                                data-tooltip="{{localize 'CAT.Settings.AutomationSources.Disable'}}"
+                                aria-label="{{localize 'CAT.Settings.AutomationSources.Disable'}}">
+                                <i class="fas fa-xmark" aria-hidden="true"></i>
+                            </button>
+                        </li>
+                    {{/each}}
+                </ul>
+                <details>
+                    <summary>{{localize "CAT.Settings.AutomationSources.Disabled"}} (<span
+                            class="disabled-count">{{disabledRows.length}}</span>)</summary>
+                    <ul data-list="disabled">
+                        {{#each disabledRows}}
+                            <li class="row" data-source-id="{{id}}" data-kind="{{kind}}">
+                                <span class="pill">{{kindLabel}}</span>
+                                <span class="name">{{name}}</span>
+                                <input type="number" class="rank" value="{{priority}}" draggable="false" hidden>
+                                <button type="button" draggable="false" data-priority-action="enable"
+                                    data-tooltip="{{localize 'CAT.Settings.AutomationSources.Enable'}}"
+                                    aria-label="{{localize 'CAT.Settings.AutomationSources.Enable'}}">
+                                    <i class="fas fa-plus" aria-hidden="true"></i>
+                                </button>
+                            </li>
+                        {{/each}}
+                    </ul>
+                </details>
+            </div>
+        {{/if}}
+        {{#if ../tabbed}}</section>{{/if}}
+    {{/each}}
+</div>

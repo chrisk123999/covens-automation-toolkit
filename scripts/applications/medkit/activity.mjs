@@ -42,7 +42,6 @@ export default class ActivityMedkit extends MedkitApp {
         return _loc('CAT.MEDKIT.Title', {name: this.#displayName});
     }
 
-    // "<Item> - <Activity>"; activity instances expose metadata.label (a raw i18n key), so the base label path is wrong here.
     get #displayName() {
         const activity = this.document;
         const itemName = activity.item?.name;
@@ -51,7 +50,7 @@ export default class ActivityMedkit extends MedkitApp {
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
-        context.label = this.#displayName;
+        context.title = this.#displayName;
         const flags = this._getFlags();
         context.fields = {
             hidden: new fields.BooleanField({label: _loc('CAT.MEDKIT.Activity.Hidden.Label')}),
