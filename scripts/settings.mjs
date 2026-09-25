@@ -28,6 +28,11 @@ const permissionChoices = {
     4: 'USER.RoleGamemaster'
 };
 const settings = {
+    windowPositions: {
+        type: Object,
+        default: {},
+        scope: 'client'
+    },
     displayDebugLogs: {
         type: Boolean,
         default: true,

@@ -3,15 +3,15 @@
         {{#if legend}}
             <legend>{{localize legend}}</legend>
         {{/if}}
-        {{#cat-wrapIf hasSubinputs "div" class="cat-has-collapsible"}}
+        {{#cat-wrapIf hasSubinputs "div" class="collapsible"}}
             {{#if useHelper}}
                 {{#each options}}
                     {{formGroup field name=name value=value id=id}}
                 {{/each}}
             {{else if isButton}}
-                <div class="cat-body-buttons {{#if displayAsRows}}cat-stacked{{/if}}">
+                <div class="buttons {{#if displayAsRows}}stacked{{/if}}">
                     {{#each options}}
-                        <button type="submit" class="cat-body-button" data-action="confirm" id="{{id}}" name="{{name}}"
+                        <button type="submit" class="btn" data-action="confirm" id="{{id}}" name="{{name}}"
                             {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}{{#if reference}}
                             data-reference-tooltip="{{reference}}" {{/if}}>
                             {{#if image}}<img
@@ -23,18 +23,17 @@
                 </div>
             {{else if isCheckbox}}
                 {{#if showCounter}}
-                    <div class="cat-budget-counter{{#if (gte currentNum totalMax)}} at-max{{/if}}">
-                        {{currentNum}}/{{totalMax}}</div>
+                    <div class="budget{{#if (gte currentNum totalMax)}} at-max{{/if}}">
+                        {{currentNum}}/{{totalMax}}
+                    </div>
                 {{/if}}
                 {{#each options}}
-                    <div class="cat-form-group" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
-                        <div{{#if subinputs}} class="cat-summary" {{/if}}>
-                            <div class="form-group inline{{#if locked}} cat-locked{{/if}}">
+                    <div class="row" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
+                        <div>
+                            <div class="form-group inline{{#if locked}} locked{{/if}}">
                                 {{#if ../hasSubinputs}}
-                                    <div class="cat-collapsible-icon-placeholder" {{#if subinputs}}
-                                        data-action="toggleCollapsed" {{/if}}>
-                                        {{#if subinputs}}<i
-                                                class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                                    <div class="icon-slot" {{#if subinputs}} data-action="toggleCollapsed" {{/if}}>
+                                        {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
 
@@ -42,16 +41,17 @@
                                     data-reference-tooltip="{{reference}}" {{/if}}>
                                     {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}"
                                             src="{{image}}" data-token-id="{{name}}">{{/if}}
-                                    <span class="cat-label-text">{{{localize label}}}</span>
+                                    <span>{{{localize label}}}</span>
                                 </label>
                                 {{#if tags}}
-                                    <div class="cat-tags">
+                                    <div class="tags">
                                         {{#each tags}}
                                             <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"
-                                                {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>
+                                                {{#if status}} data-medkit-status="{{status}}" {{/if}} {{#if tooltip}}
+                                                data-tooltip="{{tooltip}}" {{/if}}>
                                                 {{#if icon}}<i class="{{icon}}"></i>{{/if}}
                                                 {{#if image}}<img class="cat-damage-icon" src="{{image}}">{{/if}}
-                                                <span class="cat-hint-text">{{localize label}}</span>
+                                                <span>{{localize label}}</span>
                                             </span>
                                         {{/each}}
                                     </div>
@@ -67,26 +67,24 @@
                                                 class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                                 {{/each}}
                             </div>
-                    </div>
-                    {{#if subinputs}}
-                        <div class="cat-collapsible-content">
-                            <div class="cat-collapsible-wrapper">
-                                {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
-                            </div>
                         </div>
-                    {{/if}}
+                        {{#if subinputs}}
+                            <div class="panel">
+                                <div>
+                                    {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                                </div>
+                            </div>
+                        {{/if}}
                     </div>
                 {{/each}}
             {{else if isRequest}}
                 {{#each options}}
-                    <div class="cat-form-group" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
-                        <div{{#if subinputs}} class="cat-summary" {{/if}}>
-                            <div class="form-group inline{{#if locked}} cat-locked{{/if}}">
+                    <div class="row" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
+                        <div>
+                            <div class="form-group inline{{#if locked}} locked{{/if}}">
                                 {{#if ../hasSubinputs}}
-                                    <div class="cat-collapsible-icon-placeholder" {{#if subinputs}}
-                                        data-action="toggleCollapsed" {{/if}}>
-                                        {{#if subinputs}}<i
-                                                class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                                    <div class="icon-slot" {{#if subinputs}} data-action="toggleCollapsed" {{/if}}>
+                                        {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
 
@@ -94,23 +92,24 @@
                                     data-reference-tooltip="{{reference}}" {{/if}}>
                                     {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}"
                                             src="{{image}}" data-token-id="{{name}}">{{/if}}
-                                    <span class="cat-label-text">{{{localize label}}}</span>
+                                    <span>{{{localize label}}}</span>
                                 </label>
                                 {{#if tags}}
-                                    <div class="cat-tags">
+                                    <div class="tags">
                                         {{#each tags}}
                                             <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"
-                                                {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>
+                                                {{#if status}} data-medkit-status="{{status}}" {{/if}} {{#if tooltip}}
+                                                data-tooltip="{{tooltip}}" {{/if}}>
                                                 {{#if icon}}<i class="{{icon}}"></i>{{/if}}
                                                 {{#if image}}<img class="cat-damage-icon" src="{{image}}">{{/if}}
-                                                <span class="cat-hint-text">{{localize label}}</span>
+                                                <span>{{localize label}}</span>
                                             </span>
                                         {{/each}}
                                     </div>
                                 {{/if}}
                                 <div class="form-fields">
                                     <input type="hidden" name="{{name}}" value="{{isChecked}}" data-for="{{id}}">
-                                    <button type="button" class="cat-body-button cat-request {{state.key}}" id="{{id}}"
+                                    <button type="button" class="btn request {{state.key}}" id="{{id}}"
                                         data-action="request" {{#if stateReason}} data-tooltip="{{stateReason}}"
                                         {{/if}}>
                                         {{#if state.icon}}<i class="{{state.icon}}"></i>{{/if}}
@@ -123,26 +122,24 @@
                                                 class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                                 {{/each}}
                             </div>
-                    </div>
-                    {{#if subinputs}}
-                        <div class="cat-collapsible-content">
-                            <div class="cat-collapsible-wrapper">
-                                {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
-                            </div>
                         </div>
-                    {{/if}}
+                        {{#if subinputs}}
+                            <div class="panel">
+                                <div>
+                                    {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                                </div>
+                            </div>
+                        {{/if}}
                     </div>
                 {{/each}}
             {{else if isRadio}}
                 {{#each options}}
-                    <div class="cat-form-group" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
-                        <div{{#if subinputs}} class="cat-summary" {{/if}}>
+                    <div class="row" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
+                        <div>
                             <div class="form-group">
                                 {{#if ../hasSubinputs}}
-                                    <div class="cat-collapsible-icon-placeholder"
-                                        {{#if subinputs}}data-action="toggleCollapsed" {{/if}}>
-                                        {{#if subinputs}}<i
-                                                class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                                    <div class="icon-slot" {{#if subinputs}}data-action="toggleCollapsed" {{/if}}>
+                                        {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
 
@@ -153,13 +150,14 @@
                                     {{localize label}}
                                 </label>
                                 {{#if tags}}
-                                    <div class="cat-tags">
+                                    <div class="tags">
                                         {{#each tags}}
                                             <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"
-                                                {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>
+                                                {{#if status}} data-medkit-status="{{status}}" {{/if}} {{#if tooltip}}
+                                                data-tooltip="{{tooltip}}" {{/if}}>
                                                 {{#if icon}}<i class="{{icon}}"></i>{{/if}}
                                                 {{#if image}}<img class="cat-damage-icon" src="{{image}}">{{/if}}
-                                                <span class="cat-hint-text">{{localize label}}</span>
+                                                <span>{{localize label}}</span>
                                             </span>
                                         {{/each}}
                                     </div>
@@ -174,29 +172,27 @@
                                                 class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                                 {{/each}}
                             </div>
-                    </div>
-                    {{#if subinputs}}
-                        <div class="cat-collapsible-content">
-                            <div class="cat-collapsible-wrapper">
-                                {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
-                            </div>
                         </div>
-                    {{/if}}
+                        {{#if subinputs}}
+                            <div class="panel">
+                                <div>
+                                    {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                                </div>
+                            </div>
+                        {{/if}}
                     </div>
                 {{/each}}
             {{else if isSelectAmount}}
                 {{#if totalMax}}
-                    <div class="cat-budget-counter{{#if atMax}} at-max{{/if}}">{{currentSpent}}/{{totalMax}}</div>
+                    <div class="budget{{#if atMax}} at-max{{/if}}">{{currentSpent}}/{{totalMax}}</div>
                 {{/if}}
                 {{#each options}}
-                    <div class="cat-form-group" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
-                        <div{{#if subinputs}} class="cat-summary" {{/if}}>
+                    <div class="row" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
+                        <div>
                             <div class="form-group">
                                 {{#if ../hasSubinputs}}
-                                    <div class="cat-collapsible-icon-placeholder" {{#if subinputs}}
-                                        data-action="toggleCollapsed" {{/if}}>
-                                        {{#if subinputs}}<i
-                                                class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                                    <div class="icon-slot" {{#if subinputs}} data-action="toggleCollapsed" {{/if}}>
+                                        {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
 
@@ -207,13 +203,14 @@
                                     {{{localize label}}}
                                 </label>
                                 {{#if tags}}
-                                    <div class="cat-tags">
+                                    <div class="tags">
                                         {{#each tags}}
                                             <span class="cat-combobox-tag" id="{{id}}" data-for="{{../id}}"
-                                                {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>
+                                                {{#if status}} data-medkit-status="{{status}}" {{/if}} {{#if tooltip}}
+                                                data-tooltip="{{tooltip}}" {{/if}}>
                                                 {{#if icon}}<i class="{{icon}}"></i>{{/if}}
                                                 {{#if image}}<img class="cat-damage-icon" src="{{image}}">{{/if}}
-                                                <span class="cat-hint-text">{{localize label}}</span>
+                                                <span>{{localize label}}</span>
                                             </span>
                                         {{/each}}
                                     </div>
@@ -233,26 +230,24 @@
                                                 class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                                 {{/each}}
                             </div>
-                    </div>
-                    {{#if subinputs}}
-                        <div class="cat-collapsible-content">
-                            <div class="cat-collapsible-wrapper">
-                                {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
-                            </div>
                         </div>
-                    {{/if}}
+                        {{#if subinputs}}
+                            <div class="panel">
+                                <div>
+                                    {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                                </div>
+                            </div>
+                        {{/if}}
                     </div>
                 {{/each}}
             {{else if isSlider}}
                 {{#each options}}
-                    <div class="cat-form-group" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
-                        <div{{#if subinputs}} class="cat-summary" {{/if}}>
+                    <div class="row" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
+                        <div>
                             <div class="form-group">
                                 {{#if ../hasSubinputs}}
-                                    <div class="cat-collapsible-icon-placeholder" {{#if subinputs}}
-                                        data-action="toggleCollapsed" {{/if}}>
-                                        {{#if subinputs}}<i
-                                                class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                                    <div class="icon-slot" {{#if subinputs}} data-action="toggleCollapsed" {{/if}}>
+                                        {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
 
@@ -273,32 +268,32 @@
                                                 class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                                 {{/each}}
                             </div>
-                    </div>
-                    {{#if subinputs}}
-                        <div class="cat-collapsible-content">
-                            <div class="cat-collapsible-wrapper">
-                                {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
-                            </div>
                         </div>
-                    {{/if}}
+                        {{#if subinputs}}
+                            <div class="panel">
+                                <div>
+                                    {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                                </div>
+                            </div>
+                        {{/if}}
                     </div>
                 {{/each}}
             {{else if isFormula}}
-                <div class="cat-formula{{#if header}} cat-dialog-subheader{{/if}}">
+                <div class="formula{{#if header}} subheader{{/if}}">
                     {{#each groups}}
-                        <div class="cat-dice-group{{#if muted}} cat-dice-muted{{/if}}" id="{{id}}">
-                            <header class="cat-dice-group-header">
-                                {{#if icon}}<img class="cat-dmg-icon" src="{{icon}}">{{/if}}
-                                {{#if label}}<span class="cat-dice-type-label">{{label}}</span>{{/if}}
-                                <strong class="cat-dice-subtotal">{{formula}}</strong>
+                        <div class="group{{#if muted}} muted{{/if}}" id="{{id}}">
+                            <header>
+                                {{#if icon}}<img class="dmg" src="{{icon}}">{{/if}}
+                                {{#if label}}<span class="type">{{label}}</span>{{/if}}
+                                <strong>{{formula}}</strong>
                                 {{#if crit}}<i class="fas fa-check-double"
                                         data-tooltip="{{localize 'DND5E.CriticalHit'}}"></i>{{/if}}
-                                {{#if total includeZero=true}}<span class="cat-dice-total">= {{total}}{{#if outcome}}
+                                {{#if total includeZero=true}}<span class="total">= {{total}}{{#if outcome}}
                                             ({{outcome}}){{/if}}</span>{{/if}}
                             </header>
                             <ol class="dice-rolls">
                                 {{#each dice}}
-                                    <li class="cat-die-cell">
+                                    <li>
                                         <label class="roll {{dieClass}}{{#if add}} add{{else}} subtract{{/if}}"
                                             data-tooltip="{{tooltip}}">{{value}}</label>
                                     </li>
@@ -309,22 +304,22 @@
                 </div>
             {{else if isDice}}
                 {{#if showCounter}}
-                    <div class="cat-budget-counter">{{currentNum}}/{{totalMax}}</div>
+                    <div class="budget">{{currentNum}}/{{totalMax}}</div>
                 {{/if}}
-                <div class="cat-dice-picker" data-total-max="{{totalMax}}">
+                <div class="dice" data-total-max="{{totalMax}}">
                     {{#each groups}}
-                        <div class="cat-dice-group">
-                            <header class="cat-dice-group-header">
-                                {{#if icon}}<img class="cat-dmg-icon" src="{{icon}}">{{/if}}
-                                {{#if label}}<span class="cat-dice-type-label">{{label}}</span>{{/if}}
-                                <strong class="cat-dice-subtotal">{{total}}</strong>
+                        <div class="group">
+                            <header>
+                                {{#if icon}}<img class="dmg" src="{{icon}}">{{/if}}
+                                {{#if label}}<span class="type">{{label}}</span>{{/if}}
+                                <strong>{{total}}</strong>
                             </header>
                             <ol class="dice-rolls">
                                 {{#each dice}}
-                                    <li class="cat-die-cell">
+                                    <li>
                                         <input type="checkbox" hidden id="d-{{name}}" name="{{name}}">
                                         <label for="d-{{name}}"
-                                            class="roll d{{faces}}{{#unless isStandard}} cat-die-generic{{/unless}}{{#if isMin}} min{{/if}}{{#if isMax}} max{{/if}}"
+                                            class="roll d{{faces}}{{#unless isStandard}} generic{{/unless}}{{#if isMin}} min{{/if}}{{#if isMax}} max{{/if}}"
                                             data-tooltip="d{{faces}}">{{result}}</label>
                                     </li>
                                 {{/each}}
@@ -332,20 +327,19 @@
                         </div>
                     {{/each}}
                     {{#if grandTotal}}
-                        <div class="cat-dice-grand-total">
-                            <span>{{localize 'CAT.Dialog.Total'}}</span><strong>{{grandTotal}}</strong></div>
+                        <div class="grand-total">
+                            <span>{{localize 'CAT.Dialog.Total'}}</span><strong>{{grandTotal}}</strong>
+                        </div>
                     {{/if}}
                 </div>
             {{else if isCombobox}}
                 {{#each options}}
-                    <div class="cat-form-group" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
-                        <div{{#if subinputs}} class="cat-summary" {{/if}}>
-                            <div class="form-group{{#unless label}} cat-no-label{{/unless}}">
+                    <div class="row" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
+                        <div>
+                            <div class="form-group{{#unless label}} no-label{{/unless}}">
                                 {{#if ../hasSubinputs}}
-                                    <div class="cat-collapsible-icon-placeholder" {{#if subinputs}}
-                                        data-action="toggleCollapsed" {{/if}}>
-                                        {{#if subinputs}}<i
-                                                class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                                    <div class="icon-slot" {{#if subinputs}} data-action="toggleCollapsed" {{/if}}>
+                                        {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
 
@@ -367,26 +361,24 @@
                                     data-tooltip="{{tooltip}}" {{/if}}>{{#if icon}}<i
                                             class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                             {{/each}}
-                    </div>
-                    {{#if subinputs}}
-                        <div class="cat-collapsible-content">
-                            <div class="cat-collapsible-wrapper">
-                                {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
-                            </div>
                         </div>
-                    {{/if}}
+                        {{#if subinputs}}
+                            <div class="panel">
+                                <div>
+                                    {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                                </div>
+                            </div>
+                        {{/if}}
                     </div>
                 {{/each}}
             {{else if isComboboxMulti}}
                 {{#each options}}
-                    <div class="cat-form-group" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
-                        <div{{#if subinputs}} class="cat-summary" {{/if}}>
-                            <div class="form-group cat-multi-combobox-group{{#unless label}} cat-no-label{{/unless}}">
+                    <div class="row" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
+                        <div>
+                            <div class="form-group combo{{#unless label}} no-label{{/unless}}">
                                 {{#if ../hasSubinputs}}
-                                    <div class="cat-collapsible-icon-placeholder"
-                                        {{#if subinputs}}data-action="toggleCollapsed" {{/if}}>
-                                        {{#if subinputs}}<i
-                                                class="fas fa-chevron-down fa-fw cat-collapsible-icon"></i>{{/if}}
+                                    <div class="icon-slot" {{#if subinputs}}data-action="toggleCollapsed" {{/if}}>
+                                        {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
 
@@ -410,14 +402,14 @@
                                     data-tooltip="{{tooltip}}" {{/if}}>{{#if icon}}<i
                                             class="{{icon}}"></i>{{/if}}{{{localize label}}}</p>
                             {{/each}}
-                    </div>
-                    {{#if subinputs}}
-                        <div class="cat-collapsible-content">
-                            <div class="cat-collapsible-wrapper">
-                                {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
-                            </div>
                         </div>
-                    {{/if}}
+                        {{#if subinputs}}
+                            <div class="panel">
+                                <div>
+                                    {{> (lookup @root 'inputTemplate') inputs=subinputs inputTemplate=@root.inputTemplate}}
+                                </div>
+                            </div>
+                        {{/if}}
                     </div>
                 {{/each}}
             {{/if}}

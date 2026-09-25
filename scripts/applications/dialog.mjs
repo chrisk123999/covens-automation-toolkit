@@ -1,5 +1,6 @@
+import {constants} from '../lib/_module.mjs';
 import {uiUtils} from '../utilities/_module.mjs';
-const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+import CatApp from './cat-app.mjs';
 const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundry.data.fields;
 
 /**
@@ -18,7 +19,7 @@ Hooks.once('setup', () => {
 });
 
 // Generic dialog for macros. API matches CPR v13 DialogApp.
-export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2) {
+export default class DialogApp extends CatApp {
     #context;
     #resolveResults;
     #resultsPromise;
@@ -52,7 +53,6 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
         actions: {
             confirm: DialogApp.#confirm,
             request: DialogApp.#request,
-            toggleDetach: DialogApp.#onToggleDetach,
             toggleCollapsed: DialogApp.#toggleCollapsed
         },
         window: {
@@ -67,11 +67,33 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     };
 
     static PARTS = {
-        form: {
-            template: 'modules/cat/templates/dialog-app.hbs',
-            scrollable: ['.scrollable']
-        }
+        header: CatApp.HEADER_PART,
+        phases: {template: 'modules/cat/templates/dialog/phases.hbs'},
+        subheaders: {template: 'modules/cat/templates/dialog/subheaders.hbs'},
+        body: {template: 'modules/cat/templates/dialog/body.hbs', scrollable: ['']},
+        footer: CatApp.FOOTER_PART
     };
+
+    get phases() {
+        return [];
+    }
+
+    get detachable() {
+        return true;
+    }
+
+    get footerButtons() {
+        const selective = this.#context.inputs.filter(input => input.requireSelection);
+        const blockConfirm = (selective.length > 0 && !selective.some(input => input.currentNum > 0))
+            || this.#context.inputs.some(input => input.requireTotal && input.currentSpent < input.totalMax);
+        return this.#context.buttons.map(button => ({...button, action: 'confirm', disabled: blockConfirm && button.name === 'true'}));
+    }
+
+    _configureRenderParts(options) {
+        const parts = super._configureRenderParts(options);
+        if (!this.phases.length) delete parts.phases;
+        return parts;
+    }
 
     _armResults() {
         this.#resultsPromise = new Promise(r => this.#resolveResults = r);
@@ -97,31 +119,14 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     static get INPUT_ID() { return 'i'; }
 
     /** @this {DialogApp} */
-    async _preClose(options) {
-        options.animate = false;
-        await uiUtils.fadeOut(this.element);
-    }
 
     /** @this {DialogApp} */
-    static #onToggleDetach() {
-        if (this.window.windowId) return this.attachWindow();
-        const rect = this.element.getBoundingClientRect();
-        // Popup outer dims must include browser chrome so the inner viewport fits the dialog.
-        // Foundry's #applyDetachedConstraints clamps to inner viewport, so under-sizing here truncates the dialog.
-        const chromeW = (window.outerWidth - window.innerWidth) || 16;
-        const chromeH = (window.outerHeight - window.innerHeight) || 80;
-        return this.detachWindow({position: {
-            width: Math.round(rect.width) + chromeW,
-            height: Math.round(rect.height) + chromeH
-        }});
-    }
-
     #expandedSections = new Map();
     #queuedOpenSections = new Set();
 
     /** @this {DialogApp} */
     static #toggleCollapsed(_event, target) {
-        const collapsible = target.closest('.cat-form-group');
+        const collapsible = target.closest('.row');
         if (!collapsible) return;
         collapsible.classList.toggle('collapsed');
         this.#expandedSections.set(
@@ -137,7 +142,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #openCollapsible(target) {
-        const collapsible = target.closest('.cat-form-group');
+        const collapsible = target.closest('.row');
         if (!collapsible) return;
         collapsible.classList.remove('collapsed');
         this.#expandedSections.set(collapsible.dataset.collapsibleId, true);
@@ -350,7 +355,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 if (t.faces) {
                     const source = t.options.source || t.denomination;
                     const results = t.results?.filter(r => r.active) ?? [];
-                    const dieClass = STANDARD_FACES.has(t.faces) ? 'd' + t.faces : 'cat-die-generic';
+                    const dieClass = STANDARD_FACES.has(t.faces) ? 'd' + t.faces : 'generic';
                     for (let k = 0; k < t.number; k++) {
                         const value = results[k]?.result;
                         dice.push({
@@ -362,7 +367,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     }
                 } else dice.push({
                     tooltip: t.options.source || t.formula,
-                    dieClass: 'cat-die-generic',
+                    dieClass: 'generic',
                     value: t.formula,
                     add
                 });
@@ -377,7 +382,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 outcome: opts?.outcome,
                 muted: opts?.muted,
                 label: cfg?.label,
-                icon: cfg?.icon,
+                icon: constants.damageIcons[type] ?? cfg?.icon,
                 dice
             };
         });
@@ -445,7 +450,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 label: t.label,
                 image: t.image,
                 icon: t.icon,
-                id: t.id
+                id: t.id,
+                status: t.status
             })),
             id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
         }));
@@ -455,6 +461,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
             totalMax: opts?.totalMax ?? 99,
             showCounter: opts?.totalMax != null,
             currentNum: options.filter(i => i.isChecked).length,
+            requireSelection: opts?.requireSelection,
             hasSubinputs: options.some(i => i.subinputs?.length),
             header: opts?.header,
             legend: opts?.legend
@@ -515,7 +522,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 label: t.label,
                 image: t.image,
                 icon: t.icon,
-                id: t.id
+                id: t.id,
+                status: t.status
             })),
             id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
         }));
@@ -552,7 +560,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     label: t.label,
                     image: t.image,
                     icon: t.icon,
-                    id: t.id
+                    id: t.id,
+                    status: t.status
                 })),
                 id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
             })),
@@ -593,7 +602,8 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                     label: t.label,
                     image: t.image,
                     icon: t.icon,
-                    id: t.id
+                    id: t.id,
+                    status: t.status
                 })),
                 onchange: f.options?.onchange
             };
@@ -770,11 +780,9 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     async _prepareContext(options) {
-        const context = await super._prepareContext(options);
         if (!this.#context) this.#formatInputs();
-        const detached = options.window?.attach ? false : options.window?.detach ? true : !!this.window.windowId;
-        const blockConfirm = this.#context.inputs.some(i => i.requireTotal && i.currentSpent < i.totalMax);
-        return {...context, ...this.#context, title: this.windowTitle, detached, blockConfirm};
+        const context = await super._prepareContext(options);
+        return {...this.#context, ...context};
     }
 
     // Cap each option's max so combined weighted amounts stay under totalMax.
@@ -817,7 +825,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
     async _onChangeForm(formConfig, event) {
         super._onChangeForm(formConfig, event);
         const targetInput = event.target;
-        const dicePicker = targetInput.closest?.('.cat-dice-picker');
+        const dicePicker = targetInput.closest?.('.dice');
         if (dicePicker && targetInput.type === 'checkbox') {
             const totalMax = Number(dicePicker.dataset.totalMax);
             if (!totalMax) return;
@@ -826,7 +834,7 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
                 targetInput.checked = false;
                 return;
             }
-            const counter = this.element?.querySelector('.cat-budget-counter');
+            const counter = this.element?.querySelector('.budget');
             if (counter) {
                 counter.textContent = `${checked}/${totalMax}`;
                 counter.classList.toggle('at-max', checked >= totalMax);
@@ -892,13 +900,10 @@ export default class DialogApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     _onRender(context, options) {
         super._onRender(context, options);
-        uiUtils.enableWindowDrag(this, '.cat-dialog-header');
-        const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
-        const header = this.element?.querySelector('.cat-dialog-header');
-        if (counter && header) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));
+        const counter = this.element?.querySelector(':scope > .body .budget');
+        const header = this.element?.querySelector(':scope > header');
+        if (counter && header) header.insertBefore(counter, header.querySelector('[data-action="toggleDetach"]'));
         if (options.isFirstRender) {
-            this.bringToFront();
-            uiUtils.centerWindow(this, {width: 400, height: 300});
             this.element.addEventListener('cat-resize', () => {
                 this.setPosition({width: 'auto', height: 'auto'});
             });

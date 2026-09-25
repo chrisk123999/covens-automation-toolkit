@@ -1,4 +1,7 @@
-import {genericUtils, queryUtils, uiUtils} from '../../utilities/_module.mjs';
+import {constants} from '../../lib/_module.mjs';
+import {genericUtils, queryUtils} from '../../utilities/_module.mjs';
+import uiUtils from '../../utilities/uiUtils.mjs';
+import CatApp from '../cat-app.mjs';
 const {RollResolver} = foundry.applications.dice;
 
 export default class CatRollResolver extends RollResolver {
@@ -6,16 +9,21 @@ export default class CatRollResolver extends RollResolver {
         classes: ['cat', 'cat-dialog', 'cat-roll-resolver'],
         window: {frame: false, positioned: true, contentClasses: ['standard-form']},
         position: {width: 'auto', height: 'auto'},
-        actions: {toggleDetach: CatRollResolver.#onToggleDetach},
+        actions: {toggleDetach: uiUtils.onToggleDetach, applyOutcome: CatRollResolver.#onApplyOutcome},
         form: {handler: this._fulfillRoll}
     };
 
-    static #onToggleDetach() {
-        if (this.window.windowId) return this.attachWindow();
-        const rect = this.element.getBoundingClientRect();
-        const chromeW = (window.outerWidth - window.innerWidth) || 16;
-        const chromeH = (window.outerHeight - window.innerHeight) || 80;
-        return this.detachWindow({position: {width: Math.round(rect.width) + chromeW, height: Math.round(rect.height) + chromeH}});
+    get detachable() {
+        return true;
+    }
+
+    get closeAction() {
+        return 'close';
+    }
+
+    static #onApplyOutcome(_event, target) {
+        this._pendingOutcome = target.dataset.outcome;
+        this.element.requestSubmit();
     }
 
     bringToFront() {
@@ -23,10 +31,29 @@ export default class CatRollResolver extends RollResolver {
     }
 
     static PARTS = {
-        form: {id: 'form', template: 'modules/cat/templates/dice/roll-resolver.hbs'}
+        header: CatApp.HEADER_PART,
+        body: {template: 'modules/cat/templates/dice/roll-resolver/body.hbs', scrollable: ['']},
+        outcomes: {template: 'modules/cat/templates/dice/roll-resolver/outcomes.hbs'},
+        footer: CatApp.FOOTER_PART
     };
 
+    get outcomes() {
+        const {rollType, flavor} = this.#rollContext();
+        const type = (rollType ?? flavor ?? '').toLowerCase();
+        const [prefix, names] = type.includes('attack') ? ['attack', ['fumble', 'miss', 'hit', 'critical']]
+            : type.includes('sav') ? ['save', ['failure', 'success']] : ['', []];
+        return names.map(name => ({value: `${prefix}-${name}`, label: 'CAT.Manual.Outcome.' + name.capitalize()}));
+    }
+
+    _configureRenderParts(options) {
+        const parts = super._configureRenderParts(options);
+        if (!this.outcomes.length) delete parts.outcomes;
+        return parts;
+    }
+
     _pendingOutcome = null;
+
+    #cachedWorkflow = null;
 
     static #entryMode() {
         return game.settings.get('cat', 'manualRollsEntryMode');
@@ -35,29 +62,31 @@ export default class CatRollResolver extends RollResolver {
     static async fulfillBatch(rolls, label, {prompt = false} = {}) {
         const {OperatorTerm, DiceTerm} = foundry.dice.terms;
         const terms = [];
-        const termTypes = new Map();
-        const typeMods = new Map();
-        const typeModTips = new Map();
+        const termInfo = new Map();
         for (const roll of rolls) {
             if (terms.length) terms.push(new OperatorTerm({operator: '+'}));
             let mod = 0, sign = 1;
             for (const term of roll.terms) {
-                if (term instanceof DiceTerm && roll.options.type) termTypes.set(term, roll.options.type);
                 if (term.operator) { sign = term.operator === '-' ? -1 : 1; continue; }
                 if (term.faces === undefined && term.number !== undefined) mod += sign * term.number;
                 sign = 1;
             }
-            if (roll.options.type && mod) {
-                typeMods.set(roll.options.type, (typeMods.get(roll.options.type) ?? 0) + mod);
-                typeModTips.set(roll.options.type, this.#breakdown(roll.data, roll.terms));
+            const dice = roll.terms.filter(term => term instanceof DiceTerm);
+            const anchor = dice.find(term => (CatRollResolver.#knownType(term.options?.flavor) ?? roll.options.type) === roll.options.type) ?? dice[0];
+            for (const term of dice) {
+                termInfo.set(term, {
+                    type: roll.options.type,
+                    properties: [...(roll.options.properties ?? [])].sort().join(','),
+                    source: roll.options.cat?.source,
+                    mod: term === anchor ? mod : 0,
+                    tip: term === anchor && mod ? this.#breakdown(roll.data, roll.terms) : undefined
+                });
             }
             terms.push(...roll.terms);
         }
         const combined = Roll.defaultImplementation.fromTerms(terms, {...rolls[0].options});
         const resolver = new this(combined);
-        resolver._termTypes = termTypes;
-        resolver._typeMods = typeMods;
-        resolver._typeModTips = typeModTips;
+        resolver._termInfo = termInfo;
         resolver._batchLabel = label;
         resolver._batchDamage = rolls.some(roll => CONFIG.Dice?.DamageRoll && roll instanceof CONFIG.Dice.DamageRoll);
         resolver._forcePrompt = prompt;
@@ -66,13 +95,14 @@ export default class CatRollResolver extends RollResolver {
     }
 
     #workflow() {
+        if (this.#cachedWorkflow) return this.#cachedWorkflow;
         const key = this.roll.options?.workflowId;
         const Workflow = globalThis.MidiQOL?.Workflow;
         if (!key || !Workflow) return null;
         const direct = Workflow.getWorkflow(key);
-        if (direct) return direct;
+        if (direct) return this.#cachedWorkflow = direct;
         const workflows = [...Workflow.workflows.values()].map(w => w instanceof WeakRef ? w.deref() : w).filter(Boolean);
-        return workflows
+        return this.#cachedWorkflow = workflows
             .filter(w => w.activity?.uuid === key || [...(w.targets ?? [])].some(t => t.actor?.uuid === key))
             .sort((a, b) => (b.workflowStartTime ?? 0) - (a.workflowStartTime ?? 0))[0] ?? null;
     }
@@ -159,24 +189,27 @@ export default class CatRollResolver extends RollResolver {
         const mode = CatRollResolver.#entryMode();
         const total = mode !== 'perDie';
         const rollTotal = mode === 'rollTotal';
+        const damageGroups = [];
         for (const [id, group] of Object.entries(context.groups)) {
             if (group.results[0]?.method !== 'cat') continue;
             const term = this.fulfillable.get(id)?.term;
-            const type = this._termTypes?.get(term) ?? term?.options?.type ?? term?.options?.flavor ?? this.roll.options?.type;
-            const damage = type && (CONFIG.DND5E?.damageTypes?.[type] ?? CONFIG.DND5E?.healingTypes?.[type]);
+            const damage = this.#damage(term);
+            const info = this._termInfo?.get(term);
+            const groupMod = this.#groupModifier(term);
             if (damage) {
-                group.label = `${group.label} ${_loc(damage.label)}`;
-                group.icon = `<img class="cat-dmg-icon" src="${damage.icon}">`;
-                const groupMod = this._typeMods ? (this._typeMods.get(type) ?? 0) : this.#flatModifier();
+                const damageLabel = _loc(damage.config.label);
+                if (!groupMod) damageGroups.push({id, group, term, damage: damageLabel, key: `${damage.type}|${term.faces}|${info?.properties ?? ''}`});
+                group.icon = `<img class="dmg" src="${constants.damageIcons[damage.type] ?? damage.config.icon}">`;
                 if (groupMod) {
-                    group.modifier = groupMod > 0 ? `+ ${groupMod}` : `− ${Math.abs(groupMod)}`;
-                    group.modifierTooltip = this._typeModTips ? this._typeModTips.get(type) : this.#modifierBreakdown();
+                    group.modifier = CatRollResolver.#signed(groupMod);
+                    group.modifierTooltip = info?.tip ?? this.#modifierBreakdown();
                 }
+                group.tooltip = this.#groupTooltip(info?.source, group.label, groupMod, damageLabel);
             }
             if (term?.faces === 20) {
                 const mod = this.#flatModifier();
                 if (mod) {
-                    group.modifier = mod > 0 ? `+ ${mod}` : `− ${Math.abs(mod)}`;
+                    group.modifier = CatRollResolver.#signed(mod);
                     group.modifierTooltip = this.#modifierBreakdown();
                 }
                 const adv = this.#advantageInfo(term);
@@ -188,18 +221,91 @@ export default class CatRollResolver extends RollResolver {
             if (total) {
                 const n = term.number ?? 1;
                 const useRollTotal = rollTotal && this.roll.terms.includes(term);
-                const mod = useRollTotal ? this.#groupModifier(term) : 0;
-                if (useRollTotal) { group.modifier = null; group.modifierTooltip = null; }
+                const mod = useRollTotal ? groupMod : 0;
                 group.results = [{...group.results[0], value: '', readonly: false, disabled: false, text: n > 1, minValue: n + mod, maxValue: n * term.faces + mod, denomination: _loc(useRollTotal ? 'CAT.Manual.RollTotal' : 'CAT.Manual.DiceTotal')}];
             } else {
                 for (const result of group.results) result.readonly = false;
             }
         }
+        if (total) this.#mergeDamageGroups(context, damageGroups);
         const label = this.#contextLabel();
         context.formula = label.label;
         context.formulaIcon = label.icon;
         context.formulaSub = label.sub ?? null;
+        context.title = 'CAT.Manual.Title';
+        context.detachable = this.detachable;
+        context.closeAction = this.closeAction;
+        Object.assign(context, uiUtils.detachContext(this, options));
+        context.buttons = [{label: 'CAT.Manual.Submit', icon: 'fa-solid fa-dice-d20'}];
+        context.outcomes = this.outcomes;
         return context;
+    }
+
+    #mergeDamageGroups(context, damageGroups) {
+        this._mergedTerms = new Map();
+        for (const bucket of Object.values(Object.groupBy(damageGroups, entry => entry.key))) {
+            if (bucket.length < 2) continue;
+            const [primary, ...rest] = bucket;
+            const faces = primary.term.faces;
+            const dice = CatRollResolver.#diceTotal(bucket.map(entry => entry.term));
+            const sources = [...new Set(bucket.map(entry => this._termInfo?.get(entry.term)?.source).filter(Boolean))];
+            primary.group.label = `${dice}d${faces}`;
+            primary.group.tooltip = this.#groupTooltip(sources.join(', '), primary.group.label, 0, primary.damage);
+            Object.assign(primary.group.results[0], {label: primary.group.label, text: true, minValue: dice, maxValue: dice * faces});
+            this._mergedTerms.set(primary.id, bucket.map(entry => entry.term));
+            for (const entry of rest) delete context.groups[entry.id];
+        }
+    }
+
+    static #diceTotal(terms) {
+        return terms.reduce((sum, term) => sum + Math.max(term.number ?? 1, 1), 0);
+    }
+
+    #fulfillMerged(merged, value) {
+        if (value === null) {
+            for (const part of merged) {
+                for (let i = Math.max(part.number ?? 1, 1); i > 0; i--) part.results.push({result: part.randomFace(), active: true});
+            }
+            return;
+        }
+        const entries = CatRollResolver.#parseEntries(value);
+        if (Array.isArray(entries)) {
+            let offset = 0;
+            for (const part of merged) {
+                const n = Math.max(part.number ?? 1, 1);
+                const slice = entries.slice(offset, offset + n);
+                offset += n;
+                for (let i = slice.length; i < n; i++) slice.push(part.randomFace());
+                for (const result of this._backsolve(part, slice.join(','), 'diceTotal')) part.results.push(result);
+            }
+            return;
+        }
+        const shares = CatRollResolver.#splitMergedTotal(merged, entries);
+        merged.forEach((part, index) => {
+            for (const result of this._backsolve(part, shares[index], 'diceTotal')) part.results.push(result);
+        });
+    }
+
+    static #parseEntries(value) {
+        const raw = String(value ?? '');
+        if (!/[\s,]/.test(raw.trim())) return Number(raw) || 0;
+        return raw.split(/[\s,]+/).filter(part => part !== '').map(Number);
+    }
+
+    #groupTooltip(source, formula, mod, damage) {
+        return `${source ? source + ': ' : ''}${formula}${mod ? CatRollResolver.#signed(mod, true) : ''} ${damage}`;
+    }
+
+    static #splitMergedTotal(terms, total) {
+        const counts = terms.map(term => Math.max(term.number ?? 1, 1));
+        const shares = counts.slice();
+        let left = Math.max(total, CatRollResolver.#diceTotal(terms)) - counts.reduce((sum, n) => sum + n, 0);
+        for (let i = 0; i < terms.length && left > 0; i++) {
+            const take = Math.min(left, counts[i] * (terms[i].faces - 1));
+            shares[i] += take;
+            left -= take;
+        }
+        return shares;
     }
 
     #contextLabel() {
@@ -298,34 +404,11 @@ export default class CatRollResolver extends RollResolver {
 
     _onRender(context, options) {
         super._onRender(context, options);
-        uiUtils.enableWindowDrag(this, '.cat-dialog-header');
+        uiUtils.enableWindowDrag(this);
         if (options.isFirstRender) {
             this.bringToFront();
             this.element.querySelector('input:not([disabled])')?.focus();
         }
-        if (this.element.querySelector('.cat-quick-outcomes')) return;
-        const {rollType, flavor} = this.#rollContext();
-        const type = (rollType ?? flavor ?? '').toLowerCase();
-        const outcomes = type.includes('attack') ? ['fumble', 'miss', 'hit', 'critical'] : type.includes('sav') ? ['failure', 'success'] : null;
-        if (!outcomes) return;
-        const footer = this.element.querySelector('.form-footer');
-        if (!footer) return;
-        const prefix = type.includes('attack') ? 'attack' : 'save';
-        const row = document.createElement('div');
-        row.className = 'cat-quick-outcomes';
-        for (const outcome of outcomes) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'cat-quick-outcome';
-            button.textContent = _loc('CAT.Manual.Outcome.' + outcome.capitalize());
-            const name = `${prefix}-${outcome}`;
-            button.addEventListener('click', () => {
-                this._pendingOutcome = name;
-                this.element.requestSubmit();
-            });
-            row.append(button);
-        }
-        footer.before(row);
     }
 
     #modifierExcludingD20() {
@@ -451,6 +534,7 @@ export default class CatRollResolver extends RollResolver {
         return super._onSubmitForm(formConfig, event);
     }
 
+    /** @this {CatRollResolver} */
     static async _fulfillRoll(event, form, formData) {
         if (this._pendingOutcome && this._applyOutcome(this._pendingOutcome)) {
             this._pendingOutcome = null;
@@ -459,6 +543,11 @@ export default class CatRollResolver extends RollResolver {
         const mode = CatRollResolver.#entryMode();
         for (let [id, value] of Object.entries(formData.object)) {
             const {term} = this.fulfillable.get(id);
+            const merged = this._mergedTerms?.get(id);
+            if (merged && mode !== 'perDie') {
+                this.#fulfillMerged(merged, this._blankResults?.[id] ? null : (this._typedValues?.[id] ?? value));
+                continue;
+            }
             if (this._blankResults?.[id]) {
                 for (const result of this._blankResults[id]) term.results.push(result);
                 continue;
@@ -519,8 +608,27 @@ export default class CatRollResolver extends RollResolver {
     }
 
     #groupModifier(term) {
-        const type = this._termTypes?.get(term) ?? term?.options?.type ?? term?.options?.flavor ?? this.roll.options?.type;
-        if (this._typeMods && type) return this._typeMods.get(type) ?? 0;
-        return this.#flatModifier();
+        if (this._termInfo) return this._termInfo.get(term)?.mod ?? 0;
+        return term === this.#firstDiceTerm() ? this.#flatModifier() : 0;
+    }
+
+    static #knownType(value) {
+        return (value && (CONFIG.DND5E?.damageTypes?.[value] ?? CONFIG.DND5E?.healingTypes?.[value])) ? value : undefined;
+    }
+
+    #damage(term) {
+        const own = CatRollResolver.#knownType(term?.options?.flavor);
+        const type = own ?? CatRollResolver.#knownType(this._termInfo ? this._termInfo.get(term)?.type : this.roll.options?.type);
+        if (!type) return undefined;
+        return {type, config: CONFIG.DND5E?.damageTypes?.[type] ?? CONFIG.DND5E?.healingTypes?.[type]};
+    }
+
+    static #signed(value, spaced = false) {
+        const gap = spaced ? ' ' : '';
+        return value > 0 ? `${gap}+${gap}${value}` : `${gap}−${gap}${Math.abs(value)}`;
+    }
+
+    #firstDiceTerm() {
+        return this.roll.terms.find(term => term.faces !== undefined);
     }
 }

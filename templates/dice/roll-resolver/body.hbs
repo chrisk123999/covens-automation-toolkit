@@ -1,0 +1,33 @@
+<div class="body standard-form">
+    {{#if formula}}
+        <p class="context">{{{formulaIcon}}}{{formula}}</p>
+    {{/if}}
+    {{#if formulaSub}}
+        <p class="subcontext">{{formulaSub}}</p>
+    {{/if}}
+    <div class="groups">
+        {{#each groups}}
+            <fieldset class="group" data-term-id="{{@key}}" {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>
+                <legend class="label" {{#if labelTooltip}} data-tooltip="{{labelTooltip}}" {{/if}}>
+                    <span>{{label}}</span>{{#if modifier}}<span class="modifier" {{#if modifierTooltip}}
+                            data-tooltip="{{modifierTooltip}}" {{/if}}>{{modifier}}</span>{{/if}}{{{icon}}}
+                </legend>
+                <div>
+                    {{#each results}}
+                        <div class="form-fields">
+                            <label class="icon die-input{{#if isNew}} new-addition{{/if}}"
+                                data-denomination="{{denomination}}" data-method="{{method}}">
+                                <input type="{{#if text}}text{{else}}number{{/if}}" name="{{id}}" step="1"
+                                    {{#unless text}}min="{{#if minValue}}{{minValue}}{{else}}1{{/if}}"
+                                    max="{{#if maxValue}}{{maxValue}}{{else}}{{faces}}{{/if}}" {{/unless}}
+                                    inputmode="numeric" value="{{value}}" placeholder="{{denomination}}"
+                                    {{#if readonly}}readonly{{/if}}{{#if disabled}} disabled{{/if}}>
+                                {{{icon}}}
+                            </label>
+                        </div>
+                    {{/each}}
+                </div>
+            </fieldset>
+        {{/each}}
+    </div>
+</div>

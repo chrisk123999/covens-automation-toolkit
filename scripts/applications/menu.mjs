@@ -1,10 +1,10 @@
+import CatApp from './cat-app.mjs';
 import {uiUtils, genericUtils, automationUtils} from '../utilities/_module.mjs';
 import {constants} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
-const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {StringField, BooleanField, SetField} = foundry.data.fields;
 
-export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
+export default class MenuApp extends CatApp {
     #context;
     #spellPacks = new Set();
     constructor(options) {
@@ -44,28 +44,43 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
 
     static PARTS = {
-        form: {
-            template: 'modules/cat/templates/menu.hbs',
+        header: CatApp.HEADER_PART,
+        body: {
+            template: 'modules/cat/templates/menu/body.hbs',
             scrollable: ['']
-        }
+        },
+        footer: CatApp.FOOTER_PART
     };
 
-    async _preClose(options) {
-        options.animate = false;
-        await uiUtils.fadeOut(this.element);
+    static #BUTTON_SETS = {
+        yesNo: [['Yes', 'true'], ['No', 'false']],
+        okCancel: [['Confirm', 'true'], ['Cancel', 'false']],
+        ok: [['Confirm', 'true']],
+        cancel: [['Cancel', 'false']]
+    };
+
+    get footerButtons() {
+        return this.#context?.buttons ?? [];
     }
+
+    _configureRenderParts(options) {
+        const parts = super._configureRenderParts(options);
+        if (!(this.buttons in MenuApp.#BUTTON_SETS)) delete parts.footer;
+        return parts;
+    }
+
 
     /** @this {MenuApp} */
     static async #formHandler(event, form, formData) {
         const data = genericUtils.expandObject(formData.object);
-        form.querySelectorAll('.cat-settings-priority').forEach(widget => {
+        form.querySelectorAll('.priority').forEach(widget => {
             const sourceSetting = widget.dataset.sourceSetting;
             if (!sourceSetting) return;
             const sources = {};
-            widget.querySelectorAll('.cat-priority-list').forEach(list => {
+            widget.querySelectorAll('ul[data-list]').forEach(list => {
                 const enabled = list.dataset.list === 'enabled';
-                list.querySelectorAll('.cat-priority-row').forEach(row => {
-                    const priority = Number(row.querySelector('.cat-priority-rank').value);
+                list.querySelectorAll('.row').forEach(row => {
+                    const priority = Number(row.querySelector('.rank').value);
                     const id = row.dataset.sourceId;
                     sources[id] = {
                         enabled: enabled, 
@@ -95,20 +110,7 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
             const entry = this.#buildInput(input);
             if (entry) context.inputs.push(entry);
         }
-        switch (this.buttons) {
-            case 'yesNo':
-                context.buttons.push(MenuApp.#makeButton('Yes', 'true'), MenuApp.#makeButton('No', 'false'));
-                break;
-            case 'okCancel':
-                context.buttons.push(MenuApp.#makeButton('Confirm', 'true'), MenuApp.#makeButton('Cancel', 'false'));
-                break;
-            case 'ok':
-                context.buttons.push(MenuApp.#makeButton('Confirm', 'true'));
-                break;
-            case 'cancel':
-                context.buttons.push(MenuApp.#makeButton('Cancel', 'false'));
-                break;
-        }
+        for (const [label, value] of MenuApp.#BUTTON_SETS[this.buttons] ?? []) context.buttons.push(MenuApp.#makeButton(label, value));
         context.tabbed = context.inputs.length > 1 && context.inputs.every(input => input.isPriority);
         this.#context = context;
     }
@@ -237,12 +239,12 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _prepareContext(options) {
-        const context = await super._prepareContext(options);
         if (!this.#context) {
             if (this.inputs?.some(input => input.packFilter)) await this.#loadSpellPacks();
             this.#formatInputs();
         }
-        return {...context, ...this.#context, title: this.windowTitle};
+        const context = await super._prepareContext(options);
+        return {...this.#context, ...context};
     }
 
     async #loadSpellPacks() {
@@ -260,53 +262,53 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     #wireTabs() {
-        const nav = this.element?.querySelector('.cat-menu-tabs');
+        const nav = this.element?.querySelector('nav');
         if (!nav || nav.dataset.wired === '1') return;
         nav.dataset.wired = '1';
         nav.addEventListener('click', event => {
-            const tab = event.target.closest('.cat-menu-tab');
+            const tab = event.target.closest('.tab-link');
             if (!tab) return;
             const name = tab.dataset.tab;
-            nav.querySelectorAll('.cat-menu-tab').forEach(t => t.classList.toggle('active', t === tab));
-            this.element.querySelectorAll('.cat-menu-tab-panel').forEach(panel => panel.classList.toggle('active', panel.dataset.tabPanel === name));
+            nav.querySelectorAll('.tab-link').forEach(t => t.classList.toggle('active', t === tab));
+            this.element.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.dataset.tabPanel === name));
             this.setPosition({width: 'auto', height: 'auto'});
         });
     }
 
     #wirePriority() {
-        this.element?.querySelectorAll('.cat-settings-priority').forEach(widget => this.#wirePriorityWidget(widget));
+        this.element?.querySelectorAll('.priority').forEach(widget => this.#wirePriorityWidget(widget));
     }
 
     #wirePriorityWidget(widget) {
         if (!widget || widget.dataset.wired === '1') return;
         widget.dataset.wired = '1';
-        const enabledList = widget.querySelector('.cat-priority-list[data-list="enabled"]');
-        const disabledList = widget.querySelector('.cat-priority-list[data-list="disabled"]');
+        const enabledList = widget.querySelector('ul[data-list="enabled"]');
+        const disabledList = widget.querySelector('ul[data-list="disabled"]');
         let dragRow = null;
         enabledList.addEventListener('dragstart', event => {
             if (event.target.closest('input, button')) {
                 event.preventDefault();
                 return;
             }
-            dragRow = event.target.closest('.cat-priority-row');
-            dragRow?.classList.add('cat-priority-dragging');
+            dragRow = event.target.closest('.row');
+            dragRow?.classList.add('dragging');
             if (event.dataTransfer) {
                 event.dataTransfer.effectAllowed = 'move';
                 event.dataTransfer.setData('text/plain', dragRow?.dataset.sourceId ?? '');
             }
         });
         enabledList.addEventListener('keydown', event => {
-            if (event.key === 'Enter' && event.target.classList.contains('cat-priority-rank')) {
+            if (event.key === 'Enter' && event.target.classList.contains('rank')) {
                 event.preventDefault();
                 MenuApp.#sortByRank(enabledList);
             }
         });
         const clearMarkers = () => {
-            enabledList.querySelectorAll('.cat-priority-drop-before').forEach(el => el.classList.remove('cat-priority-drop-before'));
-            enabledList.classList.remove('cat-priority-drop-end');
+            enabledList.querySelectorAll('.drop-before').forEach(el => el.classList.remove('drop-before'));
+            enabledList.classList.remove('drop-end');
         };
         enabledList.addEventListener('dragend', () => {
-            dragRow?.classList.remove('cat-priority-dragging');
+            dragRow?.classList.remove('dragging');
             dragRow = null;
             clearMarkers();
         });
@@ -317,8 +319,8 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
             if (!dragRow) return;
             const after = MenuApp.#dragAfterElement(enabledList, event.clientY);
             clearMarkers();
-            if (after) after.classList.add('cat-priority-drop-before');
-            else enabledList.classList.add('cat-priority-drop-end');
+            if (after) after.classList.add('drop-before');
+            else enabledList.classList.add('drop-end');
         });
         enabledList.addEventListener('drop', event => {
             event.preventDefault();
@@ -330,22 +332,22 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
             MenuApp.#reposition(dragRow);
         });
         enabledList.addEventListener('change', event => {
-            if (event.target.classList.contains('cat-priority-rank')) MenuApp.#sortByRank(enabledList);
+            if (event.target.classList.contains('rank')) MenuApp.#sortByRank(enabledList);
         });
         widget.addEventListener('click', event => {
             const button = event.target.closest('[data-priority-action]');
             if (!button) return;
-            MenuApp.#toggleRow(widget, button.closest('.cat-priority-row'), button.dataset.priorityAction === 'enable', enabledList, disabledList);
+            MenuApp.#toggleRow(widget, button.closest('.row'), button.dataset.priorityAction === 'enable', enabledList, disabledList);
             this.setPosition({height: 'auto'});
         });
-        widget.querySelector('.cat-priority-disabled-section')?.addEventListener('toggle', () => {
+        widget.querySelector('details')?.addEventListener('toggle', () => {
             this.setPosition({height: 'auto'});
         });
     }
 
     static #toggleRow(widget, row, enable, enabledList, disabledList) {
-        const rank = row.querySelector('.cat-priority-rank');
-        const button = row.querySelector('.cat-priority-toggle');
+        const rank = row.querySelector('.rank');
+        const button = row.querySelector('[data-priority-action]');
         const icon = button.querySelector('i');
         if (enable) {
             row.setAttribute('draggable', 'true');
@@ -363,15 +365,15 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
             icon.className = 'fas fa-plus';
             disabledList.appendChild(row);
         }
-        const count = disabledList.querySelectorAll('.cat-priority-row').length;
-        const counter = widget.querySelector('.cat-priority-disabled-count');
+        const count = disabledList.querySelectorAll('.row').length;
+        const counter = widget.querySelector('.disabled-count');
         if (counter) counter.textContent = String(count);
     }
 
 
     static #reposition(row) {
-        const rankOf = el => Number(el.querySelector('.cat-priority-rank').value);
-        const setRank = (el, v) => { el.querySelector('.cat-priority-rank').value = String(v); };
+        const rankOf = el => Number(el.querySelector('.rank').value);
+        const setRank = (el, v) => { el.querySelector('.rank').value = String(v); };
         const prev = row.previousElementSibling;
         const next = row.nextElementSibling;
         const prevVal = prev ? rankOf(prev) : null;
@@ -392,13 +394,13 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     static #sortByRank(list) {
-        [...list.querySelectorAll('.cat-priority-row')]
-            .sort((a, b) => Number(a.querySelector('.cat-priority-rank').value) - Number(b.querySelector('.cat-priority-rank').value))
+        [...list.querySelectorAll('.row')]
+            .sort((a, b) => Number(a.querySelector('.rank').value) - Number(b.querySelector('.rank').value))
             .forEach(row => list.appendChild(row));
     }
 
     static #dragAfterElement(list, y) {
-        const rows = [...list.querySelectorAll('.cat-priority-row:not(.cat-priority-dragging)')];
+        const rows = [...list.querySelectorAll('.row:not(.dragging)')];
         return rows.reduce((closest, row) => {
             const box = row.getBoundingClientRect();
             const offset = y - box.top - box.height / 2;
@@ -408,15 +410,9 @@ export default class MenuApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _onRender(context, options) {
         super._onRender(context, options);
-        uiUtils.enableWindowDrag(this, '.cat-dialog-header');
         this.#wireTabs();
         this.#wirePriority();
-        const counter = this.element?.querySelector('.cat-dialog-body .cat-budget-counter');
-        const header = this.element?.querySelector('.cat-dialog-header');
-        if (counter && header) header.insertBefore(counter, header.querySelector('.cat-dialog-detach'));
         if (options.isFirstRender) {
-            this.bringToFront();
-            uiUtils.centerWindow(this, {width: 400, height: 300});
             this.element.addEventListener('cat-resize', () => {
                 this.setPosition({width: 'auto', height: 'auto'});
             });

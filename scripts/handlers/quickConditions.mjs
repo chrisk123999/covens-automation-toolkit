@@ -15,7 +15,6 @@ function onRender(application, element) {
     });
 }
 function registerHelpers() {
-    foundry.applications.handlebars.loadTemplates(['modules/cat/templates/quick-conditions.hbs']);
     Handlebars.registerHelper(helpers);
 }
 function button(input) {

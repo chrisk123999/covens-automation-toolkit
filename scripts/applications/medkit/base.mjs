@@ -1,13 +1,18 @@
+import contextmenu from '../../handlers/contextmenu.mjs';
 import {constants, Logging} from '../../lib/_module.mjs';
-import {documentUtils, genericUtils, automationUtils, dialogUtils, uiUtils, itemUtils} from '../../utilities/_module.mjs';
+import {automationUtils, dialogUtils, documentUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
+import uiUtils from '../../utilities/uiUtils.mjs';
+import CatApp from '../cat-app.mjs';
 import DialogApp from '../dialog.mjs';
 import EmbeddedMacroEditorApp from '../embedded-macros.mjs';
 const {fields} = foundry.data;
 
-const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
-
 Hooks.once('setup', () => {
-    foundry.applications.handlebars.loadTemplates(['modules/cat/templates/medkit/shared/option-field.hbs', 'modules/cat/templates/medkit/shared/identifier-field.hbs']);
+    foundry.applications.handlebars.loadTemplates([
+        'modules/cat/templates/medkit/shared/option-field.hbs',
+        'modules/cat/templates/medkit/shared/identifier-field.hbs',
+        'modules/cat/templates/medkit/shared/automation-tree.hbs'
+    ]);
 });
 
 function embeddedToFlat(entry) {
@@ -25,14 +30,11 @@ function flatToEmbedded(flat) {
     return {name: flat.name, event: flat.event, pass: flat.pass, macros: [macro]};
 }
 
-export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2) {
+export default class MedkitApp extends CatApp {
     #document;
-    /** In-memory mutable copy of document.flags.cat; flushed on Save. */
     #flags;
     #listValues = {};
-    /** In-memory mutable source selection; flushed on Save. */
     #selectedSource;
-    /** In-memory mutable system.source.rules; flushed on Save. */
     #rulesValue;
 
     constructor({document, ...options}) {
@@ -56,6 +58,8 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         }
     }
 
+    static INITIAL_SIZE = {width: 700, height: 500};
+
     static DEFAULT_OPTIONS = {
         id: 'cat-medkit-window',
         classes: ['cat', 'cat-medkit'],
@@ -65,10 +69,10 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         form: {submitOnChange: false, closeOnSubmit: false},
         actions: {
             update: MedkitApp.#update,
-            applyDefault: MedkitApp.#applyDefault,
             applyAvailable: MedkitApp.#applyAvailable,
             gotoTab: MedkitApp.#gotoTab,
             save: MedkitApp.#save,
+            openMedkit: MedkitApp.#openMedkit,
             saveClose: MedkitApp.#saveClose,
             cancel: MedkitApp.#cancel,
             addEmbeddedMacro: MedkitApp.#addEmbeddedMacro,
@@ -87,16 +91,14 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         }
     };
 
-    /** Header/nav/footer parts shared by every medkit. Subclass spreads into its own PARTS. */
     static SHARED_PARTS = {
-        header: {template: 'modules/cat/templates/medkit/shared/header.hbs'},
+        header: CatApp.HEADER_PART,
         nav: {template: 'modules/cat/templates/medkit/shared/nav.hbs'},
-        footer: {template: 'modules/cat/templates/medkit/shared/footer.hbs'}
+        footer: CatApp.FOOTER_PART
     };
 
     static PARTS = {...MedkitApp.SHARED_PARTS};
 
-    /** Generic-features part/tab, shared by every document medkit. */
     static GENERIC_PART = {generic: {template: 'modules/cat/templates/medkit/shared/generic.hbs'}};
     static GENERIC_TAB = {id: 'generic', icon: 'fa-solid fa-toolbox', label: 'CAT.MEDKIT.TABS.Generic'};
 
@@ -124,7 +126,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static KEEP_PATHS = [];
 
-    /** Maps a tab id to the world setting holding the minimum user role allowed to edit it. */
     static PERMISSION_SETTINGS = {
         automation: 'permissionsAutomation',
         automations: 'permissionsAutomation',
@@ -149,6 +150,22 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     get title() {
         const name = this.#document.metadata?.label ?? this.#document.name ?? '';
         return _loc('CAT.MEDKIT.Title', {name});
+    }
+
+    get detachable() {
+        return true;
+    }
+
+    get footerButtons() {
+        return [
+            {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Cancel', name: 'cancel', icon: 'fa-solid fa-xmark', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
+            {type: 'button', action: 'saveClose', label: 'CAT.MEDKIT.Footer.SaveClose', name: 'saveClose', icon: 'fa-solid fa-check', tooltip: 'CAT.MEDKIT.Footer.SaveCloseTooltip'},
+            {type: 'button', action: 'save', label: 'CAT.MEDKIT.Footer.Save', name: 'save', icon: 'fa-solid fa-download', tooltip: 'CAT.MEDKIT.Footer.SaveTooltip'}
+        ];
+    }
+
+    get closeAction() {
+        return 'cancel';
     }
 
     get isDirty() {
@@ -176,9 +193,40 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     _getMassApplyItems() { return []; }
 
-    static _massApplyItemsFromScene(scene) {
+    _massApplyBucket(item) {
+        const applied = automationUtils.getCurrentAutomation(item);
+        const available = (automationUtils.getAvailableAutomations(item, {excludeSources: constants.massApplyExcludeSources}) ?? [])
+            .filter(automation => automation.uuid !== item.uuid);
+        if (!automationUtils.isSelfAutomation(item, {automation: applied}) && (applied || automationUtils.getStoredHash(item))) {
+            return automationUtils.isUpToDate(item, {automation: applied}) ? {reason: 'current', applied, available} : {reason: 'outdated', applied, available};
+        }
+        return available.length ? {reason: 'available', available} : null;
+    }
+
+    async _prepareAutomationCounts() {
+        const items = Array.from(await this._getMassApplyItems() ?? []).filter(item => !['class', 'subclass'].includes(item.type));
+        const buckets = {
+            'up-to-date': [],
+            available: [],
+            outdated: []
+        };
+        const statusFor = {current: 'up-to-date', available: 'available', outdated: 'outdated'};
+        for (const item of items) {
+            const bucket = this._massApplyBucket(item);
+            if (bucket) buckets[statusFor[bucket.reason]].push(item.name);
+        }
+        return Object.entries(buckets).map(([status, names]) => ({
+            status,
+            label: `CAT.MEDKIT.MassApply.Counts.${status === 'up-to-date' ? 'UpToDate' : status === 'available' ? 'Available' : 'Outdated'}`,
+            count: names.length,
+            names: names.join(', ')
+        }));
+    }
+
+    static _massApplyItemsFromScene(scene, {level} = {}) {
         const items = [];
         for (const token of scene?.tokens ?? []) {
+            if (level && token.level !== level) continue;
             const actor = token.actor;
             if (!actor) continue;
             for (const item of actor.items) items.push(item);
@@ -186,36 +234,59 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return items;
     }
 
+    async _canMassApply() { return true; }
+
     async _preparePartContext(partId, context) {
         const partContext = await super._preparePartContext(partId, context);
         if (partId in partContext.tabs) partContext.tab = partContext.tabs[partId];
         if (partId === 'nav') {
             partContext.tabs = foundry.utils.deepClone(partContext.tabs);
-            if (partContext.tabs.configuration && context.configurationCategories?.length) {
-                partContext.tabs.configuration.indicator = 'configurable';
+            for (const [id, hit] of Object.entries(this._prepareTabIndicators(context))) {
+                if (!hit || !partContext.tabs[id]) continue;
+                const key = hit.indicator === 'inherited' ? 'inherited' : id;
+                partContext.tabs[id].indicator = hit.indicator;
+                partContext.tabs[id].indicatorLabel = _loc(`CAT.MEDKIT.Indicator.${key}.${hit.count === 1 ? 'One' : 'Other'}`, {count: hit.count});
             }
-            if (partContext.tabs.generic && context.genericSelected?.length) {
-                partContext.tabs.generic.indicator = 'generic';
+            if (partContext.tabs.automation && context.hero) {
+                partContext.tabs.automation.icon = context.hero.icon;
+                partContext.tabs.automation.status = context.hero.medkitStatus;
+                partContext.tabs.automation.indicatorLabel = _loc(context.statusLabel);
             }
         }
         return partContext;
+    }
+
+    _prepareTabIndicators(context) {
+        const flags = this.#flags;
+        const counted = (indicator, count) => count ? {indicator, count} : null;
+        const docProps = Object.values(flags.alternateAttributes ?? {}).reduce((total, list) => total + (list?.length ?? 0), 0)
+            + Object.keys(flags.classDifficultyClass ?? {}).length
+            + Object.keys(flags.classAttackBonus ?? {}).length
+            + (flags.hidden ? 1 : 0) + (flags.spellIdentifier ? 1 : 0) + (flags.otherAbilities ? 1 : 0);
+        const picked = Object.values(flags.macros ?? {}).reduce((total, entry) => total + (Array.isArray(entry) ? entry.length : 0), 0);
+        const options = (context.configurationCategories ?? []).reduce((total, category) => total + category.options.length, 0);
+        return {
+            configuration: counted('configurable', options),
+            generic: counted('generic', context.genericSelected?.length ?? 0)
+                ?? counted('inherited', automationUtils.countDescendantGenerics(this.#document)),
+            embedded: counted('content', (flags.embeddedMacros ?? []).length),
+            macros: counted('content', picked),
+            docprops: counted('content', docProps),
+            region: counted('content', (flags.placed?.region?.activities ?? []).length)
+        };
     }
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
         this.#listValues = {};
         context.document = this.#document;
-        context.label = this.#document.metadata?.label ?? this.#document.name ?? '';
+        context.title = this.#document.metadata?.label ?? this.#document.name ?? '';
         context.medkitStatus = undefined;
         context.statusLabel = 'CAT.MEDKIT.STATUSES.Unavailable';
         context.isDirty = this.isDirty;
-        context.embeddedCount = (this.#flags.embeddedMacros ?? []).length;
+        Object.assign(context, uiUtils.detachContext(this, options));
         context.embeddedMacros = (this.#flags.embeddedMacros ?? []).map((entry, index) => ({index, name: entry.name ?? '', event: entry.event ?? '', pass: entry.pass ?? ''}));
-        context.buttons = [
-            {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Cancel', name: 'cancel', icon: 'fa-solid fa-xmark', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
-            {type: 'button', action: 'saveClose', label: 'CAT.MEDKIT.Footer.SaveClose', name: 'saveClose', icon: 'fa-solid fa-check', tooltip: 'CAT.MEDKIT.Footer.SaveCloseTooltip'},
-            {type: 'button', action: 'save', label: 'CAT.MEDKIT.Footer.Save', name: 'save', icon: 'fa-solid fa-download', tooltip: 'CAT.MEDKIT.Footer.SaveTooltip'}
-        ];
+        if ('automations' in this.constructor.PARTS) context.automationCounts = await this._prepareAutomationCounts();
         if ('macros' in this.constructor.PARTS) context.macroChoices = this._prepareRegisteredMacros().choices;
         if ('generic' in this.constructor.PARTS) {
             const generic = this._prepareGenericFeatures();
@@ -248,7 +319,36 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             const option = this.#buildOption(cfg, {name: `flags.cat.config.${cfg.key}`, value, configPath: `config.${cfg.key}`});
             grouped.get(category).options.push(option);
         }
-        return Array.from(grouped.values());
+        const categories = Array.from(grouped.values());
+        for (const category of categories) category.groups = this.#groupRepeatedOptions(category.options);
+        return categories;
+    }
+
+    #groupRepeatedOptions(options) {
+        const words = key => key.split(/(?=[A-Z])/);
+        const labelCounts = options.reduce((tally, option) => {
+            tally[option.label] = (tally[option.label] ?? 0) + 1;
+            return tally;
+        }, {});
+        const groups = [];
+        for (const option of options) {
+            const parts = words(option.key);
+            const shared = labelCounts[option.label] > 1 && parts.length > 1 ? parts[0] : null;
+            const previous = groups.at(-1);
+            if (previous && previous.shared === shared) previous.options.push(option);
+            else groups.push({shared, options: [option]});
+        }
+        return groups.map(group => {
+            if (!group.shared) return {label: null, options: group.options};
+            const wordLists = group.options.map(option => words(option.key));
+            const common = [];
+            for (let index = 0; index < wordLists[0].length - 1; index++) {
+                const word = wordLists[0][index];
+                if (!wordLists.every(list => list[index] === word)) break;
+                common.push(word);
+            }
+            return {label: this.#humanize(common.join('')), options: group.options};
+        });
     }
 
     #buildOption(descriptor, {name, value, configPath, source, identifier} = {}) {
@@ -439,7 +539,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                     identifier
                 });
             });
-            return {id: composite, label: macro?.label ?? identifier, options};
+            return {id: composite, label: macro?.label ?? identifier, options, groups: this.#groupRepeatedOptions(options)};
         });
         return {choices, selected, features};
     }
@@ -529,7 +629,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return CONFIG.DND5E.limitedUsePeriods.recoveryOptions.map(o => ({value: o.value, label: _loc(o.label)}));
     }
 
-    // Compendium items come from the browser button, not this list — packs can hold thousands.
     #itemChoices(entry = {}) {
         const currentUuid = entry.uuid;
         const world = game.items.map(i => ({value: i.uuid, label: i.name, image: i.img}));
@@ -544,7 +643,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return world.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     }
 
-    // Compendium actors come from the browser button, not this list — packs can hold thousands.
     #actorChoices(entry = {}) {
         const currentUuid = entry.sourceActorUuid;
         const world = game.actors.filter(a => !a.flags?.cat?.summon).map(a => ({value: a.uuid, label: a.name, image: a.img}));
@@ -559,7 +657,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         return world.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     }
 
-    // Values are prefixed folder:<id> / pack:<id> so consumers resolve either kind.
     #packFolderChoices(documentType, mode) {
         const choices = [];
         if (mode !== 'pack') {
@@ -692,7 +789,11 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     _prepareRegisteredMacros(flagPath = 'macros') {
         if (!constants.macros) return {choices: []};
         const all = constants.macros.getAllMacros({genericOnly: false});
-        const sourceLabel = src => constants.automations?.getSourceName?.(src) ?? src;
+        const sourceLabel = src => {
+            const name = constants.automations?.getSourceName?.(src) ?? src;
+            const words = String(name).split(/\s+/).filter(word => !['of', 'the', 'and', 'for', 'a', '&'].includes(word.toLowerCase()));
+            return words.length > 1 ? words.map(word => word[0]).join('').toUpperCase() : name;
+        };
         const choicesData = all.map(m => {
             const key = m.source + '|' + m.identifier + '|' + m.rules;
             const events = Object.entries(m.macros ?? {}).filter(([, arr]) => arr?.length).map(([event]) => event);
@@ -701,7 +802,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 source: m.source,
                 identifier: m.identifier,
                 rules: m.rules,
-                label: m.identifier + '  [' + sourceLabel(m.source) + ' · ' + m.rules + ']',
+                label: m.identifier + '  [' + sourceLabel(m.source) + ' - ' + m.rules + ']',
                 events
             };
         });
@@ -878,18 +979,6 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     /** @this {MedkitApp} */
-    static async #applyDefault() {
-        const available = automationUtils.getAvailableAutomations(this.#document);
-        const priority = automationUtils.getAutomationSources();
-        const pick = priority.map(s => available.find(a => a.source === s)).find(Boolean) ?? available[0];
-        if (!pick) return;
-        this.#selectedSource = pick.source;
-        await this._commit();
-        genericUtils.notify('CAT.MEDKIT.Notif.Applied', {format: {source: constants.automations.getSourceName?.(pick.source) ?? pick.source, version: pick.version ?? '?'}});
-        this.render();
-    }
-
-    /** @this {MedkitApp} */
     static #gotoTab(_event, target) {
         const tab = target.dataset.tab;
         if (tab) this.changeTab(tab, 'sheet');
@@ -921,7 +1010,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {MedkitApp} */
     static #addSummonEntry(_event, target) {
-        const wrap = target.closest('.cat-summon-list');
+        const wrap = target.closest('.summons');
         const path = wrap?.dataset.flagPath;
         if (!path) return;
         const max = Number(wrap.dataset.max) || Infinity;
@@ -934,7 +1023,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {MedkitApp} */
     static #removeSummonEntry(_event, target) {
-        const wrap = target.closest('.cat-summon-list');
+        const wrap = target.closest('.summons');
         const path = wrap?.dataset.flagPath;
         if (!path) return;
         const flags = this._getFlags();
@@ -967,7 +1056,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {MedkitApp} */
     static #addSummonItem(_event, target) {
-        const wrap = target.closest('.cat-summon-item-list');
+        const wrap = target.closest('.summon-items');
         const path = wrap?.dataset.flagPath;
         if (!path) return;
         const flags = this._getFlags();
@@ -978,7 +1067,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {MedkitApp} */
     static #removeSummonItem(_event, target) {
-        const wrap = target.closest('.cat-summon-item-list');
+        const wrap = target.closest('.summon-items');
         const path = wrap?.dataset.flagPath;
         if (!path) return;
         const flags = this._getFlags();
@@ -1009,6 +1098,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @this {MedkitApp} */
     static async #massApply() {
+        if (!await this._canMassApply()) return;
         const rawItems = Array.from(await this._getMassApplyItems() ?? []);
         if (!rawItems.length) return;
         const dependencyMap = new Map();
@@ -1018,40 +1108,38 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         const visiting = new Set();
         let cycleDetected = false;
         const visit = (item) => {
-            if (visited.has(item.id)) return; 
+            if (visited.has(item.id)) return;
             if (visiting.has(item.id)) {
                 Logging.addEntry('WARNING', 'Circular dependency detected involving item:' + item.name + '(ID: ' + item.id + ')');
                 cycleDetected = true;
-                return; 
+                return;
             }
             visiting.add(item.id);
             const deps = dependencyMap.get(item.id) || new Set();
             deps.forEach(depId => {
                 const depItem = rawItems.find(i => i.id === depId);
-                if (depItem) visit(depItem); 
+                if (depItem) visit(depItem);
             });
             visiting.delete(item.id);
             visited.add(item.id);
-            const applied = automationUtils.getCurrentAutomation(item);
-            if (applied || automationUtils.getStoredHash(item)) {
-                if (!automationUtils.isUpToDate(item)) sortedItems.push({item, reason: 'outdated', applied});
-            } else {
-                const available = automationUtils.getAvailableAutomations(item, {excludeSources: constants.massApplyExcludeSources});
-                if (available?.length) sortedItems.push({item, reason: 'available', available});
-            }
+            const bucket = this._massApplyBucket(item);
+            if (bucket && (bucket.reason !== 'current' || bucket.available?.length > 1)) sortedItems.push({item, ...bucket});
         };
         rawItems.forEach(visit);
         if (!sortedItems.length) return genericUtils.notify('CAT.MEDKIT.MassApply.NoUpdates', {type: 'warn'});
         if (cycleDetected) genericUtils.notify('CAT.MEDKIT.MassApply.CycleWarning', {type: 'warn'});
         const choices = await this.#massApplyPrompt(sortedItems);
         if (!choices) return;
-        genericUtils.notify('CAT.MEDKIT.MassApply.Started');
-        for (const entry of sortedItems) {
+        const applying = sortedItems.filter(entry => choices[this.#massApplyID(entry.item)].included);
+        const progress = genericUtils.notify('CAT.MEDKIT.MassApply.Started', {progress: true});
+        let done = 0;
+        for (const entry of applying) {
             const options = choices[this.#massApplyID(entry.item)];
-            if (!options.included) continue;
             await automationUtils.updateItem(entry.item, {source: options.source});
+            done++;
+            progress.update({pct: done / applying.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: applying.length, name: entry.item.name})});
         }
-        genericUtils.notify('CAT.MEDKIT.MassApply.Done');
+        progress.update({pct: 1, message: _loc('CAT.MEDKIT.MassApply.Done')});
         this.render();
     }
 
@@ -1063,7 +1151,9 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             let preferred;
             const i = entry.item;
             const subinputs = [];
-            const tags = [{label: `CAT.MEDKIT.MassApply.${entry.reason === 'available' ? 'Apply' : 'Update'}`, id: 'reason'}];
+            const reasonTags = {available: {label: 'CAT.MEDKIT.MassApply.Counts.Available', status: 'available'}, outdated: {label: 'CAT.MEDKIT.MassApply.Counts.Outdated', status: 'outdated'}, current: {label: 'CAT.MEDKIT.MassApply.Counts.UpToDate', status: 'up-to-date'}};
+            const reason = {...reasonTags[entry.reason], id: 'reason'};
+            const tags = [];
             if (entry.available?.length > 1) {
                 preferred = automationUtils.getAutomationSources().find(s => entry.available.some(e => e.source === s));
                 tags.push({label: 'CAT.MEDKIT.MassApply.ChooseSource', id: 'choose'});
@@ -1085,12 +1175,13 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                     }
                 }]]);
             }
-            if (entry.available?.length) tags.push({label: automationUtils.getSourceName(preferred ?? entry.available[0].source), id: 'source'});
+            if (entry.available?.length) tags.unshift({label: automationUtils.getSourceName(preferred ?? entry.available[0].source), id: 'source'});
             if (entry.applied) {
                 const version = documentUtils.getVersion(i) ?? '0';
-                const label = `${version} ⟶ ${entry.applied.version}`;
-                tags.push({label, id: 'update'});
+                const label = entry.reason === 'current' ? version : `${version} ⟶ ${entry.applied.version}`;
+                tags.push({label, id: 'update', status: reason.status});
             }
+            tags.push(reason);
             let collection;
             if (i.actor) {
                 data[i.actor.uuid] ??= {name: i.actor.name, inputs: []};
@@ -1104,7 +1195,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 name: this.#massApplyID(i) + '.included',
                 options: {
                     tooltip: await uiUtils.enrichHTML(i.system?.description?.value, i.getRollData()),
-                    isChecked: true,
+                    isChecked: entry.reason !== 'current',
                     image: i.img,
                     subinputs,
                     tags
@@ -1112,7 +1203,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
             });
         }
         const inputs = Object.values(data)
-            .map(d => (['checkbox', d.inputs, {displayAsRows: true, legend: d.name}]))
+            .map(d => (['checkbox', d.inputs, {displayAsRows: true, legend: d.name, requireSelection: true}]))
             .sort((a, b) => {
                 if (!a[2].legend) return 1;
                 if (!b[2].legend) return -1;
@@ -1249,7 +1340,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #wireDocumentDrop() {
-        for (const el of this.element.querySelectorAll('.cat-medkit-documents[data-validate="uuid"]')) {
+        for (const el of this.element.querySelectorAll('.documents[data-validate="uuid"]')) {
             this.#bindDrop(el, async uuid => {
                 const path = el.dataset.flagPath;
                 if (!path) return;
@@ -1283,21 +1374,69 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
         }
     }
 
-    async _preClose(options) {
-        options.animate = false;
-        await uiUtils.fadeOut(this.element);
+    async _prepareAutomationTree() {
+        const statusKeys = {
+            [constants.automationStatus.AVAILABLE]: constants.MEDKIT_STATUSES.AVAILABLE,
+            [constants.automationStatus.OUTDATED]: constants.MEDKIT_STATUSES.OUTDATED,
+            [constants.automationStatus.UP_TO_DATE]: constants.MEDKIT_STATUSES.UP_TO_DATE,
+            [constants.automationStatus.CONFIGURABLE]: constants.MEDKIT_STATUSES.UP_TO_DATE,
+            [constants.automationStatus.GENERIC]: constants.MEDKIT_STATUSES.UP_TO_DATE
+        };
+        const shape = node => {
+            const tags = (node.kinds ?? []).map(kind => _loc('CAT.MEDKIT.Tree.Config.' + kind));
+            return {
+                uuid: node.uuid,
+                name: node.name,
+                automated: node.automated,
+                statusKey: statusKeys[node.status] ?? '',
+                kindLabel: 'CAT.MEDKIT.Tree.Kind.' + node.documentName,
+                tags,
+                tooltip: node.name
+            };
+        };
+        const flatten = nodes => nodes.flatMap(node => [node, ...flatten(node.children)]);
+        const branches = await automationUtils.getAutomationTree(this.document);
+        const rows = [];
+        for (const node of branches) {
+            const tiles = flatten(node.children).map(shape);
+            const kinds = new Set(tiles.map(tile => tile.kindLabel));
+            rows.push({...shape(node), tiles, tilesKind: kinds.size === 1 ? tiles[0].kindLabel : null});
+        }
+        return {rows};
+    }
+
+    /** @this {MedkitApp} */
+    static async #openMedkit(_event, target) {
+        const document = await fromUuid(target.dataset.uuid);
+        if (document) contextmenu.openMedkit(document);
     }
 
     _onRender(context, options) {
         super._onRender(context, options);
-        uiUtils.enableWindowDrag(this, '.cat-medkit-header');
         this.#wireDocumentDrop();
         this.#wireFieldDrop();
         this.#applyTabPermissions();
         if (options.isFirstRender) {
-            this.bringToFront();
-            uiUtils.centerWindow(this, {width: 700, height: 500});
+            this.#fitNavToOneRow();
+            this.#warnIfLocked();
         }
+    }
+
+    #warnIfLocked() {
+        const pack = this.#document?.compendium ?? this.#document?.item?.compendium;
+        if (pack?.locked) ui.notifications.warn(_loc('CAT.MEDKIT.LockedPack', {pack: pack.metadata.label}));
+    }
+
+    #fitNavToOneRow() {
+        if (this.constructor.REMEMBER_POSITION && uiUtils.storedWindowPosition(this.options)) return;
+        const nav = this.element.querySelector(':scope > nav');
+        if (!nav) return;
+        const styles = getComputedStyle(nav);
+        const tabs = Array.from(nav.children);
+        const gaps = parseFloat(styles.columnGap || 0) * Math.max(tabs.length - 1, 0);
+        const padding = parseFloat(styles.paddingLeft || 0) + parseFloat(styles.paddingRight || 0);
+        const needed = Math.ceil(tabs.reduce((total, tab) => total + tab.offsetWidth, 0) + gaps + padding) + (this.element.offsetWidth - this.element.clientWidth);
+        if (needed > this.position.width) this.setPosition({width: needed});
     }
 
     #applyTabPermissions() {
@@ -1309,7 +1448,7 @@ export default class MedkitApp extends HandlebarsApplicationMixin(ApplicationV2)
                 el.setAttribute('contenteditable', 'false');
             });
             const notice = document.createElement('p');
-            notice.className = 'cat-permission-notice notification warning';
+            notice.className = 'notice notification warning';
             notice.textContent = _loc('CAT.MEDKIT.NoPermission');
             section.prepend(notice);
         }

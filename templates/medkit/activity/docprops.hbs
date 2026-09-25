@@ -1,4 +1,5 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     <fieldset data-section="activity-properties">
         <legend>{{localize "CAT.MEDKIT.TABS.DocProps"}}</legend>
         {{formGroup fields.hidden name="flags.cat.hidden" value=hidden hint=(localize "CAT.MEDKIT.Activity.Hidden.Hint")}}
@@ -19,7 +20,7 @@
                 <div class="form-fields">
                     <cat-multi-combobox input-id="cat-medkit-other-abilities" name="flags.cat.otherAbilities">
                         {{#each otherAbilityChoices}}
-                            <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                            <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                         {{/each}}
                     </cat-multi-combobox>
                 </div>

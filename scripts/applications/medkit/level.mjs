@@ -11,8 +11,7 @@ export default class LevelMedkit extends MedkitApp {
 
     static TABS = MedkitApp.SCENE_LEVEL_TABS;
 
-    // TODO: confirm v14 Level scope.
     _getMassApplyItems() {
-        return MedkitApp._massApplyItemsFromScene(this.document.parent);
+        return MedkitApp._massApplyItemsFromScene(this.document.parent, {level: this.document.id});
     }
 }

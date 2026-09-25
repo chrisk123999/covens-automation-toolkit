@@ -1,13 +1,13 @@
 import {constants} from '../lib/_module.mjs';
-import {uiUtils, genericUtils} from '../utilities/_module.mjs';
-const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
+import {genericUtils, uiUtils} from '../utilities/_module.mjs';
+import CatApp from './cat-app.mjs';
 const {fields} = foundry.data;
 
 const csv = arr => (Array.isArray(arr) ? arr : []).join(', ');
 const splitCsv = raw => String(raw ?? '').split(',').map(s => s.trim()).filter(Boolean);
 
 // Popup editor for a single document-property entry.
-export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(ApplicationV2) {
+export default class DocPropertyEditorApp extends CatApp {
     #type;
     #entry;
     #onSubmit;
@@ -33,9 +33,20 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
         form: {handler: DocPropertyEditorApp.#onFormSubmit, submitOnChange: false, closeOnSubmit: false}
     };
 
+    static INITIAL_SIZE = {width: 560, height: 480};
+
     static PARTS = {
-        body: {template: 'modules/cat/templates/doc-property-editor.hbs', scrollable: ['.cat-embedded-macros-body']}
+        header: CatApp.HEADER_PART,
+        body: {template: 'modules/cat/templates/doc-property-editor/body.hbs', scrollable: ['']},
+        footer: CatApp.FOOTER_PART
     };
+
+    get footerButtons() {
+        return [
+            {label: 'CAT.MEDKIT.Footer.Cancel', icon: 'fa-solid fa-xmark', type: 'button', action: 'close', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
+            {label: 'DND5E.Confirm', icon: 'fa-solid fa-check'}
+        ];
+    }
 
     get title() {
         return _loc('CAT.MEDKIT.DocProps.Title', {type: _loc(`CAT.MEDKIT.DocProps.Props.${this.#type}.Label`), name: this.#titleName});
@@ -43,7 +54,7 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
 
     #fetchChoices(choices, values = []) {
         let options = typeof choices === 'function' ? choices() : choices;
-        if (typeof options === 'object') 
+        if (typeof options === 'object')
             return Object.entries(options).map(([value, label]) => ({value, label, selected: values.includes(value)}));
         else options.forEach(o => o.selected = values.includes(o.value));
         return options;
@@ -130,21 +141,9 @@ export default class DocPropertyEditorApp extends HandlebarsApplicationMixin(App
         if (this.#onSubmit?.(entry) !== false) this.close();
     }
 
-    async _preClose(options) {
-        options.animate = false;
-        await uiUtils.fadeOut(this.element);
-    }
 
     bringToFront() {
         uiUtils.bringToFront(this);
     }
 
-    _onRender(context, options) {
-        super._onRender(context, options);
-        uiUtils.enableWindowDrag(this, '.cat-embedded-macros-header', {ignore: 'button, a, input, select, textarea, [data-action], cat-multi-combobox'});
-        if (options.isFirstRender) {
-            this.bringToFront();
-            uiUtils.centerWindow(this, {width: 560, height: 480});
-        }
-    }
 }

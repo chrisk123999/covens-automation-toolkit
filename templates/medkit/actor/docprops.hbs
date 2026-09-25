@@ -1,4 +1,5 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     {{> "modules/cat/templates/medkit/shared/identifier-field.hbs"}}
 
     <fieldset data-section="condition-resistance">
@@ -8,20 +9,24 @@
             <div class="form-fields">
                 <cat-multi-combobox input-id="cat-medkit-actor-cr" name="flags.cat.CR">
                     {{#each conditionChoicesCR}}
-                        <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                        <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                     {{/each}}
                 </cat-multi-combobox>
             </div>
             <p class="hint">{{localize "CAT.MEDKIT.Actor.ConditionResistance.Hint"}}</p>
         </div>
         {{#each crConditionRows as |row|}}
-            <div class="cat-medkit-condition-row">
-                <span class="cat-medkit-condition-name">{{row.label}}</span>
-                <button type="button" class="cat-medkit-ability-btn{{#if row.all}} active{{/if}}" data-action="toggleCR" data-condition="{{row.key}}" data-ability="all" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+            <div class="row">
+                <span class="name">{{row.label}}</span>
+                <button type="button" class="ability{{#if row.all}} active{{/if}}" data-action="toggleCR"
+                    data-condition="{{row.key}}" data-ability="all"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
                 {{#each row.abilities as |ab|}}
-                    <button type="button" class="cat-medkit-ability-btn{{#if ab.active}} active{{/if}}" data-action="toggleCR" data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                    <button type="button" class="ability{{#if ab.active}} active{{/if}}" data-action="toggleCR"
+                        data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
                 {{/each}}
-                <button type="button" class="cat-medkit-condition-remove" data-action="removeCondition" data-flag-key="CR" data-condition="{{row.key}}" data-tooltip="{{localize 'Remove'}}">
+                <button type="button" class="remove" data-action="removeCondition" data-flag-key="CR"
+                    data-condition="{{row.key}}" data-tooltip="{{localize 'COMMON.Delete'}}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -34,20 +39,24 @@
             <div class="form-fields">
                 <cat-multi-combobox input-id="cat-medkit-actor-cv" name="flags.cat.CV">
                     {{#each conditionChoicesCV}}
-                        <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                        <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                     {{/each}}
                 </cat-multi-combobox>
             </div>
             <p class="hint">{{localize "CAT.MEDKIT.Actor.ConditionVulnerability.Hint"}}</p>
         </div>
         {{#each cvConditionRows as |row|}}
-            <div class="cat-medkit-condition-row">
-                <span class="cat-medkit-condition-name">{{row.label}}</span>
-                <button type="button" class="cat-medkit-ability-btn{{#if row.all}} active{{/if}}" data-action="toggleCV" data-condition="{{row.key}}" data-ability="all" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+            <div class="row">
+                <span class="name">{{row.label}}</span>
+                <button type="button" class="ability{{#if row.all}} active{{/if}}" data-action="toggleCV"
+                    data-condition="{{row.key}}" data-ability="all"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
                 {{#each row.abilities as |ab|}}
-                    <button type="button" class="cat-medkit-ability-btn{{#if ab.active}} active{{/if}}" data-action="toggleCV" data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                    <button type="button" class="ability{{#if ab.active}} active{{/if}}" data-action="toggleCV"
+                        data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
                 {{/each}}
-                <button type="button" class="cat-medkit-condition-remove" data-action="removeCondition" data-flag-key="CV" data-condition="{{row.key}}" data-tooltip="{{localize 'Remove'}}">
+                <button type="button" class="remove" data-action="removeCondition" data-flag-key="CV"
+                    data-condition="{{row.key}}" data-tooltip="{{localize 'COMMON.Delete'}}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -56,20 +65,25 @@
     <fieldset data-section="feature-resistance">
         <legend>{{localize "CAT.MEDKIT.Actor.FeatureResistance.Label"}}</legend>
         <p class="hint">{{localize "CAT.MEDKIT.Actor.FeatureResistance.Hint"}}</p>
-        <div class="cat-class-bonus-add" data-feature-roll-mode>
+        <div class="bonus-add" data-feature-roll-mode>
             <input type="text" placeholder="{{localize 'CAT.MEDKIT.FeatureRollMode.AddPlaceholder'}}">
-            <button type="button" data-action="addFeatureRollMode" data-flag-key="FR" data-tooltip="{{localize 'CAT.MEDKIT.FeatureRollMode.Add'}}">
+            <button type="button" data-action="addFeatureRollMode" data-flag-key="FR"
+                data-tooltip="{{localize 'CAT.MEDKIT.FeatureRollMode.Add'}}">
                 <i class="fa-solid fa-plus"></i>
             </button>
         </div>
         {{#each frIdentifierRows as |row|}}
-            <div class="cat-medkit-condition-row">
-                <span class="cat-medkit-condition-name">{{row.label}}</span>
-                <button type="button" class="cat-medkit-ability-btn{{#if row.all}} active{{/if}}" data-action="toggleFR" data-condition="{{row.key}}" data-ability="all" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+            <div class="row">
+                <span class="name">{{row.label}}</span>
+                <button type="button" class="ability{{#if row.all}} active{{/if}}" data-action="toggleFR"
+                    data-condition="{{row.key}}" data-ability="all"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
                 {{#each row.abilities as |ab|}}
-                    <button type="button" class="cat-medkit-ability-btn{{#if ab.active}} active{{/if}}" data-action="toggleFR" data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                    <button type="button" class="ability{{#if ab.active}} active{{/if}}" data-action="toggleFR"
+                        data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
                 {{/each}}
-                <button type="button" class="cat-medkit-condition-remove" data-action="removeCondition" data-flag-key="FR" data-condition="{{row.key}}" data-tooltip="{{localize 'Remove'}}">
+                <button type="button" class="remove" data-action="removeCondition" data-flag-key="FR"
+                    data-condition="{{row.key}}" data-tooltip="{{localize 'COMMON.Delete'}}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -78,20 +92,25 @@
     <fieldset data-section="feature-vulnerability">
         <legend>{{localize "CAT.MEDKIT.Actor.FeatureVulnerability.Label"}}</legend>
         <p class="hint">{{localize "CAT.MEDKIT.Actor.FeatureVulnerability.Hint"}}</p>
-        <div class="cat-class-bonus-add" data-feature-roll-mode>
+        <div class="bonus-add" data-feature-roll-mode>
             <input type="text" placeholder="{{localize 'CAT.MEDKIT.FeatureRollMode.AddPlaceholder'}}">
-            <button type="button" data-action="addFeatureRollMode" data-flag-key="FV" data-tooltip="{{localize 'CAT.MEDKIT.FeatureRollMode.Add'}}">
+            <button type="button" data-action="addFeatureRollMode" data-flag-key="FV"
+                data-tooltip="{{localize 'CAT.MEDKIT.FeatureRollMode.Add'}}">
                 <i class="fa-solid fa-plus"></i>
             </button>
         </div>
         {{#each fvIdentifierRows as |row|}}
-            <div class="cat-medkit-condition-row">
-                <span class="cat-medkit-condition-name">{{row.label}}</span>
-                <button type="button" class="cat-medkit-ability-btn{{#if row.all}} active{{/if}}" data-action="toggleFV" data-condition="{{row.key}}" data-ability="all" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+            <div class="row">
+                <span class="name">{{row.label}}</span>
+                <button type="button" class="ability{{#if row.all}} active{{/if}}" data-action="toggleFV"
+                    data-condition="{{row.key}}" data-ability="all"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
                 {{#each row.abilities as |ab|}}
-                    <button type="button" class="cat-medkit-ability-btn{{#if ab.active}} active{{/if}}" data-action="toggleFV" data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                    <button type="button" class="ability{{#if ab.active}} active{{/if}}" data-action="toggleFV"
+                        data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
                 {{/each}}
-                <button type="button" class="cat-medkit-condition-remove" data-action="removeCondition" data-flag-key="FV" data-condition="{{row.key}}" data-tooltip="{{localize 'Remove'}}">
+                <button type="button" class="remove" data-action="removeCondition" data-flag-key="FV"
+                    data-condition="{{row.key}}" data-tooltip="{{localize 'COMMON.Delete'}}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -100,20 +119,25 @@
     <fieldset data-section="feature-immunity">
         <legend>{{localize "CAT.MEDKIT.Actor.FeatureImmunity.Label"}}</legend>
         <p class="hint">{{localize "CAT.MEDKIT.Actor.FeatureImmunity.Hint"}}</p>
-        <div class="cat-class-bonus-add" data-feature-roll-mode>
+        <div class="bonus-add" data-feature-roll-mode>
             <input type="text" placeholder="{{localize 'CAT.MEDKIT.FeatureRollMode.AddPlaceholder'}}">
-            <button type="button" data-action="addFeatureRollMode" data-flag-key="FI" data-tooltip="{{localize 'CAT.MEDKIT.FeatureRollMode.Add'}}">
+            <button type="button" data-action="addFeatureRollMode" data-flag-key="FI"
+                data-tooltip="{{localize 'CAT.MEDKIT.FeatureRollMode.Add'}}">
                 <i class="fa-solid fa-plus"></i>
             </button>
         </div>
         {{#each fiIdentifierRows as |row|}}
-            <div class="cat-medkit-condition-row">
-                <span class="cat-medkit-condition-name">{{row.label}}</span>
-                <button type="button" class="cat-medkit-ability-btn{{#if row.all}} active{{/if}}" data-action="toggleFI" data-condition="{{row.key}}" data-ability="all" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+            <div class="row">
+                <span class="name">{{row.label}}</span>
+                <button type="button" class="ability{{#if row.all}} active{{/if}}" data-action="toggleFI"
+                    data-condition="{{row.key}}" data-ability="all"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
                 {{#each row.abilities as |ab|}}
-                    <button type="button" class="cat-medkit-ability-btn{{#if ab.active}} active{{/if}}" data-action="toggleFI" data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                    <button type="button" class="ability{{#if ab.active}} active{{/if}}" data-action="toggleFI"
+                        data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
                 {{/each}}
-                <button type="button" class="cat-medkit-condition-remove" data-action="removeCondition" data-flag-key="FI" data-condition="{{row.key}}" data-tooltip="{{localize 'Remove'}}">
+                <button type="button" class="remove" data-action="removeCondition" data-flag-key="FI"
+                    data-condition="{{row.key}}" data-tooltip="{{localize 'COMMON.Delete'}}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -122,20 +146,25 @@
     <fieldset data-section="feature-failure">
         <legend>{{localize "CAT.MEDKIT.Actor.FeatureFailure.Label"}}</legend>
         <p class="hint">{{localize "CAT.MEDKIT.Actor.FeatureFailure.Hint"}}</p>
-        <div class="cat-class-bonus-add" data-feature-roll-mode>
+        <div class="bonus-add" data-feature-roll-mode>
             <input type="text" placeholder="{{localize 'CAT.MEDKIT.FeatureRollMode.AddPlaceholder'}}">
-            <button type="button" data-action="addFeatureRollMode" data-flag-key="FF" data-tooltip="{{localize 'CAT.MEDKIT.FeatureRollMode.Add'}}">
+            <button type="button" data-action="addFeatureRollMode" data-flag-key="FF"
+                data-tooltip="{{localize 'CAT.MEDKIT.FeatureRollMode.Add'}}">
                 <i class="fa-solid fa-plus"></i>
             </button>
         </div>
         {{#each ffIdentifierRows as |row|}}
-            <div class="cat-medkit-condition-row">
-                <span class="cat-medkit-condition-name">{{row.label}}</span>
-                <button type="button" class="cat-medkit-ability-btn{{#if row.all}} active{{/if}}" data-action="toggleFF" data-condition="{{row.key}}" data-ability="all" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+            <div class="row">
+                <span class="name">{{row.label}}</span>
+                <button type="button" class="ability{{#if row.all}} active{{/if}}" data-action="toggleFF"
+                    data-condition="{{row.key}}" data-ability="all"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
                 {{#each row.abilities as |ab|}}
-                    <button type="button" class="cat-medkit-ability-btn{{#if ab.active}} active{{/if}}" data-action="toggleFF" data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                    <button type="button" class="ability{{#if ab.active}} active{{/if}}" data-action="toggleFF"
+                        data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
                 {{/each}}
-                <button type="button" class="cat-medkit-condition-remove" data-action="removeCondition" data-flag-key="FF" data-condition="{{row.key}}" data-tooltip="{{localize 'Remove'}}">
+                <button type="button" class="remove" data-action="removeCondition" data-flag-key="FF"
+                    data-condition="{{row.key}}" data-tooltip="{{localize 'COMMON.Delete'}}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>

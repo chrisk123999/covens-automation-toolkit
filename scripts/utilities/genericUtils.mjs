@@ -103,9 +103,11 @@ function decimalToFraction(decimal) {
  * @param {'info'|'warn'|'error'} [options.type] Notification severity.
  * @param {boolean} [options.localize] Treat the message as a localization key.
  * @param {object} [options.format] Interpolation data for the localized string.
+ * @param {boolean} [options.progress] Track progress, updated through the returned handle.
+ * @returns {object|undefined} The notification, when tracking progress.
  */
-function notify(message, {type = 'info', localize = true, format} = {}) {
-    ui.notifications[type](message, {localize, format});
+function notify(message, {type = 'info', localize = true, format, progress = false} = {}) {
+    return ui.notifications[type](message, {localize, format, progress});
 }
 /**
  * Foundry's isNewerVersion, wrapped so macros need not reach into foundry.utils.

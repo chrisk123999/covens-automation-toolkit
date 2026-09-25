@@ -1,12 +1,14 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     <fieldset data-section="generic-select">
         <legend>{{localize "CAT.MEDKIT.Generic.SelectLabel"}}</legend>
         {{#if genericChoices.length}}
-            <div class="form-group cat-multi-combobox-group">
+            <div class="form-group combo">
                 <label>{{localize "CAT.MEDKIT.Generic.SelectField"}}</label>
                 <cat-multi-combobox input-id="cat-medkit-generic-select" name="flags.cat.genericConfig">
                     {{#each genericChoices}}
-                        <option value="{{value}}" data-image="{{image}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                        <option value="{{value}}" data-image="{{image}}" {{#if selected}} selected{{/if}}>{{label}}
+                        </option>
                     {{/each}}
                 </cat-multi-combobox>
             </div>
@@ -19,8 +21,11 @@
         {{#each genericFeatures as |feature|}}
             <fieldset data-section="generic-feature" data-feature-id="{{feature.id}}">
                 <legend>{{feature.label}}</legend>
-                {{#each feature.options as |option|}}
-                    {{> "modules/cat/templates/medkit/shared/option-field.hbs" option}}
+                {{#each feature.groups as |group|}}
+                    {{#if group.label}}<span class="subgroup">{{group.label}}</span>{{/if}}
+                    {{#each group.options as |option|}}
+                        {{> "modules/cat/templates/medkit/shared/option-field.hbs" option}}
+                    {{/each}}
                 {{/each}}
                 {{#unless feature.options.length}}
                     <p class="hint">{{localize "CAT.MEDKIT.Generic.NoConfig"}}</p>

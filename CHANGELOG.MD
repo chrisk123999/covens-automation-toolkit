@@ -1,15 +1,41 @@
 # 0.0.9 Release:
 ## Update Notes:
-- Added setting: Fix Description Enrichers. When an automation update keeps an item's existing description, bare `[[/damage]]` and `[[/save]]` enrichers are rewritten from the item. Off by default, since it edits description text.
+- A tab's icon is colored when that tab holds content.
+- Added a CatKit entry to context menus everywhere a CatKit can be opened: the Item, Actor and Scene directories, the scene navigation bar, compendium entries, compendium packs, and item, activity and effect rows on sheets.
+- Added a light theme.
+- Added Related Automations to the CatKit. It lists the automated documents nested under the one you are editing, each opening its own CatKit.
+- Added setting: Fix Description Enrichers. When an automation update keeps an item's existing description, bare `[[/damage]]` and `[[/save]]` enrichers are rewritten from the item.
+- Configuration options that repeat a label are grouped under a subheading derived from their shared key prefix.
+- Every CAT window can be resized from a corner grabber, and remembers its position and size.
+- Manual rolls use CAT's damage artwork, matching the icons the bonus and damage dialogs already used.
+- Manual rolls: damage dice of the same type and denomination are shown as a single box, and that box accepts either a total or the individual dice (`5,6`).
+- Manual rolls: each damage group names what granted it, and its damage type, in a tooltip. The damage type no longer takes up room in the group's label.
+- Mass apply shows counts for up to date, available and out of date, each listing the items it counted on hover. Up to date items are listed, unchecked, when another source could be applied to them.
+- Mass apply works on compendiums. A locked pack refuses, and a pack belonging to a module or the system asks first, since updating that package overwrites whatever was applied.
+- Opening a CatKit on a document in a locked compendium warns that changes will not save.
+- Reworked the dark theme.
+- Reworked the document property editor.
+- The Generic tab icon is marked when a nested document carries a generic, not just the document itself.
 ## API Update Notes:
+- `automationUtils.getAutomationStatus` accepts any document.
+- `automationUtils.isUpToDate` accepts an already-resolved `automation`.
+- `genericUtils.notify` accepts `progress` and returns the notification
+- `workflowUtils.bonusDamage` accepts `source`, naming what granted the damage. It is stored as `options.cat.source` and shown as attribution on manual rolls.
+- Added `constants.contextMenuHookNames`.
 - Swapped the order of D20 events `bonus` and `optionalBonus`. `bonus` is now the final event in which the roll can be changed and should be used for rerolls.
 - Added utils:
   - `actorUtils.isWounded`
+  - `automationUtils`: `getMedkitChildren`, `getCatConfigKinds`, `getAnyAutomationStatus`, `getAutomationTree`, `countDescendantGenerics`, `isSelfAutomation`
   - `itemUtils`: `getSpellAttackBonus`, `addDamageBonus`
   - `tokenUtils`: `canSense`, `movementSpent`
+  - `uiUtils`: `storedWindowPosition`, `applyStoredWindowPosition`, `rememberWindowPosition`, `toggleDetached`, `onToggleDetach`, `isDetached`, `detachContext`
   - `workflowUtils`: `getScaledDuration`, `rollConfiguredSource`
 - `tokenUtils.teleportToken` accepts `options` and passes them to the animation's macros, so a teleport animation's own config now reaches it.
 - JSDoc added across `automationUtils`, `workflowUtils` and `documentUtils`.
+## Bug Fixes:
+- Mass apply on a level covered every token on the scene rather than the tokens on that level.
+- A manual roll showed a roll's flat modifier against every damage group sharing its damage type, so a dagger's `+3` appeared three times.
+- The manual roll input flashed a focus ring on the way in and out.
 ## API Bug Fixes:
 - `actorUtils.isBloodied` was defined but never exported, so calling it threw.
 - Class scales resolve from subclass items, not just class items.

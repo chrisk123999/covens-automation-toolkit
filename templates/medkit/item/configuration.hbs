@@ -1,9 +1,13 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     {{#each configurationCategories as |category|}}
         <fieldset data-section="config-{{category.id}}" data-tooltip="{{localize category.tooltip}}">
             <legend>{{category.label}}</legend>
-            {{#each category.options as |option|}}
-                {{> "modules/cat/templates/medkit/shared/option-field.hbs" option}}
+            {{#each category.groups as |group|}}
+                {{#if group.label}}<span class="subgroup">{{group.label}}</span>{{/if}}
+                {{#each group.options as |option|}}
+                    {{> "modules/cat/templates/medkit/shared/option-field.hbs" option}}
+                {{/each}}
             {{/each}}
         </fieldset>
     {{else}}
@@ -12,4 +16,10 @@
             <p class="hint">{{localize "CAT.MEDKIT.Configuration.None"}}</p>
         </fieldset>
     {{/each}}
+    {{#if automationTree.rows.length}}
+        <fieldset data-section="automation-tree">
+            <legend>{{localize "CAT.MEDKIT.Tree.Legend"}}</legend>
+            {{> "modules/cat/templates/medkit/shared/automation-tree.hbs" tree=automationTree}}
+        </fieldset>
+    {{/if}}
 </section>

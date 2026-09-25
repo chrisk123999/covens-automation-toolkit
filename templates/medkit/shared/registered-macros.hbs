@@ -1,12 +1,13 @@
-<section class="tab standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
     <fieldset data-section="macro-picker">
         <legend>{{localize "CAT.MEDKIT.Macros.Picker.Label"}}</legend>
         {{#if macroChoices.length}}
-            <div class="form-group cat-multi-combobox-group">
+            <div class="form-group combo">
                 <label>{{localize "CAT.MEDKIT.Macros.Picker.Field"}}</label>
                 <cat-multi-combobox input-id="cat-medkit-macros" name="flags.cat.macros">
                     {{#each macroChoices}}
-                        <option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>
+                        <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                     {{/each}}
                 </cat-multi-combobox>
             </div>

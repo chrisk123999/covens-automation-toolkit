@@ -22,14 +22,25 @@ function getCurrentAutomation(item) {
     return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type, sourceType});
 }
 /**
- * Automation status of an item, or the lowest status across an actor's items.
- * @param {Item5e|Actor5e} document Document to act on.
- * @returns {number} A {@link constants.automationStatus} value, or -2 for an unsupported document.
+ * Whether this document is a registered automation rather than one an automation was applied to.
+ * @param {Item5e} item Item to act on.
+ * @param {object} [options] Additional options.
+ * @param {Automation} [options.automation] Already-resolved automation, to save a registry scan.
+ * @returns {boolean}
+ */
+function isSelfAutomation(item, {automation = getCurrentAutomation(item)} = {}) {
+    return automation?.uuid === item.uuid;
+}
+/**
+ * Automation status of an item, the lowest across an actor's items, or configurable for anything else carrying CAT config.
+ * @param {ClientDocument} document Document to act on.
+ * @returns {number} A {@link constants.automationStatus} value.
  */
 function getAutomationStatus(document) {
     if (document.documentName === 'Item') return getItemAutomationStatus(document);
     if (document.documentName === 'Actor') return getActorAutomationStatus(document);
-    return -2;
+    if (getCatConfigKinds(document).length) return constants.automationStatus.CONFIGURABLE;
+    return constants.automationStatus.UNAVAILABLE;
 }
 /**
  * The lowest automation status across this actor's items, ignoring items with nothing to automate.
@@ -49,11 +60,10 @@ function getActorAutomationStatus(actor) {
  * @returns {number} A {@link constants.automationStatus} value.
  */
 function getItemAutomationStatus(item) {
-    const isApplied = getStoredHash(item) || getCurrentAutomation(item);
-    if (isApplied) {
-        if (!isUpToDate(item)) return constants.automationStatus.OUTDATED;
-        const currentAutomation = getCurrentAutomation(item);
-        if (currentAutomation?.config) return constants.automationStatus.CONFIGURABLE;
+    const automation = getCurrentAutomation(item);
+    if (getStoredHash(item) || automation) {
+        if (!isUpToDate(item, {automation})) return constants.automationStatus.OUTDATED;
+        if (automation?.config) return constants.automationStatus.CONFIGURABLE;
         return constants.automationStatus.UP_TO_DATE;
     }
     if (getAvailableAutomations(item).length) return constants.automationStatus.AVAILABLE;
@@ -65,8 +75,8 @@ function getItemAutomationStatus(item) {
  * @param {Item5e} item Item to act on.
  * @returns {boolean}
  */
-function isUpToDate(item) {
-    const currentAutomation = getCurrentAutomation(item);
+function isUpToDate(item, {automation} = {}) {
+    const currentAutomation = automation ?? getCurrentAutomation(item);
     if (currentAutomation) {
         if (foundry.utils.isNewerVersion(currentAutomation.version, documentUtils.getVersion(item) ?? '0')) return false;
         return true;
@@ -273,6 +283,83 @@ function getAppliedOrPreferredAutomation(item) {
         const match = allAutomations.find(automation => automation.source === source);
         if (match) return match;
     }
+}
+/**
+ * Documents nested under this one that have their own medkit.
+ * @param {ClientDocument} document Document to act on.
+ * @returns {Array} Child documents, in display order.
+ */
+function getMedkitChildren(document) {
+    if (!(document instanceof foundry.abstract.Document)) return [];
+    switch (document.documentName) {
+        case 'Actor': return [...document.items, ...document.effects];
+        case 'Item': return [...(document.system?.activities ?? []), ...document.effects];
+        case 'Scene': return [...(document.regions ?? []), ...(document.tokens ?? [])];
+        default: return [];
+    }
+}
+/**
+ * Which kinds of CAT configuration a document carries.
+ * @param {ClientDocument} document Document to act on.
+ * @returns {string[]} Flag keys holding content, in declaration order.
+ */
+function getCatConfigKinds(document) {
+    const flags = document.flags?.cat ?? {};
+    return ['config', 'genericConfig', 'macros', 'embeddedMacros', 'alternateAttributes', 'placed', 'animation'].filter(key => {
+        const value = flags[key];
+        return Array.isArray(value) ? value.length > 0 : !!value && Object.keys(value).length > 0;
+    });
+}
+/**
+ * The medkit status of any document, including the spell a cast activity points at.
+ * @param {ClientDocument} document Document to act on.
+ * @returns {Promise<number>} A {@link constants.automationStatus} value.
+ */
+async function getAnyAutomationStatus(document) {
+    if (document.type === 'cast') {
+        const identifier = document.flags?.cat?.spellIdentifier || (await fromUuid(document.spell?.uuid))?.identifier;
+        const spell = identifier ? await compendiumUtils.getSpellUuid(identifier).then(uuid => uuid && fromUuid(uuid)) : null;
+        if (spell) return getAutomationStatus(spell);
+    }
+    return getAutomationStatus(document);
+}
+/**
+ * How many documents nested under this one have a generic automation applied.
+ * @param {ClientDocument} document Document to act on.
+ * @returns {number} Count of descendants carrying a generic config.
+ */
+function countDescendantGenerics(document) {
+    return getMedkitChildren(document).reduce((total, child) => {
+        const generic = child.flags?.cat?.genericConfig;
+        const own = generic && Object.keys(generic).length > 0 ? 1 : 0;
+        return total + own + countDescendantGenerics(child);
+    }, 0);
+}
+/**
+ * Every medkit-editable document beneath this one, pruned to branches that hold an automation.
+ * @param {ClientDocument} document Document to act on.
+ * @returns {Promise<Array>} Nested {uuid, documentName, name, status, automated, children} nodes.
+ */
+async function getAutomationTree(document) {
+    const branches = [];
+    for (const child of getMedkitChildren(document)) {
+        const children = await getAutomationTree(child);
+        const status = await getAnyAutomationStatus(child);
+        const automated = status >= constants.automationStatus.OUTDATED;
+        const kinds = getCatConfigKinds(child);
+        if (!automated && !kinds.length && !children.length) continue;
+        branches.push({
+            uuid: child.uuid,
+            documentName: child.documentName ?? 'Activity',
+            name: child.name ?? child.label ?? child.id,
+            type: child.type,
+            status,
+            automated,
+            kinds,
+            children
+        });
+    }
+    return branches;
 }
 /**
  * Repoint every cast activity at the same spell in the user's preferred spell compendium,
@@ -588,6 +675,7 @@ async function getCompendiumDocumentByName(name, type) {
 export default {
     getCurrentAutomation,
     getAutomationStatus,
+    isSelfAutomation,
     getAvailableAutomations,
     getConfigValue,
     getGenericConfigValue,
@@ -616,5 +704,10 @@ export default {
     calledEventSync,
     getAnimationConfig,
     getResolvedAnimation,
-    getCompendiumDocumentByName
+    getCompendiumDocumentByName,
+    getMedkitChildren,
+    getAnyAutomationStatus,
+    getCatConfigKinds,
+    getAutomationTree,
+    countDescendantGenerics
 };

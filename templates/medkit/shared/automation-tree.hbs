@@ -1,0 +1,28 @@
+<div class="tree">
+    {{#each tree.rows}}
+        <button type="button" class="node{{#unless automated}} muted{{/unless}}" data-action="openMedkit"
+            data-uuid="{{uuid}}" data-tooltip="{{tooltip}}">
+            {{#if statusKey}}<span class="dot" data-medkit-status="{{statusKey}}"></span>{{/if}}
+            <span class="name">{{name}}</span>
+            {{#each tags}}<span class="cat-combobox-tag" {{#if ../statusKey}} data-medkit-status="{{../statusKey}}"
+                    {{/if}}>{{this}}</span>{{/each}}
+            <span class="kind">{{localize kindLabel}}</span>
+        </button>
+        {{#if tiles.length}}
+            <div class="tiles">
+                <div class="tile-list">
+                    {{#each tiles}}
+                        <button type="button" class="tile{{#unless automated}} muted{{/unless}}"
+                            data-action="openMedkit" data-uuid="{{uuid}}" data-tooltip="{{tooltip}}">
+                            {{#if statusKey}}<span class="dot" data-medkit-status="{{statusKey}}"></span>{{/if}}
+                            <span class="name">{{name}}</span>
+                            {{#each tags}}<span class="cat-combobox-tag" {{#if ../statusKey}}
+                                    data-medkit-status="{{../statusKey}}" {{/if}}>{{this}}</span>{{/each}}
+                        </button>
+                    {{/each}}
+                </div>
+                {{#if tilesKind}}<span class="kind">{{localize tilesKind}}</span>{{/if}}
+            </div>
+        {{/if}}
+    {{/each}}
+</div>

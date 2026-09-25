@@ -1,5 +1,5 @@
-import MedkitApp from './base.mjs';
 import {genericUtils} from '../../utilities/_module.mjs';
+import MedkitApp from './base.mjs';
 const {fields} = foundry.data;
 
 export default class ActorMedkit extends MedkitApp {
@@ -23,8 +23,8 @@ export default class ActorMedkit extends MedkitApp {
         automations: {template: 'modules/cat/templates/medkit/actor/automations.hbs'},
         ...MedkitApp.GENERIC_PART,
         embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
-        docprops: {template: 'modules/cat/templates/medkit/actor/docprops.hbs'},
-        macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'}
+        macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'},
+        docprops: {template: 'modules/cat/templates/medkit/actor/docprops.hbs'}
     };
 
     static TABS = {
@@ -33,8 +33,8 @@ export default class ActorMedkit extends MedkitApp {
                 {id: 'automations', icon: 'fa-solid fa-download', label: 'CAT.MEDKIT.TABS.Automations'},
                 MedkitApp.GENERIC_TAB,
                 {id: 'embedded', icon: 'fa-solid fa-feather-pointed', label: 'CAT.MEDKIT.TABS.Embedded'},
-                {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'},
-                {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'}
+                {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'},
+                {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'}
             ],
             initial: 'automations'
         }
@@ -44,7 +44,6 @@ export default class ActorMedkit extends MedkitApp {
         return Array.from(this.document.items ?? []);
     }
 
-    // Per-condition flag values are comma-separated strings: 'true' (all saves) or 'wis,cha' (subset).
     #parseConditionValue(value) {
         const parts = String(value ?? '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
         return {
@@ -71,6 +70,7 @@ export default class ActorMedkit extends MedkitApp {
 
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
+        context.automationTree = await this._prepareAutomationTree();
         const flags = this._getFlags();
         context.fields = {
             name: new fields.StringField({label: _loc('CAT.MEDKIT.Actor.Name.Label')}),
@@ -95,7 +95,6 @@ export default class ActorMedkit extends MedkitApp {
         return context;
     }
 
-    // Add/remove condition keys via multi-combobox; default new entries to 'true' (all saves).
     async _onChangeForm(formConfig, event) {
         const name = event.target?.name ?? event.target?.getAttribute?.('name');
         if (name === 'flags.cat.CR' || name === 'flags.cat.CV') {
@@ -121,11 +120,9 @@ export default class ActorMedkit extends MedkitApp {
         const flags = this._getFlags();
         const parsed = this.#parseConditionValue(flags[flagKey]?.[conditionKey]);
         if (abilityKey === 'all') {
-            // [All] click sets value to 'true' and clears ability subset; pressing again is a no-op.
             if (parsed.all && !parsed.abilities.size) return;
             foundry.utils.setProperty(flags, `${flagKey}.${conditionKey}`, 'true');
         } else {
-            // Otherwise toggle this ability in/out of the subset.
             let abilities;
             if (parsed.all) abilities = new Set([abilityKey]);
             else {

@@ -3,6 +3,7 @@
     "MEDKIT": {
       "Title": "Coven's Automation Toolkit Configuration: {name}",
       "HeaderLabel": "CAT Medkit",
+      "LockedPack": "{pack} is locked. Changes made here will not be saved until the compendium is unlocked.",
       "NoPermission": "You do not have permission to modify this tab.",
       "ReloadWarning": "The registered automation will not reflect your changes until the world is reloaded!",
       "TABS": {
@@ -16,19 +17,25 @@
         "PlacedRegion": "Placed Region"
       },
       "MassApply": {
+        "Counts": {
+          "UpToDate": "Up to date",
+          "Available": "Available",
+          "Outdated": "Out of date"
+        },
         "Label": "Mass Apply / Update",
         "Button": "Mass Apply / Update",
         "Tooltip": "Apply / update automations for every item under this document.",
         "ConfirmTitle": "Mass apply automations?",
         "ConfirmPrompt": "Apply registered automations to every item under this document? This rewrites their data and cannot be undone.",
         "Started": "Mass apply started.",
+        "Progress": "Applying {done}/{total} — {name}",
         "Done": "Mass apply complete.",
-        "CompendiumPending": "Compendium mass apply isn't wired yet - waiting on a pack-aware updater.",
+        "PackLocked": "{pack} is locked. Unlock the compendium to apply automations to it.",
+        "PackTitle": "Apply to a package compendium?",
+        "PackWarning": "{pack} belongs to {package}, not to this world. Updating {package} will overwrite anything applied here.",
         "CycleWarning": "Circular dependency detected among items. Some updates may occur out of sequence!",
         "NoUpdates": "There are no items in need of updates!",
-        "ChooseSource": "Choose Source",
-        "Update": "Update",
-        "Apply": "Apply"
+        "ChooseSource": "Choose Source"
       },
       "Identifier": {
         "Label": "Document Identifier",
@@ -261,7 +268,7 @@
         "Close": "Close",
         "CancelTooltip": "Discard pending changes and close.",
         "Save": "Save",
-        "SaveTooltip": "Commit pending changes; keep the window open.",
+        "SaveTooltip": "Commit pending changes.",
         "SaveClose": "Save & Close",
         "SaveCloseTooltip": "Commit pending changes and close.",
         "DiscardTitle": "Discard changes?",
@@ -287,6 +294,55 @@
         "Configurable": "Automation Configurable",
         "Generic": "Generic Feature Applied",
         "Unavailable": "No Automations Found"
+      },
+      "Indicator": {
+        "configuration": {
+          "One": "{count} configurable option",
+          "Other": "{count} configurable options"
+        },
+        "generic": {
+          "One": "{count} generic automation",
+          "Other": "{count} generic automations"
+        },
+        "inherited": {
+          "One": "{count} nested generic automation",
+          "Other": "{count} nested generic automations"
+        },
+        "embedded": {
+          "One": "{count} embedded macro",
+          "Other": "{count} embedded macros"
+        },
+        "macros": {
+          "One": "{count} registered macro",
+          "Other": "{count} registered macros"
+        },
+        "docprops": {
+          "One": "{count} document property",
+          "Other": "{count} document properties"
+        },
+        "region": {
+          "One": "{count} region activity",
+          "Other": "{count} region activities"
+        }
+      },
+      "Tree": {
+        "Legend": "Related Automations",
+        "Config": {
+          "config": "Configured",
+          "genericConfig": "Generic",
+          "macros": "Macros",
+          "embeddedMacros": "Embedded",
+          "alternateAttributes": "Doc Props",
+          "placed": "Region",
+          "animation": "Animation"
+        },
+        "Kind": {
+          "Item": "Item",
+          "Activity": "Activity",
+          "ActiveEffect": "Effect",
+          "Region": "Region",
+          "Token": "Token"
+        }
       },
       "Configuration": {
         "None": "No configurable options for this automation."
@@ -454,7 +510,7 @@
         },
         "Name": {
           "Label": "Match Name",
-          "Hint": "Override the name used when matching this actor (typically NPCs) against registered automations."
+          "Hint": "Match this actor against automations under a different name."
         }
       },
       "Activity": {
@@ -608,7 +664,6 @@
       "UnknownTarget": "Unknown Target",
       "Use": "Use {document}?",
       "UseExtraCost": "Use {document}? (Costs {quantity} {resource})",
-      "UseOn": "Use {document} on {target}?",
       "UseRecover": "Use {document} to recover {spent}/{max} {resource}?",
       "UseRollTotal": "Use {document}? (Roll Total: {rollTotal})",
       "UseForRollTotal": "Use {document} for {name}? (Roll Total: {rollTotal})"
@@ -907,7 +962,8 @@
       "Disabled": "Disabled",
       "Chat": "Chat",
       "Ok": "Ok",
-      "Cancel": "Cancel"
+      "Cancel": "Cancel",
+      "Resize": "Resize"
     },
     "QuickConditions": {
       "Legend": "Available Conditions",

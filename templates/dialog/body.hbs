@@ -1,0 +1,7 @@
+<div class="body standard-form">
+    {{#if content}}
+        <div class="content{{#unless inputs}} only{{/unless}}">{{{localize content}}}
+        </div>
+    {{/if}}
+    {{> (lookup @root 'inputTemplate') inputs=inputs inputTemplate=inputTemplate}}
+</div>

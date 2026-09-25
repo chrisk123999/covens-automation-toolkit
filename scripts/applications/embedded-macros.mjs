@@ -1,8 +1,8 @@
+import CatApp from './cat-app.mjs';
 import {constants} from '../lib/_module.mjs';
 import {genericUtils, uiUtils} from '../utilities/_module.mjs';
 import {macroautocomplete} from '../integration/_modules.mjs';
 
-const {ApplicationV2, HandlebarsApplicationMixin} = foundry.applications.api;
 const {fields} = foundry.data;
 
 const CREATURE_SCOPES = ['actor', 'scene', 'nearby', 'region', 'level', 'group', 'vehicle', 'encounter'];
@@ -120,7 +120,7 @@ function extraFieldInput(key, macro) {
     }
 }
 
-export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(ApplicationV2) {
+export default class EmbeddedMacroEditorApp extends CatApp {
     #macro;
     #onSubmit;
     #titleName;
@@ -146,9 +146,20 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
         }
     };
 
+    static INITIAL_SIZE = {width: 820, height: 480};
+
     static PARTS = {
-        body: {template: 'modules/cat/templates/embedded-macros.hbs', scrollable: ['.cat-embedded-macros-body']}
+        header: CatApp.HEADER_PART,
+        body: {template: 'modules/cat/templates/embedded-macros/body.hbs', scrollable: ['']},
+        footer: CatApp.FOOTER_PART
     };
+
+    get footerButtons() {
+        return [
+            {label: 'CAT.MEDKIT.Footer.Cancel', icon: 'fa-solid fa-xmark', type: 'button', action: 'close', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
+            {label: 'DND5E.Confirm', icon: 'fa-solid fa-check', type: 'button', action: 'confirm'}
+        ];
+    }
 
     get title() {
         return _loc('CAT.MEDKIT.EmbeddedMacros.Title', {name: this.#titleName});
@@ -224,10 +235,6 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
         if (this.#onSubmit?.(cleaned) !== false) this.close();
     }
 
-    async _preClose(options) {
-        options.animate = false;
-        await uiUtils.fadeOut(this.element);
-    }
 
     bringToFront() {
         uiUtils.bringToFront(this);
@@ -235,11 +242,6 @@ export default class EmbeddedMacroEditorApp extends HandlebarsApplicationMixin(A
 
     _onRender(context, options) {
         super._onRender(context, options);
-        uiUtils.enableWindowDrag(this, '.cat-embedded-macros-header');
-        if (options.isFirstRender) {
-            this.bringToFront();
-            uiUtils.centerWindow(this, {width: 820, height: 480});
-        }
         macroautocomplete.inContext(context, this, this.#documentType);
     }
 }
