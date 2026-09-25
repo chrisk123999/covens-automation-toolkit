@@ -536,6 +536,31 @@ function grantRollModifier(options, type, tokenID, attributionID, attributionDis
     mods[tokenID].push({type, identifier: attributionID, display: attributionDisplay});
     setWorkflowProperty(options, 'rollModifiers', mods);
 }
+/**
+ * How long a spell lasts once scaled by the level it was cast at, capped at a day.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @returns {number} Duration in seconds.
+ */
+function getScaledDuration(workflow) {
+    const castDurations = {1: 3600, 2: 3600, 3: 28800, 4: 28800};
+    const seconds = castDurations[getCastLevel(workflow)] ?? 86400;
+    return Math.min(seconds * workflow.item.system.duration.value, 86400);
+}
+/**
+ * Use the item or activity a bonus is configured to roll.
+ * @param {RollBonus} bonus Bonus carrying the source document.
+ * @param {object} config Generic macro config, supplying rollItem, rollActivity and consume.
+ * @param {Token5e[]} [targets] Targets the use is rolled against.
+ * @returns {Promise<MidiQOL.Workflow|void>}
+ */
+async function rollConfiguredSource(bonus, config, targets = []) {
+    const item = bonus.document.documentName === 'Item' ? bonus.document : bonus.activity?.item;
+    if (!item) return;
+    if (config.rollItem) return await completeItemUse(item, targets);
+    if (!config.rollActivity) return;
+    const activity = item.system.activities.get(config.rollActivity);
+    if (activity) await completeActivityUse(activity, targets, {consumeResources: config.consume, consumeUsage: config.consume});
+}
 export default {
     getActionType,
     isAttackType,
@@ -563,5 +588,7 @@ export default {
     applyWorkflowDamage,
     updateTargets,
     preventZeroHP,
-    grantRollModifier
+    grantRollModifier,
+    getScaledDuration,
+    rollConfiguredSource
 };

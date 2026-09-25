@@ -4,10 +4,14 @@
 ## API Update Notes:
 - Swapped the order of D20 events `bonus` and `optionalBonus`. `bonus` is now the final event in which the roll can be changed and should be used for rerolls.
 - Added utils:
+  - `actorUtils.isWounded`
+  - `itemUtils`: `getSpellAttackBonus`, `addDamageBonus`
   - `tokenUtils`: `canSense`, `movementSpent`
+  - `workflowUtils`: `getScaledDuration`, `rollConfiguredSource`
 - `tokenUtils.teleportToken` accepts `options` and passes them to the animation's macros, so a teleport animation's own config now reaches it.
 - JSDoc added across `automationUtils`, `workflowUtils` and `documentUtils`.
 ## API Bug Fixes:
+- `actorUtils.isBloodied` was defined but never exported, so calling it threw.
 - Class scales resolve from subclass items, not just class items.
 - A `rules: 'all'` scale now matches on both 2014 and 2024 actors.
 - Region macros never ran for a region placed by anything other than a spell. Cast data is defaulted rather than partially written, and a trigger that is alone in its group is no longer entered into the overlap contest it cannot win.

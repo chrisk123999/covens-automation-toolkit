@@ -453,6 +453,14 @@ async function removeFavorites(actor, entities) {
 function isBloodied(actor) {
     return actor.system.attributes.hp.value <= Math.floor(actor.system.attributes.hp.max / 2);
 }
+/**
+ * Whether this actor has lost any hit points.
+ * @param {Actor5e} actor Actor to check.
+ * @returns {boolean}
+ */
+function isWounded(actor) {
+    return actor.system.attributes.hp.value < actor.system.attributes.hp.effectiveMax;
+}
 export default {
     getEffects,
     getGroups,
@@ -488,5 +496,7 @@ export default {
     getMaxCastLevel,
     getCR,
     addFavorites,
-    removeFavorites
+    removeFavorites,
+    isBloodied,
+    isWounded
 };

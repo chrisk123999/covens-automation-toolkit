@@ -369,6 +369,29 @@ function canCast(item) {
     }
     return true;
 }
+/**
+ * The spell attack bonus this item's owner rolls with, including their ranged spell attack bonus.
+ * @param {Item5e} item Item to read from.
+ * @returns {number}
+ */
+function getSpellAttackBonus(item) {
+    const actor = item.actor;
+    const ability = item.system.ability || actor.system.attributes.spellcasting || 'int';
+    const bonus = dnd5e.utils.simplifyBonus(actor.system.bonuses?.rsak?.attack, actor.getRollData());
+    return actor.system.attributes.prof + (actor.system.abilities[ability]?.mod ?? 0) + bonus;
+}
+/**
+ * Append a bonus to the first damage part of every activity in this item's data, in place.
+ * @param {object} itemData Item source data to modify.
+ * @param {string|number} bonus Formula appended to each part.
+ */
+function addDamageBonus(itemData, bonus) {
+    Object.values(itemData.system.activities).forEach(activityData => {
+        const part = activityData.damage?.parts?.[0];
+        if (!part) return;
+        part.bonus = part.bonus ? part.bonus + ' + ' + bonus : String(bonus);
+    });
+}
 export default {
     getSaveDC,
     getSavedCastData,
@@ -386,5 +409,7 @@ export default {
     resolveDescriptionEnrichers,
     setDescriptionBlock,
     getDependencies,
-    canCast
+    canCast,
+    getSpellAttackBonus,
+    addDamageBonus
 };
