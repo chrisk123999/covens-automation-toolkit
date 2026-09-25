@@ -288,7 +288,33 @@ function negateDamageItemDamage(ditem) {
  * @param {number|'auto'} [options.multiplier] 'auto' applies the target's immunity, resistance and vulnerability.
  */
 function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', multiplier = 1} = {}) {
-    const active = {type: {}};
+    if (modificationAmount < 0 && type === 'none') {
+        const amounts = {};
+        let pool = Math.abs(modificationAmount);
+        const damages = genericUtils.deepClone(ditem.damageDetail);
+        for (const dmg of damages) {
+            const mult = dmg.active?.multiplier ?? 1;
+            if (dmg.active?.immunity || mult === 0 || dmg.value === 0) continue;
+            if (amounts[dmg.type]) amounts[dmg.type].damage += dmg.damage;
+            else amounts[dmg.type] = {damage: dmg.damage, mult, active: dmg.active};
+        }
+        for (const [type, {damage, mult, active}] of Object.entries(amounts)) {
+            if (damage <= 0) continue;
+            const distributedReduction = Math.min(damage, pool);
+            addDamageDetail(ditem, -distributedReduction, type, mult, active);
+            pool -= distributedReduction;
+            if (pool <= 0) break;
+        }
+    } else addDamageDetail(ditem, modificationAmount, type, multiplier);
+    const actualTotal = ditem.totalDamage = ditem.damageDetail.reduce((total, dmg) => total + dmg.value, 0);
+    const newTempHP = ditem.oldTempHP - actualTotal;
+    ditem.newTempHP = Math.max(newTempHP, 0);
+    ditem.newHP = Math.clamp(ditem.oldHP + Math.min(0, newTempHP), 0, ditem.oldHP);
+    ditem.hpDamage = ditem.oldHP - ditem.newHP;
+}
+// used locally only
+function addDamageDetail(ditem, damage, type, multiplier, active) {
+    active ??= {type: {}};
     if (ditem.saved) active.type.saved = true;
     if (multiplier === 'auto') {
         const {damageImmunityMultiplier, damageResistanceMultiplier, damageVulnerabilityMultiplier} = MidiQOL.configSettings();
@@ -310,16 +336,10 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
         }
     }
     active.multiplier = multiplier;
-    modificationAmount = Math.trunc(modificationAmount * multiplier);
-    if (modificationAmount < 0 && type !== 'healing') modificationAmount = Math.max(modificationAmount, -ditem.totalDamage);
-    ditem.damageDetail.push({active, type, value: modificationAmount});
-    ditem.rawDamageDetail.push({value: modificationAmount, type});
-    const actualTotal = ditem.totalDamage + modificationAmount;
-    ditem.totalDamage = actualTotal;
-    const newTempHP = ditem.oldTempHP - actualTotal;
-    ditem.newTempHP = Math.max(newTempHP, 0);
-    ditem.newHP = Math.clamp(ditem.oldHP + Math.min(0, newTempHP), 0, ditem.oldHP);
-    ditem.hpDamage = ditem.oldHP - ditem.newHP;
+    let value = Math.trunc(damage * multiplier);
+    if (value < 0 && type !== 'healing') value = Math.max(value, -ditem.totalDamage);
+    ditem.damageDetail.push({active, type, value, damage});
+    ditem.rawDamageDetail.push({damage, value: damage, type});
 }
 /**
  * Whether this roll is a continuation rather than a fresh use: over time effects, automation-only activities, and spells cast without spending a slot.

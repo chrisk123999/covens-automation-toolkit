@@ -53,17 +53,17 @@ const settings = {
         menu: 'automation',
         default: {
             dnd5e: {
-                enabled: true,
+                enabled: false,
                 priority: 60,
                 pack: false
             },
             'dnd-players-handbook': {
-                enabled: true,
+                enabled: false,
                 priority: 50,
                 pack: false
             },
             'dnd-dungeon-masters-guide': {
-                enabled: true,
+                enabled: false,
                 priority: 40,
                 pack: false
             },
