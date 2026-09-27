@@ -165,7 +165,9 @@ function buildAttributes() {
             Restrictions.Property,
             Restrictions.Type,
             Restrictions.SourceType,
-            Restrictions.WeaponType
+            Restrictions.WeaponType,
+            Restrictions.Armor,
+            Restrictions.Weapon
         ]
     });
 

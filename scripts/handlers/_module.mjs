@@ -11,3 +11,4 @@ export {default as quickConditions} from './quickConditions.mjs';
 export {default as movement} from './movement.mjs';
 export {default as grapple} from './grapple.mjs';
 export {default as conditionResistanceAndVulnerability} from './conditionResistanceAndVulnerability.mjs';
+export {default as weapon} from './weapon.mjs';

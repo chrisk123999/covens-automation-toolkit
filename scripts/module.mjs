@@ -26,6 +26,7 @@ Hooks.once('init', () => {
     lib.constants.alternateAttributes = lib.AlternateAttributes.buildAttributes();
     handlers.quickConditions.registerHelpers();
     handlers.movement.register();
+    handlers.weapon.register();
     globalThis.cat = {
         api: buildApi(),
         applications,

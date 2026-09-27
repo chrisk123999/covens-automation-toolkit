@@ -11,7 +11,7 @@ import {documentUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_
 function getEffects(actor, {includeItemEffects = false} = {}) {
     const effects = Array.from(actor.allApplicableEffects());
     if (!includeItemEffects) return effects;
-    const enchantmentEffects = actor.items.contents.flatMap(item => item.effects.contents).filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment);
+    const enchantmentEffects = actor.items?.contents.flatMap(item => item.effects.contents).filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment) ?? [];
     return [...effects, ...enchantmentEffects];
 }
 

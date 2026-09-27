@@ -274,7 +274,7 @@ function range(wrapped, rollData, labels) {
         this.range.value += bonus;
         this.range.catModified = true;
     }
-    wrapped(rollData, labels);
+    return wrapped(rollData, labels);
 }
 const patches = [
     {path: 'dnd5e.dataModels.shared.DamageData.prototype.formula',              fn: formula,        wrapType: 'MIXED'},

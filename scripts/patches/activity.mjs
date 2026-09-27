@@ -1,5 +1,5 @@
 import {Logging, constants} from '../lib/_module.mjs';
-import {itemUtils} from '../utilities/_module.mjs';
+import {actorUtils, itemUtils} from '../utilities/_module.mjs';
 /*
 activity.flags.cat.otherAbilities = {
     value: ['wis', 'int']
@@ -91,10 +91,26 @@ function getAttackData(wrapped, ...args) {
     }
     return exit();
 }
+function checkSaveAbility(wrapped) {
+    const data = this[this.type];
+    if (data.dc.calculation in CONFIG.DND5E.abilities) return data.dc.calculation;
+    if (data.dc.calculation === 'spellcasting') return this.spellcastingAbility;
+    const available = availableAbilities.apply(this, [() => this.item.system.availableAbilities ?? new Set()]);
+    if (!available) return defaultCheckSaveAbility(this.type, data);
+    if (available.size === 1) return available.first();
+    return this.actor ? actorUtils.getBestAbility(this.actor, Array.from(available)) : defaultCheckSaveAbility(this.type, data);
+}
+function defaultCheckSaveAbility(type, data) {
+    return (type === 'check' ? data.ability : data.abiility.first()) ?? null;
+}
 function patch(enabled) {
     if (enabled) {
         Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.AttackActivity.prototype.availableAbilities', {force: true});
         libWrapper.register('cat', 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities', availableAbilities, 'MIXED');
+        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.activity.SaveActivityData.prototype.ability', {force: true});
+        libWrapper.register('cat', 'dnd5e.dataModels.activity.SaveActivityData.prototype.ability', checkSaveAbility, 'OVERRIDE');
+        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.activity.CheckActivityData.prototype.ability', {force: true});
+        libWrapper.register('cat', 'dnd5e.dataModels.activity.CheckActivityData.prototype.ability', checkSaveAbility, 'OVERRIDE');
         Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData', {force: true});
         libWrapper.register('cat', 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData', prepareFinalDataSave, 'WRAPPER');
         Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData', {force: true});
@@ -102,6 +118,10 @@ function patch(enabled) {
     } else {
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.AttackActivity.prototype.availableAbilities');
         libWrapper.unregister('cat', 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities');
+        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.activity.SaveActivityData.prototype.ability');
+        libWrapper.unregister('cat', 'dnd5e.dataModels.activity.SaveActivityData.prototype.ability');
+        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.activity.CheckActivityData.prototype.ability');
+        libWrapper.unregister('cat', 'dnd5e.dataModels.activity.CheckActivityData.prototype.ability');
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData');
         libWrapper.unregister('cat', 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData');
         Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData');

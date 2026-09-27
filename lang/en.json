@@ -111,8 +111,8 @@
         "Props": {
           "Ability": {
             "Field": "Abilities",
-            "Hint": "Extra abilities this attack may use.",
-            "Label": "Alternate Attack Abilities"
+            "Hint": "Extra abilities any matching attack, check, or save activity may use.",
+            "Label": "Alternate Activity Abilities"
           },
           "ACAbility": {
             "Field": "Ability",

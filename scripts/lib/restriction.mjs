@@ -78,7 +78,7 @@ registerRestriction({
         return ids.some(id => {
             let [itemID, activityID, idx = 0] = id.split('|').map(i => i.trim());
             if (itemID !== identifier) return false;
-            if (activityID !== activityIdentifier) return false;
+            if (activityID && activityID !== activityIdentifier) return false;
             if (idx === 'all' || !activityID?.length) return true;
             return idx == partIndex;
         });
@@ -238,18 +238,11 @@ registerRestriction({
 registerRestriction({
     type: 'HasActivity',
     canInvert: true,
-    choices: () => ({
-        'attack': _loc('DND5E.ATTACK.Title.one'),
-        'heal': _loc('DND5E.HEAL.Title'),
-        'save': _loc('DND5E.SAVE.Title.one'),
-        'summon': _loc('DND5E.SUMMON.Title')
-    }),
-    evaluate: (restriction, {document}) => {
-        const data = [];
-        if (document.hasAttack) data.push('attack');
-        if (document.hasSave) data.push('save');
-        if (document.isHealing) data.push('heal');
-        if (document.hasSummoning) data.push('summon');
+    choices: () => Object.entries(CONFIG.DND5E.activityTypes).reduce(
+        (obj, [type, {documentClass}]) => (obj[type] = _loc(documentClass.metadata.title), obj), {}
+    ),
+    evaluate: (restriction, {item}) => {
+        const data = item.system.activities.contents.map(a => a.type);
         return checkList(restriction, {data});
     }
 });
