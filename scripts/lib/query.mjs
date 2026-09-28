@@ -1,4 +1,4 @@
-import {documentUtils, effectUtils} from '../utilities/_module.mjs';
+import {documentUtils, effectUtils, itemUtils, workflowUtils} from '../utilities/_module.mjs';
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 async function dialog({title, content, inputs, buttons, config}) {
     return await DialogApp.dialog(title, content, inputs, buttons, config);
@@ -116,6 +116,18 @@ async function removeFavorites({actorUuid, entityUuids}) {
         }
     }
 }
+async function syntheticItemDataRoll({itemData, actorUuid, targetUuids, config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot}) {
+    const actor = await fromUuid(actorUuid);
+    const targets = targetUuids.map(t => fromUuidSync(t));
+    const workflow = await workflowUtils.syntheticItemDataRoll(itemData, actor, targets, {config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot});
+    return workflow.getSafeMacroData();
+}
+async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot}) {
+    const item = await fromUuid(itemUuid);
+    const targets = targetUuids.map(t => fromUuidSync(t));
+    const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, consumeUsage, spellSlot});
+    return workflow.getSafeMacroData();
+}
 function registerQueries() {
     const handlers = {
         createEffects,
@@ -134,7 +146,9 @@ function registerQueries() {
         moveToken,
         updateTargets,
         addFavorites,
-        removeFavorites
+        removeFavorites,
+        syntheticItemDataRoll,
+        syntheticActivityDataRoll
     };
     for (const [name, fn] of Object.entries(handlers)) {
         globalThis.CONFIG.queries['cat.' + name] = fn;
@@ -158,5 +172,7 @@ export default {
     moveToken,
     updateTargets,
     addFavorites,
-    removeFavorites
+    removeFavorites,
+    syntheticItemDataRoll,
+    syntheticActivityDataRoll
 };

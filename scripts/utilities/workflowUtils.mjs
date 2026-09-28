@@ -140,8 +140,24 @@ async function syntheticActivityRoll(activity, targets = [], {config = {}, optio
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
 async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
+    const user = userId ? game.users.get(userId) : queryUtils.firstOwner(item.actor);
+    if (user && user.id !== game.user.id) {
+        return await queryUtils.query('syntheticActivityDataRoll', user, {
+            activityData,
+            itemUuid: item.uuid,
+            targetUuids: targets.map(t => t.uuid),
+            config,
+            options,
+            dialog,
+            message,
+            atLevel,
+            consumeUsage,
+            consumeResources,
+            spellSlot
+        }, MidiQOL.configSettings().reactionTimeout * 1000);
+    }
     const activity = activityUtils.syntheticActivity(activityData, item);
-    return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot});
+    return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot});
 }
 /**
  * Spend an activity's consumption at a scaled amount without triggering its parent.
@@ -263,8 +279,24 @@ async function syntheticItemRoll(item, targets = [], {config = {}, options = {},
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
 async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
+    const user = userId ? game.users.get(userId) : queryUtils.firstOwner(actor);
+    if (user && user.id !== game.user.id) {
+        return await queryUtils.query('syntheticItemDataRoll', user, {
+            itemData,
+            actorUuid: actor.uuid,
+            targetUuids: targets.map(t => t.uuid),
+            config,
+            options,
+            dialog,
+            message,
+            atLevel,
+            consumeUsage,
+            consumeResources,
+            spellSlot
+        }, MidiQOL.configSettings().reactionTimeout * 1000);
+    }
     const newItem = itemUtils.syntheticItem(itemData, actor);
-    return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot});
+    return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot});
 }
 /**
  * Zero every damage total on a damage item, leaving hit points untouched.

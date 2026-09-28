@@ -1,5 +1,5 @@
 /** @import Actor5e from '../../dnd5e/module/documents/actor/actor.mjs'; */
-import {documentUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
+import {documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
 
 /**
  * Get all applicable effects on an actor, optionally including item-applied enchantments (not by default).
@@ -190,6 +190,26 @@ function getSize(actor, returnString) {
  */
 function getEffectByStatusID(actor, id) {
     return getEffects(actor).find(i => i.id === CONFIG.statusEffects.find(j => j.id === id)?._id);
+}
+
+/**
+ * Get all active effects that are causing each status.
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string[]} ids One or more status effect id to match.
+ * @returns {ActiveEffect[]|undefined}
+ */
+function getStatusSources(actor, ids) {
+    const effects = getEffects(actor);
+    const hasStatus = new Set();
+    for (const condition of ids) {
+        const effect = effects.find(i => i.id === CONFIG.statusEffects.find(j => j.id === condition)?._id);
+        if (!effect) continue;
+        if (effect.flags.dae?.autoCreated) {
+            const sources = effects.filter(e => e.id !== effect.id && effectUtils.getConditions(e).has(condition));
+            for (const s of sources) hasStatus.add(s);
+        } else hasStatus.add(effect);
+    }
+    if (hasStatus.size) return Array.from(hasStatus);
 }
 
 /**
@@ -498,5 +518,6 @@ export default {
     addFavorites,
     removeFavorites,
     isBloodied,
-    isWounded
+    isWounded,
+    getStatusSources
 };
