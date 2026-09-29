@@ -156,6 +156,10 @@ class RollBonus {
         if (!this.activity) return 0;
         let value = Infinity;
         const actor = this.actor;
+        if (this.activity.consumption.scaling.max) {
+            const max = rollUtils.rollDiceSync(this.activity.consumption.scaling.max, {document: this.activity})?.total;
+            if (max !== undefined) value = max;
+        }
         const slot = () => Math.min(value, Math.max(Object.values(actor.system.spells)
             .reduce((max, spell) => spell.value ? Math.max(spell.level, max) : max, -1) - this.activity.item.system.level, 0));
         if (this.activity.isSpell) value = slot();
@@ -596,10 +600,11 @@ class RollBonus {
     }
     /** @type {OnUse} */
     static async defaultUse({bonus, workflow, otherBonuses}) {
+        const options = {config: {scaling: bonus.scalingValue}};
         if (bonus.document.documentName === 'Item') {
-            await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets ?? []));
+            await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets ?? []), options);
         } else {
-            await workflowUtils.completeActivityUse(bonus.document, Array.from(bonus.targets ?? []));
+            await workflowUtils.completeActivityUse(bonus.document, Array.from(bonus.targets ?? []), options);
         }
     }
     /** @type {RequestHandler} */

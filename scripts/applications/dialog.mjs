@@ -359,7 +359,7 @@ export default class DialogApp extends CatApp {
                     for (let k = 0; k < t.number; k++) {
                         const value = results[k]?.result;
                         dice.push({
-                            tooltip: value === undefined ? source : `${source} - ${value}`,
+                            tooltip: value === undefined ? source : `${source} = ${value}`,
                             dieClass,
                             value,
                             add
@@ -379,6 +379,7 @@ export default class DialogApp extends CatApp {
                 crit: f.options?.isCritical,
                 formula: f._formula,
                 total: opts?.total,
+                deterministic: opts?.deterministic ?? true,
                 outcome: opts?.outcome,
                 muted: opts?.muted,
                 label: cfg?.label,

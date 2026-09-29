@@ -128,15 +128,16 @@ async function moveToken(token, waypoints, options = {}) {
  * @param {foundry.documents.TokenDocument} token The token document to teleport.
  * @param {object} [options] Additional options.
  * @param {Crosshairs} [options.destination] Data for crosshair result (see {@link Crosshairs.prototype.toObject}). A new crosshair is prompted if {@link destination} is undefined.
+ * @param {object} [options.centerpoint] If {@link destination} is not provided, the crosshair range will be measured from this point rather than from {@link token}.
  * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
  * @param {number} [options.range] Maximum distance in scene units.
  * @returns {Promise<undefined>}
  */
-async function teleportToken(token, {destination, animation, options = {}, range = 30} = {}) {
+async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30} = {}) {
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
-        destination = await crosshairUtils.aimCrosshair({token, maxRange: range});
+        destination = await crosshairUtils.aimCrosshair({centerpoint, token, maxRange: range});
     }
     if (!destination || destination?.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
@@ -159,14 +160,15 @@ async function teleportToken(token, {destination, animation, options = {}, range
  * @param {foundry.documents.TokenDocument} token The token document to move.
  * @param {object} [options] Additional options.
  * @param {Crosshairs} [options.destination] Data for crosshair result (see {@link Crosshairs.prototype.toObject}). A new crosshair is prompted if {@link destination} is undefined.
+ * @param {object} [options.centerpoint] If {@link destination} is not provided, the crosshair range will be measured from this point rather than from {@link token}.
  * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
  * @param {foundry.documents.TokenDocument} [options.sourceToken] Origin of the movement.
  * @param {MovementAction} [options.action] See {@link MovementAction}.
  * @param {number} [options.range] Maximum distance in scene units.
  * @returns {Promise<undefined>}
  */
-async function displaceToken(token, {sourceToken, destination, animation, range = 5, action = 'catForce'} = {}) {
-    destination ??= await crosshairUtils.aimCrosshair({token, maxRange: range});
+async function displaceToken(token, {sourceToken, destination, centerpoint, animation, range = 5, action = 'catForce'} = {}) {
+    destination ??= await crosshairUtils.aimCrosshair({token, maxRange: range, centerpoint});
     if (!destination || destination?.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation, action, destination, range}).run();
     if (result) return;

@@ -298,8 +298,16 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             : (attack ? 'CAT.OptionalBonus.Miss' : 'CAT.OptionalBonus.Failure'));
     let rollTotal;
     if (rolls?.length) {
-        if (rolls.every(r => r._evaluated)) rollTotal = rolls.reduce((t, r) => t += r.total, 0);
-        rolls = rolls.map(r => r._evaluated ? r.clone() : r);
+        if (rolls.every(r => r._evaluated)) rollTotal = rolls.reduce((t, r) => {
+            if (r.d20) r.options.originalD20 = r.d20.results;
+            return t + r.total;
+        }, 0);
+        rolls = rolls.map(r => {
+            if (!r._evaluated) return r;
+            const clone = r.clone();
+            if (clone.options.originalD20) clone.d20.results = clone.options.originalD20;
+            return clone;
+        });
     }
     const groups = [
         {cls: D20Bonus, rolls: rolls ?? [], bonuses: bonuses.filter(b => b instanceof D20Bonus)},
@@ -338,9 +346,27 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
         if (!formula?.isFormula) return;
         group.aggregate = aggregateOf(group);
         formula.groups = formula.parseNewFormula(group.aggregate).groups;
+        if (bonus instanceof D20Bonus) {
+            let total = rollTotal;
+            let anyActive = false;
+            let deterministic = true;
+            for (const b of group.bonuses) {
+                if (!b.active) continue;
+                anyActive = true;
+                if (!b.roll.isDeterministic) {
+                    deterministic = false;
+                    break;
+                }
+                total += b.roll.clone().evaluateSync().total;
+            }
+            formula.groups[0].total = total;
+            formula.groups[0].deterministic = deterministic;
+            if (outcomeLabel) formula.groups[0].outcome = anyActive ?  _loc('CAT.OptionalBonus.Unknown') : outcomeLabel;
+        }
     };
-    const sliderChange = ({bonus, thisContext, input, getInputById}) => {
-        bonus.updateScaling(input.value, workflow, bonuses, rollTotal);
+    const sliderChange = ({bonus, fullContext, thisContext, input, getInputById}) => {
+        const preFormula = bonus.roll.formula;
+        bonus.updateScaling(input.value - 1, workflow, bonuses, rollTotal);
         input.hints = bonus.scalingHints;
         const targets = thisContext.inputs.find(i => i.isComboboxMulti)?.options[0];
         if (targets) {
@@ -363,6 +389,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             t.tooltip = hint.tooltip;
             t.icon = hint.icon;
         }
+        if (bonus.active && bonus.roll.formula !== preFormula) updateFormula(fullContext, bonus);
         return true;
     };
     const targetsChange = ({bonus, input}) => {
@@ -393,10 +420,10 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
                 hints: bonus.scalingHints,
                 label: 'CAT.OptionalBonus.Scaling',
                 options: {
-                    min: 0,
+                    min: 1,
                     max: bonus.maxScaling,
                     step: 1,
-                    onchange: ({thisContext, input, getInputById}) => sliderChange({bonus, thisContext, input, getInputById})
+                    onchange: ({fullContext, thisContext, input, getInputById}) => sliderChange({bonus, fullContext, thisContext, input, getInputById})
                 }
             }]]);
         const counter = {value: 1};

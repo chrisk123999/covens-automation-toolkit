@@ -288,8 +288,12 @@
                                 <strong>{{formula}}</strong>
                                 {{#if crit}}<i class="fas fa-check-double"
                                         data-tooltip="{{localize 'DND5E.CriticalHit'}}"></i>{{/if}}
-                                {{#if total includeZero=true}}<span class="total">= {{total}}{{#if outcome}}
-                                            ({{outcome}}){{/if}}</span>{{/if}}
+                                {{#if total includeZero=true}}<span class="total">= 
+                                    {{#if deterministic}}{{total}}
+                                    {{else}}<img class="d20icon" src="/icons/svg/d20-grey.svg">
+                                    {{/if}}
+                                    {{#if outcome}}({{outcome}}){{/if}}</span>
+                                {{/if}}
                             </header>
                             <ol class="dice-rolls">
                                 {{#each dice}}

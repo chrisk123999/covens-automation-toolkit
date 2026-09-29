@@ -1056,7 +1056,7 @@ cat-multi-combobox {
         }
 
 
-        .dmg {
+        .dmg, .d20icon {
             flex-shrink: 0;
             width: 1rem;
             height: 1rem;
@@ -1064,6 +1064,11 @@ cat-multi-combobox {
             &[src$=".svg"] {
                 filter: var(--cat-svg-tint);
             }
+        }
+
+        .d20icon {
+            display:inline-block;
+            vertical-align: -10%;
         }
 
         .dice {

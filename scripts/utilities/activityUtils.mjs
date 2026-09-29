@@ -239,6 +239,16 @@ async function correctSpellLink(activity, spell) {
     return await documentUtils.update(activity, {'spell.uuid': spell.uuid});
 }
 
+/**
+ * Returns true when there are enough resources for the required costs on an activity, if any.
+ * @param {dnd5e.dataModels.activity.BaseActivityData} activity
+ * @param {number} [scaling]
+ * @returns {boolean}
+ */
+function checkCosts(activity, scaling) {
+    return !activity.consumption.targets.some(c => c.getConsumptionLabels({scaling}, {consume: true}).warn);
+}
+
 export default {
     getSaveDC,
     getSavedCastData,
@@ -253,5 +263,6 @@ export default {
     hasDefaultIcon,
     hasDefaultName,
     getDefaultDamageRolls,
-    correctSpellLink
+    correctSpellLink,
+    checkCosts
 };
