@@ -84,7 +84,7 @@ class RollBonus {
     #getScalingHints;//Function | Callback creates scaling hints for the UI after all other changes are settled.
     #cost;          // BonusCost| The costs required to use this bonus.
     #maxScaling;    // Number   | Max value of the scaling slider.
-    #scalingValue;  // Number   | Current scaling. Base 0.
+    #scalingIncrease;// Number  | Current scaling. Base 0.
     #use;           // Function | Async callback runs after the selection is confirmed.
     #scalingHints;//DialogHint[]| Array of {label, icon} for UI scaling hints.
     #validateHints; // ...      | Array of {label, icon} for explaining the validity of bonus.
@@ -107,7 +107,7 @@ class RollBonus {
         this.maxScaling = this.#getMaxScaling(maxScaling);
         this.#getScalingHints = this.constructor.defaultScalingHints;
         this.#optional = optional;
-        this.#scalingValue = 0;
+        this.#scalingIncrease = 0;
         this.#cost = {};
         this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.() ?? this.#actor?.getRollData());
         this.#rollClass = this.constructor.rollClass;
@@ -260,12 +260,12 @@ class RollBonus {
         this.#maxScaling = Number(value);
     }
     /** @type {number} Current scaling. Base 0. */
-    get scalingValue() {
-        return this.#scalingValue;
+    get scalingIncrease() {
+        return this.#scalingIncrease;
     }
-    set scalingValue(value) {
+    set scalingIncrease(value) {
         value = Number(value);
-        this.#scalingValue = this.#maxScaling ? Math.min(value, this.#maxScaling) : value;
+        this.#scalingIncrease = this.#maxScaling ? Math.min(value, this.#maxScaling - 1) : value;
     }
     /** @type {boolean} True if this bonus requires user input. */
     get optional() {
@@ -418,7 +418,7 @@ class RollBonus {
     }
     updateScaling(value, workflow, otherBonuses, rollTotal) {
         this.#initialized = true;
-        this.scalingValue = value;
+        this.scalingIncrease = value;
         const params = {bonus: this, workflow, otherBonuses, rollTotal};
         const cost = this.#costScaling?.(params);
         const roll = this.#bonusScaling?.(params);
@@ -563,7 +563,7 @@ class RollBonus {
     }
     /** @type {BonusScalingHandler} */
     static defaultBonusScaling({rollTotal, bonus, workflow, otherBonuses}) {
-        const scaling = bonus.scalingValue;
+        const scaling = bonus.scalingIncrease;
         const roll = new bonus.rollClass(bonus.baseFormula, bonus.roll.data, bonus.roll.options);
         const dieTerm = roll.terms.find(i => i.faces);
         if (dieTerm) dieTerm.number += scaling;
@@ -580,7 +580,7 @@ class RollBonus {
         }
         if (!bonus.activity) return costs;
         const actor = bonus.actor;
-        const scaling = bonus.scalingValue;
+        const scaling = bonus.scalingIncrease;
         const consumption = bonus.activity.consumption;
         if (consumption.spellSlot && bonus.activity.requiresSpellSlot) {
             const base = bonus.activity.item.system.level;
@@ -600,7 +600,7 @@ class RollBonus {
     }
     /** @type {OnUse} */
     static async defaultUse({bonus, workflow, otherBonuses}) {
-        const options = {config: {scaling: bonus.scalingValue}};
+        const options = {config: {scaling: bonus.scalingIncrease}};
         if (bonus.document.documentName === 'Item') {
             await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets ?? []), options);
         } else {
@@ -905,7 +905,7 @@ export class DamageBonus extends RollBonus {
         if (!bonus.activity.canScaleDamage) return bonus.roll;
         if (!bonus.activity?.damage?.parts.length) return RollBonus.defaultBonusScaling({rollTotal, bonus, workflow, otherBonuses});
         // incompatible with multiple damage types - requires a restructure for allowing several rolls per bonus
-        const scaled = activityUtils.getDefaultDamageRolls(bonus.activity, {scaling: bonus.scalingValue});
+        const scaled = activityUtils.getDefaultDamageRolls(bonus.activity, {scaling: bonus.scalingIncrease});
         return scaled[0];
     }
     static _combineRolls(rolls) {

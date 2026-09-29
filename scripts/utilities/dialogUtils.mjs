@@ -414,7 +414,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
         const bonus = bonuses[i];
         const name = 'b-' + i;
         const subinputs = [];
-        if (bonus.maxScaling > 0)
+        if (bonus.maxScaling > 1)
             subinputs.push(['slider', [{
                 name: name + '.scaling',
                 hints: bonus.scalingHints,
@@ -462,7 +462,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             if (bonus.damageTypes?.size > 1) tags.push({label: 'CAT.OptionalBonus.DamageTypeChoice', id: 'damageType'});
         }
         if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id, bonus)})));
-        if (bonus.maxScaling > 0) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
+        if (bonus.maxScaling > 1) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
         if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
         const fieldset = bonus.optional ? bonus.isThirdParty ? thirdParty : optional : contextual;
         fieldset.push({
