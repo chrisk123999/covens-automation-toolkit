@@ -91,20 +91,22 @@ function targetEffectData(name, rules, img = constants.grappleIcon) {
         }
     };
 }
-function escapeData(dc, rules) {
-    const data = itemData({_id:''}, {_id:''}, dc, rules, {name: _loc('CAT.GrappleShove.GrappleEscape'), img: constants.grappleEscapeIcon});
+function escapeData(dc) {
+    const data = itemData({_id:''}, {_id:''}, dc, '2014', {name: _loc('CAT.GrappleShove.GrappleEscape'), img: constants.grappleEscapeIcon});
     genericUtils.setProperty(data, 'flags.cat.macros.roll', [{identifier: 'grapple', rules: 'all', source: 'cat'}]);
-    data.system.activities.catSyntheticGrap.midiProperties = {identifier: 'grapple-escape'};
-    data.system.activities.catSyntheticGrap.target.affects.type = 'self';
-    data.system.activities.catSyntheticGrap.activation.type = 'action';
-    data.system.activities.catSyntheticGrap.effects = [];
+    const activity = data.system.activities.catSyntheticGrap;
+    activity.midiProperties = {identifier: 'grapple-escape'};
     data.system.identifier = 'grapple-escape';
+    activity.target.affects.type = 'self';
+    activity.activation.type = 'action';
+    activity.effects = [];
     data.effects = [];
     return data;
 }
-async function createEscapeItem(actor, itemData) {
-    const item = actorUtils.getItemByIdentifier(actor, itemData.system.identifier, {type: 'feat'}) ?? 
-        (await documentUtils.createEmbeddedDocuments(actor, 'Item', [itemData]))?.[0];
+async function createEscapeItem(actor, dc) {
+    const data = escapeData(dc);
+    const item = actorUtils.getItemByIdentifier(actor, data.system.identifier, {type: 'feat'}) ?? 
+        (await documentUtils.createEmbeddedDocuments(actor, 'Item', [data]))?.[0];
     if (item) await actorUtils.addFavorites(actor, [item]);
     return item;
 }
@@ -160,7 +162,7 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
     if (!sourceEffect || !targetEffect) return;
     await documentUtils.makeDependent(sourceEffect, [targetEffect]);
     await documentUtils.makeDependent(targetEffect, [sourceEffect]);
-    const escapeItem = await createEscapeItem(targetToken.actor, escapeData(data.dc, rules));
+    const escapeItem = await createEscapeItem(targetToken.actor, data.dc);
     await new Events.GrappleEvent(sourceToken, targetToken, constants.grapplePasses.postGrapple, {data: {
         rules, sourceEffect, targetEffect, escapeItem
     }}).run();
@@ -181,19 +183,19 @@ async function preGrappleEscape({workflow}) {
     const data = {};
     const tags = {};
     const grapplers = [];
+    const abilityTags = abilities('2014').map(a => ({
+        label: CONFIG.DND5E.skills[a]?.label ?? CONFIG.DND5E.abilities[a]?.label ?? a,
+        id: 'ability-' + a
+    }));
     const effects = actorUtils.getEffectByIdentifier(workflow.actor, 'grappleTarget', {multiple: 'true'});
     for (const e of effects) {
         const flag = e.flags.cat?.grapple;
         const token = workflow.token.scene.tokens.get(flag?.tokenId);
         if (!token) continue;
-        const rules = documentUtils.getRules(e);
         if (flag.dc === undefined) tags[token.id] = [{label: _loc('midi-qol.ContestedRoll'), id: 'dc'}];
         else tags[token.id] = uiUtils.showDC(token.actor) ? [{label: `${_loc('DND5E.AbbreviationDC')} ${flag.dc}`, id: 'dc'}] : [];
-        tags[token.id].push(...abilities(rules).map(a => ({
-            label: CONFIG.DND5E.abilities[a]?.label ?? CONFIG.DND5E.skills[a]?.label ?? a,
-            id: 'ability-' + a
-        })));
-        data[token.id] = {dc: flag.dc, effect: e, rules};
+        tags[token.id].push(...abilityTags);
+        data[token.id] = {dc: flag.dc, effect: e};
         grapplers.push(token);
     }
     if (!grapplers.length) return true;
@@ -203,7 +205,7 @@ async function preGrappleEscape({workflow}) {
     await new Events.GrappleEvent(choice, workflow.token.document, constants.grapplePasses.preEscape, {data: selected}).run();
     selected.dc ??= await legacyGrappleDC(choice.actor);
     if (selected.dc === undefined) noDCAutoSucceed(workflow, workflow.token);
-    workflow.item = itemUtils.syntheticItem(escapeData(selected.dc, selected.rules), workflow.actor);
+    workflow.item = itemUtils.syntheticItem(escapeData(selected.dc), workflow.actor);
     workflow.activity = workflow.item.system.activities.get(workflow.activity.id);
     workflowUtils.setWorkflowProperty(workflow, 'grappleEscape', {
         effect: selected.effect, grappler: choice, remaining: Object.values(data).filter(d => d.effect.id !== selected.effect.id)
@@ -218,7 +220,7 @@ async function grappleEscape({workflow}) {
     }}).run();
     if (!workflow.saves.size) return;
     const nextGrapple = data.remaining[0];
-    if (nextGrapple) await createEscapeItem(workflow.actor, escapeData(nextGrapple.dc, nextGrapple.rules));
+    if (nextGrapple) await createEscapeItem(workflow.actor, nextGrapple.dc);
     if (data.effect) await documentUtils.deleteDocument(data.effect);
 }
 async function deleteGrappleEscape({actor, identifier}) {

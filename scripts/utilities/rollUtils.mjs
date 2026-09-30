@@ -249,8 +249,14 @@ async function requestRoll(actor, request, ability, {rollDC, advantage, disadvan
     switch(request) {
         case 'check':
         case 'save': genericUtils.setProperty(data.saveDetails, 'rollAbilities', [ability]); break;
-        case 'skill': genericUtils.setProperty(data.saveDetails, 'rollSkills', [ability]); break;
-        case 'tool': genericUtils.setProperty(data.saveDetails, 'rollTools', [ability]); break;
+        case 'skill':
+            genericUtils.setProperty(data.saveDetails, 'rollAbilities', [actor.system.skills[ability]?.ability ?? CONFIG.DND5E.skills[ability]?.ability ?? '']);
+            genericUtils.setProperty(data.saveDetails, 'rollSkills', [ability]);
+            break;
+        case 'tool':
+            genericUtils.setProperty(data.saveDetails, 'rollAbilities', [actor.system.tools[ability]?.ability ?? CONFIG.DND5E.tools[ability]?.ability ?? '']);
+            genericUtils.setProperty(data.saveDetails, 'rollTools', [ability]);
+            break;
         case 'deathSave': break;
     }
     return (await MidiQOL.socket().executeAsUser('rollAbility', user.id, data))?.[0];
