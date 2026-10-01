@@ -4,6 +4,7 @@
 - Added a CatKit entry to context menus everywhere a CatKit can be opened: the Item, Actor and Scene directories, the scene navigation bar, compendium entries, compendium packs, and item, activity and effect rows on sheets.
 - Added a light theme.
 - Added Related Automations to the CatKit. It lists the automated documents nested under the one you are editing, each opening its own CatKit.
+- Added special duration: Dealt damage. The effect is removed once its actor deals damage to another creature.
 - Added setting: Fix Description Enrichers. When an automation update keeps an item's existing description, bare `[[/damage]]` and `[[/save]]` enrichers are rewritten from the item.
 - Configuration options that repeat a label are grouped under a subheading derived from their shared key prefix.
 - Every CAT window can be resized from a corner grabber, and remembers its position and size.
@@ -21,15 +22,19 @@
 - `automationUtils.isUpToDate` accepts an already-resolved `automation`.
 - `genericUtils.notify` accepts `progress` and returns the notification
 - `workflowUtils.bonusDamage` accepts `source`, naming what granted the damage. It is stored as `options.cat.source` and shown as attribution on manual rolls.
-- Added `constants.contextMenuHookNames`.
+- Added `constants`: `contextMenuHookNames`, `activationTypeOptions`, `activityTypeOptions`, `sizeOptions`.
 - Swapped the order of D20 events `bonus` and `optionalBonus`. `bonus` is now the final event in which the roll can be changed and should be used for rerolls.
 - Added utils:
+  - `activityUtils`: `getCheckDCModifiedActivityData`, `getRecoveryPools`
   - `actorUtils.isWounded`
   - `automationUtils`: `getMedkitChildren`, `getCatConfigKinds`, `getAnyAutomationStatus`, `getAutomationTree`, `countDescendantGenerics`, `isSelfAutomation`
   - `itemUtils`: `getSpellAttackBonus`, `addDamageBonus`
-  - `tokenUtils`: `canSense`, `movementSpent`
+  - `rollUtils.replaceD20`
+  - `tokenUtils`: `canSense`, `movementSpent`, `swapTokens`
   - `uiUtils`: `storedWindowPosition`, `applyStoredWindowPosition`, `rememberWindowPosition`, `toggleDetached`, `onToggleDetach`, `isDetached`, `detachContext`
-  - `workflowUtils`: `getScaledDuration`, `rollConfiguredSource`
+  - `workflowUtils`: `getScaledDuration`, `rollConfiguredSource`, `specialItemUse`, `removeTargets`
+- `documentUtils.getEffectByIdentifier` accepts `sourceActor`, matching only effects whose origin activity belongs to that actor.
+- `$activity.dc` in a `flags.midi-qol.OverTime` change resolves to the origin activity's save DC when the effect is created.
 - `tokenUtils.teleportToken` accepts `options` and passes them to the animation's macros, so a teleport animation's own config now reaches it.
 - JSDoc added across `automationUtils`, `workflowUtils` and `documentUtils`.
 ## Bug Fixes:
@@ -49,6 +54,8 @@
 - `workflowUtils.completeItemUse` and `completeActivityUse` no longer throw when MidiQOL declines the use and returns nothing.
 - Summoned items no longer throw when the summoning spell was granted by a feat rather than a class.
 - `dialogUtils.selectDialog` and `numberDialog` localize their input label.
+- `SummonsManager.moveSummon` no longer throws for a summon without a token.
+- An optional bonus's formula tag refreshes when one of its extra inputs changes.
 
 # 0.0.8 Release:
 ## API Update Notes:
