@@ -364,6 +364,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             if (outcomeLabel) formula.groups[0].outcome = anyActive ?  _loc('CAT.OptionalBonus.Unknown') : outcomeLabel;
         }
     };
+    const formulaLabel = bonus => workflow?.isCritical && bonus instanceof DamageBonus ? DamageBonus.GetCriticalRoll(bonus).formula : bonus.roll.formula;
     const sliderChange = ({bonus, fullContext, thisContext, input, getInputById}) => {
         const preFormula = bonus.roll.formula;
         bonus.updateScaling(input.value - 1, workflow, bonuses, rollTotal);
@@ -380,8 +381,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
         const tags = getInputById(input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags ?? [];
         for (const t of tags) {
             if (t.id === 'formula') {
-                if (workflow?.isCritical && bonus instanceof DamageBonus) t.label = DamageBonus.GetCriticalRoll(bonus).formula;
-                else t.label = bonus.roll.formula;
+                t.label = formulaLabel(bonus);
                 continue;
             }
             const hint = bonus.scalingHints.find(h => h.id === t.id);
@@ -405,6 +405,15 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
         const type = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
         tag.image = type.icon;
         tag.tooltip = type.label;
+        return true;
+    };
+    const extraChange = ({bonus, name, ctx, onchange}) => {
+        onchange?.({...ctx, bonus});
+        const parent = ctx.fullContext.inputs.find(group => group.options?.some(o => o.name === name + '.active'));
+        if (parent) validateAll(parent.options);
+        updateFormula(ctx.fullContext, bonus);
+        const tag = ctx.getInputById(ctx.input.id.split(DialogApp.SUBINPUT_SEPARATOR)[0])?.tags?.find(t => t.id === 'formula');
+        if (tag) tag.label = formulaLabel(bonus);
         return true;
     };
     for (const group of groups) group.aggregate = aggregateOf(group);
@@ -453,12 +462,11 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
                 }
             }]]);
         for (const [type, fields, options] of bonus.extraInputs)
-            subinputs.push([type, fields.map(f => ({...f, name: name + '.inputs.' + f.name})), options]);
+            subinputs.push([type, fields.map(f => ({...f, name: name + '.inputs.' + f.name, options: {...f.options, onchange: ctx => extraChange({bonus, name, ctx, onchange: f.options?.onchange})}})), options]);
         const tags = [];
         if (bonus.roll) {
-            const formula = workflow?.isCritical && bonus instanceof DamageBonus ? DamageBonus.GetCriticalRoll(bonus).formula : bonus.roll.formula;
             const type = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
-            tags.push({label: formula, id: 'formula', image: type?.icon, tooltip: type?.label});
+            tags.push({label: formulaLabel(bonus), id: 'formula', image: type?.icon, tooltip: type?.label});
             if (bonus.damageTypes?.size > 1) tags.push({label: 'CAT.OptionalBonus.DamageTypeChoice', id: 'damageType'});
         }
         if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id, bonus)})));

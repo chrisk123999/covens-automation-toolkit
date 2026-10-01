@@ -188,6 +188,20 @@ function replaceRollShowDiscarded(roll, newRoll) {
     return roll;
 }
 /**
+ * Set the active result of the first d20 in {@link roll} to a number, counted as a natural result so a 20 still crits.
+ * @param {foundry.dice.Roll} roll Roll to work with.
+ * @param {number} number Result the d20 shows.
+ * @returns {foundry.dice.Roll}
+ */
+function replaceD20(roll, number) {
+    const d20Result = roll.terms.find(term => term.faces === 20)?.results.find(result => result.active);
+    if (!d20Result) return roll;
+    d20Result.result = number;
+    delete d20Result.count;
+    roll._total = roll._evaluateTotal();
+    return roll;
+}
+/**
  * Discards rolled terms and brings the total to the given value by adding a bonus.
  * @param {foundry.dice.Roll} roll Roll to work with.
  * @param {number} total Total to force the roll to.
@@ -312,6 +326,7 @@ export default {
     getChangedDamageRoll,
     hasDuplicateDie,
     replaceRollShowDiscarded,
+    replaceD20,
     setTotalWithBonus,
     requestRoll,
     contestedRoll,

@@ -581,6 +581,7 @@
           "forceSave": "Forced a save",
           "attackMissed": "Attack missed",
           "madeAttack": "Made an attack",
+          "dealtDamage": "Dealt damage",
           "castSpell": "Cast a spell",
           "turnStart": "Start of this creature's turn",
           "turnEnd": "End of this creature's turn",

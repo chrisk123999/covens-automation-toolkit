@@ -69,6 +69,15 @@ function effectDescription(effect, updates) {
     const description = (item.system.identified ?? true) ? item.system.description[type] : item.system.unidentified.description;
     if (description) effect.updateSource({description});
 }
+function activityDC(effect) {
+    if (effect.transfer || !effect.origin) return;
+    const changes = effect.system.changes ?? [];
+    if (!changes.some(change => change.key === 'flags.midi-qol.OverTime' && change.value.includes('$activity.dc'))) return;
+    const activity = effectUtils.getOriginActivitySync(effect);
+    const dc = activity?.save?.dc?.value ?? activity?.item?.system.activities?.find(i => i.save?.dc?.value)?.save.dc.value;
+    if (!dc) return;
+    effect.updateSource({'system.changes': changes.map(change => change.key === 'flags.midi-qol.OverTime' ? {...change, value: change.value.replaceAll('$activity.dc', dc)} : change)});
+}
 async function createAnimations(effect) {
     const actor = effectUtils.getActor(effect);
     if (!actor) return;
@@ -177,6 +186,11 @@ async function specialDuration(workflow) {
                 }
                 case 'madeAttack': {
                     if (!workflowUtils.isAttackType(workflow, 'attack')) break;
+                    remove = true;
+                    break outerLoop;
+                }
+                case 'dealtDamage': {
+                    if (!workflow.damageList?.some(d => d.targetUuid !== workflow.token.document.uuid && d.totalDamage > 0)) break;
                     remove = true;
                     break outerLoop;
                 }
@@ -306,6 +320,7 @@ export default {
     applyActiveEffect,
     noAnimation,
     effectDescription,
+    activityDC,
     specialDuration,
     specialDurationConditions,
     specialDurationRemovedConditions,

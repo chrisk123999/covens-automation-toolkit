@@ -189,6 +189,22 @@ async function displaceToken(token, {sourceToken, destination, centerpoint, anim
     if (postAnimation) await postAnimation(token, {sourceToken, destination, action});
 }
 /**
+ * Swap the positions of two tokens. Always uses {@link MovementAction} displace.
+ * @param {foundry.documents.TokenDocument} tokenA Token moved to {@link tokenB}'s position.
+ * @param {foundry.documents.TokenDocument} tokenB Token moved to {@link tokenA}'s position.
+ * @param {object} [options] Additional options.
+ * @param {boolean} [options.animate] False moves both tokens without animating.
+ * @returns {Promise<void>}
+ */
+async function swapTokens(tokenA, tokenB, {animate = true} = {}) {
+    const positionA = {x: tokenA.x, y: tokenA.y, elevation: tokenA.elevation};
+    const positionB = {x: tokenB.x, y: tokenB.y, elevation: tokenB.elevation};
+    await Promise.all([
+        moveToken(tokenA, [{...positionB, action: 'displace'}], {animate}),
+        moveToken(tokenB, [{...positionA, action: 'displace'}], {animate})
+    ]);
+}
+/**
  * Push a token in a given direction.
  * @param {foundry.documents.TokenDocument} token The token document to push.
  * @param {object} options Additional options.
@@ -336,6 +352,7 @@ export default {
     getLightLevel,
     teleportToken,
     displaceToken,
+    swapTokens,
     slideToken,
     canSee,
     canSense,

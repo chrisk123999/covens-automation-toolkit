@@ -143,6 +143,19 @@ function getSaveDCModifiedActivityData(activity, dc) {
 }
 
 /**
+ * Get a new object of activity data with the existing activity's check DC replaced by a flat value.
+ * @param {Activity} activity  The activity to use as a base
+ * @param {number|string} dc   The new check DC
+ * @returns {object|undefined} Undefined when the activity has no check
+ */
+function getCheckDCModifiedActivityData(activity, dc) {
+    const activityData = activity.toObject();
+    if (!activityData.check) return;
+    activityData.check.dc = {calculation: '', formula: String(dc)};
+    return activityData;
+}
+
+/**
  * Create an in-memory activity based on activity data & an item. Does not modify the item itself.
  * @param {object} activityData Activity data to build an in-memory activity from.
  * @param {Item} item Item the in-memory activity belongs to.
@@ -185,6 +198,24 @@ function getDependencies(activity) {
         if (target.type === 'itemUses' && target.target) dependencies.add(target.target);
     });
     return dependencies;
+}
+
+/**
+ * Get the uses this activity restores through its negative consumption targets.
+ * @param {Activity} activity Activity to read from.
+ * @returns {{document: Item5e|Actor5e, uses: object}[]} Item uses resolve to the item, spell slots to the actor and its slot data.
+ */
+function getRecoveryPools(activity) {
+    const targets = activity.consumption?.targets ?? [];
+    return targets.filter(target => target.resolveCost({evaluate: false}).evaluateSync({minimize: true, strict: false}).total < 0).map(target => {
+        if (target.type === 'itemUses') {
+            const item = target.target ? activity.actor?.items.get(target.target) : activity.item;
+            if (item) return {document: item, uses: item.system.uses};
+        } else if (target.type === 'spellSlots') {
+            const slots = activity.actor?.system.spells?.[CONFIG.DND5E.spellcasting.spell.getSpellSlotKey(target.resolveLevel())];
+            if (slots) return {document: activity.actor, uses: slots};
+        }
+    }).filter(Boolean);
 }
 
 /**
@@ -256,10 +287,12 @@ export default {
     getDamageModifiedActivityData,
     getConsumptionModifiedActivityData,
     getSaveDCModifiedActivityData,
+    getCheckDCModifiedActivityData,
     syntheticActivity,
     getEffectDuration,
     getDuration,
     getDependencies,
+    getRecoveryPools,
     hasDefaultIcon,
     hasDefaultName,
     getDefaultDamageRolls,

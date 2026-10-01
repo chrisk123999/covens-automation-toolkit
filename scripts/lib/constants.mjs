@@ -348,6 +348,8 @@ const methodIconOverrides = {
     spell: 'systems/dnd5e/icons/spell-tiers/spell9.webp'
 };
 const abilityOptions = () => Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
+const activationTypeOptions = () => Object.entries(CONFIG.DND5E.activityActivationTypes).map(i => ({label: i[1].label, value: i[0]}));
+const activityTypeOptions = () => Object.entries(CONFIG.DND5E.activityTypes).map(i => ({label: _loc(i[1].documentClass.metadata.title), value: i[0], image: i[1].documentClass.metadata.img}));
 const armorOptions = () => Object.entries(CONFIG.DND5E.armorTypes).map(i => ({label: i[1], value: i[0]}));
 const characterLevelOptions = () => Array.from({length: CONFIG.DND5E.maxLevel}, (_, i) => ({label: _loc('DND5E.LevelNumber', {level: i + 1}), value: i + 1}));
 const creatureTypeOptions = () => Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
@@ -356,6 +358,7 @@ const diceSizeOptions = () => [4, 6, 8, 10, 12, 20].map(i => ({label: `d${i}`, v
 const healingTypeOptions = () => Object.entries(CONFIG.DND5E.healingTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: i[0] === 'vitality'}));
 const itemProperties = () => Object.entries(CONFIG.DND5E.itemProperties).map(i => ({label: i[1].label, value: i[0]}));
 const physicalItemTypes = () => Object.entries(Item.implementation.compendiumBrowserTypes().physical.children).map(i => ({label: _loc(i[1].label), value: i[0], image: `systems/dnd5e/icons/svg/items/${i[0]}.svg`}));
+const sizeOptions = () => Object.entries(CONFIG.DND5E.actorSizes).sort((a, b) => a[1].numerical - b[1].numerical).map(i => ({label: i[1].label, value: i[0]}));
 const skillOptions = () => Object.entries(CONFIG.DND5E.skills).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
 const spellMethodOptions = () => Object.entries(CONFIG.DND5E.spellcasting).map(i => ({label: i[1].label, value: i[0], image: methodIconOverrides[i[0]] ?? i[1].img}));
 const spellSchoolOptions = () => Object.entries(CONFIG.DND5E.spellSchools).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: true}));
@@ -468,6 +471,8 @@ export default {
     tempConditionIcon,
     armorOptions,
     abilityOptions,
+    activationTypeOptions,
+    activityTypeOptions,
     characterLevelOptions,
     creatureTypeOptions,
     damageTypeOptions,
@@ -477,6 +482,7 @@ export default {
     meleeWeaponOptions,
     physicalItemTypes,
     rangedWeaponOptions,
+    sizeOptions,
     statusOptions,
     skillOptions,
     spellMethodOptions,
