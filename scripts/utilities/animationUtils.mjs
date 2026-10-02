@@ -2,6 +2,12 @@ import {constants, ColorMatrix} from '../lib/_module.mjs';
 import {genericUtils} from './_module.mjs';
 const minSequencerVersion = '3.6.0';
 let shownSequencerWarning = false;
+const requirementMap = {
+    'animated-spell-effects-cartoon': aseCheck,
+    'jb2a_patreon': () => jb2aCheck() === 'patreon',
+    'JB2A_DnD5e': () => jb2aCheck() === 'free'
+};
+
 /**
  * Look up a registered animation, treating 'none' as unset.
  * @param {object} reference Animation selection.
@@ -11,7 +17,18 @@ let shownSequencerWarning = false;
  */
 function getAnimation({source, identifier}) {
     if (!source || !identifier || source === 'none' || identifier === 'none') return;
-    return constants.animations.getAnimation(source, identifier);
+    if (!sequencerCheck()) {
+        genericUtils.notify('CAT.Error.NoSequencer', {type: 'warn'});
+        return;
+    }
+    const result = constants.animations.getAnimation(source, identifier);
+    if (!result?.requirements?.length) return result;
+    for (const module of result.requirements)
+        if (!requirementMap[module]()) {
+            genericUtils.notify('CAT.Error.NoAnimations', {type: 'warn', format: {module}});
+            return;
+        }
+    return result;
 }
 /**
  * Preload animation files for all clients.

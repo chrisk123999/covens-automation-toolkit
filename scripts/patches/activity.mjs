@@ -103,29 +103,24 @@ function checkSaveAbility(wrapped) {
 function defaultCheckSaveAbility(type, data) {
     return (type === 'check' ? data.ability : data.abiility.first()) ?? null;
 }
+const patches = [
+    {path: 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities', fn: availableAbilities,   wrapType: 'MIXED'},
+    {path: 'dnd5e.dataModels.activity.SaveActivityData.prototype.ability',         fn: checkSaveAbility,     wrapType: 'OVERRIDE'},
+    {path: 'dnd5e.dataModels.activity.CheckActivityData.prototype.ability',        fn: checkSaveAbility,     wrapType: 'OVERRIDE'},
+    {path: 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData',     fn: prepareFinalDataSave, wrapType: 'WRAPPER'},
+    {path: 'dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData', fn: getAttackData,        wrapType: 'WRAPPER'}
+];
 function patch(enabled) {
     if (enabled) {
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.AttackActivity.prototype.availableAbilities', {force: true});
-        libWrapper.register('cat', 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities', availableAbilities, 'MIXED');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.activity.SaveActivityData.prototype.ability', {force: true});
-        libWrapper.register('cat', 'dnd5e.dataModels.activity.SaveActivityData.prototype.ability', checkSaveAbility, 'OVERRIDE');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.activity.CheckActivityData.prototype.ability', {force: true});
-        libWrapper.register('cat', 'dnd5e.dataModels.activity.CheckActivityData.prototype.ability', checkSaveAbility, 'OVERRIDE');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData', {force: true});
-        libWrapper.register('cat', 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData', prepareFinalDataSave, 'WRAPPER');
-        Logging.addEntry('DEBUG', 'Patching: dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData', {force: true});
-        libWrapper.register('cat', 'dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData', getAttackData, 'WRAPPER');
+        for (const entry of patches) {
+            Logging.addEntry('DEBUG', 'Patching: ' + entry.path, {force: true});
+            libWrapper.register('cat', entry.path, entry.fn, entry.wrapType);
+        }
     } else {
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.AttackActivity.prototype.availableAbilities');
-        libWrapper.unregister('cat', 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.activity.SaveActivityData.prototype.ability');
-        libWrapper.unregister('cat', 'dnd5e.dataModels.activity.SaveActivityData.prototype.ability');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.activity.CheckActivityData.prototype.ability');
-        libWrapper.unregister('cat', 'dnd5e.dataModels.activity.CheckActivityData.prototype.ability');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData');
-        libWrapper.unregister('cat', 'dnd5e.documents.activity.SaveActivity.prototype.prepareFinalData');
-        Logging.addEntry('DEBUG', 'Unpatching: dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData');
-        libWrapper.unregister('cat', 'dnd5e.dataModels.activity.AttackActivityData.prototype.getAttackData');
+        for (const entry of patches) {
+            Logging.addEntry('DEBUG', 'Unpatching: ' + entry.path, {force: true});
+            libWrapper.unregister('cat', entry.path);
+        }
     }
 }
 export default {
