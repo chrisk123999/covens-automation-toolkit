@@ -475,6 +475,6 @@ export default {
     get toolOptions() { return tools; },
     get triggerTypes() { return triggerTypes(); },
     get usableItemTypes() { return ['consumable', 'equipment' ,'feat', 'loot', 'spell', 'tool', 'weapon'].map(i => ({label: _loc(CONFIG.Item.typeLabels[i]), value: i, image: itemIconOverrides[i] ?? `systems/dnd5e/icons/svg/items/${i}.svg`})); },
-    get weaponOptions() {return weapons; },
+    get weaponOptions() { return weapons; },
     get weaponTypes() { return Object.entries(CONFIG.DND5E.weaponTypes).map(i => ({label: i[1], value: i[0]})); }
 };

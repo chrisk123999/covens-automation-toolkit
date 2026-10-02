@@ -51,7 +51,7 @@ const ddbInitGate = new Promise(resolve => {
 });
 Hooks.once('ready', async () => {
     lib.constants.summons = lib.SummonsManager.create();
-    getPackConstants();
+    await getPackConstants();
     readyHooks();
     if (game.settings.get('cat', 'manualRollsEnabled')) patches.dicePatching.force(true);
     integration.dae.injectFlags();
