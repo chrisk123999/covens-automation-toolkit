@@ -176,10 +176,11 @@ async function setFlag(document, scope, key, value) {
  * @param {object} [options] Additional options.
  * @param {boolean} [options.multiple] Return every match rather than the first.
  * @param {boolean} [options.includeItemEffects] Also search the effects on the actor's items.
+ * @param {Actor5e} [options.sourceActor] Only match effects whose origin activity belongs to this actor.
  * @returns {ActiveEffect|ActiveEffect[]|undefined}
  */
-function getEffectByIdentifier(document, identifier, {multiple, includeItemEffects} = {}) {
-    const predicate = effect => getIdentifier(effect) === identifier;
+function getEffectByIdentifier(document, identifier, {multiple, includeItemEffects, sourceActor} = {}) {
+    const predicate = effect => getIdentifier(effect) === identifier && (!sourceActor || effectUtils.getOriginActivitySync(effect)?.actor?.uuid === sourceActor.uuid);
     let effects;
     if (document.documentName === 'Actor') {
         effects = actorUtils.getEffects(document, {includeItemEffects});

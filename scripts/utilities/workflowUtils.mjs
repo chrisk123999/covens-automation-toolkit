@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
+import {activityUtils, actorUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 /**
  * The activity's action type for the attack mode in play, such as mwak or rsak.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
@@ -299,6 +299,37 @@ async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}
     return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot});
 }
 /**
+ * {@link syntheticItemRoll} with the item's activation types overridden to special for the use, through a temporary enchantment.
+ * @param {Item5e} item Item to use.
+ * @param {foundry.documents.TokenDocument[]} targets Tokens the use is aimed at.
+ * @param {Item5e} sourceFeature Feature granting the special use. Names the enchantment and is its origin.
+ * @param {object} [options] Additional options.
+ * @param {dnd5e.documents.activity.Activity} [options.activity] Use this activity of the item rather than the item itself.
+ * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
+ * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
+ * @returns {Promise<MidiQOL.Workflow|undefined>}
+ */
+async function specialItemUse(item, targets, sourceFeature, {activity, consumeUsage = false, consumeResources = false} = {}) {
+    const changes = Object.keys(CONFIG.DND5E.activityTypes).map(type => ({
+        key: 'activities[' + type + '].activation.type',
+        type: 'override',
+        value: 'special',
+        priority: 20
+    }));
+    changes.push({key: 'system.activation.type', type: 'override', value: 'special', priority: 20});
+    const effectData = documentUtils.getBaseEffectData(sourceFeature, {
+        name: sourceFeature.name,
+        img: constants.tempConditionIcon,
+        origin: sourceFeature.uuid,
+        changes,
+        duration: {value: 1, units: 'seconds'}
+    });
+    const effect = (await itemUtils.enchantItem(item, effectData))?.[0];
+    const workflow = activity ? await syntheticActivityRoll(item.system.activities.get(activity.id), targets, {consumeUsage, consumeResources}) : await syntheticItemRoll(item, targets, {consumeUsage, consumeResources});
+    if (effect) await documentUtils.deleteDocument(effect);
+    return workflow;
+}
+/**
  * Zero every damage total on a damage item, leaving hit points untouched.
  * @param {object} ditem Midi damage item, from workflow.damageList.
  */
@@ -538,6 +569,16 @@ async function updateTargets(workflow, targets, userId = game.user.id) {
     else await queryUtils.query('updateTargets', userId, {ids});
 }
 /**
+ * Drop tokens from the workflow's targets, and from the user's own targeting.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @param {foundry.documents.TokenDocument[]} tokens Tokens to drop, as held in the workflow's targets.
+ * @param {string} userId User whose targets are set. Defaults to the current user.
+ */
+async function removeTargets(workflow, tokens, userId = game.user.id) {
+    const targets = Array.from(workflow.targets).filter(token => !tokens.includes(token));
+    await updateTargets(workflow, targets, userId);
+}
+/**
  * Rewrite a damage item so the target survives on the given hit points.
  * @param {object} ditem Midi damage item, from workflow.damageList.
  * @param {object} [options] Additional options.
@@ -624,6 +665,7 @@ export default {
     completeItemUse,
     syntheticItemRoll,
     syntheticItemDataRoll,
+    specialItemUse,
     negateDamageItemDamage,
     modifyDamageAppliedFlat,
     setDamageItemDamage,
@@ -640,6 +682,7 @@ export default {
     applyDamage,
     applyWorkflowDamage,
     updateTargets,
+    removeTargets,
     preventZeroHP,
     grantRollModifier,
     getScaledDuration,

@@ -581,6 +581,7 @@
           "forceSave": "Forced a save",
           "attackMissed": "Attack missed",
           "madeAttack": "Made an attack",
+          "dealtDamage": "Dealt damage",
           "castSpell": "Cast a spell",
           "turnStart": "Start of this creature's turn",
           "turnEnd": "End of this creature's turn",
@@ -669,6 +670,17 @@
       "UseForRollTotal": "Use {document} for {name}? (Roll Total: {rollTotal})"
     },
     "Common": {
+      "AttackType": {
+        "attack": "Attack",
+        "meleeAttack": "Melee Attack",
+        "meleeSpellAttack": "Melee Spell Attack",
+        "meleeWeaponAttack": "Melee Weapon Attack",
+        "rangedAttack": "Ranged Attack",
+        "rangedSpellAttack": "Ranged Spell Attack",
+        "rangedWeaponAttack": "Ranged Weapon Attack",
+        "spellAttack": "Spell Attack",
+        "weaponAttack": "Weapon Attack"
+      },
       "Cover": "{amount} {cover}"
     },
     "Skill": {
