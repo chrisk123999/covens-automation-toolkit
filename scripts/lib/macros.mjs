@@ -13,7 +13,7 @@ export class RegisteredMacros {
             rules: new RulesField({required: true}),
             identifier: new fields.StringField({required: true, nullable: false}),
             generic: new fields.BooleanField({required: false, nullable: false}),
-            ...constants.triggerTypes().reduce((schema, trigger) => (schema[trigger] = makeEventGroup(), schema), {}),
+            ...constants.triggerTypes.reduce((schema, trigger) => (schema[trigger] = makeEventGroup(), schema), {}),
             genericConfig: new fields.ObjectField({required: false, nullable: false}),
             documents: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: false})
         });
@@ -98,7 +98,7 @@ class FnMacro {
         this.macros = {};
         for (const [key, list] of Object.entries(triggers)) {
             if (!list?.length) continue;
-            if (!constants.triggerTypes().has(key)) continue;
+            if (!constants.triggerTypes.has(key)) continue;
             this.macros[key] = list;
         }
     }

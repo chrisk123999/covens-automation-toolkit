@@ -457,7 +457,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
                 label: 'CAT.OptionalBonus.DamageType',
                 options: {
                     value: bonus.damageType,
-                    options: constants.damageTypeOptions().filter(o => bonus.damageTypes.has(o.value)),
+                    options: constants.damageTypeOptions.filter(o => bonus.damageTypes.has(o.value)),
                     onchange: ({fullContext, input, getInputById}) => damageChange({bonus, fullContext, input, getInputById})
                 }
             }]]);
@@ -574,7 +574,7 @@ async function selectSpellSlots(actor, title, content, {maxAmount, maxAmountMode
 async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id, sort = null} = {}) {
     if (!damageTypes?.length) return false;
     let buttons = damageTypes.map(t => {
-        const config = constants.damageTypeOptions().find(o => o.value === t);
+        const config = constants.damageTypeOptions.find(o => o.value === t);
         return [config?.label ?? t, t, {image: config?.image, invertColor: config?.invertColor}];
     });
     if (sort === 'alphabetical') buttons.sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'en', {sensitivity: 'base'}));

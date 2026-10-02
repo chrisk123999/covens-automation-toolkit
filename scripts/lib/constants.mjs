@@ -347,35 +347,21 @@ const methodIconOverrides = {
     ritual: 'systems/dnd5e/icons/svg/items/spell.svg',
     spell: 'systems/dnd5e/icons/spell-tiers/spell9.webp'
 };
-const abilityOptions = () => Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
-const activationTypeOptions = () => Object.entries(CONFIG.DND5E.activityActivationTypes).map(i => ({label: i[1].label, value: i[0]}));
-const activityTypeOptions = () => Object.entries(CONFIG.DND5E.activityTypes).map(i => ({label: _loc(i[1].documentClass.metadata.title), value: i[0], image: i[1].documentClass.metadata.img}));
-const attackTypes = ['attack', 'meleeAttack', 'rangedAttack', 'weaponAttack', 'spellAttack', 'rangedWeaponAttack', 'meleeWeaponAttack', 'rangedSpellAttack', 'meleeSpellAttack'];
-const attackTypeOptions = () => attackTypes.map(i => ({label: _loc('CAT.Common.AttackType.' + i), value: i}));
-const armorOptions = () =>Object.entries(CONFIG.DND5E.armorTypes).map(i => ({label: i[1], value: i[0]}));
-const characterLevelOptions = () => Array.from({length: CONFIG.DND5E.maxLevel}, (_, i) => ({label: _loc('DND5E.LevelNumber', {level: i + 1}), value: i + 1}));
-const creatureTypeOptions = () => Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
-const damageTypeOptions = () => Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: damageIcons[i[0]] ?? i[1].icon, invertColor: ['midi-none', 'none', 'vitality'].includes(i[0])}));
-const diceSizeOptions = () => [4, 6, 8, 10, 12, 20].map(i => ({label: `d${i}`, value: `d${i}`, image: `systems/dnd5e/icons/svg/dice/d${i}.svg`}));
-const healingTypeOptions = () => Object.entries(CONFIG.DND5E.healingTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: i[0] === 'vitality'}));
-const itemProperties = () => Object.entries(CONFIG.DND5E.itemProperties).map(i => ({label: i[1].label, value: i[0]}));
-const physicalItemTypes = () => Object.entries(Item.implementation.compendiumBrowserTypes().physical.children).map(i => ({label: _loc(i[1].label), value: i[0], image: `systems/dnd5e/icons/svg/items/${i[0]}.svg`}));
-const sizeOptions = () => Object.entries(CONFIG.DND5E.actorSizes).sort((a, b) => a[1].numerical - b[1].numerical).map(i => ({label: i[1].label, value: i[0]}));
-const skillOptions = () => Object.entries(CONFIG.DND5E.skills).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
-const spellMethodOptions = () => Object.entries(CONFIG.DND5E.spellcasting).map(i => ({label: i[1].label, value: i[0], image: methodIconOverrides[i[0]] ?? i[1].img}));
-const spellSchoolOptions = () => Object.entries(CONFIG.DND5E.spellSchools).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: true}));
-const spellSlotOptions = () => Object.entries(CONFIG.DND5E.spellLevels).map(i => i[0] == 0 ? {label: i[1], value: i[0]} : {label: i[1], value: i[0], image: `systems/dnd5e/icons/spell-tiers/${CONFIG.DND5E.spellcasting.spell.getSpellSlotKey(i[0])}.webp`});
-const statusOptions = () => CONFIG.statusEffects.map(i => ({label: _loc(i.name ?? i.label ?? i.id), value: i.id, image: i.img ?? i.icon}));
-const usableItemTypes = () => ['consumable', 'equipment' ,'feat', 'loot', 'spell', 'tool', 'weapon'].map(i => ({label: _loc(CONFIG.Item.typeLabels[i]), value: i, image: itemIconOverrides[i] ?? `systems/dnd5e/icons/svg/items/${i}.svg`}));
-const weaponTypes = () => Object.entries(CONFIG.DND5E.weaponTypes).map(i => ({label: i[1], value: i[0]}));
+const attackTypes = [
+    'attack',
+    'meleeAttack',
+    'rangedAttack',
+    'weaponAttack',
+    'spellAttack',
+    'rangedWeaponAttack',
+    'meleeWeaponAttack',
+    'rangedSpellAttack',
+    'meleeSpellAttack'
+];
 const meleeWeapons = [];
 const rangedWeapons = [];
 const tools = [];
 const weapons = [];
-const meleeWeaponOptions = () => meleeWeapons;
-const rangedWeaponOptions = () => rangedWeapons;
-const toolOptions = () => tools;
-const weaponOptions = () => weapons;
 export async function getPackConstants() {
     const weaponMap = CONFIG.DND5E.weaponTypeMap;
     for (const [id, uuid] of Object.entries(CONFIG.DND5E.weaponIds)) {
@@ -402,16 +388,6 @@ function triggerTypes() {
     }
     return cachedTypes;
 }
-const dispositionOptions = () => {return [
-    {
-        value: 'ally',
-        label: _loc('DND5E.TARGET.Type.Ally.Label')
-    },
-    {
-        value: 'enemy',
-        label: _loc('DND5E.TARGET.Type.Enemy.Label')
-    }
-];};
 export default {
     /** @type {RegisteredMacros} */
     macros: undefined,
@@ -471,31 +447,34 @@ export default {
     grappleIcon,
     grappleEscapeIcon,
     tempConditionIcon,
-    armorOptions,
-    abilityOptions,
-    activationTypeOptions,
-    activityTypeOptions,
+    get abilityOptions() { return Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon})); },
+    get activationTypeOptions() { return Object.entries(CONFIG.DND5E.activityActivationTypes).map(i => ({label: i[1].label, value: i[0]})); },
+    get activityTypeOptions() { return Object.entries(CONFIG.DND5E.activityTypes).map(i => ({label: _loc(i[1].documentClass.metadata.title), value: i[0], image: i[1].documentClass.metadata.img})); },
+    get armorOptions() { return Object.entries(CONFIG.DND5E.armorTypes).map(i => ({label: i[1], value: i[0]})); },
     attackTypes,
-    attackTypeOptions,
-    characterLevelOptions,
-    creatureTypeOptions,
-    damageTypeOptions,
-    diceSizeOptions,
-    healingTypeOptions,
-    itemProperties,
-    meleeWeaponOptions,
-    physicalItemTypes,
-    rangedWeaponOptions,
-    sizeOptions,
-    statusOptions,
-    skillOptions,
-    spellMethodOptions,
-    spellSchoolOptions,
-    spellSlotOptions,
-    toolOptions,
-    triggerTypes,
-    usableItemTypes,
-    weaponOptions,
-    weaponTypes,
-    dispositionOptions
+    get attackTypeOptions() { return attackTypes.map(i => ({label: _loc('CAT.Common.AttackType.' + i), value: i})); },
+    get characterLevelOptions() { return Array.from({length: CONFIG.DND5E.maxLevel}, (_, i) => ({label: _loc('DND5E.LevelNumber', {level: i + 1}), value: i + 1})); },
+    get creatureTypeOptions() { return Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon})); },
+    get damageTypeOptions() { return Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: damageIcons[i[0]] ?? i[1].icon, invertColor: ['midi-none', 'none', 'vitality'].includes(i[0])})); },
+    get diceSizeOptions() { return [4, 6, 8, 10, 12, 20].map(i => ({label: `d${i}`, value: `d${i}`, image: `systems/dnd5e/icons/svg/dice/d${i}.svg`})); },
+    get dispositionOptions() { return [
+        {value: 'ally', label: _loc('DND5E.TARGET.Type.Ally.Label')},
+        {value: 'enemy', label: _loc('DND5E.TARGET.Type.Enemy.Label')}
+    ];},
+    get healingTypeOptions() { return Object.entries(CONFIG.DND5E.healingTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: i[0] === 'vitality'})); },
+    get itemProperties() { return Object.entries(CONFIG.DND5E.itemProperties).map(i => ({label: i[1].label, value: i[0]})); },
+    get meleeWeaponOptions() { return meleeWeapons; },
+    get physicalItemTypes() { return Object.entries(Item.implementation.compendiumBrowserTypes().physical.children).map(i => ({label: _loc(i[1].label), value: i[0], image: `systems/dnd5e/icons/svg/items/${i[0]}.svg`})); },
+    get rangedWeaponOptions() { return rangedWeapons; },
+    get sizeOptions() { return Object.entries(CONFIG.DND5E.actorSizes).sort((a, b) => a[1].numerical - b[1].numerical).map(i => ({label: i[1].label, value: i[0]})); },
+    get skillOptions() { return Object.entries(CONFIG.DND5E.skills).map(i => ({label: i[1].label, value: i[0], image: i[1].icon})); },
+    get statusOptions() { return CONFIG.statusEffects.map(i => ({label: _loc(i.name ?? i.label ?? i.id), value: i.id, image: i.img ?? i.icon})); },
+    get spellMethodOptions() { return Object.entries(CONFIG.DND5E.spellcasting).map(i => ({label: i[1].label, value: i[0], image: methodIconOverrides[i[0]] ?? i[1].img})); },
+    get spellSchoolOptions() { return Object.entries(CONFIG.DND5E.spellSchools).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: true})); },
+    get spellSlotOptions() { return Object.entries(CONFIG.DND5E.spellLevels).map(i => i[0] == 0 ? {label: i[1], value: i[0]} : {label: i[1], value: i[0], image: `systems/dnd5e/icons/spell-tiers/${CONFIG.DND5E.spellcasting.spell.getSpellSlotKey(i[0])}.webp`}); },
+    get toolOptions() { return tools; },
+    get triggerTypes() { return triggerTypes(); },
+    get usableItemTypes() { return ['consumable', 'equipment' ,'feat', 'loot', 'spell', 'tool', 'weapon'].map(i => ({label: _loc(CONFIG.Item.typeLabels[i]), value: i, image: itemIconOverrides[i] ?? `systems/dnd5e/icons/svg/items/${i}.svg`})); },
+    get weaponOptions() {return weapons; },
+    get weaponTypes() { return Object.entries(CONFIG.DND5E.weaponTypes).map(i => ({label: i[1], value: i[0]})); }
 };

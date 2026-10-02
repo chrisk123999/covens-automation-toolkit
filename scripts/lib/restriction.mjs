@@ -252,8 +252,8 @@ registerRestriction({
     canInvert: true,
     canRequireAll: true,
     choices: () => ({
-        ...mapValueLabel(constants.weaponTypes()),
-        ...mapValueLabel(constants.weaponOptions())
+        ...mapValueLabel(constants.weaponTypes),
+        ...mapValueLabel(constants.weaponOptions)
     }),
     evaluate: ({value, requireAll}, {actor}) => {
         const data = [];
