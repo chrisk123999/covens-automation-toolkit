@@ -350,7 +350,9 @@ const methodIconOverrides = {
 const abilityOptions = () => Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
 const activationTypeOptions = () => Object.entries(CONFIG.DND5E.activityActivationTypes).map(i => ({label: i[1].label, value: i[0]}));
 const activityTypeOptions = () => Object.entries(CONFIG.DND5E.activityTypes).map(i => ({label: _loc(i[1].documentClass.metadata.title), value: i[0], image: i[1].documentClass.metadata.img}));
-const armorOptions = () => Object.entries(CONFIG.DND5E.armorTypes).map(i => ({label: i[1], value: i[0]}));
+const attackTypes = ['attack', 'meleeAttack', 'rangedAttack', 'weaponAttack', 'spellAttack', 'rangedWeaponAttack', 'meleeWeaponAttack', 'rangedSpellAttack', 'meleeSpellAttack'];
+const attackTypeOptions = () => attackTypes.map(i => ({label: _loc('CAT.Common.AttackType.' + i), value: i}));
+const armorOptions = () =>Object.entries(CONFIG.DND5E.armorTypes).map(i => ({label: i[1], value: i[0]}));
 const characterLevelOptions = () => Array.from({length: CONFIG.DND5E.maxLevel}, (_, i) => ({label: _loc('DND5E.LevelNumber', {level: i + 1}), value: i + 1}));
 const creatureTypeOptions = () => Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon}));
 const damageTypeOptions = () => Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: damageIcons[i[0]] ?? i[1].icon, invertColor: ['midi-none', 'none', 'vitality'].includes(i[0])}));
@@ -473,6 +475,8 @@ export default {
     abilityOptions,
     activationTypeOptions,
     activityTypeOptions,
+    attackTypes,
+    attackTypeOptions,
     characterLevelOptions,
     creatureTypeOptions,
     damageTypeOptions,

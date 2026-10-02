@@ -1,4 +1,4 @@
-import {constants} from '../lib/_module.mjs';
+import {constants, Logging} from '../lib/_module.mjs';
 import {actorUtils, animationUtils, documentUtils, effectUtils, genericUtils, itemUtils, workflowUtils} from '../utilities/_module.mjs';
 async function addConditions(effect) {
     const conditions = effect.flags.cat?.conditions;
@@ -75,7 +75,7 @@ function activityDC(effect) {
     if (!changes.some(change => change.key === 'flags.midi-qol.OverTime' && change.value.includes('$activity.dc'))) return;
     const activity = effectUtils.getOriginActivitySync(effect);
     const dc = activity?.save?.dc?.value ?? activity?.item?.system.activities?.find(i => i.save?.dc?.value)?.save.dc.value;
-    if (!dc) return;
+    if (!dc) return Logging.addEntry('WARNING', 'No save DC found for $activity.dc on effect ' + effect.name + ' (origin: ' + effect.origin + ')');
     effect.updateSource({'system.changes': changes.map(change => change.key === 'flags.midi-qol.OverTime' ? {...change, value: change.value.replaceAll('$activity.dc', dc)} : change)});
 }
 async function createAnimations(effect) {
