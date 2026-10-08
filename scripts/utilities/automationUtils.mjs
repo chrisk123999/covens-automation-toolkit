@@ -1,6 +1,6 @@
 import {itemEvents} from '../events/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {compendiumUtils, documentUtils, genericUtils, itemUtils} from './_module.mjs';
+import {compendiumUtils, documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
 /**
  * The registered automation currently applied to this item, matched on its identifier, rules and source. With no source flagged, only an embedded macro automation belonging to this item matches.
  * @param {Item5e} item Item to act on.
@@ -40,6 +40,7 @@ function getAutomationStatus(document) {
     if (document.documentName === 'Item') return getItemAutomationStatus(document);
     if (document.documentName === 'Actor') return getActorAutomationStatus(document);
     if (getCatConfigKinds(document).length) return constants.automationStatus.CONFIGURABLE;
+    if (document.documentName === 'Scene') return getLowestStatus([...new Set(document.tokens.contents.map(token => token.actorLink ? token.baseActor : token.actor).filter(Boolean))], getActorAutomationStatus);
     return constants.automationStatus.UNAVAILABLE;
 }
 /**
@@ -48,8 +49,17 @@ function getAutomationStatus(document) {
  * @returns {number} A {@link constants.automationStatus} value, or -2 when no item qualifies.
  */
 function getActorAutomationStatus(actor) {
-    return actor.items.reduce((lowest, item) => {
-        const status = getItemAutomationStatus(item);
+    return getLowestStatus(actor.items, getItemAutomationStatus);
+}
+/**
+ * The lowest automation status across these documents, ignoring any with nothing to automate.
+ * @param {Iterable<foundry.abstract.Document>} documents Documents to read.
+ * @param {function(foundry.abstract.Document): number} getStatus Status getter for one document.
+ * @returns {number} A {@link constants.automationStatus} value, or -2 when no document qualifies.
+ */
+function getLowestStatus(documents, getStatus) {
+    return documents.reduce((lowest, document) => {
+        const status = getStatus(document);
         if (status === -2) return lowest;
         return lowest === -2 ? status : Math.min(lowest, status);
     }, -2);
@@ -111,6 +121,16 @@ function getAvailableAutomations(item, {excludeSources = []} = {}) {
  */
 function getConfigValue(item, key) {
     return constants.automations.getConfigValue(item, key);
+}
+/**
+ * One config value for the automation on this document, reading an effect's origin item when the document is an effect.
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @param {string} key Config key.
+ * @returns {*}
+ */
+function getOriginConfigValue(document, key) {
+    const item = document.documentName === 'ActiveEffect' ? effectUtils.getOriginActivitySync(document)?.item ?? document : document;
+    return getConfigValue(item, key);
 }
 /**
  * One config value for a generic macro applied to this document, falling back to its default.
@@ -678,6 +698,7 @@ export default {
     isSelfAutomation,
     getAvailableAutomations,
     getConfigValue,
+    getOriginConfigValue,
     getGenericConfigValue,
     setConfigValue,
     setGenericConfigValue,

@@ -72,10 +72,21 @@ export function readyHooks() {
         Hooks.on(constants.combatHookNames.combatStart, events.combatEvents.combatStart);
         Hooks.on(constants.combatHookNames.deleteCombat, events.combatEvents.deleteCombat);
         Hooks.on(constants.combatHookNames.updateCombatant, events.combatEvents.updateCombatant);
-        // Aura Events
-        Hooks.on(constants.auraHookNames.createToken, events.auraEvents.createToken);
-        Hooks.on(constants.auraHookNames.deleteToken, events.auraEvents.deleteToken);
+        Hooks.once(constants.auraHookNames.catReady, events.auraEvents.catReady);
         Hooks.on(constants.auraHookNames.canvasReady, events.auraEvents.canvasReady);
+        Hooks.on(constants.auraHookNames.createScene, events.auraEvents.createScene);
+        Hooks.on(constants.auraHookNames.deleteScene, events.auraEvents.deleteScene);
+        Hooks.on(constants.auraHookNames.createToken, events.auraEvents.createToken);
+        Hooks.on(constants.auraHookNames.updateToken, events.auraEvents.updateToken);
+        Hooks.on(constants.auraHookNames.deleteToken, events.auraEvents.deleteToken);
+        Hooks.on(constants.auraHookNames.createItem, events.auraEvents.itemChanged);
+        Hooks.on(constants.auraHookNames.updateItem, events.auraEvents.updateItem);
+        Hooks.on(constants.auraHookNames.deleteItem, events.auraEvents.itemChanged);
+        Hooks.on(constants.auraHookNames.createActiveEffect, events.auraEvents.effectChanged);
+        Hooks.on(constants.auraHookNames.updateActiveEffect, events.auraEvents.effectChanged);
+        Hooks.on(constants.auraHookNames.deleteActiveEffect, events.auraEvents.effectChanged);
+        Hooks.on(constants.auraHookNames.updateActor, events.auraEvents.updateActor);
+        Hooks.on(constants.auraHookNames.deleteActor, events.auraEvents.deleteActor);
         // Item Events
         Hooks.on(constants.itemHookNames.createItem, events.itemEvents.createItem);
         Hooks.on(constants.itemHookNames.deleteItem, events.itemEvents.deleteItem);

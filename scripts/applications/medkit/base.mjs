@@ -263,14 +263,13 @@ export default class MedkitApp extends CatApp {
             + Object.keys(flags.classDifficultyClass ?? {}).length
             + Object.keys(flags.classAttackBonus ?? {}).length
             + (flags.hidden ? 1 : 0) + (flags.spellIdentifier ? 1 : 0) + (flags.otherAbilities ? 1 : 0);
-        const picked = Object.values(flags.macros ?? {}).reduce((total, entry) => total + (Array.isArray(entry) ? entry.length : 0), 0);
         const options = (context.configurationCategories ?? []).reduce((total, category) => total + category.options.length, 0);
         return {
             configuration: counted('configurable', options),
             generic: counted('generic', context.genericSelected?.length ?? 0)
                 ?? counted('inherited', automationUtils.countDescendantGenerics(this.#document)),
             embedded: counted('content', (flags.embeddedMacros ?? []).length),
-            macros: counted('content', picked),
+            macros: counted('content', (context.macroChoices ?? []).filter(choice => choice.selected).length),
             docprops: counted('content', docProps),
             region: counted('content', (flags.placed?.region?.activities ?? []).length)
         };
@@ -369,7 +368,7 @@ export default class MedkitApp extends CatApp {
         const {type} = descriptor;
         const COMBOBOX_THRESHOLD = 8;
         const sortedOptions = () => {
-            const opts = typeof descriptor.options === 'function' ? descriptor.options() : (descriptor.options ?? []);
+            const opts = typeof descriptor.options === 'function' ? descriptor.options(this.#document, this.#flags) : (descriptor.options ?? []);
             return opts.map(o => ({...o, label: _loc(o.label)})).sort((a, b) => (b.value === '') - (a.value === '') || a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
         };
         switch (type) {
@@ -559,6 +558,7 @@ export default class MedkitApp extends CatApp {
         const documentName = this.#document.documentName;
         switch (documentName) {
             case 'Item': activities = this.#document.system?.activities; break;
+            case 'Activity': activities = this.#document.item?.system?.activities; break;
             case 'ActiveEffect': {
                 const parent = this.#document.parent;
                 if (parent?.documentName !== 'Item') break;
@@ -813,6 +813,12 @@ export default class MedkitApp extends CatApp {
             for (const entry of arr) {
                 pickedKeys.add(entry.source + '|' + entry.identifier + '|' + (entry.rules ?? 'all'));
             }
+        }
+        const choiceKeys = new Set(choicesData.map(c => c.value));
+        for (const key of [...pickedKeys]) {
+            if (choiceKeys.has(key)) continue;
+            const allKey = key.replace(/\|[^|]+$/, '|all');
+            if (choiceKeys.has(allKey)) pickedKeys.add(allKey);
         }
         const choices = choicesData.map(c => ({...c, selected: pickedKeys.has(c.value)})).sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
         return {choices};
@@ -1400,7 +1406,8 @@ export default class MedkitApp extends CatApp {
         for (const node of branches) {
             const tiles = flatten(node.children).map(shape);
             const kinds = new Set(tiles.map(tile => tile.kindLabel));
-            rows.push({...shape(node), tiles, tilesKind: kinds.size === 1 ? tiles[0].kindLabel : null});
+            const mixed = kinds.size > 1;
+            rows.push({...shape(node), tiles: tiles.map(tile => ({...tile, showKind: mixed})), tilesKind: mixed ? null : tiles[0]?.kindLabel});
         }
         return {rows};
     }

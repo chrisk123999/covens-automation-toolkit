@@ -161,8 +161,8 @@ class RollBonus {
             if (max !== undefined) value = max;
         }
         const slot = () => Math.min(value, Math.max(Object.values(actor.system.spells)
-            .reduce((max, spell) => spell.value ? Math.max(spell.level, max) : max, -1) - this.activity.item.system.level, 0));
-        if (this.activity.isSpell) value = slot();
+            .reduce((max, spell) => spell.value ? Math.max(spell.level, max) : max, -1) - this.activity.item.system.level + 1, 0));
+        if (this.activity.isSpell) value = this.activity.item.system.linkedActivity ? 0 : slot();
         for (const target of this.activity.consumption.targets) {
             const baseCost = target._resolveHintCost({scaling: 0}).simplifiedCost;
             const scaledCost = target._resolveHintCost({scaling: 1}).simplifiedCost;
@@ -171,7 +171,7 @@ class RollBonus {
             const available = RollBonus.GetResource({consumption: target, actor, scaling: 0}).available;
             const limit = Math.max(0, Math.floor((available - baseCost) / stepCost));
             if (limit === 0) return 0;
-            if (limit < value) value = limit;
+            if (limit + 1 < value) value = limit + 1;
         }
         return value === Infinity ? 0 : value;
     }
@@ -582,14 +582,15 @@ class RollBonus {
         const actor = bonus.actor;
         const scaling = bonus.scalingIncrease;
         const consumption = bonus.activity.consumption;
-        if (consumption.spellSlot && bonus.activity.requiresSpellSlot) {
+        const linked = bonus.activity.isSpell ? bonus.activity.item.system.linkedActivity : null;
+        if (!linked && consumption.spellSlot && bonus.activity.requiresSpellSlot) {
             const base = bonus.activity.item.system.level;
             const key = `spell${Math.clamp(base + scaling, 1, RollBonus.#maxSpell)}`;
             const available = actor.system.spells?.[key]?.value ?? 0;
             costs.spellSlots ??= {};
             RollBonus.#lazySetCost(costs.spellSlots, key, 1, available);
         }
-        for (const target of consumption.targets) {
+        for (const target of [...consumption.targets, ...(linked?.consumption.targets ?? [])]) {
             const {simplifiedCost} = target._resolveHintCost({scaling});
             if (simplifiedCost <= 0) continue;
             const resources = RollBonus.GetResource({consumption: target, actor, scaling});
@@ -923,7 +924,6 @@ export class DamageBonus extends RollBonus {
      */
     static GetCriticalRoll(bonus) {
         if (!bonus.canCrit || bonus.roll.options.isCritical) return bonus.roll.clone();
-        const formula = rollUtils.getCriticalFormula(bonus.roll.formula, bonus.document, bonus.roll.options.critical);
-        return new bonus.rollClass(formula, bonus.roll.data, {...bonus.roll.options, isCritical: true});
+        return new bonus.rollClass(bonus.roll.formula, bonus.roll.data, {...bonus.roll.options, isCritical: true, configured: false});
     }
 }

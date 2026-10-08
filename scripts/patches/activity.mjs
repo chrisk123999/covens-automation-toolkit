@@ -101,7 +101,7 @@ function checkSaveAbility(wrapped) {
     return this.actor ? actorUtils.getBestAbility(this.actor, Array.from(available)) : defaultCheckSaveAbility(this.type, data);
 }
 function defaultCheckSaveAbility(type, data) {
-    return (type === 'check' ? data.ability : data.abiility.first()) ?? null;
+    return (type === 'check' ? data.ability : data.ability.first()) ?? null;
 }
 const patches = [
     {path: 'dnd5e.documents.activity.AttackActivity.prototype.availableAbilities', fn: availableAbilities,   wrapType: 'MIXED'},

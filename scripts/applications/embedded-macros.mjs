@@ -21,9 +21,6 @@ const DOCUMENT_SCOPES = {
     level: ['level']
 };
 const PROXIMITY_FIELDS = ['distance', 'configDistance', 'dispositions', 'configDispositions', 'disabled', 'configDisabled'];
-const EVENT_EXTRAS = {
-    aura: {optional: PROXIMITY_FIELDS}
-};
 const SCOPE_EXTRAS = {
     nearby: {optional: PROXIMITY_FIELDS},
     target: {optional: PROXIMITY_FIELDS}
@@ -47,7 +44,7 @@ function getEventStructure() {
         effect: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.effectPasses), ['activeeffect'], true)},
         item: {scopes: CREATURE_SCOPES, passes: [...mk(itemScoped, ['item'], true), ...mk(itemBare, ['item'], false)]},
         region: {scopes: [], passes: mk(Object.values(c.regionPasses), ['region'], false)},
-        aura: {scopes: [], passes: mk(Object.values(c.auraPasses), ['item', 'activeeffect', 'actor', 'token', 'activity'], false)},
+        aura: {scopes: [], passes: mk(Object.values(c.auraPasses), ['item', 'activeeffect', 'activity'], false)},
         rest: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.restPasses), [], true)},
         time: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.timePasses), [], true)},
         check: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
@@ -87,14 +84,13 @@ function getAllDocumentPasses(documentType) {
     return out;
 }
 
-// The extra config fields {required, optional} for one concrete pass (event extras + its scope extras).
+// The extra config fields {required, optional} for one concrete pass (its scope extras).
 function getPassFields(documentType, type, pass) {
     const entry = [...documentPassEntries(documentType, type)].find(i => i.pass === pass);
     if (!entry) return {required: [], optional: []};
-    const event = EVENT_EXTRAS[type] ?? {};
     const scope = (entry.scope && SCOPE_EXTRAS[entry.scope]) || {};
-    const required = [...(event.required ?? []), ...(scope.required ?? [])];
-    const optional = [...(event.optional ?? []), ...(scope.optional ?? [])].filter(key => !required.includes(key));
+    const required = scope.required ?? [];
+    const optional = (scope.optional ?? []).filter(key => !required.includes(key));
     return {required, optional};
 }
 

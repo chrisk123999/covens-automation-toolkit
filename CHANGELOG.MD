@@ -1,5 +1,7 @@
 # 0.0.9 Release:
 ## Update Notes:
+- This is the last version compatible with dnd5e 5.x.
+- Fixed a startup error when indexing compendiums: `Cannot create property 'rules' on number`.
 - A tab's icon is colored when that tab holds content.
 - Added a CatKit entry to context menus everywhere a CatKit can be opened: the Item, Actor and Scene directories, the scene navigation bar, compendium entries, compendium packs, and item, activity and effect rows on sheets.
 - Added a light theme.
@@ -17,30 +19,48 @@
 - Reworked the dark theme.
 - Reworked the document property editor.
 - The Generic tab icon is marked when a nested document carries a generic, not just the document itself.
+- Rebuilt auras. The active GM writes each aura as a real effect on the tokens inside it, and only rewrites it when a token crosses the aura's edge or the aura changes. Effects left behind while the GM was away are corrected on load.
+- Auras keep working on scenes no one is viewing. Walls block an aura only on the scene the GM is viewing.
+- The optional bonus dialog disables and dims any bonus that can no longer be afforded beside the bonuses already chosen.
+- Manual rolls show the flat modifier on dice groups without a damage type.
+- A sheet's CatKit header control is colored by automation status, like its context menu entry. A scene reports the lowest status among its tokens' actors.
+- The Registered Macros tab only counts macros picked in its list. A macro bound under a different ruleset than it was registered for is shown as that macro.
+- Related Automations labels each nested document by type when one document holds more than one type.
+- Combobox labels are trimmed, and the remove button on a multi-combobox chip has no border.
 ## API Update Notes:
 - `automationUtils.getAutomationStatus` accepts any document.
 - `automationUtils.isUpToDate` accepts an already-resolved `automation`.
 - `genericUtils.notify` accepts `progress` and returns the notification
 - `workflowUtils.bonusDamage` accepts `source`, naming what granted the damage. It is stored as `options.cat.source` and shown as attribution on manual rolls.
-- Added `constants`: `contextMenuHookNames`, `activationTypeOptions`, `activityTypeOptions`, `sizeOptions`.
+- Added `constants`: `contextMenuHookNames`, `activationTypeOptions`, `activityTypeOptions`, `sizeOptions`, `spiritTypeOptions`, `auraTriggers`, `auraMembershipKeys`, `auraActorKeys`, `auraItemPaths`.
+- `constants` option lists, `itemProperties`, `physicalItemTypes`, `triggerTypes`, `usableItemTypes` and `weaponTypes` are getters. Read them without calling them.
+- Removed `AuraEvent`. Auras are indexed by `lib.Auras` from the `descriptor` pass of a registered generic's `aura` event. The `aura` event's `filter` pass is the only aura pass a macro can bind.
+- `constants.auraHookNames` lists the hooks the aura engine listens to.
+- Event distances are measured the first time a trigger reads them.
 - Swapped the order of D20 events `bonus` and `optionalBonus`. `bonus` is now the final event in which the roll can be changed and should be used for rerolls.
 - Added utils:
   - `activityUtils`: `getCheckDCModifiedActivityData`, `getRecoveryPools`
-  - `actorUtils.isWounded`
-  - `automationUtils`: `getMedkitChildren`, `getCatConfigKinds`, `getAnyAutomationStatus`, `getAutomationTree`, `countDescendantGenerics`, `isSelfAutomation`
+  - `actorUtils`: `isWounded`, `hasStatusFromActor`, `getLevelOrCR`
+  - `automationUtils`: `getMedkitChildren`, `getCatConfigKinds`, `getAnyAutomationStatus`, `getAutomationTree`, `countDescendantGenerics`, `isSelfAutomation`, `getOriginConfigValue`
+  - `compendiumUtils.getDocumentsBySlug`
+  - `dialogUtils`: `getSpellSlotOptions`, `selectLanguage`
+  - `folderUtils.getActorsInFolder`
   - `itemUtils`: `getSpellAttackBonus`, `addDamageBonus`
   - `rollUtils.replaceD20`
-  - `tokenUtils`: `canSense`, `movementSpent`, `swapTokens`
+  - `tokenUtils`: `canSense`, `movementSpent`, `swapTokens`, `getNonSightModes`
   - `uiUtils`: `storedWindowPosition`, `applyStoredWindowPosition`, `rememberWindowPosition`, `toggleDetached`, `onToggleDetach`, `isDetached`, `detachContext`
-  - `workflowUtils`: `getScaledDuration`, `rollConfiguredSource`, `specialItemUse`, `removeTargets`
+  - `workflowUtils`: `getScaledDuration`, `rollConfiguredSource`, `specialItemUse`, `removeTargets`, `getSaveSource`
 - `documentUtils.getEffectByIdentifier` accepts `sourceActor`, matching only effects whose origin activity belongs to that actor.
-- `$activity.dc` in a `flags.midi-qol.OverTime` change resolves to the origin activity's save DC when the effect is created.
+- `$activity.dc` in a `flags.midi-qol.OverTime` change resolves to the origin activity's save DC when the effect is created. Without a save activity on the item, it falls back to the origin activity's spellcasting DC.
+- An optional bonus for a spell cast through another feature's activity costs that activity's uses rather than a spell slot, and cannot be upcast.
 - `tokenUtils.teleportToken` accepts `options` and passes them to the animation's macros, so a teleport animation's own config now reaches it.
 - JSDoc added across `automationUtils`, `workflowUtils` and `documentUtils`.
 ## Bug Fixes:
 - Mass apply on a level covered every token on the scene rather than the tokens on that level.
 - A manual roll showed a roll's flat modifier against every damage group sharing its damage type, so a dagger's `+3` appeared three times.
 - The manual roll input flashed a focus ring on the way in and out.
+- The optional bonus scaling slider stopped one level short of the highest spell slot or affordable step.
+- Manual rolls ignored a capitalized damage type in a dice flavor, so `1d8[Radiant]` was labeled with the weapon's damage type.
 ## API Bug Fixes:
 - `actorUtils.isBloodied` was defined but never exported, so calling it threw.
 - Class scales resolve from subclass items, not just class items.
@@ -56,6 +76,8 @@
 - `dialogUtils.selectDialog` and `numberDialog` localize their input label.
 - `SummonsManager.moveSummon` no longer throws for a summon without a token.
 - An optional bonus's formula tag refreshes when one of its extra inputs changes.
+- A save activity whose DC used neither an ability nor spellcasting threw when it had no available abilities.
+- A critical hit no longer throws for a damage bonus granted by an effect.
 
 # 0.0.8 Release:
 ## API Update Notes:

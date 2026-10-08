@@ -1,6 +1,6 @@
 import {genericUtils, regionUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {auraEvents, regionEvents} from '../events/_module.mjs';
+import {regionEvents} from '../events/_module.mjs';
 import {effects, regions} from '../handlers/_module.mjs';
 async function moveToken(token, movement, options, user) {
     if (user.id != game.user.id) return;
@@ -48,7 +48,6 @@ async function moveToken(token, movement, options, user) {
         const action = movement.passed.waypoints.at(-1).action;
         const teleport = CONFIG.Token.movement.actions[action]?.teleport;
         if (!skipMove) {
-            if (isFinalMovement) await auraEvents.updateAuras(token.parent.tokens, {options, eventSource: 'move'});
             await new Events.MovementEvent(token, constants.movementPasses.moved, {action, options, teleport}).run();
         }
         const moveRay = new foundry.canvas.geometry.Ray(previousCoords, coords);

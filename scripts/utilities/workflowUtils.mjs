@@ -472,6 +472,19 @@ function getMacroConditions(workflow) {
     return new Set(getWorkflowProperty(workflow, 'conditions') ?? []);
 }
 /**
+ * The activity, item and actor that forced this saving throw, read from the save config.
+ * @param {object} config Save roll config.
+ * @returns {{activity: Activity|undefined, item: Item5e, actor: foundry.documents.Actor}|undefined} Undefined when no source actor is found.
+ */
+function getSaveSource(config) {
+    const {workflowId, saveItemUuid} = config.midiOptions ?? {};
+    const activity = getWorkflowProperty(config, 'activity') ?? (workflowId ? MidiQOL.Workflow.getWorkflow(workflowId)?.activity : undefined);
+    const item = activity?.item ?? (saveItemUuid ? fromUuidSync(saveItemUuid, {strict: false}) : undefined);
+    const actor = item?.actor;
+    if (!actor) return;
+    return {activity, item, actor};
+}
+/**
  * Append an extra damage roll to a workflow after its damage has been rolled.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @param {string|number} formula Formula to roll.
@@ -674,6 +687,7 @@ export default {
     getWorkflowProperty,
     addMacroConditions,
     getMacroConditions,
+    getSaveSource,
     bonusDamage,
     getDamageTypes,
     getCastLevel,

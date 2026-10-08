@@ -1,7 +1,7 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import {D20Bonus, DamageBonus} from '../lib/_module.mjs';
 import constants from '../lib/constants.mjs';
-import {automationUtils, queryUtils, tokenUtils, uiUtils} from './_module.mjs';
+import {automationUtils, genericUtils, queryUtils, tokenUtils, uiUtils} from './_module.mjs';
 
 /**
  * A token's name for display, replaced with a generic label when names are hidden.
@@ -318,12 +318,18 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
         ? group.cls.CombineRolls(group.rolls, group.bonuses, {workflow})
         : [];
     const validateAll = context => {
-        for (const group of groups) group.cls.ValidateAll(group.bonuses, {rollTotal, workflow, spent, roll, outcome});
+        const budgets = new Map();
+        for (const group of groups) {
+            group.cls.ValidateAll(group.bonuses, {rollTotal, workflow, spent, roll, outcome});
+            budgets.set(group.cls, group.cls.AddCosts(genericUtils.deepClone(spent ?? {}), group.bonuses.filter(b => b.active)));
+        }
         for (const bonusContext of context) {
             const index = bonusContext.name.match(/\d+/)[0];
             const bonus = bonuses[index];
             bonusContext.isChecked = bonus.active;
             bonusContext.hints = bonus.validateHints;
+            const {cls} = groupOf(bonus);
+            bonusContext.disabled = !bonus.active && !cls.CheckCost(bonus, budgets.get(cls));
         }
     };
     const tagLabel = (key, bonus) => {
@@ -524,6 +530,30 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             if (bonuses[i].extraInputs.length) bonuses[i].inputs = results?.['b-' + i]?.inputs ?? {};
     };
     return {inputs, hasOptional: !!(optional.length || thirdParty.length), readInputs};
+}
+/**
+ * Combobox options for this actor's spell slots that have a use left, lowest level first.
+ * @param {foundry.documents.Actor} actor Actor the slots belong to.
+ * @returns {{value: string, level: number, label: string, image: string}[]}
+ */
+function getSpellSlotOptions(actor) {
+    return Object.entries(actor.system.spells ?? {})
+        .filter(([, slot]) => slot.value > 0 && slot.max > 0 && slot.level > 0)
+        .sort(([, a], [, b]) => a.level - b.level)
+        .map(([key, slot]) => ({value: key, level: slot.level, label: slot.label + (key === 'pact' ? ' (' + slot.level + ')' : ''), image: 'systems/dnd5e/icons/spell-tiers/spell' + slot.level + '.webp'}));
+}
+/**
+ * Prompt for one of this actor's languages, skipping the prompt when it knows one or none.
+ * @param {foundry.documents.Actor} actor Actor whose languages are offered.
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the input.
+ * @returns {Promise<string|undefined>}
+ */
+async function selectLanguage(actor, title, content) {
+    const languages = Array.from(actor.system.traits.languages.value);
+    if (languages.length <= 1) return languages[0];
+    const options = languages.map(value => ({value, label: dnd5e.documents.Trait.keyLabel(value, {trait: 'languages'})}));
+    return await selectDialog(title, content, {label: 'DND5E.Languages', name: 'language', options: {options}});
 }
 /**
  * Prompt for spell slots to spend or recover.
@@ -851,6 +881,8 @@ export default {
     selectDocumentDialog,
     buildBonusInputs,
     selectSpellSlots,
+    getSpellSlotOptions,
+    selectLanguage,
     selectDamageType,
     selectHitDie,
     confirm,

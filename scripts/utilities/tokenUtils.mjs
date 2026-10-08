@@ -280,6 +280,15 @@ function canSee(sourceToken, targetToken) {
     return MidiQOL.canSee(sourceToken, targetToken);
 }
 /**
+ * Ids of every detection mode that does not rely on sight.
+ * @returns {string[]}
+ */
+function getNonSightModes() {
+    const detectionModes = CONFIG.Canvas.detectionModes;
+    const sightType = foundry.canvas.perception.DetectionMode.DETECTION_TYPES.SIGHT;
+    return Object.keys(detectionModes).filter(id => detectionModes[id].type !== sightType);
+}
+/**
  * Can this token perceive the target through the given detection modes?
  * @param {foundry.documents.TokenDocument} sourceToken Token acting.
  * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
@@ -356,6 +365,7 @@ export default {
     slideToken,
     canSee,
     canSense,
+    getNonSightModes,
     grapple,
     grappleShoveSizeCheck,
     movementSpent

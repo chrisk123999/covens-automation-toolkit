@@ -29,7 +29,7 @@ async function hashCompendium(compendium, {register = false} = {}) {
     const index = await compendium.getIndex({ 
         fields: [
             'flags.cat.automation',
-            'system.source.rules',
+            'system.source',
             'system.identifier'
         ] 
     });

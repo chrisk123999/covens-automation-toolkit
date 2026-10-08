@@ -1,40 +1,61 @@
-import {constants, Events} from '../lib/_module.mjs';
-import {actorUtils, queryUtils} from '../utilities/_module.mjs';
-async function updateAuras(tokens, {options, eventSource} = {}) {
-    await Promise.all(tokens.map(async token =>
-        new Events.AuraEvent(token, constants.auraPasses.update, {options, eventSource}).run()
-    ));
+import {Auras, constants} from '../lib/_module.mjs';
+function whenReady(callback) {
+    return (...args) => Auras.isReady() ? callback(...args) : undefined;
 }
-async function createToken(token, options, userId) {
-    if (!queryUtils.isTheGM()) return;
-    if (!token.actor) return;
-    await updateAuras(token.parent.tokens, {options, eventSource: 'createToken'});
+function catReady() {
+    return Auras.rebuild();
 }
-async function deleteToken(token, options, userId) {
-    if (!queryUtils.isTheGM()) return;
-    if (!token.actor) return;
-    await updateAuras(token.parent.tokens.filter(t => t.id != token.id), {options, eventSource: 'deleteToken'});
+function canvasReady(board) {
+    return Auras.viewScene(board.scene);
 }
-async function canvasReady(canvas) {
-    if (!queryUtils.isTheGM() || !canvas.scene) return;
-    await updateAuras(canvas.scene.tokens, {eventSource: 'canvasReady'});
+function createScene(scene) {
+    Auras.indexScene(scene);
 }
-async function effect(effect, options) {
-    if (!effect.parent) return;
-    if (!(effect.flags.cat?.macros?.aura || effect.statuses.size)) return;
-    let token;
-    if (effect.parent instanceof Actor) {
-        token = actorUtils.getFirstToken(effect.parent);
-    } else if (effect.parent instanceof Item && effect.parent.actor) {
-        token = actorUtils.getFirstToken(effect.parent.actor);
-    }
-    if (!token) return;
-    await updateAuras(token.parent.tokens, {options, eventSource: options.action + 'ActiveEffect'});
+function deleteScene(scene) {
+    Auras.forgetScene(scene);
+}
+function createToken(token) {
+    Auras.refreshTokens([token], {reindex: true});
+}
+function updateToken(token, changes) {
+    if (!Auras.isWorldScene(token.parent)) return;
+    const reindex = constants.auraActorKeys.some(key => key in changes);
+    if (!reindex && !constants.auraMembershipKeys.some(key => key in changes)) return;
+    Auras.refreshTokens([token], {reindex});
+    if ('actorId' in changes || 'actorLink' in changes) Auras.reconcile();
+}
+function deleteToken(token) {
+    Auras.removeToken(token);
+}
+function itemChanged(item) {
+    Auras.refreshItemActor(item);
+}
+function updateItem(item, changes) {
+    const touched = 'effects' in changes || constants.auraItemPaths.some(path => foundry.utils.hasProperty(changes, path));
+    Auras.refreshItemActor(item, {touched});
+}
+function effectChanged(effect) {
+    Auras.refreshEffect(effect);
+}
+function updateActor(actor, changes) {
+    const keys = Object.keys(foundry.utils.flattenObject(changes)).filter(key => key !== '_id' && !key.startsWith('_stats'));
+    if (keys.length && keys.every(key => key.startsWith('system.attributes.hp'))) return;
+    Auras.refreshActor(actor);
+}
+function deleteActor(actor) {
+    Auras.removeActor(actor);
 }
 export default {
-    updateAuras,
-    createToken,
-    deleteToken,
-    canvasReady,
-    effect
+    catReady,
+    canvasReady: whenReady(canvasReady),
+    createScene: whenReady(createScene),
+    deleteScene: whenReady(deleteScene),
+    createToken: whenReady(createToken),
+    updateToken: whenReady(updateToken),
+    deleteToken: whenReady(deleteToken),
+    itemChanged: whenReady(itemChanged),
+    updateItem: whenReady(updateItem),
+    effectChanged: whenReady(effectChanged),
+    updateActor: whenReady(updateActor),
+    deleteActor: whenReady(deleteActor)
 };

@@ -1,5 +1,5 @@
-import {constants, D20Bonus, DamageBonus, Events, Logging, Summon} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
+import {constants, D20Bonus, DamageBonus, Events, Logging, Summon} from '../lib/_module.mjs';
 
 // reference https://gitlab.com/tposney/midi-qol/-/blob/v13/src/module/lib/midiCompletions.ts#L969
 
@@ -84,10 +84,10 @@ const VARS = {
     message: (_, {event}) => variable('object', INFO.message[event]),
     updates: (_, {event}) => variable('object', INFO.updates[event]),
     targetToken: (api, {event}) => classInstance(api, CONFIG.Token.documentClass, INFO.targetToken[event]),
-    DamageBonus: (api) => classCompletion(api, DamageBonus, 'lib.DamageBonus', 'Used in optional bonus prompts.'), 
+    DamageBonus: (api) => classCompletion(api, DamageBonus, 'lib.DamageBonus', 'Used in optional bonus prompts.'),
     D20Bonus: (api) => classCompletion(api, D20Bonus, 'lib.D20Bonus', 'Used in optional bonus prompts.'),
 
-    // Damage    
+    // Damage
     ditem: () => variable('object', 'Live copy of workflow.damageItem.'),
 
     // Region
@@ -113,7 +113,10 @@ const VARS = {
     },
 
     //Aura
-    eventSource: () => variable('string', 'The hook from which `options` originated.'),
+    source: (api) => classInstance(api, CONFIG.Actor.documentClass, 'The actor projecting the aura.'),
+    target: (api) => classInstance(api, CONFIG.Actor.documentClass, 'The actor tested against the aura.'),
+    descriptor: () => variable('object', 'The aura descriptor returned by the bound aura generic.'),
+    distance: () => variable('number', 'Edge to edge distance between the source and target tokens.'),
 
     // Rest
     result: () => variable('object', 'Changes to apply from rest.'),
@@ -209,17 +212,14 @@ const INFO = {
         move: 'Move event options.',
         region: 'Region event options.',
         effect: 'Effect event options.',
-        aura: 'Aura event options.',
         item: 'Item event options.',
         time: 'Time event options.'
     },
     actor: {
-        none: 'The trigger actor.',
-        aura: 'The actor on which to apply an aura.'
+        none: 'The trigger actor.'
     },
     token: {
-        none: 'The trigger token.',
-        aura: 'The token on which to apply an aura.'
+        none: 'The trigger token.'
     },
     updates: {
         none: 'Updates.',
@@ -230,7 +230,8 @@ const INFO = {
     },
     targetToken: {
         none: 'Target Token.',
-        roll: 'The token taking damage.'
+        roll: 'The token taking damage.',
+        aura: 'The token tested against the aura.'
     },
     config:{
         none: 'Configuration.',
@@ -248,7 +249,7 @@ const INFO = {
         save: 'Dice roll dialog configuration.',
         skill: 'Dice roll dialog configuration.',
         tool: 'Dice roll dialog configuration.'
-    }, 
+    },
     message: {
         none: 'Message configuration.',
         roll: 'Item roll message configuration.',
@@ -325,7 +326,7 @@ function dataForMacroEvent(event, pass) {
         case 'region': eventData = get(Events.RegionEvent); break;
         case 'effect': eventData = get(Events.EffectEvent); break;
         case 'combat': eventData = get(Events.CombatEvent); break;
-        case 'aura': eventData = get(Events.AuraEvent); break;
+        case 'aura': eventData = {source: null, target: null, sourceToken: null, targetToken: null, descriptor: null, distance: null}; break;
         case 'rest': eventData = get(Events.RestEvent); break;
         case 'check': eventData = get(Events.CheckEvent); break;
         case 'skill': eventData = get(Events.SkillEvent); break;
@@ -356,7 +357,7 @@ function dataForMacroEvent(event, pass) {
                 eventData = get(Events.TokenDamageWorkflowEvent);
                 break;
             }
-            eventData = get(Events.WorkflowEvent); 
+            eventData = get(Events.WorkflowEvent);
             break;
     }
     return Object.keys(eventData ?? {});

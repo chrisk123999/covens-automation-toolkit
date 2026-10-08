@@ -242,7 +242,7 @@ export class RegisteredAutomations {
      * @param {FetchAutomationInfo} [options.infoFetcherCallback] Provide additional automation info or override defaults. See {@link FetchAutomationInfo}.
      */
     async registerAutomationCompendium(pack, {source = pack.metadata.packageName, infoFetcherCallback} = {}) {
-        const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.cat.automation', 'type']});
+        const index = await pack.getIndex({fields: ['system.identifier', 'system.source', 'flags.cat.automation', 'type']});
         const documentType = pack.metadata.type;
         Logging.group('Automation Compendium Registered: ' + pack.metadata.label + ' (' + pack.metadata.packageName + ')');
         const results = index.map(document => {

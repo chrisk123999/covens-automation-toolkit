@@ -200,11 +200,11 @@ export default class CatRollResolver extends RollResolver {
                 const damageLabel = _loc(damage.config.label);
                 if (!groupMod) damageGroups.push({id, group, term, damage: damageLabel, key: `${damage.type}|${term.faces}|${info?.properties ?? ''}`});
                 group.icon = `<img class="dmg" src="${constants.damageIcons[damage.type] ?? damage.config.icon}">`;
-                if (groupMod) {
-                    group.modifier = CatRollResolver.#signed(groupMod);
-                    group.modifierTooltip = info?.tip ?? this.#modifierBreakdown();
-                }
                 group.tooltip = this.#groupTooltip(info?.source, group.label, groupMod, damageLabel);
+            }
+            if (groupMod && (damage || term?.faces !== 20)) {
+                group.modifier = CatRollResolver.#signed(groupMod);
+                group.modifierTooltip = info?.tip ?? this.#modifierBreakdown();
             }
             if (term?.faces === 20) {
                 const mod = this.#flatModifier();
@@ -385,7 +385,7 @@ export default class CatRollResolver extends RollResolver {
         for (const term of this.roll.terms) {
             if (term.operator) { parts.push(term.operator); continue; }
             if (term.faces !== undefined) {
-                const type = term.options?.type ?? term.options?.flavor;
+                const type = CatRollResolver.#knownType(term.options?.type ?? term.options?.flavor);
                 const damage = type && (CONFIG.DND5E?.damageTypes?.[type] ?? CONFIG.DND5E?.healingTypes?.[type]);
                 parts.push(`${term.number ?? 1}d${term.faces}${damage ? ' ' + _loc(damage.label) : ''}`);
             } else if (term.number !== undefined) {
@@ -613,6 +613,7 @@ export default class CatRollResolver extends RollResolver {
     }
 
     static #knownType(value) {
+        value = value?.toLowerCase().trim();
         return (value && (CONFIG.DND5E?.damageTypes?.[value] ?? CONFIG.DND5E?.healingTypes?.[value])) ? value : undefined;
     }
 

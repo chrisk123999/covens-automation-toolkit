@@ -74,7 +74,7 @@ function activityDC(effect) {
     const changes = effect.system.changes ?? [];
     if (!changes.some(change => change.key === 'flags.midi-qol.OverTime' && change.value.includes('$activity.dc'))) return;
     const activity = effectUtils.getOriginActivitySync(effect);
-    const dc = activity?.save?.dc?.value ?? activity?.item?.system.activities?.find(i => i.save?.dc?.value)?.save.dc.value;
+    const dc = activity?.save?.dc?.value ?? activity?.item?.system.activities?.find(i => i.save?.dc?.value)?.save.dc.value ?? activity?.actor?.system.abilities[activity.spellcastingAbility]?.dc;
     if (!dc) return Logging.addEntry('WARNING', 'No save DC found for $activity.dc on effect ' + effect.name + ' (origin: ' + effect.origin + ')');
     effect.updateSource({'system.changes': changes.map(change => change.key === 'flags.midi-qol.OverTime' ? {...change, value: change.value.replaceAll('$activity.dc', dc)} : change)});
 }
