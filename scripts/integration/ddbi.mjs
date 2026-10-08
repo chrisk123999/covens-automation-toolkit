@@ -27,7 +27,7 @@ async function registerAutomations(module) {
         const pack = game.packs.get(id);
         if (!pack) return;
         Logging.addEntry('DEBUG', 'Automation Compendium Registered: ' + pack.metadata.label + ' from ' + pack.metadata.packageName);
-        const index = await pack.getIndex({fields: ['system.identifier', 'system.source.rules', 'flags.ddbimporter.version', 'type']});
+        const index = await pack.getIndex({fields: ['system.identifier', 'system.source', 'flags.ddbimporter.version', 'type']});
         index.contents.forEach(entry => {
             const version = entry.flags.ddbimporter?.version;
             if (!version) return;

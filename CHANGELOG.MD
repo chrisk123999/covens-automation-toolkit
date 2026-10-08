@@ -1,5 +1,7 @@
 # 0.0.9 Release:
 ## Update Notes:
+- This is the last version compatible with dnd5e 5.x.
+- Fixed a startup error when indexing compendiums: `Cannot create property 'rules' on number`.
 - A tab's icon is colored when that tab holds content.
 - Added a CatKit entry to context menus everywhere a CatKit can be opened: the Item, Actor and Scene directories, the scene navigation bar, compendium entries, compendium packs, and item, activity and effect rows on sheets.
 - Added a light theme.
