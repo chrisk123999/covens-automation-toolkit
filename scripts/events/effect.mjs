@@ -1,6 +1,5 @@
 import {genericUtils, queryUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {auraEvents} from '../events/_module.mjs';
 import {effects} from '../handlers/_module.mjs';
 async function doCreateActiveEffect(data, options) {
     let parent = options.parent;
@@ -39,7 +38,6 @@ async function createActiveEffect(effect, options, userId) {
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await effects.specialDurationZeroSpeed(effect.parent);
     effectAnimations(effect, true);
     await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
-    await auraEvents.effect(effect, options);
 }
 async function deleteActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
@@ -51,7 +49,6 @@ async function deleteActiveEffect(effect, options, userId) {
     }
     effectAnimations(effect, false);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
-    await auraEvents.effect(effect, options);
 }
 async function updateActiveEffect(effect, updates, options, userId) {
     if (!queryUtils.isTheGM()) return;
@@ -60,7 +57,6 @@ async function updateActiveEffect(effect, updates, options, userId) {
     if (effect.active !== prevActive) {
         effectAnimations(effect, effect.active);
         if (effect.statuses.size) await effects.disableConditionStatuses(effect, effect.active);
-        if (effect.flags.cat?.macros?.aura) await auraEvents.effect(effect, options);
     }
     await new Events.EffectEvent(effect, constants.effectPasses.updated, {options, updates}).run();
 }

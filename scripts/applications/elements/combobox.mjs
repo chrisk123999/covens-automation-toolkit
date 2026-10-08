@@ -25,7 +25,7 @@ export default class CatCombobox extends HTMLElement {
 
         this.#options = Array.from(this.querySelectorAll('option')).map(o => ({
             value: o.value,
-            label: o.textContent ?? '',
+            label: o.textContent?.trim() ?? '',
             image: o.dataset.image ?? '',
             invert: !!o.dataset.invert,
             tag: o.dataset.tag ?? '',

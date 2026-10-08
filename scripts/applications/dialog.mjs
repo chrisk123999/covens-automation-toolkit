@@ -445,6 +445,7 @@ export default class DialogApp extends CatApp {
             })),
             subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs,
             locked: f.options?.locked ?? false,
+            disabled: f.options?.disabled ?? false,
             onchange: f.options?.onchange,
             tags: f.options?.tags?.map(t => ({
                 tooltip: t.tooltip,

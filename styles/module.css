@@ -82,11 +82,11 @@
     --cat-text-primary: rgb(24 22 20);
 }
 
-[data-medkit-status="unknown"]          { color: var(--cat-status-pink) !important; }
-[data-medkit-status="outdated"]         { color: var(--cat-status-red) !important; }
-[data-medkit-status="available"]        { color: var(--cat-status-yellow) !important; }
-[data-medkit-status="up-to-date"]       { color: var(--cat-status-green) !important; }
-[data-medkit-status="configurable"]     { color: var(--cat-status-blue) !important; }
+[data-medkit-status="unknown"], .cat-medkit-unknown          { color: var(--cat-status-pink) !important; }
+[data-medkit-status="outdated"], .cat-medkit-outdated         { color: var(--cat-status-red) !important; }
+[data-medkit-status="available"], .cat-medkit-available        { color: var(--cat-status-yellow) !important; }
+[data-medkit-status="up-to-date"], .cat-medkit-up-to-date       { color: var(--cat-status-green) !important; }
+[data-medkit-status="configurable"], .cat-medkit-configurable     { color: var(--cat-status-blue) !important; }
 
 /* Activity-sheet injector: a trailing flex item, never overlapping the field's other buttons. */
 .form-fields > i.cat-quick-conditions {
@@ -1247,7 +1247,8 @@ cat-multi-combobox {
                 }
             }
 
-            &.locked {
+            &.locked,
+            &:has(> .form-fields > input[type="checkbox"][disabled]) {
                 opacity: 0.65;
 
                 > .form-fields > input[type="checkbox"] {
@@ -1804,7 +1805,9 @@ cat-multi-combobox {
 
         /* Outrank core .standard-form button styling so the clear glyph stays borderless in the medkit. */
         cat-combobox > .field > button,
-        cat-combobox > .field > button:hover {
+        cat-combobox > .field > button:hover,
+        cat-multi-combobox .chip > .remove,
+        cat-multi-combobox .chip > .remove:hover {
             border: 0;
             background: transparent;
             box-shadow: none;

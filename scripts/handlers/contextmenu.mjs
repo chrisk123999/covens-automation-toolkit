@@ -16,7 +16,8 @@ function getMedkitStatus(document) {
         case constants.automationStatus.GENERIC: return constants.MEDKIT_STATUSES.CONFIGURABLE;
     }
 }
-function medkitIcon(status) {
+function medkitIcon(status, {asClass = false} = {}) {
+    if (asClass) return 'fa-solid fa-shield-cat' + (status ? ' cat-medkit-' + status : '');
     if (!status) return 'fa-solid fa-shield-cat';
     return `<i class="fa-solid fa-shield-cat" data-medkit-status="${status}"></i>`;
 }
@@ -104,7 +105,7 @@ function appendHeaderControl(app, controls) {
     if (pack && !medkitPackTypes.includes(pack.metadata.type)) return;
     controls.push({
         label: _loc('CAT.MEDKIT.HeaderLabel'),
-        icon: medkitIcon(getMedkitStatus(app.document)),
+        icon: medkitIcon(getMedkitStatus(app.document), {asClass: true}),
         onClick: () => {
             if (pack) new applications.CompendiumMedkit({document: pack}).render({force: true});
             else openMedkit(app.document);

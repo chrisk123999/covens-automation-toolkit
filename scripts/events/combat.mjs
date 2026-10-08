@@ -1,6 +1,6 @@
-import {constants, Events} from '../lib/_module.mjs';
-import {genericUtils, queryUtils} from '../utilities/_module.mjs';
 import {effects, regions} from '../handlers/_module.mjs';
+import {Auras, constants, Events} from '../lib/_module.mjs';
+import {genericUtils, queryUtils} from '../utilities/_module.mjs';
 async function updateCombat(combat, updates, context) {
     if (!queryUtils.isTheGM()) return;
     if (!updates.turn && !updates.round) return;
@@ -17,6 +17,7 @@ async function updateCombat(combat, updates, context) {
     if (previousToken) {
         await regions.processRegionActivities(previousToken, Array.from(previousToken.regions), constants.combatPasses.turnEnd, {combatData: {inCombat: true, currentRound: previousRound, currentTurn: previousTurn, combatId: combat.id}});
         await new Events.CombatEvent(combat, constants.combatPasses.turnEnd, previousToken, {context, combatant: previousCombatant, round: previousRound, turn: previousTurn}).run();
+        await Auras.turnEvent(previousToken, constants.auraTriggers.turnEnd, {combat, round: previousRound, turn: previousTurn});
         await effects.specialDurationTurn(previousToken, constants.combatPasses.turnEnd, {round: previousRound, turn: previousTurn});
     }
     if (currentToken) {
@@ -26,6 +27,7 @@ async function updateCombat(combat, updates, context) {
         }
         await regions.processRegionActivities(currentToken, Array.from(currentToken.regions), constants.combatPasses.turnStart, {combatData: {inCombat: true, currentRound, currentTurn, combatId: combat.id}});
         await new Events.CombatEvent(combat, constants.combatPasses.turnStart, currentToken, {context, combatant: currentCombatant, round: currentRound, turn: currentTurn, previousCombatant, previousRound, previousTurn}).run();
+        await Auras.turnEvent(currentToken, constants.auraTriggers.turnStart, {combat, round: currentRound, turn: currentTurn});
         await effects.specialDurationTurn(currentToken, constants.combatPasses.turnStart, {round: currentRound, turn: currentTurn});
     }
 }

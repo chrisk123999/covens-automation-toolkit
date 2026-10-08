@@ -1,15 +1,15 @@
-import {readyHooks, initHooks} from './hooks.mjs';
-import {registerSettings} from './settings.mjs';
-import * as lib from './lib/_module.mjs';
-import * as utils from './utilities/_module.mjs';
 import {buildApi} from './api.mjs';
 import * as applications from './applications/_module.mjs';
 import CatCombobox from './applications/elements/combobox.mjs';
 import CatMultiCombobox from './applications/elements/multi-combobox.mjs';
-import * as patches from './patches/_module.mjs';
-import * as integration from './integration/_modules.mjs';
 import * as handlers from './handlers/_module.mjs';
+import {initHooks, readyHooks} from './hooks.mjs';
+import * as integration from './integration/_modules.mjs';
+import * as lib from './lib/_module.mjs';
 import {getPackConstants} from './lib/constants.mjs';
+import * as patches from './patches/_module.mjs';
+import {registerSettings} from './settings.mjs';
+import * as utils from './utilities/_module.mjs';
 customElements.define(CatCombobox.tagName, CatCombobox);
 customElements.define(CatMultiCombobox.tagName, CatMultiCombobox);
 Hooks.once('i18nInit', () => {

@@ -36,7 +36,6 @@
                                         {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
-
                                 <label for="{{id}}" {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}{{#if reference}}
                                     data-reference-tooltip="{{reference}}" {{/if}}>
                                     {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}"
@@ -58,7 +57,7 @@
                                 {{/if}}
                                 <div class="form-fields">
                                     <input type="checkbox"
-                                        {{#if locked}}disabled{{else if (gte ../currentNum ../totalMax)}}{{#unless isChecked}}disabled{{/unless}}{{/if}}
+                                        {{#if locked}}disabled{{else if disabled}}disabled{{else if (gte ../currentNum ../totalMax)}}{{#unless isChecked}}disabled{{/unless}}{{/if}}
                                         id="{{id}}" name="{{name}}" {{#if isChecked}}checked{{/if}}>
                                 </div>
                                 {{#each hints}}
@@ -87,7 +86,6 @@
                                         {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
-
                                 <label for="{{id}}" {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}{{#if reference}}
                                     data-reference-tooltip="{{reference}}" {{/if}}>
                                     {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}"
@@ -142,7 +140,6 @@
                                         {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
-
                                 <label for="{{id}}" {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}{{#if reference}}
                                     data-reference-tooltip="{{reference}}" {{/if}}>
                                     {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}"
@@ -195,7 +192,6 @@
                                         {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
-
                                 <label for="{{id}}" {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}{{#if reference}}
                                     data-reference-tooltip="{{reference}}" {{/if}}>
                                     {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}"
@@ -250,7 +246,6 @@
                                         {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
-
                                 <label for="{{id}}" {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}{{#if reference}}
                                     data-reference-tooltip="{{reference}}" {{/if}}>
                                     {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}"
@@ -288,11 +283,11 @@
                                 <strong>{{formula}}</strong>
                                 {{#if crit}}<i class="fas fa-check-double"
                                         data-tooltip="{{localize 'DND5E.CriticalHit'}}"></i>{{/if}}
-                                {{#if total includeZero=true}}<span class="total">= 
-                                    {{#if deterministic}}{{total}}
-                                    {{else}}<img class="d20icon" src="/icons/svg/d20-grey.svg">
-                                    {{/if}}
-                                    {{#if outcome}}({{outcome}}){{/if}}</span>
+                                {{#if total includeZero=true}}<span class="total">=
+                                        {{#if deterministic}}{{total}}
+                                        {{else}}<img class="d20icon" src="/icons/svg/d20-grey.svg">
+                                        {{/if}}
+                                        {{#if outcome}}({{outcome}}){{/if}}</span>
                                 {{/if}}
                             </header>
                             <ol class="dice-rolls">
@@ -346,7 +341,6 @@
                                         {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
-
                                 {{#if label}}<label for="{{id}}" {{#if tooltip}} data-tooltip="{{tooltip}}"
                                         {{/if}}{{#if reference}} data-reference-tooltip="{{reference}}"
                                         {{/if}}>{{{localize label}}}</label>{{/if}}
@@ -385,7 +379,6 @@
                                         {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
                                     </div>
                                 {{/if}}
-
                                 {{#if label}}<label for="{{id}}" {{#if tooltip}} data-tooltip="{{tooltip}}"
                                         {{/if}}{{#if reference}} data-reference-tooltip="{{reference}}"
                                         {{/if}}>{{{localize label}}}</label>{{/if}}

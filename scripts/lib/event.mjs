@@ -1,6 +1,6 @@
-import {actorUtils, documentUtils, effectUtils, genericUtils, tokenUtils} from '../utilities/_module.mjs';
+import {constants, D20Bonus, DamageBonus, Logging, Triggers} from '../lib/_module.mjs';
 import * as utils from '../utilities/_module.mjs';
-import {Triggers, Logging, constants, DamageBonus, D20Bonus} from '../lib/_module.mjs';
+import {actorUtils, tokenUtils} from '../utilities/_module.mjs';
 class CatEvent {
     constructor(pass) {
         this.pass = pass;
@@ -20,7 +20,15 @@ class CatEvent {
         }
         this.distances = {};
         if (this.token && this.scene) {
-            this.scene.tokens.forEach(t => this.distances[t.id] = tokenUtils.getDistance(this.token, t));
+            const token = this.token;
+            this.scene.tokens.forEach(t => {
+                let distance;
+                Object.defineProperty(this.distances, t.id, {
+                    get: () => distance ??= tokenUtils.getDistance(token, t),
+                    enumerable: true,
+                    configurable: true
+                });
+            });
             this.level = this.scene.levels.get(this.token.level);
         }
     }
@@ -382,7 +390,7 @@ class BaseWorkflowEvent extends CatEvent {
         if (this.vehicles.length) {
             this.vehicles.forEach(vehicle => {
                 triggers.push(...this.getVehicleTriggers(vehicle, 'vehicle' + passName));
-            }); 
+            });
         }
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
@@ -621,88 +629,6 @@ class CombatEvent extends CatEvent {
         };
     }
 }
-class AuraEvent extends CatEvent {
-    constructor(targetToken, pass, {options, eventSource} = {}) {
-        super(pass);
-        this.name = 'Aura';
-        this.trigger = Triggers.AuraTrigger;
-        this.multiResult = true;
-        this.options = options;
-        this.eventSource = eventSource;
-        this.setContext(targetToken.actor, {token: targetToken});
-    }
-    async run() {
-        Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass);
-        this._debugEvent();
-        if (!this.actor) return;
-        const removedEffects = [];
-        const effects = actorUtils.getEffects(this.actor).filter(effect => effect.flags.cat?.auraEffect);
-        await Promise.all(effects.map(async effect => {
-            let identifier = documentUtils.getIdentifier(effect);
-            if (!identifier || !effect.origin) {
-                removedEffects.push(effect);
-                return;
-            }
-            let origin = await fromUuid(effect.origin);
-            if (!origin) {
-                removedEffects.push(effect);
-                return;
-            }
-            let originIdentifier = documentUtils.getIdentifier(origin);
-            if (!originIdentifier) {
-                removedEffects.push(effect);
-                return;
-            }
-            const trigger = this.sortedTriggers.find(trigger => trigger.identifier === originIdentifier);
-            if (!trigger) {
-                removedEffects.push(effect);
-                return;
-            }
-            if (trigger.document.uuid != effect.origin) removedEffects.push(effect);
-        }));
-        if (removedEffects.length) await documentUtils.deleteEmbeddedDocuments(this.actor, 'ActiveEffect', removedEffects.map(effect => effect.id));
-        const effectDatas = [];
-        const results = [];
-        for (let trigger of this.sortedTriggers) {
-            let result;
-            if (typeof trigger.macro === 'string') {
-                Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
-                result = await this.executeScript(trigger.macro, trigger);
-            } else {
-                Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macroName + ' from ' + trigger.name);
-                try {
-                    result = await trigger.macro(trigger);
-                } catch (error) {
-                    Logging.addMacroError(trigger, error);
-                }
-            }
-            if (result) {
-                if (result.effectData) {
-                    genericUtils.setProperty(result.effectData, 'flags.cat.auraEffect', true);
-                    genericUtils.setProperty(result.effectData, 'origin', trigger.document.uuid);
-                    genericUtils.setProperty(result.effectData, 'flags.cat.identifier', trigger.identifier + 'Aura');
-                    effectDatas.push(result.effectData);
-                }
-                results.push(result);
-            }
-        }
-        if (effectDatas.length) await effectUtils.createEffects(this.actor, effectDatas);
-        return results;
-    }
-    get unsortedTriggers() {
-        if (!this.scene) return [];
-        let triggers = this.getNearbyTriggers(this.scene, this.pass, {options: this.options});
-        triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
-        return triggers;
-    }
-    appendData(data) {
-        return {
-            ...super.appendData(data),
-            options: this.options,
-            eventSource: this.eventSource
-        };
-    }
-}
 class ItemEvent extends CatEvent {
     constructor(item, pass, {options, updates} = {}) {
         super(pass);
@@ -909,7 +835,6 @@ export default {
     RegionEvent,
     EffectEvent,
     CombatEvent,
-    AuraEvent,
     ItemEvent,
     ItemsEvent,
     RestEvent,

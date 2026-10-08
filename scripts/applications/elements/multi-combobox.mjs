@@ -37,7 +37,7 @@ export default class CatMultiCombobox extends HTMLElement {
             }
             return {
                 value: o.value,
-                label: o.textContent ?? '',
+                label: o.textContent?.trim() ?? '',
                 image: o.dataset.image ?? '',
                 invert: !!o.dataset.invert,
                 tag: o.dataset.tag ?? '',

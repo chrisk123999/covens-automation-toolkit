@@ -105,6 +105,19 @@ async function getDocumentByName(packId, name) {
     return await fromUuid(found.uuid);
 }
 /**
+ * Documents in a compendium whose slugified names match, in the order of the slugs given.
+ * @param {string} packId Compendium to search.
+ * @param {string[]} slugs Slugified document names to match.
+ * @returns {Promise<foundry.abstract.Document[]>} Empty when the compendium is missing.
+ */
+async function getDocumentsBySlug(packId, slugs) {
+    const pack = game.packs.get(packId);
+    if (!pack) return [];
+    const index = await pack.getIndex();
+    const entries = slugs.map(slug => index.find(entry => entry.name.slugify() === slug)).filter(Boolean);
+    return await Promise.all(entries.map(entry => fromUuid(entry.uuid)));
+}
+/**
  * Build a compendium browser filter object from a list of keys.
  * @param {string[]} list Values the filter accepts.
  * @param {boolean} [include] False to exclude the listed keys instead.
@@ -252,6 +265,7 @@ export default {
     getDocumentUuidByIdentifier,
     getSpellUuid,
     getDocumentByName,
+    getDocumentsBySlug,
     selectSpellFromLists,
     selectActor,
     getEnabledCompendiumIds,

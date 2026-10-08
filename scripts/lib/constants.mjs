@@ -103,13 +103,34 @@ const combatHookNames = {
     updateCombatant: 'updateCombatant'
 };
 const auraPasses = {
-    update: 'update'
+    filter: 'filter'
 };
 const auraHookNames = {
+    catReady: 'catReady',
+    canvasReady: 'canvasReady',
+    createScene: 'createScene',
+    deleteScene: 'deleteScene',
     createToken: 'createToken',
+    updateToken: 'updateToken',
     deleteToken: 'deleteToken',
-    canvasReady: 'canvasReady'
+    createItem: 'createItem',
+    updateItem: 'updateItem',
+    deleteItem: 'deleteItem',
+    createActiveEffect: 'createActiveEffect',
+    updateActiveEffect: 'updateActiveEffect',
+    deleteActiveEffect: 'deleteActiveEffect',
+    updateActor: 'updateActor',
+    deleteActor: 'deleteActor'
 };
+const auraTriggers = {
+    enter: 'enter',
+    exit: 'exit',
+    turnStart: 'turnStart',
+    turnEnd: 'turnEnd'
+};
+const auraMembershipKeys = ['x', 'y', 'elevation', 'width', 'height', 'hidden', 'disposition', 'level'];
+const auraActorKeys = ['actorId', 'actorLink', 'delta'];
+const auraItemPaths = ['flags.cat.macros', 'flags.cat.genericConfig', 'flags.cat.embeddedMacros', 'system.activities'];
 const regionHooksNames = {
     createRegion: 'createRegion',
     updateRegion: 'updateRegion',
@@ -413,6 +434,10 @@ export default {
     combatPasses,
     auraPasses,
     auraHookNames,
+    auraTriggers,
+    auraMembershipKeys,
+    auraActorKeys,
+    auraItemPaths,
     regionHooksNames,
     regionPasses,
     itemPasses,
@@ -455,6 +480,7 @@ export default {
     get attackTypeOptions() { return attackTypes.map(i => ({label: _loc('CAT.Common.AttackType.' + i), value: i})); },
     get characterLevelOptions() { return Array.from({length: CONFIG.DND5E.maxLevel}, (_, i) => ({label: _loc('DND5E.LevelNumber', {level: i + 1}), value: i + 1})); },
     get creatureTypeOptions() { return Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon})); },
+    get spiritTypeOptions() { return this.creatureTypeOptions.filter(option => ['celestial', 'fey', 'fiend'].includes(option.value)); },
     get damageTypeOptions() { return Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: damageIcons[i[0]] ?? i[1].icon, invertColor: ['midi-none', 'none', 'vitality'].includes(i[0])})); },
     get diceSizeOptions() { return [4, 6, 8, 10, 12, 20].map(i => ({label: `d${i}`, value: `d${i}`, image: `systems/dnd5e/icons/svg/dice/d${i}.svg`})); },
     get dispositionOptions() { return [

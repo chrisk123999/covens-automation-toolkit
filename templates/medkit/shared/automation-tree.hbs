@@ -18,6 +18,7 @@
                             <span class="name">{{name}}</span>
                             {{#each tags}}<span class="cat-combobox-tag" {{#if ../statusKey}}
                                     data-medkit-status="{{../statusKey}}" {{/if}}>{{this}}</span>{{/each}}
+                            {{#if showKind}}<span class="kind">{{localize kindLabel}}</span>{{/if}}
                         </button>
                     {{/each}}
                 </div>

@@ -213,6 +213,25 @@ function getStatusSources(actor, ids) {
 }
 
 /**
+ * Whether this actor has one of these statuses from an effect that the source actor applied.
+ * @param {foundry.documents.Actor} actor Actor to check.
+ * @param {string[]} statusIds Status ids to look for.
+ * @param {foundry.documents.Actor} sourceActor Actor that must have applied the effect.
+ * @returns {boolean}
+ */
+function hasStatusFromActor(actor, statusIds, sourceActor) {
+    return getEffects(actor).some(effect => {
+        const conditions = effectUtils.getConditions(effect);
+        if (!statusIds.some(id => conditions.has(id))) return false;
+        const origin = effectUtils.getOriginActivitySync(effect) ?? (effect.origin ? fromUuidSync(effect.origin, {strict: false}) : undefined);
+        let originActor = origin?.actor;
+        if (origin instanceof Actor) originActor = origin;
+        else if (origin?.documentName === 'ActiveEffect') originActor = effectUtils.getActor(origin);
+        return !!originActor && originActor.uuid === sourceActor.uuid;
+    });
+}
+
+/**
  * Get an item (or all items) on this actor which match the provided identifier.
  * @param {Actor5e} actor Actor to act on.
  * @param {string} identifier Identifier to match.
@@ -418,6 +437,14 @@ function getCR(actor) {
     return actor.system.details.cr ?? (4 * actor.system.attributes.prof - 7);
 }
 /**
+ * This actor's character level, or its challenge rating when it has no levels.
+ * @param {foundry.documents.Actor} actor Actor to act on.
+ * @returns {number}
+ */
+function getLevelOrCR(actor) {
+    return actor.system.details.level || actor.system.details.cr || 0;
+}
+/**
  * Add items or activities to this actor's favorites, delegating to a GM when the user lacks permission.
  * @param {foundry.documents.Actor} actor Actor to act on.
  * @param {Array<foundry.documents.Item|Activity>} entities Items or activities to favourite.
@@ -515,9 +542,11 @@ export default {
     hasUsedBonusAction,
     getMaxCastLevel,
     getCR,
+    getLevelOrCR,
     addFavorites,
     removeFavorites,
     isBloodied,
     isWounded,
-    getStatusSources
+    getStatusSources,
+    hasStatusFromActor
 };
