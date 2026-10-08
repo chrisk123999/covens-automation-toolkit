@@ -930,7 +930,6 @@ export default class MedkitApp extends CatApp {
         }
         await documentUtils.update(this.#document, updates);
         this.#reacquireDocument();
-        if (this.#document.documentName === 'Item' && this.#document.actor) await automationUtils.updateScales(this.#document);
         this.#hydrateState();
     }
 

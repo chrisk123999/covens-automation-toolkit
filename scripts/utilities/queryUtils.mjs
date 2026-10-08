@@ -63,7 +63,7 @@ function firstOwner(document, useId) {
  * @param {number} [timeout] Milliseconds to wait before giving up.
  * @returns {Promise<*>} Whatever the query returns.
  */
-async function query(name, user, queryData, timeout = 500) {
+async function query(name, user, queryData, timeout = 750) {
     return await user.query('cat.' + name, queryData, {timeout});
 }
 export default {

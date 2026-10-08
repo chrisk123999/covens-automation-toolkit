@@ -19,7 +19,7 @@ export class CatCompendiumBrowser extends CompendiumBrowser {
                 dnd5e.applications.CompendiumBrowser.MODES.BASIC;
             if (!genericUtils.isEmpty(config.filters?.locked)) {
                 genericUtils.setProperty(config, 'filters.locked.documentClass', tabData.documentClass);
-                if (tabData.types?.size && !config.filters.locked.types?.size) 
+                if (tabData.types?.length && !config.filters.locked.types?.size)
                     genericUtils.setProperty(config, 'filters.locked.types', new Set(tabData.types));
             }
         }

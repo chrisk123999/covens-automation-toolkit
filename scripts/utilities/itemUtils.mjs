@@ -65,19 +65,27 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
         Logging.addMacroError('Enchantments must have an origin!');
         return;
     }
-    genericUtils.setProperty(effectData, 'type', 'enchantment');
-    effectData.transfer = false;
+    effectData.transfer = true;
+    effectData.disabled = false;
+    effectData.type = 'enchantment';
     genericUtils.setProperty(effectData, 'flags.dnd5e.enchantment', {
         level: {
             min: null,
             max: null
         },
         riders: {
-            effect: effects,
-            item: items
+            effect: effects.filter(e => typeof e === 'string'),
+            item: items.filter(e => typeof e === 'string')
         }
     });
-    return await effectUtils.createEffects(item, [effectData], {effectOptions, forceGM});
+    const enchantment = (await effectUtils.createEffects(item, [effectData], {effectOptions, forceGM}))?.[0];
+    if (enchantment) {
+        const riderEffects = effects.filter(e => typeof e === 'object');
+        const riderItems = items.filter(i => typeof i === 'object').map(i => (genericUtils.setProperty(i, 'flags.dnd5e.enchantment.origin', enchantment.uuid), i));
+        if (riderEffects.length) await effectUtils.createEffects(item, riderEffects, {forceGM, parentEntity: enchantment});
+        if (riderItems.length) await createItems(item.actor, riderItems, {parentEntity: enchantment}); 
+    }
+    return enchantment;
 }
 /**
  * Create items on an actor, optionally favoriting them and tying their lifetime to a parent document.
@@ -145,7 +153,7 @@ async function unhideActivities(item, identifiers, {ids = false, favorite = fals
                 }
             };
             genericUtils.setProperty(effectData, 'flags.cat.identifier', 'catHiddenActivities');
-            effect = (await enchantItem(item, effectData))?.[0];
+            effect = await enchantItem(item, effectData);
         }
         return effect;
     })();

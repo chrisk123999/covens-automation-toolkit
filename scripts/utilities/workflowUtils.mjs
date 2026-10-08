@@ -324,7 +324,7 @@ async function specialItemUse(item, targets, sourceFeature, {activity, consumeUs
         changes,
         duration: {value: 1, units: 'seconds'}
     });
-    const effect = (await itemUtils.enchantItem(item, effectData))?.[0];
+    const effect = await itemUtils.enchantItem(item, effectData);
     const workflow = activity ? await syntheticActivityRoll(item.system.activities.get(activity.id), targets, {consumeUsage, consumeResources}) : await syntheticItemRoll(item, targets, {consumeUsage, consumeResources});
     if (effect) await documentUtils.deleteDocument(effect);
     return workflow;

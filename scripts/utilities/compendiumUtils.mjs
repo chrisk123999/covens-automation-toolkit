@@ -164,8 +164,8 @@ async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, p
     }
     if (!validKeys.length) return;
     const lockedFilters = {additional: {spelllist: makeBrowserFilter(validKeys)}};
-    if (Number.isInteger(minLevel)) genericUtils.setProperty(lockedFilters, 'additional.level.min', minLevel);
-    if (Number.isInteger(maxLevel)) genericUtils.setProperty(lockedFilters, 'additional.level.max', maxLevel);
+    if (Number.isInteger(parseInt(minLevel))) genericUtils.setProperty(lockedFilters, 'additional.level.min', minLevel);
+    if (Number.isInteger(parseInt(maxLevel))) genericUtils.setProperty(lockedFilters, 'additional.level.max', maxLevel);
     const result = await selectFromCompendiumBrowser('spells', {
         hint: _loc('CAT.CompendiumBrowser.SpellPicker', {lists: labels.join(', ')}),
         exceptionIdentifiers: exceptions,
