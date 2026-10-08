@@ -21,6 +21,7 @@
 - The Generic tab icon is marked when a nested document carries a generic, not just the document itself.
 - Rebuilt auras. The active GM writes each aura as a real effect on the tokens inside it, and only rewrites it when a token crosses the aura's edge or the aura changes. Effects left behind while the GM was away are corrected on load.
 - Auras keep working on scenes no one is viewing. Walls block an aura only on the scene the GM is viewing.
+- Added the `aura` generic macro, moved from CPR. It puts an aura on an item, activity or effect. It covers radius, dispositions, creature types, statuses applied by the source, disabling statuses, walls, separate ally and enemy effects, a stacking value, enter, exit and turn activities, and an optional filter macro.
 - The optional bonus dialog disables and dims any bonus that can no longer be afforded beside the bonuses already chosen.
 - Manual rolls show the flat modifier on dice groups without a damage type.
 - A sheet's CatKit header control is colored by automation status, like its context menu entry. A scene reports the lowest status among its tokens' actors.
