@@ -51,16 +51,17 @@ function syntheticItem(itemData, actor) {
 }
 /**
  * Apply an enchantment to an item. The effect data must carry an origin.
- * @param {Item5e} item Item to read from.
- * @param {object} effectData Coerced to an enchantment; `transfer` is forced off.
+ * @param {Item5e} item Item on which to apply effects.
+ * @param {object} effectData Coerced to an enchantment.
  * @param {object} [options] Additional options.
- * @param {object[]} [options.effects] Additional effects created on the actor, dependent on the enchantment.
- * @param {object[]} [options.items] Additional items created on the actor, dependent on the enchantment.
+ * @param {object[]} [options.effects] Data for additional effects created on the actor, dependent on the enchantment.
+ * @param {object[]} [options.items] Data for additional items created on the actor, dependent on the enchantment.
  * @param {object} [options.effectOptions] Passed to the creation when it goes through a GM.
  * @param {boolean} [options.forceGM] Create through a GM even when the user has permission.
- * @returns {Promise<ActiveEffect[]|undefined>}
+ * @param {boolean} [options.favoriteItems] Add created {@link items} to favorites on the character sheet.
+ * @returns {Promise<ActiveEffect|undefined>}
  */
-async function enchantItem(item, effectData, {effects = [], items = [], effectOptions, forceGM} = {}) {
+async function enchantItem(item, effectData, {effects = [], items = [], effectOptions, forceGM, favoriteItems} = {}) {
     if (!effectData.origin) {
         Logging.addMacroError('Enchantments must have an origin!');
         return;
@@ -83,7 +84,7 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
         const riderEffects = effects.filter(e => typeof e === 'object');
         const riderItems = items.filter(i => typeof i === 'object').map(i => (genericUtils.setProperty(i, 'flags.dnd5e.enchantment.origin', enchantment.uuid), i));
         if (riderEffects.length) await effectUtils.createEffects(item, riderEffects, {forceGM, parentEntity: enchantment});
-        if (riderItems.length) await createItems(item.actor, riderItems, {parentEntity: enchantment}); 
+        if (riderItems.length) await createItems(item.actor, riderItems, {favorite: favoriteItems, parentEntity: enchantment}); 
     }
     return enchantment;
 }

@@ -479,6 +479,11 @@ export default {
     attackTypes,
     get attackTypeOptions() { return attackTypes.map(i => ({label: _loc('CAT.Common.AttackType.' + i), value: i})); },
     get characterLevelOptions() { return Array.from({length: CONFIG.DND5E.maxLevel}, (_, i) => ({label: _loc('DND5E.LevelNumber', {level: i + 1}), value: i + 1})); },
+    get coverOptions() { return [
+        CONFIG.statusEffects.coverHalf,
+        CONFIG.statusEffects.coverThreeQuarters,
+        CONFIG.statusEffects.coverTotal
+    ].map(i => ({label: i.name, value: i.coverBonus ?? 999, image: i.img})); },
     get creatureTypeOptions() { return Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon})); },
     get spiritTypeOptions() { return this.creatureTypeOptions.filter(option => ['celestial', 'fey', 'fiend'].includes(option.value)); },
     get damageTypeOptions() { return Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: damageIcons[i[0]] ?? i[1].icon, invertColor: ['midi-none', 'none', 'vitality'].includes(i[0])})); },

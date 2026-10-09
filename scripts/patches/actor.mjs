@@ -71,6 +71,7 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     const options = {};
     const event = config.event;
     const skillId = config.skill;
+    config.ability ??= this.system.skills[skillId]?.ability ?? CONFIG.DND5E.skills[skillId]?.ability;
     const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
     if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await skillEvents.situational(this, {config, dialog, message, options, skillId});

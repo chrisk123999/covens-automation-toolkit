@@ -39,10 +39,10 @@ function getDistance(token, target, {wallsBlock, checkCover, convertToFt = true}
  * @param {boolean} [options.displayName] Return a localized label rather than the numeric bonus.
  * @returns {number|string}
  */
-function checkCover(sourceToken, targetToken, {activity, displayName}) {
+function checkCover(sourceToken, targetToken, {activity, displayName} = {}) {
     // TODO replace the following with MidiQOL.getCoverBonus when that becomes available
     const statusCover = targetToken.actor.statuses.has('coverTotal') ? 999 : (targetToken.actor.system.attributes.ac.cover ?? 0);
-    const moduleCover = MidiQOL.computeCoverBonus(sourceToken.object, targetToken.object, activity);
+    const moduleCover = Math.min(MidiQOL.computeCoverBonus(sourceToken.object, targetToken.object, activity), 999);
     const cover = Math.max(moduleCover, statusCover);
     if (!displayName) return cover;
     const names = {

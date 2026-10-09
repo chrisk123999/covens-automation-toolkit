@@ -369,7 +369,11 @@ export default class MedkitApp extends CatApp {
         const COMBOBOX_THRESHOLD = 8;
         const sortedOptions = () => {
             const opts = typeof descriptor.options === 'function' ? descriptor.options(this.#document, this.#flags) : (descriptor.options ?? []);
-            return opts.map(o => ({...o, label: _loc(o.label)})).sort((a, b) => (b.value === '') - (a.value === '') || a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+            return opts.map(o => ({...o, label: _loc(o.label)})).sort((a, b) =>
+                Number.isNumeric(a.value) && Number.isNumeric(b.value) ?
+                    (parseFloat(a.value) - parseFloat(b.value)) : 
+                    ((b.value === '') - (a.value === '') || a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}))
+            );
         };
         switch (type) {
             case 'checkbox': option.field = new fields.BooleanField({label}); break;
