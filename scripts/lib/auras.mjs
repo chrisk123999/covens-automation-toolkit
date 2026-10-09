@@ -1,4 +1,4 @@
-import {actorUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, rollUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
+import {actorUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, rollUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 import {constants, Events, Logging} from './_module.mjs';
 const state = {
     ready: false,
@@ -76,7 +76,7 @@ function getTemplate(document, descriptor) {
     delete effectData.flags.cat?.macros?.aura;
     delete effectData.flags.cat?.specialDuration;
     delete effectData.flags.dae?.specialDuration;
-    effectData.origin = document.uuid;
+    dataUtils.setOrigin(effectData, document);
     effectData.transfer = false;
     effectData.disabled = false;
     return effectData;
@@ -152,7 +152,10 @@ function measure(token, target) {
 }
 function isWallBlocked(token, target) {
     if (token === target || !canvas.ready || token.parent !== canvas.scene || !token.object) return false;
-    return !!token.object.checkCollision(target.getCenterPoint(target._source), {origin: token.getCenterPoint(token._source), type: 'move', mode: 'any'});
+    const origin = token.getMovementOrigin(token._source);
+    const destination = target.getMovementOrigin(target._source);
+    if (token.object.checkCollision(destination, {origin, type: 'move', mode: 'any'})) return true;
+    return !!token.parent.testSurfaceCollision(origin, destination, {level: token._source.level});
 }
 function passesFilter(entry, target, distance) {
     const filter = entry.descriptor.filter;
@@ -495,9 +498,9 @@ function getTriggerActivity(entry, reference) {
 function getTokenCombat(token) {
     return game.combats.find(combat => combat.started && combat.combatants.some(combatant => combatant.tokenId === token.id && combatant.sceneId === token.parent?.id));
 }
-function getTurnKey(combat, round = combat?.round, turn = combat?.turn) {
+function getTurnKey(combat, round = combat?.round, combatantId = combat?.combatant?.id) {
     if (!combat?.started) return;
-    return combat.id + '.' + round + '.' + turn;
+    return combat.id + '.' + round + '.' + combatantId;
 }
 function pickTriggered(target, candidates, event) {
     if (!target.actor) return [];
@@ -539,7 +542,7 @@ function membershipTriggers(diffs) {
         if (exitEntries.length) enqueue(() => runTriggers(token, exitEntries, constants.auraTriggers.exit, turnKey));
     });
 }
-async function turnEvent(token, event, {combat, round, turn} = {}) {
+async function turnEvent(token, event, {combat, round, combatantId} = {}) {
     if (!queryUtils.isTheGM() || !state.ready || !token?.parent) return;
     const index = ensureIndex(token.parent);
     const members = index?.membership.get(token.id);
@@ -547,7 +550,7 @@ async function turnEvent(token, event, {combat, round, turn} = {}) {
     const candidates = Array.from(members.entries()).map(([key, distance]) => ({entry: index.entries.get(key), distance})).filter(candidate => candidate.entry);
     const entries = pickTriggered(token, candidates, event);
     if (!entries.length) return;
-    const turnKey = getTurnKey(combat, round, turn);
+    const turnKey = getTurnKey(combat, round, combatantId);
     await enqueue(() => runTriggers(token, entries, event, turnKey));
 }
 function isReady() {

@@ -48,6 +48,7 @@ export function readyHooks() {
     Hooks.on(constants.effectHookNames.createActiveEffect, events.effectEvents.createActiveEffect);
     Hooks.on(constants.effectHookNames.deleteActiveEffect, events.effectEvents.deleteActiveEffect);
     Hooks.on(constants.effectHookNames.updateActiveEffect, events.effectEvents.updateActiveEffect);
+    Hooks.on(constants.effectHookNames.suppressionChanged, events.effectEvents.suppressionChanged);
     // Region Events
     Hooks.on(constants.regionHooksNames.preCreateRegion, events.regionEvents.preCreateRegion);
     Hooks.on(constants.regionHooksNames.preUpdateRegion, events.regionEvents.preUpdateRegion);
@@ -68,8 +69,7 @@ export function readyHooks() {
     Hooks.on(constants.itemHookNames.preUpdateItem, events.itemEvents.preUpdateItem);
     if (queryUtils.isTheGM()) {
         // Combat Events
-        Hooks.on(constants.combatHookNames.updateCombat, events.combatEvents.updateCombat);
-        Hooks.on(constants.combatHookNames.combatStart, events.combatEvents.combatStart);
+        Hooks.on(constants.combatHookNames.preUpdateCombat, events.combatEvents.preUpdateCombat);
         Hooks.on(constants.combatHookNames.deleteCombat, events.combatEvents.deleteCombat);
         Hooks.on(constants.combatHookNames.updateCombatant, events.combatEvents.updateCombatant);
         Hooks.once(constants.auraHookNames.catReady, events.auraEvents.catReady);
@@ -111,7 +111,6 @@ export function initHooks() {
     // Integration
     Hooks.on(constants.miscHookNames.daeModifySpecials, dae.modifySpecials);
     Hooks.once(constants.miscHookNames.tidyReady, tidy5e.headerControls);
-    Hooks.on(constants.miscHookNames.renderTidy5eItemSheetClassic, tidy5e.renderTidySheet);
     Hooks.on(constants.miscHookNames.renderTidy5eItemSheetQuadrone, tidy5e.renderTidySheet);
     Hooks.on(constants.miscHookNames.renderTidy5eCharacterSheetQuadrone, tidy5e.renderTidySheet);
     Hooks.once(constants.miscHookNames.macroautocomplete, macroautocomplete.registerCAT);

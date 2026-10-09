@@ -140,7 +140,6 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
     }
     /** @override */
     async draw() {
-        // eslint-disable-next-line no-undef
         if (!this.template) this.template = this.addChild(new PIXI.Graphics());
         if (this.controlIcon && this._currentIconStr !== this.icon) {
             this.controlIcon.destroy();
@@ -154,8 +153,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
         if (!this.ruler) this.ruler = this.addChild(this._drawRulerText());
         const texture = this.document.texture;
         if (texture)  {
-            // eslint-disable-next-line no-undef
-            this._texture = await loadTexture(texture, {fallback: 'icons/svg/hazard.svg'}); 
+            this._texture = await foundry.canvas.loadTexture(texture, {fallback: 'icons/svg/hazard.svg'});
         } else {
             this._texture = null;
         }
@@ -207,7 +205,6 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
             let offset = this.tileTexture ? 0 : distancePixels;
             this.template.beginTextureFill({
                 texture: this._texture,
-                // eslint-disable-next-line no-undef
                 matrix: new PIXI.Matrix().scale(scale, scale).translate(-offset, -offset)
             });
         } else {
@@ -324,15 +321,13 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
         let distancePixels = (distance / canvas.dimensions.distance) * canvas.dimensions.size;
         if (shapeData.type === 'rectangle') {
             let length = distancePixels * 2; 
-            // eslint-disable-next-line no-undef
             return new PIXI.Rectangle(-length / 2, -length / 2, length, length);
         } 
         else if (shapeData.type === 'circle') {
             let radius = distancePixels;
-            if (!game.settings.get('core', 'gridTemplates')) {
+            if (!shapeData.gridBased) {
                 radius = Math.round(radius / (canvas.dimensions.size / 2)) * (canvas.dimensions.size / 2);
             }
-            // eslint-disable-next-line no-undef
             return new PIXI.Circle(0, 0, radius);
         }
         return null;

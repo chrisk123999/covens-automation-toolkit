@@ -100,6 +100,27 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
     if (deleteAnimation) genericUtils.setProperty(effectData, 'flags.cat.animation.delete', {...deleteAnimation, config: deleteAnimationOptions});
     if (activityUuid) genericUtils.setProperty(effectData, 'flags.cat.activityUuid', activityUuid);
     if (copyConfigs) genericUtils.setProperty(effectData, 'flags.cat.config', genericUtils.mergeObject(effectData.flags.cat?.config ?? {}, copyConfigs));
+    if (effectData.origin) setOrigin(effectData, effectData.origin);
+    return effectData;
+}
+/**
+ * Point effect data at its origin, writing dnd5e's `system.origin` to match and replacing any copied from another effect.
+ * @param {object} effectData Effect data to write into, which is mutated.
+ * @param {string|object} origin The activity, item, effect or actor the effect comes from, or its uuid.
+ * @returns {object} The same effect data.
+ */
+function setOrigin(effectData, origin) {
+    if (typeof origin === 'string') origin = fromUuidSync(origin, {strict: false}) ?? origin;
+    effectData.origin = origin?.uuid ?? origin;
+    if (effectData.type === 'condition') return effectData;
+    const item = origin?.documentName === 'Item' ? origin : origin?.item;
+    const systemOrigin = {
+        activity: origin?.documentName === 'Activity' ? origin.uuid : undefined,
+        effect: origin?.documentName === 'ActiveEffect' ? origin.uuid : undefined,
+        item: item?.uuid,
+        actor: (origin?.documentName === 'Actor' ? origin : origin?.actor ?? item?.actor)?.uuid
+    };
+    genericUtils.setProperty(effectData, 'system.origin', Object.fromEntries(Object.entries(systemOrigin).filter(([, uuid]) => uuid)));
     return effectData;
 }
 
@@ -122,5 +143,6 @@ export default {
     setRules,
     setIdentifier,
     buildEffectData,
+    setOrigin,
     toArray
 };

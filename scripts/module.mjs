@@ -27,6 +27,7 @@ Hooks.once('init', () => {
     handlers.quickConditions.registerHelpers();
     handlers.movement.register();
     handlers.weapon.register();
+    CONFIG.DND5E.senses.devilsSight = {label: 'CAT.Senses.DevilsSight', grantsSight: true};
     globalThis.cat = {
         api: buildApi(),
         applications,
@@ -60,6 +61,7 @@ Hooks.once('ready', async () => {
     patches.effectPatching.patch(true);
     patches.compendiumBrowserPatching.patch(true);
     patches.combatPatching.patch(true);
+    patches.daePatching.patch(true);
     handlers.grapple.register();
     handlers.aura.register();
     await utils.genericUtils.sleep(1000); //To avoid eating console logs from other modules.

@@ -614,7 +614,7 @@ class CombatEvent extends CatEvent {
         this.turn = turn;
         this.previousRound = previousRound;
         this.previousTurn = previousTurn;
-        this.setContext(token.actor, {token});
+        this.setContext(token?.actor ?? combatant?.actor, {token});
     }
     appendData(data) {
         return {

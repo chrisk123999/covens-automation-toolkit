@@ -51,7 +51,8 @@ export default defineConfig([
                 Roll: 'writable',
                 ActiveEffect: 'writable',
                 Folder: 'writable',
-                ChatMessage: 'writable'
+                ChatMessage: 'writable',
+                PIXI: 'writable'
             },
             ecmaVersion: 'latest',
             sourceType: 'module'

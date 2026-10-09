@@ -60,8 +60,10 @@ function noAnimation(effect, options) {
 }
 function effectDescription(effect, updates) {
     if (updates.description || !effect.parent) return;
-    if (effect.transfer && effect.parent.documentName !== 'Item') return;
-    const item = (!effect.transfer && effect.origin) ? effectUtils.getOriginActivitySync(effect)?.item : effect.parent;
+    const isEnchantment = effect.type === 'enchantment';
+    if (effect.transfer && !isEnchantment && effect.parent.documentName !== 'Item') return;
+    const fromOrigin = (!effect.transfer || isEnchantment) && effect.origin;
+    const item = fromOrigin ? effectUtils.getOriginActivitySync(effect)?.item : effect.parent;
     if (item?.documentName != 'Item') return;
     const mode = game.settings.get('cat', 'effectDescriptionsNPC');
     if (mode && item.actor?.type === 'npc') return;
@@ -70,7 +72,7 @@ function effectDescription(effect, updates) {
     if (description) effect.updateSource({description});
 }
 function activityDC(effect) {
-    if (effect.transfer || !effect.origin) return;
+    if ((effect.transfer && effect.type !== 'enchantment') || !effect.origin) return;
     const changes = effect.system.changes ?? [];
     if (!changes.some(change => change.key === 'flags.midi-qol.OverTime' && change.value.includes('$activity.dc'))) return;
     const activity = effectUtils.getOriginActivitySync(effect);
@@ -132,9 +134,8 @@ async function specialDuration(workflow) {
                         }
                         break;
                     case 'hitByAnotherCreature':
-                        if (!workflow.hitTargets.size) break;
-                    // eslint-disable-next-line no-fallthrough
                     case 'attackedByAnotherCreature': {
+                        if (i === 'hitByAnotherCreature' && !workflow.hitTargets.size) break;
                         if (!workflow.activity) return;
                         if (!workflowUtils.isAttackType(workflow, 'attack')) break;
                         const origin = (await effectUtils.getOriginActivity(effect))?.item;
@@ -144,9 +145,8 @@ async function specialDuration(workflow) {
                         break outerLoop;
                     }
                     case 'hitBySource':
-                        if (!workflow.hitTargets.size) break;
-                    // eslint-disable-next-line no-fallthrough
                     case 'attackedBySource': {
+                        if (i === 'hitBySource' && !workflow.hitTargets.size) break;
                         if (!workflow.activity) return;
                         if (!workflowUtils.isAttackType(workflow, 'attack')) break;
                         const origin = (await effectUtils.getOriginActivity(effect))?.item;
@@ -233,22 +233,14 @@ async function specialDurationEquipment(item, {removed} = {}) {
         if (specialDurations.includes(item.system.type?.value)) await documentUtils.deleteDocument(effect);
     }));
 }
-async function disableConditionEquipment(item) {
-    const actor = item.actor;
+async function refreshDisableConditions(actor) {
     if (!actor) return;
+    const equippedTypes = new Set(actor.items.filter(i => i.system.equipped && i.type === 'equipment').map(i => i.system.type?.value));
     await Promise.all(actorUtils.getEffects(actor, {includeItemEffects: true}).map(async effect => {
         const conditions = effect.flags.cat?.disableCondition;
         if (!conditions?.length) return;
-        const shouldDisable = actor.items.some(i => i.system.equipped && i.type === 'equipment' && conditions.includes(i.system.type?.value));
+        const shouldDisable = conditions.some(condition => actor.statuses.has(condition) || equippedTypes.has(condition));
         if (!!effect.disabled !== shouldDisable) await documentUtils.update(effect, {disabled: shouldDisable});
-    }));
-}
-async function disableConditionStatuses(effect, gainedStatus) {
-    await Promise.all(actorUtils.getEffects(effect.parent, {includeItemEffects: true}).filter(i => i.id != effect.id).map(async eff => {
-        const disableConditions = eff.flags.cat?.disableCondition;
-        if (!disableConditions?.length) return;
-        const shouldDisable = effect.statuses.some(k => disableConditions.includes(k)) & gainedStatus;
-        if (!!effect.disabled !== shouldDisable) await documentUtils.update(eff, {disabled: shouldDisable});
     }));
 }
 async function specialDurationHitPoints(actor, updates) {
@@ -292,7 +284,7 @@ async function specialDurationZeroSpeed(actor) {
     const effects = actorUtils.getEffects(actor, {includeItemEffects: true}).filter(i => i.flags.cat?.specialDuration?.includes('zeroSpeed'));
     if (!effects.length) return;
     const types = ['burrow', 'climb', 'fly', 'swim', 'walk'];
-    const allZero = types.every(t => actor.system.attributes.movement[t] === 0);
+    const allZero = types.every(t => actor.system.attributes.movement.speeds[t] === 0);
     if (!allZero) return;
     await documentUtils.deleteEmbeddedDocuments(actor, 'ActiveEffect', effects.map(i => i.id));
 }
@@ -311,7 +303,7 @@ async function rehideActivities(effect) {
     await itemUtils.rehideActivities(originActivity.item, identifiers, {favorite: !!effect.flags.cat?.favoriteActivities});
 }
 function difficultTerrain(gridSpace, token, options, found) {
-    if (!token.actor.flags.cat?.ignoreDifficultTerrain?.tokens) return;
+    if (!token.actor?.flags.cat?.ignoreDifficultTerrain?.tokens) return;
     found.clear();
 }
 export default {
@@ -325,8 +317,7 @@ export default {
     specialDurationConditions,
     specialDurationRemovedConditions,
     specialDurationEquipment,
-    disableConditionEquipment,
-    disableConditionStatuses,
+    refreshDisableConditions,
     specialDurationToolCheck,
     specialDurationHitPoints,
     specialDurationTurn,

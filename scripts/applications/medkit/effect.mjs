@@ -1,4 +1,5 @@
 import MedkitApp from './base.mjs';
+import {constants} from '../../lib/_module.mjs';
 const {fields} = foundry.data;
 
 const SPECIAL_DURATION_GROUPS = {
@@ -45,8 +46,8 @@ export default class EffectMedkit extends MedkitApp {
         context.animationDelete = this._animationFlagOption({key: 'effect-animation-delete', label: _loc('CAT.MEDKIT.Effect.AnimationDelete.Label'), tooltip: _loc('CAT.MEDKIT.Effect.AnimationDelete.Tooltip'), path: 'animation.delete', macroKey: 'delete'});
 
         const pickedConditions = new Set(flags.conditions ?? []);
-        context.conditionChoices = CONFIG.statusEffects
-            .map(s => ({value: s.id, label: _loc(s.name ?? s.label ?? s.id)}))
+        context.conditionChoices = constants.statusOptions
+            .map(({value, label}) => ({value, label}))
             .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}))
             .map(c => ({...c, selected: pickedConditions.has(c.value)}));
 
@@ -59,7 +60,7 @@ export default class EffectMedkit extends MedkitApp {
             const label = groupLabel(key);
             return {label, options: sortChoices(options.map(o => ({value: o.value, label: `${label}: ${o.label}`})))};
         };
-        const statusChoices = suffix => CONFIG.statusEffects.map(s => ({value: s.id + suffix, label: _loc(s.name ?? s.label ?? s.id)}));
+        const statusChoices = suffix => constants.statusOptions.map(o => ({value: o.value + suffix, label: o.label}));
         const toolChoices = suffix => Object.entries(CONFIG.DND5E.tools).map(([key, tool]) => ({value: key + suffix, label: fromUuidSync(tool.id)?.name ?? key}));
         context.specialDurationGroups = [
             ...Object.entries(SPECIAL_DURATION_GROUPS).map(([key, list]) => ({

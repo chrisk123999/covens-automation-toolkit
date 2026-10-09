@@ -19,7 +19,7 @@ async function registerAutomations(module) {
             if (!version) return;
             constants.automations.registerAutomation({
                 source: CONFIG.id,
-                rules: entry.system.source.rules,
+                rules: entry.system.source?.rules || 'all',
                 identifier: entry.system.identifier,
                 version: version,
                 uuid: entry.uuid,

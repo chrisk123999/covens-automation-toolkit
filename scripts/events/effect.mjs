@@ -1,4 +1,4 @@
-import {genericUtils, queryUtils} from '../utilities/_module.mjs';
+import {effectUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {effects} from '../handlers/_module.mjs';
 async function doCreateActiveEffect(data, options) {
@@ -33,7 +33,7 @@ async function createActiveEffect(effect, options, userId) {
     if (effect.parent instanceof Actor) await effects.addConditions(effect);
     if (effect.statuses.size) {
         await effects.specialDurationConditions(effect);
-        await effects.disableConditionStatuses(effect, true);
+        await effects.refreshDisableConditions(effectUtils.getActor(effect));
     }
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await effects.specialDurationZeroSpeed(effect.parent);
     effectAnimations(effect, true);
@@ -45,7 +45,7 @@ async function deleteActiveEffect(effect, options, userId) {
     if (effect.parent instanceof Actor) await effects.removeConditions(effect);
     if (effect.statuses.size) {
         await effects.specialDurationRemovedConditions(effect);
-        await effects.disableConditionStatuses(effect, false);
+        await effects.refreshDisableConditions(effectUtils.getActor(effect));
     }
     effectAnimations(effect, false);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
@@ -56,9 +56,14 @@ async function updateActiveEffect(effect, updates, options, userId) {
     const prevActive = genericUtils.getProperty(options, 'cat.previous.active');
     if (effect.active !== prevActive) {
         effectAnimations(effect, effect.active);
-        if (effect.statuses.size) await effects.disableConditionStatuses(effect, effect.active);
+        if (effect.statuses.size) await effects.refreshDisableConditions(effectUtils.getActor(effect));
     }
     await new Events.EffectEvent(effect, constants.effectPasses.updated, {options, updates}).run();
+}
+async function suppressionChanged(effect, suppressed) {
+    if (!queryUtils.isTheGM() || !effectUtils.getActor(effect)) return;
+    effectAnimations(effect, !suppressed);
+    if (effect.statuses.size) await effects.refreshDisableConditions(effectUtils.getActor(effect));
 }
 function preCreateActiveEffect(effect, updates, options, userId) {
     effects.noAnimation(effect, options);
@@ -82,6 +87,7 @@ export default {
     createActiveEffect,
     deleteActiveEffect,
     updateActiveEffect,
+    suppressionChanged,
     preCreateActiveEffect,
     preDeleteActiveEffect,
     preUpdateActiveEffect,

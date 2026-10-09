@@ -1,21 +1,22 @@
 /**
  * Whether this token already has a stamp for the turn in progress. Outside combat there are no turns, so nothing is ever stamped.
- * @param {{id: string, combatId: string, round: number, turn: number}[]} stamps Stamps recorded so far.
+ * @param {{id: string, combatId: string, round: number, combatantId: string}[]} stamps Stamps recorded so far.
  * @param {string} tokenId Token whose stamp is being checked.
- * @param {{inCombat: boolean, combatId: string, currentRound: number, currentTurn: number}} combatData From tokenUtils.getCombatData.
+ * @param {{inCombat: boolean, combatId: string, currentRound: number, currentTurn: number, currentCombatantId: string}} combatData From tokenUtils.getCombatData. Stamps written before combatant ids were recorded compare by turn.
  * @returns {boolean}
  */
 function isStampedThisTurn(stamps, tokenId, combatData) {
     if (!combatData.inCombat || !stamps?.length) return false;
     const record = stamps.find(pt => pt.id === tokenId);
-    return record && record.combatId === combatData.combatId && record.round === combatData.currentRound &&  record.turn === combatData.currentTurn;
+    if (!record || record.combatId !== combatData.combatId || record.round !== combatData.currentRound) return false;
+    return record.combatantId ? record.combatantId === combatData.currentCombatantId : record.turn === combatData.currentTurn;
 }
 /**
  * Replace this token's stamp with one for the current turn.
- * @param {{id: string, combatId: string, round: number, turn: number}[]} stamps Stamps recorded so far.
+ * @param {{id: string, combatId: string, round: number, combatantId: string}[]} stamps Stamps recorded so far.
  * @param {string} tokenId Token being stamped.
- * @param {{inCombat: boolean, combatId: string, currentRound: number, currentTurn: number}} combatData From tokenUtils.getCombatData.
- * @returns {{id: string, combatId: string, round: number, turn: number}[]} A new array, or the input unchanged outside combat.
+ * @param {{inCombat: boolean, combatId: string, currentRound: number, currentCombatantId: string}} combatData From tokenUtils.getCombatData.
+ * @returns {{id: string, combatId: string, round: number, combatantId: string}[]} A new array, or the input unchanged outside combat.
  */
 function addTurnStamp(stamps, tokenId, combatData) {
     if (!combatData.inCombat) return stamps;
@@ -24,7 +25,7 @@ function addTurnStamp(stamps, tokenId, combatData) {
         id: tokenId,
         combatId: combatData.combatId,
         round: combatData.currentRound,
-        turn: combatData.currentTurn
+        combatantId: combatData.currentCombatantId
     });
     return newStamps;
 }

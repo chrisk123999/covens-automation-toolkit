@@ -1,6 +1,14 @@
 import {constants} from '../lib/_module.mjs';
 import {activityUtils, actorUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 /**
+ * Midi workflow options that skip or keep the attack and damage prompts.
+ * @param {boolean} fast Skip the prompts.
+ * @returns {object}
+ */
+function fastWorkflowOptions(fast) {
+    return {fastForwardDamage: fast, autoFastAttack: fast, autoRollAttack: fast};
+}
+/**
  * The activity's action type for the attack mode in play, such as mwak or rsak.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @returns {string|undefined} Undefined when the workflow has no activity.
@@ -61,10 +69,7 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
     const defaultOptions = {
         targetUuids: targets.map(i => i.uuid),
         configureDialog: false,
-        workflowOptions: {
-            autoFastDamage: fast,
-            autoRollAttack: fast
-        }
+        workflowOptions: fastWorkflowOptions(fast)
     };
     if (autoDamage) {
         let autoRollDamage = MidiQOL.configSettings().autoRollDamage;
@@ -83,25 +88,16 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
     options = genericUtils.mergeObject(defaultOptions, options);
     config = genericUtils.mergeObject(defaultConfig, config);
     config.midiOptions = options;
-    let fixSets = false;
     if (!config.midiOptions?.asUser && !queryUtils.hasPermission(activity.actor, game.userId)) {
         if (!config.midiOptions) config.midiOptions = {};
         config.midiOptions.asUser = queryUtils.firstOwner(activity.actor, true);
-        config.midiOptions.checkGMStatus = true;
+        config.midiOptions.checkGMstatus = true;
         config.midiOptions.workflowData = true;
-        fixSets = true;
     } else if (config.midiOptions?.asUser && config.midiOptions?.asUser !== game.userId) {
         config.midiOptions.workflowData = true;
-        fixSets = true;
     }
-    let workflow = await MidiQOL.completeActivityUse(activity, config, dialog, message);
-    workflow = workflow?.workflow ?? workflow;
-    if (fixSets && workflow) {
-        if (workflow.failedSaves) workflow.failedSaves = new Set(workflow.failedSaves);
-        if (workflow.hitTargets) workflow.hitTargets = new Set(workflow.hitTargets);
-        if (workflow.targets) workflow.targets = new Set(workflow.targets);
-    }
-    return workflow;
+    const workflow = await MidiQOL.completeActivityUse(activity, config, dialog, message);
+    return workflow?.workflow ?? workflow;
 }
 /**
  * {@link completeActivityUse} with the prompts skipped and damage rolled automatically.
@@ -142,7 +138,7 @@ async function syntheticActivityRoll(activity, targets = [], {config = {}, optio
 async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(item.actor);
     if (user && user.id !== game.user.id) {
-        return await queryUtils.query('syntheticActivityDataRoll', user, {
+        return MidiQOL.restoreWorkflowTokenSets(await queryUtils.query('syntheticActivityDataRoll', user, {
             activityData,
             itemUuid: item.uuid,
             targetUuids: targets.map(t => t.uuid),
@@ -154,7 +150,7 @@ async function syntheticActivityDataRoll(activityData, item, targets, {config = 
             consumeUsage,
             consumeResources,
             spellSlot
-        }, MidiQOL.configSettings().reactionTimeout * 1000);
+        }, MidiQOL.configSettings().reactionTimeout * 1000));
     }
     const activity = activityUtils.syntheticActivity(activityData, item);
     return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot});
@@ -200,10 +196,7 @@ async function completeItemUse(item, targets = [], {config = {}, options = {}, d
     const defaultOptions = {
         targetUuids: targets.map(i => i.uuid),
         configureDialog: false,
-        workflowOptions: {
-            autoFastDamage: fast,
-            autoRollAttack: fast
-        }
+        workflowOptions: fastWorkflowOptions(fast)
     };
     if (autoDamage) {
         let autoRollDamage = MidiQOL.configSettings().autoRollDamage;
@@ -222,25 +215,16 @@ async function completeItemUse(item, targets = [], {config = {}, options = {}, d
     options = genericUtils.mergeObject(defaultOptions, options);
     config = genericUtils.mergeObject(defaultConfig, config);
     config.midiOptions = options;
-    let fixSets = false;
     if (!config.midiOptions?.asUser && !queryUtils.hasPermission(item.actor, game.userId)) {
         if (!config.midiOptions) config.midiOptions = {};
         config.midiOptions.asUser = queryUtils.firstOwner(item.actor, true);
-        config.midiOptions.checkGMStatus = true;
+        config.midiOptions.checkGMstatus = true;
         config.midiOptions.workflowData = true;
-        fixSets = true;
     } else if (config.midiOptions?.asUser && config.midiOptions?.asUser !== game.userId) {
         config.midiOptions.workflowData = true;
-        fixSets = true;
     }
-    let workflow = await MidiQOL.completeItemUse(item, config, dialog, message);
-    workflow = workflow?.workflow ?? workflow;
-    if (fixSets && workflow) {
-        if (workflow.failedSaves) workflow.failedSaves = new Set(workflow.failedSaves);
-        if (workflow.hitTargets) workflow.hitTargets = new Set(workflow.hitTargets);
-        if (workflow.targets) workflow.targets = new Set(workflow.targets);
-    }
-    return workflow;
+    const workflow = await MidiQOL.completeItemUse(item, config, dialog, message);
+    return workflow?.workflow ?? workflow;
 }
 /**
  * {@link completeItemUse} with the prompts skipped and damage rolled automatically.
@@ -281,7 +265,7 @@ async function syntheticItemRoll(item, targets = [], {config = {}, options = {},
 async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(actor);
     if (user && user.id !== game.user.id) {
-        return await queryUtils.query('syntheticItemDataRoll', user, {
+        return MidiQOL.restoreWorkflowTokenSets(await queryUtils.query('syntheticItemDataRoll', user, {
             itemData,
             actorUuid: actor.uuid,
             targetUuids: targets.map(t => t.uuid),
@@ -293,7 +277,7 @@ async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}
             consumeUsage,
             consumeResources,
             spellSlot
-        }, MidiQOL.configSettings().reactionTimeout * 1000);
+        }, MidiQOL.configSettings().reactionTimeout * 1000));
     }
     const newItem = itemUtils.syntheticItem(itemData, actor);
     return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot});
@@ -461,7 +445,7 @@ function addMacroConditions(workflow, conditions) {
     const existing = getMacroConditions(workflow);
     if (typeof conditions === 'string') existing.add(conditions);
     else conditions.forEach(c => existing.add(c));
-    setWorkflowProperty(workflow, 'conditions', existing);
+    setWorkflowProperty(workflow, 'conditions', Array.from(existing));
 }
 /**
  * Conditions flagged by {@link addMacroConditions} as applied programmatically.
@@ -477,12 +461,21 @@ function getMacroConditions(workflow) {
  * @returns {{activity: Activity|undefined, item: Item5e, actor: foundry.documents.Actor}|undefined} Undefined when no source actor is found.
  */
 function getSaveSource(config) {
-    const {workflowId, saveItemUuid} = config.midiOptions ?? {};
-    const activity = getWorkflowProperty(config, 'activity') ?? (workflowId ? MidiQOL.Workflow.getWorkflow(workflowId)?.activity : undefined);
+    const {workflowId, saveItemUuid, saveActivityUuid} = config.midiOptions ?? {};
+    const activity = getWorkflowProperty(config, 'activity') ?? (workflowId ? MidiQOL.Workflow.getWorkflow(workflowId)?.activity : undefined) ?? (saveActivityUuid ? fromUuidSync(saveActivityUuid, {strict: false}) : undefined);
     const item = activity?.item ?? (saveItemUuid ? fromUuidSync(saveItemUuid, {strict: false}) : undefined);
     const actor = item?.actor;
     if (!actor) return;
     return {activity, item, actor};
+}
+/**
+ * The activity a roll was requested by, from CAT's workflow data or midi-qol's save request.
+ * @param {object} config Roll configuration.
+ * @returns {Promise<Activity|undefined>}
+ */
+async function getConfigActivity(config) {
+    const uuid = getWorkflowProperty(config, 'activityUuid') ?? config.midiOptions?.saveActivityUuid;
+    if (uuid) return await fromUuid(uuid);
 }
 /**
  * Append an extra damage roll to a workflow after its damage has been rolled.
@@ -544,11 +537,11 @@ async function bonusAttack(workflow, formula) {
  * @param {foundry.documents.TokenDocument[]} targets Tokens the use is aimed at.
  * @param {object} [options] Additional options.
  * @param {string} [options.flavor] Flavour text for the chat card.
- * @param {string} [options.itemCardId] 'new' posts a fresh card.
+ * @param {string} [options.itemCardUuid] 'new' posts a fresh card.
  * @param {Item5e} [options.sourceItem] Names and illustrates the card.
  * @returns {MidiQOL.DamageOnlyWorkflow}
  */
-function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flavor, itemCardId = 'new', sourceItem} = {}) {
+function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flavor, itemCardUuid = 'new', sourceItem} = {}) {
     let itemData = {};
     if (sourceItem) {
         itemData = {
@@ -557,7 +550,7 @@ function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flav
             type: sourceItem.type
         };
     }
-    return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, targets.map(t => t.object), damageRoll, {flavor, itemCardId, itemData});
+    return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, targets.map(t => t.object), damageRoll, {flavor, itemCardUuid, itemData});
 }
 /**
  * Apply damage directly to tokens, without a workflow.
@@ -579,7 +572,7 @@ async function updateTargets(workflow, targets, userId = game.user.id) {
     workflow.targets = new Set(targets);
     const ids = targets.map(t => t.id);
     if (userId === game.user.id) canvas.tokens?.setTargets(ids);
-    else await queryUtils.query('updateTargets', userId, {ids});
+    else await queryUtils.query('updateTargets', game.users.get(userId), {ids});
 }
 /**
  * Drop tokens from the workflow's targets, and from the user's own targeting.
@@ -688,6 +681,7 @@ export default {
     addMacroConditions,
     getMacroConditions,
     getSaveSource,
+    getConfigActivity,
     bonusDamage,
     getDamageTypes,
     getCastLevel,

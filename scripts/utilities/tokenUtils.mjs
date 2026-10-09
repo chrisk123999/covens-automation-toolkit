@@ -23,12 +23,14 @@ function getSavedCastData(token) {
  * @param {object} [options] Additional options.
  * @param {boolean} [options.wallsBlock] Return -1 when a wall lies between them.
  * @param {boolean} [options.checkCover] Include cover in the measurement.
- * @param {boolean} [options.convertToFt] Convert from grid units to scene units.
+ * @param {boolean} [options.convertToFt] Convert the scene's distance units to feet.
  * @returns {number}
  */
 function getDistance(token, target, {wallsBlock, checkCover, convertToFt = true} = {}) {
-    const distance =  MidiQOL.computeDistance(token.object, target.object, {wallsBlock, includeCover: checkCover});
-    return convertToFt ? genericUtils.convertDistance(token.parent, distance) : distance;
+    const distance = MidiQOL.computeDistance(token.object, target.object, {wallsBlock, includeCover: checkCover});
+    const units = token.parent.grid.units;
+    if (!convertToFt || distance < 0 || units === 'ft') return distance;
+    return dnd5e.utils.convertLength(distance, units, 'ft', {strict: false}).toNearest(0.01);
 }
 /**
  * Get the target's cover from the source, taking the greater of its cover condition and its calculated cover.
@@ -46,7 +48,7 @@ function checkCover(sourceToken, targetToken, {activity, displayName} = {}) {
     const cover = Math.max(moduleCover, statusCover);
     if (!displayName) return cover;
     const names = {
-        0: 'DND5E.COMMON.No',
+        0: 'COMMON.No',
         2: 'DND5E.CoverHalf',
         5: 'DND5E.CoverThreeQuarters',
         999: 'DND5E.CoverTotal'
@@ -70,7 +72,7 @@ function isEnemy(source, target, {dispositionA, dispositionB} = {}) {
 /**
  * Snapshot this token's combat position, for stamping an effect to a particular turn.
  * @param {foundry.documents.TokenDocument} token Token to read from.
- * @returns {{inCombat: boolean, combatId: string|null, currentRound: number|null, currentTurn: number|null}}
+ * @returns {{inCombat: boolean, combatId: string|null, currentRound: number|null, currentTurn: number|null, currentCombatantId: string|null}}
  */
 function getCombatData(token) {
     const combat = token.combatant?.combat;
@@ -78,7 +80,8 @@ function getCombatData(token) {
         inCombat: !!combat,
         combatId: combat ? combat.id : null,
         currentRound: combat ? combat.round : null,
-        currentTurn: combat ? combat.turn : null
+        currentTurn: combat ? combat.turn : null,
+        currentCombatantId: combat?.combatant?.id ?? null
     };
 }
 /**
@@ -197,8 +200,8 @@ async function displaceToken(token, {sourceToken, destination, centerpoint, anim
  * @returns {Promise<void>}
  */
 async function swapTokens(tokenA, tokenB, {animate = true} = {}) {
-    const positionA = {x: tokenA.x, y: tokenA.y, elevation: tokenA.elevation};
-    const positionB = {x: tokenB.x, y: tokenB.y, elevation: tokenB.elevation};
+    const positionA = {x: tokenA.x, y: tokenA.y, elevation: tokenA.elevation, level: tokenA.level};
+    const positionB = {x: tokenB.x, y: tokenB.y, elevation: tokenB.elevation, level: tokenB.level};
     await Promise.all([
         moveToken(tokenA, [{...positionB, action: 'displace'}], {animate}),
         moveToken(tokenB, [{...positionA, action: 'displace'}], {animate})
@@ -227,36 +230,13 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
     if (ray) {
         angle = ray.angle;
     } else if (sourceToken) {
-        angle = Math.atan2(token.y - sourceToken.y, token.x - sourceToken.x);
+        const center = token.getCenterPoint();
+        const sourceCenter = sourceToken.getCenterPoint();
+        angle = Math.atan2(center.y - sourceCenter.y, center.x - sourceCenter.x);
     } else {
         return;
     }
-    const scene = token.parent;
-    const isGridless = scene.grid.isGridless || scene.grid.type === CONST.GRID_TYPES.GRIDLESS;
-    const dUnits = distance / scene.dimensions.distance;
-    let kGrid = dUnits;
-    if (!isGridless) {
-        const ux = Math.abs(Math.cos(angle));
-        const uy = Math.abs(Math.sin(angle));
-        const maxU = Math.max(ux, uy);
-        const minU = Math.min(ux, uy);
-        const diagonalRule = scene.grid.diagonals;
-        if (diagonalRule === CONST.GRID_DIAGONALS.EQUIDISTANT) {
-            kGrid = dUnits / maxU;
-        } else if (diagonalRule === CONST.GRID_DIAGONALS.ALTERNATING_1 || diagonalRule === CONST.GRID_DIAGONALS.ALTERNATING_2) {
-            kGrid = dUnits / (maxU + 0.5 * minU);
-        } else if (diagonalRule === CONST.GRID_DIAGONALS.RECTILINEAR || diagonalRule === CONST.GRID_DIAGONALS.ILLEGAL) {
-            kGrid = dUnits / (maxU + minU);
-        } else if (diagonalRule === CONST.GRID_DIAGONALS.EXACT || diagonalRule === CONST.GRID_DIAGONALS.APPROXIMATE) {
-            kGrid = dUnits;
-        }
-    }
-    const pixelDistance = kGrid * scene.dimensions.size;
-    let targetPoint = {
-        x: token.x + Math.cos(angle) * pixelDistance,
-        y: token.y + Math.sin(angle) * pixelDistance
-    };
-    if (!isGridless) targetPoint = scene.grid.getSnappedPoint(targetPoint, {mode: 0xFF0});
+    const targetPoint = token.getSnappedPosition(token.parent.grid.getTranslatedPoint({x: token.x, y: token.y}, Math.toDegrees(angle), distance));
     await moveToken(token, [
         {
             x: targetPoint.x,
@@ -330,18 +310,21 @@ async function grappleShoveSizeCheck(sourceToken, targetToken, identifier = 'gra
  * @returns {'bright'|'dim'|'dark'}
  */
 function getLightLevel(token) {
-    if (token.parent.environment.globalLight.enabled) return 'bright';
-    const center = Object.values(token.object.center);
-    const lights = canvas.effects.lightSources.filter(source => !(source instanceof foundry.canvas.sources.GlobalLightSource) && source.shape.contains(...center));
+    const point = token.getMovementOrigin();
+    if (canvas.effects.testInsideDarkness(point)) return 'dark';
+    const globalLight = canvas.environment.globalLightSource;
+    if (globalLight.active) {
+        const {min, max} = globalLight.data.darkness;
+        const darknessLevel = canvas.effects.getDarknessLevel(point);
+        if (darknessLevel >= min && darknessLevel <= max) return 'bright';
+    }
+    const lights = canvas.effects.lightSources.filter(source => source.active && !(source instanceof foundry.canvas.sources.GlobalLightSource) && source.testPoint(point));
     if (!lights.length) return 'dark';
-    const inBright = lights.some(light => {
-        const {data: {x, y}, ratio} = light;
-        return Math.hypot(center[0] - x, center[1] - y) <= ratio * light.shape.config.radius;
-    });
+    const inBright = lights.some(light => Math.hypot(point.x - light.data.x, point.y - light.data.y) <= light.ratio * light.shape.config.radius);
     return inBright ? 'bright' : 'dim';
 }
 /**
- * Get the movement spent by this token for the current round in combat. Movement history is not stored outside of combat.
+ * Get the movement spent by this token since the start of the current turn in combat. Core clears every combatant's movement history at each turn start, and does not store it outside of combat.
  * @param {foundry.documents.TokenDocument} token
  * @param {boolean} [getRemaining] Return spent movement subtracted from max speed.
  * @returns {number}

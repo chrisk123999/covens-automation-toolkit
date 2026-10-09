@@ -174,7 +174,7 @@ registerRestriction({
     canRequireAll: true,
     choices: () => ({
         ...CONFIG.DND5E.armorTypes,
-        unarmored: _loc('DND5E.ArmorClassUnarmored')
+        unarmored: _loc('DND5E.ARMORCLASS.Calculation.Unarmored')
     }),
     evaluate: ({value, requireAll}, {actor}) => {
         if (!actor.system.attributes?.ac) return RESULTS.FORCE_FAIL;

@@ -51,7 +51,6 @@ function getConditions(effect) {
     let conditions = new Set();
     const validKeys = [
         'macro.CE',
-        'macro.CUB',
         'macro.StatusEffect',
         'StatusEffect'
     ];
@@ -63,6 +62,9 @@ function getConditions(effect) {
     conditions = conditions.union(effect.statuses ?? new Set());
     return conditions;
 }
+function getOriginActivityUuid(effect) {
+    return effect.system?.origin?.activity ?? effect.flags.dae?.activity ?? effect.flags.cat?.activityUuid;
+}
 /**
  * Resolve the activity that created this effect, preferring the stamped uuid.
  * @param {ActiveEffect} effect Effect to read from.
@@ -70,7 +72,7 @@ function getConditions(effect) {
  */
 async function getOriginActivity(effect) {
     if (!effect) return;
-    const activityUuid = effect.flags.dae?.activity ?? effect.flags.cat?.activityUuid;
+    const activityUuid = getOriginActivityUuid(effect);
     if (activityUuid) return await fromUuid(activityUuid);
     if (!effect.origin) return;
     const origin = await fromUuid(effect.origin);
@@ -79,7 +81,7 @@ async function getOriginActivity(effect) {
     if (originActivityUuid) return await fromUuid(originActivityUuid);
     if (origin.parent?.documentName === 'Item') {
         return origin.parent.system.activities?.find(activity =>
-            activity.effects.some(aEffect => aEffect.effect.id === origin.id)
+            activity.effects.some(aEffect => aEffect._id === origin.id)
         );
     }
 }
@@ -89,7 +91,7 @@ async function getOriginActivity(effect) {
  * @returns {Activity|undefined}
  */
 function getOriginActivitySync(effect) {
-    const activityUuid = effect.flags.dae?.activity ?? effect.flags.cat?.activityUuid;
+    const activityUuid = getOriginActivityUuid(effect);
     if (activityUuid) return fromUuidSync(activityUuid, {strict: false});
     if (!effect.origin) return;
     const origin = fromUuidSync(effect.origin, {strict: false});
@@ -98,7 +100,7 @@ function getOriginActivitySync(effect) {
     if (originActivityUuid) return fromUuidSync(originActivityUuid, {strict: false});
     if (origin.parent?.documentName === 'Item') {
         return origin.parent.system.activities?.find(activity =>
-            activity.effects.some(aEffect => aEffect.effect.id === origin.id)
+            activity.effects.some(aEffect => aEffect._id === origin.id)
         );
     }
 }
@@ -172,7 +174,25 @@ function pushImageChanges(effectData, document, {identifier} = {}) {
     if (tokenImg) effectData.system.changes.push({key: 'token.texture.src', type: 'override', value: tokenImg, priority});
     return effectData;
 }
+/**
+ * Convert effect duration data to seconds, using the world calendar. Open-ended durations return undefined.
+ * @param {EffectDurationData} duration Duration data with `value` and `units`.
+ * @returns {number|undefined}
+ */
+function durationToSeconds({value, units} = {}) {
+    if (!value || !units) return;
+    const calendar = game.time.calendar;
+    let unit = units.slice(0, -1);
+    if (unit === 'round' || unit === 'turn') return Math.trunc(value * (CONFIG.time[unit + 'Time'] || 0)) || undefined;
+    if (unit === 'month') {
+        const monthCount = calendar.months.values.length;
+        value = monthCount ? Math.ceil(value * calendar.days.daysPerYear / monthCount) : 0;
+        unit = 'day';
+    }
+    return calendar.componentsToTime({[unit]: value});
+}
 export default {
+    durationToSeconds,
     getCastData,
     createEffects,
     getConditions,

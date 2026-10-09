@@ -2,11 +2,25 @@ import {checkEvents, hitDieEvents, saveEvents, skillEvents, toolEvents} from '..
 import {genericUtils, workflowUtils} from '../utilities/_module.mjs';
 import {optionalBonus} from '../mechanics/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
+function overtimeRequest(event) {
+    const element = event?.target instanceof HTMLElement ? event.target : undefined;
+    const link = element?.closest('.roll-link, [data-action="rollRequest"], [data-action="concentration"]');
+    if (link?.dataset.midiOvertimeActorUuid) return {actorUuid: link.dataset.midiOvertimeActorUuid, rollMode: link.dataset.midiRollMode ?? link.dataset.rollMode};
+    const messageId = element?.closest('[data-message-id]')?.dataset.messageId;
+    const flags = messageId ? game.messages.get(messageId)?.flags['midi-qol'] : undefined;
+    return {actorUuid: flags?.overtimeActorUuid, rollMode: flags?.overtimeRollMode};
+}
+function mergeRollOptions(config, options) {
+    if (!Object.keys(options).length) return;
+    const [firstRoll = {}, ...otherRolls] = config.rolls ?? [];
+    config.rolls = [genericUtils.mergeObject(firstRoll, {options}, {inplace: false}), ...otherRolls];
+}
 async function check(wrapped, config, dialog = {}, message = {}) {
     const options = {};
+    if (config.ability === 'spellcasting') config = {...config, ability: this.spellcastingAbility};
     const event = config.event;
     const checkId = config.ability;
-    const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
+    const activity = await workflowUtils.getConfigActivity(config);
     if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await checkEvents.situational(this, {config, dialog, message, options, checkId});
     if (activity) await checkEvents.targetSituational(this, {config, dialog, message, options, checkId});
@@ -14,12 +28,10 @@ async function check(wrapped, config, dialog = {}, message = {}) {
     const bonusSession = optionalBonus.rollSession();
     await optionalBonus.rollPreRoll('check', this, {config, dialog, message, options, checkId}, bonusSession);
     let overtimeActorUuid;
-    if (event) {
-        let target = event.target?.closest('.roll-link, [data-action="rollRequest"], [data-action="concentration"]');
-        if (target?.dataset?.midiOvertimeActorUuid) {
-            overtimeActorUuid = target.dataset.midiOvertimeActorUuid;
-            options.rollMode = target.dataset.midiRollMode ?? target.dataset.rollMode ?? options.rollMode;
-        }
+    const overtime = overtimeRequest(event);
+    if (overtime.actorUuid) {
+        overtimeActorUuid = overtime.actorUuid;
+        options.rollMode = overtime.rollMode ?? options.rollMode;
     }
     let messageData;
     let rollMode;
@@ -32,10 +44,10 @@ async function check(wrapped, config, dialog = {}, message = {}) {
         }
         messageData = message.data;
         if (overtimeActorUuid) messageData['flags.midi-qol.overtimeActorUuid'] = overtimeActorUuid;
-        rollMode = message.rollMode ?? game.settings.get('core', 'rollMode');
+        rollMode = message.rollMode ?? game.settings.get('core', 'messageMode');
     };
     Hooks.once('dnd5e.preRollAbilityCheck', messageDataFunc);
-    if (Object.entries(options).length) config.rolls = [{options}];
+    mergeRollOptions(config, options);
     config = {
         ...config,
         ...options
@@ -58,11 +70,14 @@ async function check(wrapped, config, dialog = {}, message = {}) {
     if (message.create !== false) {
         messageData ??= {};
         const messageId = event?.target.closest('[data-message-id]')?.dataset.messageId;
-        if (messageId) genericUtils.mergeObject(messageData, {'flags.dnd5e.originatingMessage': messageId});
+        if (messageId) {
+            genericUtils.mergeObject(messageData, {'system.origin': messageId});
+            roll.options.originatingMessage ??= messageId;
+        }
         genericUtils.mergeObject(messageData, {flags: options.flags ?? {}});
         //genericUtils.setProperty(messageData, 'flags.midi-qol.lmrtfy.requestId', options.flags?.lmrtfy?.data?.requestId);
-        messageData.template = 'modules/midi-qol/templates/roll-base.html';
-        await roll.toMessage(messageData, {rollMode: roll.options?.rollMode ?? rollMode});
+        const chatMessage = await roll.toMessage(messageData, {messageMode: roll.options?.rollMode ?? rollMode});
+        if (chatMessage) roll.parent = chatMessage;
     }
     await checkEvents.post(this, {config, dialog, message, options, checkId, roll});
     return [roll];
@@ -72,7 +87,7 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     const event = config.event;
     const skillId = config.skill;
     config.ability ??= this.system.skills[skillId]?.ability ?? CONFIG.DND5E.skills[skillId]?.ability;
-    const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
+    const activity = await workflowUtils.getConfigActivity(config);
     if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await skillEvents.situational(this, {config, dialog, message, options, skillId});
     if (activity) await skillEvents.targetSituational(this, {config, dialog, message, options, skillId});
@@ -80,12 +95,10 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     const bonusSession = optionalBonus.rollSession();
     await optionalBonus.rollPreRoll('skill', this, {config, dialog, message, options, skillId}, bonusSession);
     let overtimeActorUuid;
-    if (event) {
-        let target = event.target?.closest('.roll-link, [data-action="rollRequest"], [data-action="concentration"]');
-        if (target?.dataset?.midiOvertimeActorUuid) {
-            overtimeActorUuid = target.dataset.midiOvertimeActorUuid;
-            options.rollMode = target.dataset.midiRollMode ?? target.dataset.rollMode ?? options.rollMode;
-        }
+    const overtime = overtimeRequest(event);
+    if (overtime.actorUuid) {
+        overtimeActorUuid = overtime.actorUuid;
+        options.rollMode = overtime.rollMode ?? options.rollMode;
     }
     let messageData;
     let rollMode;
@@ -98,10 +111,10 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
         }
         messageData = message.data;
         if (overtimeActorUuid) messageData['flags.midi-qol.overtimeActorUuid'] = overtimeActorUuid;
-        rollMode = message.rollMode ?? game.settings.get('core', 'rollMode');
+        rollMode = message.rollMode ?? game.settings.get('core', 'messageMode');
     };
     Hooks.once('dnd5e.preRollSkill', messageDataFunc);
-    if (Object.entries(options).length) config.rolls = [{options}];
+    mergeRollOptions(config, options);
     config = {
         ...config,
         ...options
@@ -124,17 +137,22 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     if (message.create !== false) {
         messageData ??= {};
         let messageId = event?.target.closest('[data-message-id]')?.dataset.messageId;
-        if (messageId) genericUtils.mergeObject(messageData, {'flags.dnd5e.originatingMessage': messageId});
-        await roll.toMessage(messageData, {rollMode: roll.options?.rollMode ?? rollMode});
+        if (messageId) {
+            genericUtils.mergeObject(messageData, {'system.origin': messageId});
+            roll.options.originatingMessage ??= messageId;
+        }
+        const chatMessage = await roll.toMessage(messageData, {messageMode: roll.options?.rollMode ?? rollMode});
+        if (chatMessage) roll.parent = chatMessage;
     }
     await skillEvents.post(this, {config, dialog, message, options, skillId, roll});
     return [roll];
 }
 async function save(wrapped, config, dialog = {}, message = {}) {
     const options = {};
+    if (config.ability === 'spellcasting') config = {...config, ability: this.spellcastingAbility};
     const event = config.event;
     const saveId = config.ability;
-    const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
+    const activity = await workflowUtils.getConfigActivity(config);
     if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await saveEvents.situational(this, {config, dialog, message, options, saveId});
     if (activity) await saveEvents.targetSituational(this, {config, dialog, message, options, saveId});
@@ -142,12 +160,10 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     const bonusSession = optionalBonus.rollSession();
     await optionalBonus.rollPreRoll('save', this, {config, dialog, message, options, saveId}, bonusSession);
     let overtimeActorUuid;
-    if (event) {
-        let target = event.target?.closest('.roll-link, [data-action="rollRequest"], [data-action="concentration"]');
-        if (target?.dataset?.midiOvertimeActorUuid) {
-            overtimeActorUuid = target.dataset.midiOvertimeActorUuid;
-            options.rollMode = target.dataset.midiRollMode ?? target.dataset.rollMode ?? options.rollMode;
-        }
+    const overtime = overtimeRequest(event);
+    if (overtime.actorUuid) {
+        overtimeActorUuid = overtime.actorUuid;
+        options.rollMode = overtime.rollMode ?? options.rollMode;
     }
     let messageData;
     let rollMode;
@@ -160,10 +176,10 @@ async function save(wrapped, config, dialog = {}, message = {}) {
         }
         messageData = message.data;
         if (overtimeActorUuid) messageData['flags.midi-qol.overtimeActorUuid'] = overtimeActorUuid;
-        rollMode = message.rollMode ?? game.settings.get('core', 'rollMode');
+        rollMode = message.rollMode ?? game.settings.get('core', 'messageMode');
     };
     Hooks.once('dnd5e.preRollSavingThrow', messageDataFunc);
-    if (Object.entries(options).length) config.rolls = [{options}];
+    mergeRollOptions(config, options);
     config = {
         ...config,
         ...options
@@ -186,11 +202,14 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     if (message.create !== false) {
         messageData ??= {};
         let messageId = event?.target.closest('[data-message-id]')?.dataset.messageId;
-        if (messageId) genericUtils.mergeObject(messageData, {'flags.dnd5e.originatingMessage': messageId});
+        if (messageId) {
+            genericUtils.mergeObject(messageData, {'system.origin': messageId});
+            roll.options.originatingMessage ??= messageId;
+        }
         genericUtils.mergeObject(messageData, {flags: options.flags ?? {}});
         //genericUtils.setProperty(messageData, 'flags.midi-qol.lmrtfy.requestId', options.flags?.lmrtfy?.data?.requestId);
-        messageData.template = 'modules/midi-qol/templates/roll-base.html';
-        await roll.toMessage(messageData, {rollMode: roll.options?.rollMode ?? rollMode});
+        const chatMessage = await roll.toMessage(messageData, {messageMode: roll.options?.rollMode ?? rollMode});
+        if (chatMessage) roll.parent = chatMessage;
     }
     await saveEvents.post(this, {config, dialog, message, options, saveId, roll});
     return [roll];
@@ -198,7 +217,7 @@ async function save(wrapped, config, dialog = {}, message = {}) {
 async function tool(wrapped, config, dialog, message) {
     let options = {};
     let toolId = config.tool;
-    const activity = await fromUuid(workflowUtils.getWorkflowProperty(config, 'activityUuid'));
+    const activity = await workflowUtils.getConfigActivity(config);
     if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await toolEvents.situational(this, {config, options, dialog, message, toolId});
     if (activity) await toolEvents.targetSituational(this, {config, dialog, message, options, toolId});

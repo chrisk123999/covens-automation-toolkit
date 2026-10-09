@@ -30,15 +30,7 @@ async function moveToken(token, movement, options, user) {
     const validTypes = ['npc', 'character', 'vehicle'];
     if (!validTypes.includes(token.actor.type)) return;
     const isFinalMovement = !movement.pending.waypoints.length;
-    const coords = genericUtils.duplicate(movement.destination);
-    const previousCoords = genericUtils.duplicate(movement.origin);
-    if (!previousCoords) return;
-    const xDiff = token.width * token.parent.grid.size / 2;
-    const yDiff = token.height * token.parent.grid.size / 2;
-    coords.x += xDiff;
-    coords.y += yDiff;
-    previousCoords.x += xDiff;
-    previousCoords.y += yDiff;
+    if (!movement.origin) return;
     const ignore = genericUtils.getProperty(options, 'cat.movement.ignore');
     //let skipMove = genericUtils.getCPRSetting('movementPerformance') < 2 && !isFinalMovement;
     let skipMove = false;
@@ -50,19 +42,12 @@ async function moveToken(token, movement, options, user) {
         if (!skipMove) {
             await new Events.MovementEvent(token, constants.movementPasses.moved, {action, options, teleport}).run();
         }
-        const moveRay = new foundry.canvas.geometry.Ray(previousCoords, coords);
         const currentRegions = Array.from(token.regions);
         const leavingRegions = previousRegions.filter(i => !currentRegions.includes(i));
         const enteringRegions = currentRegions.filter(i => !previousRegions.includes(i));
         const stayingRegions = previousRegions.filter(i => currentRegions.includes(i));
-        const throughRegions = token.parent.regions.reduce((acc, region) => {
-            const intersected = regionUtils.rayIntersectsRegion(region, moveRay);
-            if (!intersected) return acc;
-            acc.push(region);
-            return acc;
-        }, []);
-        let enteredAndLeftRegions = [];
-        if (!teleport) enteredAndLeftRegions = throughRegions.filter(i => !leavingRegions.includes(i) && !enteringRegions.includes(i) && !stayingRegions.includes(i));
+        const waypoints = [movement.origin, ...movement.passed.waypoints];
+        const enteredAndLeftRegions = teleport ? [] : token.parent.regions.filter(region => !previousRegions.includes(region) && !currentRegions.includes(region) && token.segmentizeRegionMovementPath(region, waypoints).some(segment => segment.type === CONST.REGION_MOVEMENT_SEGMENTS.ENTER));
         await regions.updateRegionEffects(token, currentRegions);
         if (leavingRegions.length) {
             await regions.processRegionActivities(token, leavingRegions, constants.regionPasses.left);
@@ -81,7 +66,7 @@ async function moveToken(token, movement, options, user) {
             await new Events.RegionEvent(enteredAndLeftRegions, constants.regionPasses.passedThrough, {tokens: [token]}).run();
         }
     }
-    await effects.specialDurationMove(token.actor);
+    if (movement.passed.waypoints.at(-1)?.action !== 'fall') await effects.specialDurationMove(token.actor);
 }
 export default {
     moveToken

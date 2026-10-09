@@ -92,10 +92,13 @@ export class SummonsManager {
         }
         if (size) {
             genericUtils.setProperty(actorData, 'system.traits.size', size);
-            genericUtils.setProperty(actorData, 'prototypeToken.width', CONFIG.DND5E.actorSizes[size].token ?? 1);
-            genericUtils.setProperty(actorData, 'prototypeToken.height', CONFIG.DND5E.actorSizes[size].token ?? 1);
-            genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleX', CONFIG.DND5E.actorSizes[size].dynamicTokenScale ?? 1);
-            genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleY', CONFIG.DND5E.actorSizes[size].dynamicTokenScale ?? 1);
+            if (!dnd5e.settings.tokenSizeSync) {
+                const sizeConfig = CONFIG.DND5E.actorSizes[size];
+                genericUtils.setProperty(actorData, 'prototypeToken.width', sizeConfig.token ?? 1);
+                genericUtils.setProperty(actorData, 'prototypeToken.height', sizeConfig.token ?? 1);
+                genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleX', sizeConfig.dynamicTokenScale ?? 1);
+                genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleY', sizeConfig.dynamicTokenScale ?? 1);
+            }
         }
         await summonEvents.preCreate(summon, updates);
         genericUtils.mergeObject(actorData, updates);
@@ -145,7 +148,7 @@ export class SummonsManager {
             return;
         }
         const save = spellcasting.save;
-        const attack = spellcasting.attack;
+        const attack = spellcasting.attack - (sourceClass.actor?.conditionRollReduction ?? 0);
         Object.values(itemData.system.activities).forEach(activityData => {
             if (matchDC && activityData.type === 'save') genericUtils.setProperty(activityData, 'save.dc', {
                 calculation: '',
@@ -173,7 +176,7 @@ export class SummonsManager {
         for (const summon of summons) {
             let calculatedInitiative;
             if (summon.initiative === 'follows') {
-                calculatedInitiative = baseInitiative + (followsCount * 0.001);
+                calculatedInitiative = baseInitiative - (followsCount * 0.001);
                 followsCount++;
             } else if (summon.initiative === 'standard') {
                 const roll = await summon.actor.getInitiativeRoll().evaluate();
@@ -182,7 +185,7 @@ export class SummonsManager {
                 });
                 calculatedInitiative = roll.total;
             }
-            const existingCombatant = combat.combatants.find(c => c.tokenId === summon.token?.id);
+            const existingCombatant = summon.token ? combat.getCombatantsByToken(summon.token)[0] : undefined;
             if (existingCombatant) {
                 combatantsToUpdate.push({
                     _id: existingCombatant.id,
@@ -293,7 +296,7 @@ export class SummonsManager {
             crosshairsConfig: crosshairConfig
         });
         if (!result || result.cancelled) return;
-        return await this.spawnSummon(summon, token.scene, result, {elevation: token.elevation});
+        return await this.spawnSummon(summon, token.scene, result, {elevation: token.elevation, level: token.level});
     }
     async moveSummon(summon, range, {token, action} = {}) {
         if (!summon.token) return await this.placeSummon(summon, range, {token});
@@ -301,12 +304,13 @@ export class SummonsManager {
         action ??= summon.token.movementAction;
         await tokenUtils.displaceToken(summon.token, {sourceToken: token, range, action});
     }
-    async spawnSummon(summon, scene, location, {elevation} = {}) {
+    async spawnSummon(summon, scene, location, {elevation, level} = {}) {
         const preToken = await summon.actor.getTokenDocument({
             x: location.x,
             y: location.y,
-            elevation: elevation ?? summon.ownerToken?.elevation 
-        });
+            elevation: elevation ?? summon.ownerToken?.elevation,
+            level: level ?? summon.ownerToken?.level
+        }, {parent: scene});
         const animation = summon.animation ? animationUtils.getAnimation({source: summon.animation.source, identifier: summon.animation.identifier}) : undefined;
         if (animation?.macros?.prePlace) await animation.macros.prePlace(summon, location, preToken);
         const token = (await documentUtils.createEmbeddedDocuments(scene, 'Token', [preToken.toObject()], {cat: {summonCreate: true}}))?.[0];
@@ -325,13 +329,14 @@ export class SummonsManager {
         if (animation?.macros?.postRemove) await animation.macros.postRemove(summon, location, token);
     }
     getSummons(actor) {
-        return this.summons.filter(summon => summon.owner.uuid === actor.uuid);
+        return this.summons.filter(summon => summon.ownerUuid === actor.uuid);
     }
     getSummonData(actor) {
         return this.#summons.get(actor.id);
     }
     getSummonsBySource(document) {
-        return this.summons.filter(summon => summon.sourceDocument?.uuid === document.uuid);
+        if (!document) return [];
+        return this.summons.filter(summon => summon.sourceDocumentUuid === document.uuid);
     }
     getSummonsByIdentifier(identifier, {actor} = {}) {
         if (actor) return this.getSummons(actor).filter(summon => summon.identifier === identifier);

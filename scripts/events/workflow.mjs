@@ -2,19 +2,27 @@ import {constants, Events} from '../lib/_module.mjs';
 import {optionalBonus, regionVisibility} from '../mechanics/_module.mjs';
 import {diceSoNice} from '../integration/_modules.mjs';
 import {effects, manualRolls} from '../handlers/_module.mjs';
+import {workflowUtils} from '../utilities/_module.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
     let event = await new Events.PreTargetingWorkflowEvent(constants.workflowPasses.preTargeting, {activity, token, config, dialog, message}).run();
     if (event) return false;
 }
+async function refundAborted(workflow) {
+    if (!workflow.aborted || workflowUtils.getWorkflowProperty(workflow, 'keepConsumption')) return;
+    await workflow.refundConsumption?.();
+}
 async function preItemRoll(workflow) {
     if (game.settings.get('cat', 'diceSoNice') && game.modules.get('dice-so-nice')?.active) diceSoNice.preItemRoll(workflow);
     let event = await new Events.WorkflowEvent(constants.workflowPasses.preItemRoll, workflow).run();
+    await refundAborted(workflow);
     if (event) return false;
 }
 async function preambleComplete(workflow) {
     let event = await new Events.WorkflowEvent(constants.workflowPasses.targeting, workflow).run();
+    await refundAborted(workflow);
     if (event) return;
     event = await new Events.WorkflowEvent(constants.workflowPasses.preambleComplete, workflow).run();
+    await refundAborted(workflow);
     if (event) return false;
 }
 async function attackRollConfig(workflow) {

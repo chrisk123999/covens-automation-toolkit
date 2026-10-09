@@ -59,31 +59,30 @@ function availableAbilities(wrapped) {
     });
     return allAbilities;
 }
-function prepareFinalDataSave(wrapped, ...args) {
-    wrapped.apply(this, args);
-    if (!this.actor || !this.save?.dc?.value) return;
-    const [_, sourceClassIdentifier] = itemUtils.getAdvancementSourceKey(this.item)?.split(':') ?? [];
-    if (!sourceClassIdentifier) return;
-    const totalBonus = this.actor.items.reduce((acc, item) => {
+function sourceClassIdentifier(item) {
+    return item.system.classIdentifier || itemUtils.getAdvancementSourceKey(item)?.split(':')[1];
+}
+function classBonus(activity, flagKey) {
+    const classIdentifier = activity.actor ? sourceClassIdentifier(activity.item) : undefined;
+    if (!classIdentifier) return 0;
+    return activity.actor.items.reduce((acc, item) => {
         if (!itemUtils.getEquipmentState(item)) return acc;
-        const bonus = item.flags.cat?.classDifficultyClass?.[sourceClassIdentifier]?.value;
-        if (bonus) return acc + bonus;
-        return acc;
+        return acc + (item.flags.cat?.[flagKey]?.[classIdentifier]?.value ?? 0);
     }, 0);
-    this.save.dc.value += totalBonus;
+}
+function prepareFinalDataSave(wrapped, ...args) {
+    const totalBonus = classBonus(this, 'classDifficultyClass');
+    if (!totalBonus) return wrapped.apply(this, args);
+    const originalBonus = this.save.dc.bonus;
+    this.save.dc.bonus = originalBonus ? originalBonus + ' + ' + totalBonus : String(totalBonus);
+    wrapped.apply(this, args);
+    this.save.dc.bonus = originalBonus;
 }
 function getAttackData(wrapped, ...args) {
-    const exit = () => wrapped(args);
+    const exit = () => wrapped(...args);
     if (!this.actor) return exit();
     if (this.attack.catModified) return exit();
-    const [_, sourceClassIdentifier] = itemUtils.getAdvancementSourceKey(this.item)?.split(':') ?? [];
-    if (!sourceClassIdentifier) return exit();
-    const totalBonus = this.actor.items.reduce((acc, item) => {
-        if (!itemUtils.getEquipmentState(item)) return acc;
-        const bonus = item.flags.cat?.classAttackBonus?.[sourceClassIdentifier]?.value;
-        if (bonus) return acc + bonus;
-        return acc;
-    }, 0);
+    const totalBonus = classBonus(this, 'classAttackBonus');
     this.attack.bonus ||= '';
     if (totalBonus) {
         this.attack.bonus += ' + ' + totalBonus;

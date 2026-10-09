@@ -5,7 +5,7 @@ import {genericUtils} from './_module.mjs';
  */
 function gmID() {
     let gmID = game.users.activeGM?.id;
-    const preferredGMId = game.settings.get('midi-qol', 'PreferredGM');  
+    const preferredGMId = MidiQOL.configSettings()?.preferredGM ?? '';
     if (preferredGMId !== '') {
         const preferredGM = game.users.get(preferredGMId);
         if (preferredGM?.active) gmID = preferredGM.id;
