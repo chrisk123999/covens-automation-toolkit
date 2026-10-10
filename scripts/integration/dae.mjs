@@ -20,34 +20,26 @@ function initFlags() {
 }
 function injectFlags() {
     for (const conditionRollMode of conditionFlags) {
-        genericUtils.setProperty(
-            game.i18n.translations,
-            `dae.fieldData.fieldCategories.CAT.${conditionRollMode}`,
-            _loc(`CAT.DAE.${conditionRollMode}.Category`)
-        );
+        genericUtils.setProperty(game.i18n.translations, `dae.fieldData.fieldCategories.CAT.${conditionRollMode}`, _loc(`CAT.DAE.${conditionRollMode}.Category`));
         for (const [condition, {name}] of Object.entries(CONFIG.DND5E.conditionTypes)) {
-            genericUtils.setProperty(game.i18n.translations, `dae.CAT.${conditionRollMode}.fieldData.${catFlag(conditionRollMode, condition)}`, {
+            DAE.localizationMap[catFlag(conditionRollMode, condition)] = {
                 name: _loc(`CAT.DAE.${conditionRollMode}.Name`, {condition: name}),
                 description: _loc(`CAT.DAE.${conditionRollMode}.Description`, {condition: name})
-            });
+            };
         }
     }
-    genericUtils.setProperty(
-        game.i18n.translations,
-        'dae.fieldData.fieldCategories.CAT.FeatureRollModes',
-        _loc('CAT.DAE.FeatureRollModes')
-    );
+    genericUtils.setProperty(game.i18n.translations, 'dae.fieldData.fieldCategories.CAT.FeatureRollModes', _loc('CAT.DAE.FeatureRollModes'));
     for (const featureRollMode of featureFlags) {
-        genericUtils.setProperty(game.i18n.translations, `dae.CAT.FeatureRollModes.fieldData.${catFlag(featureRollMode, 'identifier')}`, {
+        DAE.localizationMap[catFlag(featureRollMode, 'identifier')] = {
             name: _loc(`CAT.DAE.${featureRollMode}.Name`),
             description: _loc(`CAT.DAE.${featureRollMode}.Description`) 
-        });
+        };
     }
     genericUtils.setProperty(game.i18n.translations, 'dae.fieldData.fieldCategories.CAT.OTHER', _loc('CAT.DAE.Other'));
-    genericUtils.setProperty(game.i18n.translations, 'dae.CAT.OTHER.fieldData.flags.cat.ignoreDifficultTerrain.tokens', {
+    DAE.localizationMap['flags.cat.ignoreDifficultTerrain.tokens'] = {
         name: _loc('CAT.DAE.IgnoreDifficultTerrainTokens.Name'),
         description: _loc('CAT.DAE.IgnoreDifficultTerrainTokens.Description')
-    });
+    };
 }
 function addFlags(fieldData) {
     for (const [category, fields] of Object.entries(daeBrowserFields))
