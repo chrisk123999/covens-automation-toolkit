@@ -942,13 +942,16 @@
     },
     "DAE": {
       "CV": {
+        "Category": "CAT Condition Vulnerability",
         "Name": "{condition} Condition Vulnerability",
         "Description": "Condition Vulnerability to {condition}, roll at disadvantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
       },
       "CR": {
+        "Category": "CAT Condition Resistance",
         "Name": "{condition} Condition Resistance",
         "Description": "Condition Resistance to {condition}, roll at advantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
       },
+      "FeatureRollModes": "CAT Feature Roll Modes",
       "FF": {
         "Name": "Feature Failure",
         "Description": "Feature Failure on an activity by identifier, auto-fail saves. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
@@ -968,7 +971,8 @@
       "IgnoreDifficultTerrainTokens": {
         "Name": "Ignore Difficult Terrain: Other Tokens",
         "Description": "This actor does not consider other tokens as difficult terrain."
-      }
+      },
+      "Other": "CAT Other"
     },
     "Generic": {
       "Disabled": "Disabled",

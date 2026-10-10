@@ -1,6 +1,6 @@
 import CatRollResolver from '../applications/dice/roll-resolver.mjs';
 import {actorUtils, genericUtils, queryUtils} from './_module.mjs';
-const {OperatorTerm, NumericTerm} = foundry.dice.terms;
+const {OperatorTerm, NumericTerm, ParentheticalTerm} = foundry.dice.terms;
 /**
  * @typedef {object} CritOptions
  * @property {string} [bonusDamage] An extra term in the formula.
@@ -203,29 +203,41 @@ function replaceD20(roll, number) {
 }
 /**
  * Discards rolled terms and brings the total to the given value by adding a bonus.
- * @param {foundry.dice.Roll} roll Roll to work with.
+ * @param {foundry.dice.Roll} roll An evaluated roll.
  * @param {number} total Total to force the roll to.
  * @returns {foundry.dice.Roll}
  */
 function setTotalWithBonus(roll, total) {
-    let number = total;
-    for (const term of roll.terms) {
-        if (term.isDeterministic) {
-            if (Number.isNumeric(term.total)) number -= term.total;
-            continue;
-        }
-        for (const result of term.results) {
-            result.active = false;
-            result.discarded = true;
-        }
-    }
-    roll.terms.push(
+    const number = total - discardTerms(roll);
+    if (number) roll.terms.push(
         new OperatorTerm({operator: '+'}),
         new NumericTerm({number}).evaluate()
     );
     roll._total = total;
     roll.resetFormula();
     return roll;
+}
+// used locally only
+function discardTerms(roll) {
+    let numericTerms = 0;
+    for (let i = 0; i < roll.terms.length; i++) {
+        const term = roll.terms[i];
+        const subtraction = roll.terms[i - 1]?.operator === '-' ? -1 : 1;
+        if (term instanceof ParentheticalTerm) {
+            numericTerms += discardTerms(term.roll) * subtraction;
+            continue;
+        }
+        if (term instanceof NumericTerm) {
+            numericTerms += term.total * subtraction;
+            continue;
+        }
+        if (!term.results) continue;
+        for (const result of term.results) {
+            result.active = false;
+            result.discarded = true;
+        }
+    }
+    return numericTerms;
 }
 /**
  * Note - tools will roll '-1' if the associated item is not present on the character sheet.
