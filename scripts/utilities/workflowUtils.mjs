@@ -530,6 +530,16 @@ async function bonusAttack(workflow, formula) {
     await workflow.setAttackRoll(roll);
 }
 /**
+ * Add a part to the workflow's attack roll formula before it is rolled.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @param {string|number} formula Formula to add, such as '-1d4'.
+ */
+function addAttackRollPart(workflow, formula) {
+    const parts = getWorkflowProperty(workflow, 'attackRollParts') ?? [];
+    parts.push(String(formula));
+    setWorkflowProperty(workflow, 'attackRollParts', parts);
+}
+/**
  * Apply an already-evaluated roll as damage from a source token, with its own chat card.
  * @param {foundry.documents.TokenDocument} sourceToken Token dealing the damage.
  * @param {foundry.dice.Roll} damageRoll Evaluated roll to apply.
@@ -573,6 +583,18 @@ async function updateTargets(workflow, targets, userId = game.user.id) {
     const ids = targets.map(t => t.id);
     if (userId === game.user.id) canvas.tokens?.setTargets(ids);
     else await queryUtils.query('updateTargets', game.users.get(userId), {ids});
+}
+/**
+ * Record the workflow's targets on its item card, in the format dnd5e captures at card creation.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ */
+async function recordTargets(workflow) {
+    const chatCard = workflow.chatCard;
+    if (!chatCard?.system?.targets) return;
+    const descriptors = dnd5e.dataModels.chatMessage.fields.TargetsField.getDescriptors(workflow.targets ?? []);
+    const recorded = chatCard.system.targets.map(target => target.token);
+    if (recorded.length === descriptors.length && descriptors.every(target => recorded.includes(target.token))) return;
+    await documentUtils.update(chatCard, {'system.targets': descriptors});
 }
 /**
  * Drop tokens from the workflow's targets, and from the user's own targeting.
@@ -687,9 +709,11 @@ export default {
     getCastLevel,
     setActivity,
     bonusAttack,
+    addAttackRollPart,
     applyDamage,
     applyWorkflowDamage,
     updateTargets,
+    recordTargets,
     removeTargets,
     preventZeroHP,
     grantRollModifier,

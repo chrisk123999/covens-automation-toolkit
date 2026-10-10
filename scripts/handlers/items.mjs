@@ -62,12 +62,18 @@ async function hashCompendium(compendium, {register = false} = {}) {
 async function registerCompendiums({startup = false} = {}) {
     const enabledSources = automationUtils.getAutomationSources();
     const sources = constants.automations.sources;
+    const settings = game.settings.get('cat', 'automationSources');
+    const modules = constants.automations.moduleRegistrations;
+    const isEnabled = source => modules.has(source) ? settings[source]?.enabled !== false : enabledSources.includes(source);
     if (!startup) {
         for (const source of Array.from(sources)) {
-            if (!enabledSources.includes(source)) {
+            if (!isEnabled(source)) {
                 constants.automations.unregisterAutomationsBySource(source);
                 constants.scales.unregisterScalesBySource(source);
             }
+        }
+        for (const [id, options] of modules) {
+            if (isEnabled(id) && !sources.has(id)) await constants.automations.registerAutomationModule(id, options);
         }
     }
     const sourceList = [integration.dnd5e, integration.midiQol, integration.phb, integration.dmg, integration.ddbi];

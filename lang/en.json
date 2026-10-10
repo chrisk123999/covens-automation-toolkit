@@ -460,6 +460,15 @@
         "Browse": "Browse Sequencer Database"
       },
       "Animation": {
+        "Categories": {
+          "attack": "Attack",
+          "classFeature": "Class Feature",
+          "default": "Other",
+          "generic": "Generic",
+          "rangedAttack": "Ranged Attack",
+          "spell": "Spell",
+          "weaponAttacks": "Weapon Attack"
+        },
         "Credits": "Animation by",
         "Discord": "Discord",
         "Patreon": "Patreon"
@@ -597,9 +606,11 @@
           "zeroHP": "HP reduced to zero",
           "tempHP": "Temporary HP lost",
           "tempMaxHP": "Temporary max HP lost",
+          "rolledSave": "Rolled a saving throw",
           "Groups": {
             "Workflow": "Workflow",
             "Turn": "Turn",
+            "Roll": "Roll",
             "Movement": "Movement",
             "HitPoints": "Hit Points",
             "ConditionAdded": "Condition Added",
@@ -623,7 +634,9 @@
         "AnimationDelete": {
           "Label": "Remove Animation",
           "Tooltip": "Animation played when this effect is removed."
-        }
+        },
+        "AnimationApply": "Apply",
+        "AnimationRemove": "Remove"
       },
       "Generic": {
         "SelectLabel": "Generic Features",
@@ -891,6 +904,12 @@
       "EffectDescriptions": {
         "Name": "Automatic Effect Descriptions",
         "Hint": "When enabled, effects without descriptions will automatically be filled in from the origin item."
+      },
+      "PlacedRegionVisibility": {
+        "Name": "Placed Area Visibility",
+        "Hint": "Where areas placed by activities are drawn once placed. Their effects apply either way.",
+        "layer": "Regions Layer Only",
+        "always": "Always"
       },
       "EffectDescriptionsNPC": {
         "Name": "Hide NPC Effect Descriptions",

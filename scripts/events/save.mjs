@@ -1,4 +1,5 @@
 import {DialogApp} from '../applications/_module.mjs';
+import {effects} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 async function situational(actor, data) {
     return await new Events.SaveEvent(actor, constants.rollPasses.situational, data).run();
@@ -36,7 +37,9 @@ async function bonus(actor, data) {
     return await new Events.SaveEvent(actor, constants.rollPasses.bonus, data).run();
 }
 async function post(actor, data) {
-    return await new Events.SaveEvent(actor, constants.rollPasses.post, data).run();
+    const result = await new Events.SaveEvent(actor, constants.rollPasses.post, data).run();
+    await effects.specialDurationSave(actor);
+    return result;
 }
 export default {
     situational,

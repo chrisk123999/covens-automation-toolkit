@@ -52,7 +52,9 @@
     <fieldset data-section="animation">
         <legend>{{localize "CAT.MEDKIT.Effect.Animation"}}</legend>
         {{formGroup fields.noAnimation name="flags.cat.noAnimation" value=noAnimation hint=(localize "CAT.MEDKIT.Effect.NoAnimation.Hint")}}
+        <span class="subgroup">{{localize "CAT.MEDKIT.Effect.AnimationApply"}}</span>
         {{> "modules/cat/templates/medkit/shared/option-field.hbs" animationCreate}}
+        <span class="subgroup">{{localize "CAT.MEDKIT.Effect.AnimationRemove"}}</span>
         {{> "modules/cat/templates/medkit/shared/option-field.hbs" animationDelete}}
     </fieldset>
 </section>

@@ -5,6 +5,7 @@ const {fields} = foundry.data;
 const SPECIAL_DURATION_GROUPS = {
     Workflow: ['endOfWorkflow', 'forceSave', 'attackMissed', 'madeAttack', 'dealtDamage', 'castSpell', 'damaged', 'damagedByAlly', 'damagedByEnemy', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource'],
     Turn: ['turnStart', 'turnEnd'],
+    Roll: ['rolledSave'],
     Movement: ['moveFinished', 'zeroSpeed'],
     HitPoints: ['tempHP', 'tempMaxHP', 'zeroHP']
 };
@@ -42,8 +43,8 @@ export default class EffectMedkit extends MedkitApp {
             noAnimation: new fields.BooleanField({label: _loc('CAT.MEDKIT.Effect.NoAnimation.Label')})
         };
         context.noAnimation = flags.noAnimation ?? false;
-        context.animationCreate = this._animationFlagOption({key: 'effect-animation-create', label: _loc('CAT.MEDKIT.Effect.AnimationCreate.Label'), tooltip: _loc('CAT.MEDKIT.Effect.AnimationCreate.Tooltip'), path: 'animation.create', macroKey: 'create'});
-        context.animationDelete = this._animationFlagOption({key: 'effect-animation-delete', label: _loc('CAT.MEDKIT.Effect.AnimationDelete.Label'), tooltip: _loc('CAT.MEDKIT.Effect.AnimationDelete.Tooltip'), path: 'animation.delete', macroKey: 'delete'});
+        context.animationCreate = this._animationFlagOption({key: 'effect-animation-create', label: _loc('CAT.MEDKIT.Effect.AnimationCreate.Label'), hint: _loc('CAT.MEDKIT.Effect.AnimationCreate.Tooltip'), path: 'animation.create', macroKey: 'create'});
+        context.animationDelete = this._animationFlagOption({key: 'effect-animation-delete', label: _loc('CAT.MEDKIT.Effect.AnimationDelete.Label'), hint: _loc('CAT.MEDKIT.Effect.AnimationDelete.Tooltip'), path: 'animation.delete', macroKey: 'delete'});
 
         const pickedConditions = new Set(flags.conditions ?? []);
         context.conditionChoices = constants.statusOptions

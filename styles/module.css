@@ -221,18 +221,17 @@
         }
 
         &.cat-combobox-group {
-            padding: var(--cat-space-xs) var(--cat-space-sm);
-            border-top: 1px solid var(--cat-border-light);
-            color: var(--cat-text-muted);
+            padding: var(--cat-space-sm) var(--cat-space-sm) var(--cat-space-xs);
+            color: var(--cat-text-accent);
             font-weight: 600;
-            font-size: 0.75em;
+            font-size: 0.85em;
             text-transform: uppercase;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
             cursor: default;
-            background: var(--cat-bg-sunken);
+            background: transparent;
 
             &:hover {
-                background: var(--cat-bg-sunken);
+                background: transparent;
             }
         }
     }
@@ -646,6 +645,10 @@ cat-multi-combobox {
 
     .form-group.combo > label {
         grid-column: 1;
+    }
+
+    &.cat-medkit .form-group.combo {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     }
 
     .form-group.combo cat-multi-combobox > .chips {

@@ -42,6 +42,7 @@ const workflowHookNames = {
     preItemRoll: 'midi-qol.premades.postNoAction',
     preambleComplete: 'midi-qol.premades.postPreambleComplete',
     preAttackRollConfig: 'midi-qol.premades.preAttackRollConfig',
+    preRollAttack: 'dnd5e.preRollAttackV2',
     postAttackRoll: 'midi-qol.premades.postWaitForAttackRoll',
     attackRollComplete: 'midi-qol.premades.postAttackRollComplete',
     preTargetSave: 'midi-qol.preTargetSave',

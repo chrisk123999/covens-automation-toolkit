@@ -12,6 +12,7 @@ export default class CatMultiCombobox extends foundry.applications.elements.Adop
     #options = [];
     #selected = new Map();
     #open = false;
+    #stopFollow;
     #highlighted = -1;
     #amountsMode = false;
     #maxTotal = null;
@@ -416,26 +417,16 @@ export default class CatMultiCombobox extends foundry.applications.elements.Adop
         if (this.#open) return;
         this.#open = true;
         this.ownerDocument.body.append(this.#list);
-        this.#reposition();
+        this.#stopFollow = uiUtils.followAnchor(this.#input, this.#list, () => this.#closePopover());
         this.#list.hidden = false;
-        this.ownerDocument.defaultView.addEventListener('scroll', this.#reposition, true);
-        this.ownerDocument.defaultView.addEventListener('resize', this.#reposition);
     }
 
     #closePopover() {
         if (!this.#open) return;
         this.#open = false;
         this.#list.hidden = true;
-        this.ownerDocument.defaultView.removeEventListener('scroll', this.#reposition, true);
-        this.ownerDocument.defaultView.removeEventListener('resize', this.#reposition);
+        this.#stopFollow?.();
     }
-
-    #reposition = () => {
-        const rect = this.#input.getBoundingClientRect();
-        this.#list.style.left = `${rect.left}px`;
-        this.#list.style.top = `${rect.bottom}px`;
-        this.#list.style.width = `${rect.width}px`;
-    };
 
     #onDocumentMousedown = (event) => {
         if (this.contains(event.target) || this.#list.contains(event.target)) return;

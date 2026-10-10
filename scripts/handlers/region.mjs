@@ -23,6 +23,7 @@ function placed(region) {
     if (visibility) sourceUpdates.flags.cat.visibility = visibility;
     const coreVisibility = activity.flags.cat?.placed?.region?.coreVisibility;
     if (coreVisibility !== undefined) sourceUpdates.visibility = coreVisibility;
+    else if (region.visibility === CONST.REGION_VISIBILITY.ALWAYS && game.settings.get('cat', 'placedRegionVisibility') === 'layer') sourceUpdates.visibility = CONST.REGION_VISIBILITY.LAYER;
     const effects = activity.flags.cat?.placed?.region?.effects;
     if (effects) sourceUpdates.flags.cat.effects = effects;
     const activities = activity.flags.cat?.placed?.region?.activities;

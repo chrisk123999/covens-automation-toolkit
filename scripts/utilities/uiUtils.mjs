@@ -190,7 +190,32 @@ async function enrichHTML(html, rollData) {
 function showDC(actor) {
     return MidiQOL.shouldDisplaySaveDC(actor);
 }
+/**
+ * Keep a popover under its anchor every frame until stopped.
+ * @param {HTMLElement} anchor Element to sit under.
+ * @param {HTMLElement} popover Element to position.
+ * @param {Function} onDetached Called when the anchor leaves the document.
+ * @returns {Function} Stops following.
+ */
+function followAnchor(anchor, popover, onDetached) {
+    const view = anchor.ownerDocument.defaultView;
+    let frame;
+    let last;
+    const step = () => {
+        if (!anchor.isConnected) return onDetached();
+        const {left, bottom, width} = anchor.getBoundingClientRect();
+        const key = left + ',' + bottom + ',' + width;
+        if (key !== last) {
+            last = key;
+            Object.assign(popover.style, {left: left + 'px', top: bottom + 'px', width: width + 'px'});
+        }
+        frame = view.requestAnimationFrame(step);
+    };
+    step();
+    return () => view.cancelAnimationFrame(frame);
+}
 export default {
+    followAnchor,
     fallbackIcon,
     fadeOut,
     enableWindowDrag,

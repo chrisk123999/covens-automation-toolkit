@@ -11,6 +11,7 @@ export default class CatCombobox extends foundry.applications.elements.Adoptable
     #image;
     #options = [];
     #open = false;
+    #stopFollow;
     #highlighted = -1;
 
     get id() { return this.#input.id; }
@@ -121,7 +122,7 @@ export default class CatCombobox extends foundry.applications.elements.Adoptable
         matches.forEach((o, i) => {
             if (o.group && o.group !== lastGroup) {
                 const header = document.createElement('li');
-                header.className = 'cat-combobox-group';
+                header.classList.add('cat-combobox-group');
                 header.textContent = o.group;
                 this.#list.append(header);
             }
@@ -184,28 +185,18 @@ export default class CatCombobox extends foundry.applications.elements.Adoptable
         if (this.#open) return;
         this.#open = true;
         this.ownerDocument.body.append(this.#list);
-        this.#reposition();
+        this.#stopFollow = uiUtils.followAnchor(this.#input, this.#list, () => this.#closePopover());
         this.#list.hidden = false;
         const highlighted = this.#list.querySelector('li.highlighted');
         highlighted?.scrollIntoView({block: 'nearest'});
-        this.ownerDocument.defaultView.addEventListener('scroll', this.#reposition, true);
-        this.ownerDocument.defaultView.addEventListener('resize', this.#reposition);
     }
 
     #closePopover() {
         if (!this.#open) return;
         this.#open = false;
         this.#list.hidden = true;
-        this.ownerDocument.defaultView.removeEventListener('scroll', this.#reposition, true);
-        this.ownerDocument.defaultView.removeEventListener('resize', this.#reposition);
+        this.#stopFollow?.();
     }
-
-    #reposition = () => {
-        const rect = this.#input.getBoundingClientRect();
-        this.#list.style.left = `${rect.left}px`;
-        this.#list.style.top = `${rect.bottom}px`;
-        this.#list.style.width = `${rect.width}px`;
-    };
 
     #onKeydown(event) {
         const rows = this.#list.querySelectorAll('li[data-value]');

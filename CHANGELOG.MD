@@ -1,3 +1,17 @@
+# 0.1.2 Release:
+## Update Notes:
+- Added special duration: Rolled a saving throw.
+- Added setting: Placed Area Visibility. Areas placed by activities are drawn on the Regions layer only by default.
+## Bug Fixes:
+- Special durations triggered by attacks, saves and damage expire at that step of the roll.
+- Forced movement no longer spends a token's movement.
+- Saving settings keeps automation sources registered unless they are disabled, matching startup.
+- CatKit dropdowns stay attached to their field when the window moves.
+## API Update Notes:
+- Added `workflowUtils.addAttackRollPart`, `workflowUtils.recordTargets`, `animationUtils.meetsRequirement` and `animationUtils.getCredits`.
+- Effect animation `create` and `delete` macros receive `{activity, sourceToken}` as a fourth argument.
+- Animations can require `jb2a_patreon`. The `JB2A_DnD5e` requirement is met by either JB2A module.
+
 # 0.1.1 Release:
 ## Update Notes:
 - Requires dnd5e 6.0 or later, midi-qol 14.6.0 or later, and DAE 14.6.0 or later.
