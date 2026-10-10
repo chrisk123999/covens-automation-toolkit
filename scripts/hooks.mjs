@@ -28,6 +28,7 @@ export function readyHooks() {
     Hooks.on(constants.workflowHookNames.preItemRoll, events.workflowEvents.preItemRoll);
     Hooks.on(constants.workflowHookNames.preambleComplete, events.workflowEvents.preambleComplete);
     Hooks.on(constants.workflowHookNames.preAttackRollConfig, events.workflowEvents.attackRollConfig);
+    Hooks.on(constants.workflowHookNames.preRollAttack, events.workflowEvents.preRollAttack);
     Hooks.on(constants.workflowHookNames.postAttackRoll, events.workflowEvents.postAttackRoll);
     Hooks.on(constants.workflowHookNames.attackRollComplete, events.workflowEvents.attackRollComplete);
     Hooks.on(constants.workflowHookNames.savesComplete, events.workflowEvents.savesComplete);

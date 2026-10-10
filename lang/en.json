@@ -460,6 +460,15 @@
         "Browse": "Browse Sequencer Database"
       },
       "Animation": {
+        "Categories": {
+          "attack": "Attack",
+          "classFeature": "Class Feature",
+          "default": "Other",
+          "generic": "Generic",
+          "rangedAttack": "Ranged Attack",
+          "spell": "Spell",
+          "weaponAttacks": "Weapon Attack"
+        },
         "Credits": "Animation by",
         "Discord": "Discord",
         "Patreon": "Patreon"
@@ -579,10 +588,7 @@
         "SpecialDurations": {
           "endOfWorkflow": "End of workflow",
           "forceSave": "Forced a save",
-          "attackMissed": "Attack missed",
-          "madeAttack": "Made an attack",
           "dealtDamage": "Dealt damage",
-          "castSpell": "Cast a spell",
           "turnStart": "Start of this creature's turn",
           "turnEnd": "End of this creature's turn",
           "damaged": "Took damage",
@@ -594,7 +600,6 @@
           "attackedBySource": "Attacked by effect source",
           "moveFinished": "Movement finished",
           "zeroSpeed": "Speed reduced to zero",
-          "zeroHP": "HP reduced to zero",
           "tempHP": "Temporary HP lost",
           "tempMaxHP": "Temporary max HP lost",
           "Groups": {
@@ -623,7 +628,9 @@
         "AnimationDelete": {
           "Label": "Remove Animation",
           "Tooltip": "Animation played when this effect is removed."
-        }
+        },
+        "AnimationApply": "Apply",
+        "AnimationRemove": "Remove"
       },
       "Generic": {
         "SelectLabel": "Generic Features",
@@ -891,6 +898,12 @@
       "EffectDescriptions": {
         "Name": "Automatic Effect Descriptions",
         "Hint": "When enabled, effects without descriptions will automatically be filled in from the origin item."
+      },
+      "PlacedRegionVisibility": {
+        "Name": "Placed Area Visibility",
+        "Hint": "Where areas placed by activities are drawn once placed. Their effects apply either way.",
+        "layer": "Regions Layer Only",
+        "always": "Always"
       },
       "EffectDescriptionsNPC": {
         "Name": "Hide NPC Effect Descriptions",

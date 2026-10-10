@@ -137,6 +137,12 @@ export class RegisteredAutomations {
     sourceNames = {};
 
     /**
+     * Options each module registered its automations with, so a re-enabled source can register again.
+     * @type {Map<string, object>}
+     */
+    moduleRegistrations = new Map();
+
+    /**
      * Get the registered Automation (or Automations), if any, by identifier & other criteria
      * @param {string} identifier                           The identifier of the automation
      * @param {object} [options={}]                         Additional options
@@ -273,6 +279,8 @@ export class RegisteredAutomations {
     async registerAutomationModule(id, {ignoredPackIds = [], infoFetcherCallback} = {}) {
         const module = game.modules.get(id);
         if (!module?.active) return false;
+        this.moduleRegistrations.set(id, {ignoredPackIds, infoFetcherCallback});
+        if (game.settings.get('cat', 'automationSources')[id]?.enabled === false) return false;
         Logging.group('Automation Module Registered: ' + module.title);
         const itemPacks = module.packs.filter(pack => pack.type === 'Item' && !ignoredPackIds.includes(pack.id));
         if (!itemPacks.size) return;

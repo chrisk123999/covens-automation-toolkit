@@ -69,15 +69,8 @@ async function check(wrapped, config, dialog = {}, message = {}) {
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
-        const messageId = event?.target.closest('[data-message-id]')?.dataset.messageId;
-        if (messageId) {
-            genericUtils.mergeObject(messageData, {'system.origin': messageId});
-            roll.options.originatingMessage ??= messageId;
-        }
         genericUtils.mergeObject(messageData, {flags: options.flags ?? {}});
-        //genericUtils.setProperty(messageData, 'flags.midi-qol.lmrtfy.requestId', options.flags?.lmrtfy?.data?.requestId);
-        const chatMessage = await roll.toMessage(messageData, {messageMode: roll.options?.rollMode ?? rollMode});
-        if (chatMessage) roll.parent = chatMessage;
+        await roll.constructor.buildPost([roll], {event}, {data: messageData, rollMode: roll.options?.rollMode ?? rollMode});
     }
     await checkEvents.post(this, {config, dialog, message, options, checkId, roll});
     return [roll];
@@ -136,13 +129,7 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
-        let messageId = event?.target.closest('[data-message-id]')?.dataset.messageId;
-        if (messageId) {
-            genericUtils.mergeObject(messageData, {'system.origin': messageId});
-            roll.options.originatingMessage ??= messageId;
-        }
-        const chatMessage = await roll.toMessage(messageData, {messageMode: roll.options?.rollMode ?? rollMode});
-        if (chatMessage) roll.parent = chatMessage;
+        await roll.constructor.buildPost([roll], {event}, {data: messageData, rollMode: roll.options?.rollMode ?? rollMode});
     }
     await skillEvents.post(this, {config, dialog, message, options, skillId, roll});
     return [roll];
@@ -201,15 +188,8 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
-        let messageId = event?.target.closest('[data-message-id]')?.dataset.messageId;
-        if (messageId) {
-            genericUtils.mergeObject(messageData, {'system.origin': messageId});
-            roll.options.originatingMessage ??= messageId;
-        }
         genericUtils.mergeObject(messageData, {flags: options.flags ?? {}});
-        //genericUtils.setProperty(messageData, 'flags.midi-qol.lmrtfy.requestId', options.flags?.lmrtfy?.data?.requestId);
-        const chatMessage = await roll.toMessage(messageData, {messageMode: roll.options?.rollMode ?? rollMode});
-        if (chatMessage) roll.parent = chatMessage;
+        await roll.constructor.buildPost([roll], {event}, {data: messageData, rollMode: roll.options?.rollMode ?? rollMode});
     }
     await saveEvents.post(this, {config, dialog, message, options, saveId, roll});
     return [roll];

@@ -1,6 +1,6 @@
 import {itemEvents} from '../events/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {compendiumUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
+import {animationUtils, compendiumUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
 /**
  * The registered automation currently applied to this item, matched on its identifier, rules and source. With no source flagged, only an embedded macro automation belonging to this item matches.
  * @param {Item5e} item Item to act on.
@@ -673,7 +673,7 @@ function getResolvedAnimation(document, settingKey, {source, identifier, rules} 
     const animationSetting = isGeneric ? getGenericConfigValue(document, source, identifier, settingKey, {rules}) : getConfigValue(document, settingKey);
     if (!animationSetting || !animationSetting.source || !animationSetting.identifier || animationSetting.source === 'none' || animationSetting.identifier === 'none') return {animation: undefined, options: {}};
     const animation = constants.animations.getAnimation(animationSetting.source, animationSetting.identifier);
-    if (!animation) return {animation: undefined, options: {}};
+    if (!animation || !animationUtils.sequencerCheck() || !(animation.requirements ?? []).every(requirement => animationUtils.meetsRequirement(requirement))) return {animation: undefined, options: {}};
     const options = {};
     if (animation.config) Object.keys(animation.config).forEach(key => options[key] = isGeneric ? getGenericAnimationConfig(document, source, identifier, settingKey, key) : getAnimationConfig(document, settingKey, key));
     return {animation, options};

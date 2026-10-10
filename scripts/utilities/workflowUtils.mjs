@@ -530,6 +530,16 @@ async function bonusAttack(workflow, formula) {
     await workflow.setAttackRoll(roll);
 }
 /**
+ * Add a part to the workflow's attack roll formula before it is rolled.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @param {string|number} formula Formula to add, such as '-1d4'.
+ */
+function addAttackRollPart(workflow, formula) {
+    const parts = getWorkflowProperty(workflow, 'attackRollParts') ?? [];
+    parts.push(String(formula));
+    setWorkflowProperty(workflow, 'attackRollParts', parts);
+}
+/**
  * Apply an already-evaluated roll as damage from a source token, with its own chat card.
  * @param {foundry.documents.TokenDocument} sourceToken Token dealing the damage.
  * @param {foundry.dice.Roll} damageRoll Evaluated roll to apply.
@@ -687,6 +697,7 @@ export default {
     getCastLevel,
     setActivity,
     bonusAttack,
+    addAttackRollPart,
     applyDamage,
     applyWorkflowDamage,
     updateTargets,

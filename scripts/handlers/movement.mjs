@@ -4,7 +4,8 @@ function register() {
         icon: 'fa-solid fa-explosion',
         measure: false,
         canSelect: false,
-        terrainAction: null
+        terrainAction: null,
+        costMultiplier: 0
     };
 }
 export default {

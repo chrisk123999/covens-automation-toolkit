@@ -80,6 +80,11 @@ function activityDC(effect) {
     if (!dc) return Logging.addEntry('WARNING', 'No save DC found for $activity.dc on effect ' + effect.name + ' (origin: ' + effect.origin + ')');
     effect.updateSource({'system.changes': changes.map(change => change.key === 'flags.midi-qol.OverTime' ? {...change, value: change.value.replaceAll('$activity.dc', dc)} : change)});
 }
+function animationSource(effect) {
+    const activity = effectUtils.getOriginActivitySync(effect);
+    const actor = activity?.actor ?? fromUuidSync(effect.origin, {strict: false})?.parent?.actor;
+    return {activity, sourceToken: actor ? actorUtils.getFirstToken(actor) : undefined};
+}
 async function createAnimations(effect) {
     const actor = effectUtils.getActor(effect);
     if (!actor) return;
@@ -90,7 +95,7 @@ async function createAnimations(effect) {
     const animation = animationUtils.getAnimation(animationData);
     if (!animation) return;
     const config = constants.animations.getEffectAnimationConfigs(effect, 'create');
-    await animation.macros.create?.(effect, token, config);
+    await animation.macros.create?.(effect, token, config, animationSource(effect));
 }
 async function deleteAnimations(effect) {
     const actor = effectUtils.getActor(effect);
@@ -102,111 +107,55 @@ async function deleteAnimations(effect) {
     const animation = animationUtils.getAnimation(animationData);
     if (!animation) return;
     const config = constants.animations.getEffectAnimationConfigs(effect, 'delete');
-    await animation.macros.delete?.(effect, token, config);
+    await animation.macros.delete?.(effect, token, config, animationSource(effect));
 }
-async function specialDuration(workflow) {
-    if (!workflow.token) return;
-    await Promise.all(workflow.targets.map(async token => {
-        if (!token.actor) return;
-        await Promise.all(actorUtils.getEffects(token.actor, {includeItemEffects: true}).map(async effect => {
-            const specialDurations = effect.flags.cat?.specialDuration;
-            if (!specialDurations) return;
-            let remove = false;
-            outerLoop:
-            for (const i of specialDurations) {
-                switch (i) {
-                    case 'damaged':
-                        if (workflow.damageList.find(d => d.targetUuid === token.document.uuid)?.totalDamage > 0) {
-                            remove = true;
-                            break outerLoop;
-                        }
-                        break;
-                    case 'damagedByAlly':
-                        if (workflow.token.document.disposition === token.document.disposition && workflow.damageList.find(d => d.targetUuid === token.document.uuid)?.totalDamage > 0) {
-                            remove = true;
-                            break outerLoop;
-                        }
-                        break;
-                    case 'damagedByEnemy':
-                        if (workflow.token.document.disposition != token.document.disposition && workflow.damageList.find(d => d.targetUuid === token.document.uuid)?.totalDamage > 0) {
-                            remove = true;
-                            break outerLoop;
-                        }
-                        break;
-                    case 'hitByAnotherCreature':
-                    case 'attackedByAnotherCreature': {
-                        if (i === 'hitByAnotherCreature' && !workflow.hitTargets.size) break;
-                        if (!workflow.activity) return;
-                        if (!workflowUtils.isAttackType(workflow, 'attack')) break;
-                        const origin = (await effectUtils.getOriginActivity(effect))?.item;
-                        if (!origin?.actor) break;
-                        if (workflow.actor.id === origin.actor.id) break;
-                        remove = true;
-                        break outerLoop;
-                    }
-                    case 'hitBySource':
-                    case 'attackedBySource': {
-                        if (i === 'hitBySource' && !workflow.hitTargets.size) break;
-                        if (!workflow.activity) return;
-                        if (!workflowUtils.isAttackType(workflow, 'attack')) break;
-                        const origin = (await effectUtils.getOriginActivity(effect))?.item;
-                        if (!origin?.actor) break;
-                        if (workflow.actor.id != origin.actor.id) break;
-                        remove = true;
-                        break outerLoop;
-                    }
-                    case 'endOfWorkflow': {
-                        remove = true;
-                        break outerLoop;
-                    }
-                }
-            }
-            if (remove) await documentUtils.deleteDocument(effect);
-        }));
-    }));
-    await Promise.all(actorUtils.getEffects(workflow.actor, {includeItemEffects: true}).map(async effect => {
-        const specialDurations = effect.flags.cat?.specialDuration;
-        if (!specialDurations) return;
-        let remove = false;
-        outerLoop:
-        for (const i of specialDurations) {
-            switch (i) {
-                case 'forceSave': {
-                    if (!workflow.activity) return;
-                    if (!workflow.activity.hasSave) return;
-                    if (workflow.targets.size === 1 && workflow.targets.has(workflow.token)) return;
-                    remove = true;
-                    break outerLoop;
-                }
-                case 'attackMissed': {
-                    if (!workflow.activity || !workflowUtils.isAttackType(workflow, 'attack')) break;
-                    if (!workflow.targets.size || workflow.hitTargets.size) break;
-                    remove = true;
-                    break outerLoop;
-                }
-                case 'madeAttack': {
-                    if (!workflowUtils.isAttackType(workflow, 'attack')) break;
-                    remove = true;
-                    break outerLoop;
-                }
-                case 'dealtDamage': {
-                    if (!workflow.damageList?.some(d => d.targetUuid !== workflow.token.document.uuid && d.totalDamage > 0)) break;
-                    remove = true;
-                    break outerLoop;
-                }
-                case 'castSpell': {
-                    if (workflow.item?.type !== 'spell') break;
-                    remove = true;
-                    break outerLoop;
-                }
-                case 'endOfWorkflow': {
-                    remove = true;
-                    break outerLoop;
-                }
-            }
+const damagedBy = (relation) => ({workflow, target, ditem}) => ditem?.totalDamage > 0 && (!relation || (workflow.token.document.disposition === target.disposition) === (relation === 'ally'));
+const attackedBy = (source, hit) => async ({workflow, target, origin}) => {
+    if (!workflow.activity || !workflowUtils.isAttackType(workflow, 'attack')) return false;
+    if (hit && !workflow.hitTargets.has(target.object)) return false;
+    const actor = (await origin())?.item?.actor;
+    return !!actor && (workflow.actor.id === actor.id) === source;
+};
+const specialDurationTriggers = {
+    attackedByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, false)},
+    attackedBySource: {stage: 'attack', side: 'target', test: attackedBy(true, false)},
+    hitByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, true)},
+    hitBySource: {stage: 'attack', side: 'target', test: attackedBy(true, true)},
+    forceSave: {stage: 'save', side: 'actor', test: ({workflow}) => !!workflow.activity?.hasSave && !(workflow.targets.size === 1 && workflow.targets.has(workflow.token))},
+    damaged: {stage: 'damage', side: 'target', test: damagedBy()},
+    damagedByAlly: {stage: 'damage', side: 'target', test: damagedBy('ally')},
+    damagedByEnemy: {stage: 'damage', side: 'target', test: damagedBy('enemy')},
+    dealtDamage: {stage: 'damage', side: 'actor', test: ({workflow, target, ditem}) => ditem?.totalDamage > 0 && target.uuid !== workflow.token.document.uuid},
+    endOfWorkflow: {stage: 'finished', side: 'both', test: () => true}
+};
+const stageSides = Object.values(specialDurationTriggers).reduce((sides, {stage, side}) => {
+    sides[stage] ??= new Set();
+    if (side === 'both') ['actor', 'target'].forEach(s => sides[stage].add(s));
+    else sides[stage].add(side);
+    return sides;
+}, {});
+async function expireBySpecialDuration(actor, side, stage, context) {
+    await Promise.all(actorUtils.getEffects(actor, {includeItemEffects: true}).map(async effect => {
+        const keys = effect.flags.cat?.specialDuration;
+        if (!keys?.length) return;
+        let originActivity;
+        const origin = () => originActivity ??= effectUtils.getOriginActivity(effect);
+        for (const key of keys) {
+            const trigger = specialDurationTriggers[key];
+            if (trigger?.stage !== stage || (trigger.side !== side && trigger.side !== 'both')) continue;
+            if (await trigger.test({...context, effect, origin})) return await documentUtils.deleteDocument(effect);
         }
-        if (remove) await documentUtils.deleteDocument(effect);
     }));
+}
+async function specialDuration(workflow, stage, {token, ditem} = {}) {
+    if (!workflow.token) return;
+    const sides = stageSides[stage];
+    if (!sides) return;
+    if (sides.has('target')) {
+        const targets = stage === 'damage' ? [token?.document ?? token] : Array.from(workflow.targets ?? [], target => target.document);
+        await Promise.all(targets.filter(target => target?.actor).map(target => expireBySpecialDuration(target.actor, 'target', stage, {workflow, target, ditem})));
+    }
+    if (sides.has('actor')) await expireBySpecialDuration(workflow.actor, 'actor', stage, {workflow, target: token?.document ?? token, ditem});
 }
 async function specialDurationConditions(effect) {
     await Promise.all(actorUtils.getEffects(effect.parent, {includeItemEffects: true}).filter(i => i.id != effect.id).map(async eff => {
@@ -248,7 +197,6 @@ async function specialDurationHitPoints(actor, updates) {
     if (!hp) return;
     const validTypes = [];
     if (hp.temp === 0) validTypes.push('tempHP');
-    if (hp.value === 0) validTypes.push('zeroHP');
     if (hp.tempmax === 0) validTypes.push('tempMaxHP');
     if (!validTypes.length) return;
     await Promise.all(actorUtils.getEffects(actor, {includeItemEffects: true}).map(async effect => {

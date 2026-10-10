@@ -30,6 +30,12 @@ async function attackRollConfig(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollConfig, workflow).run();
     await optionalBonus.attackPreRoll(workflow);
 }
+function preRollAttack(config) {
+    const parts = config.workflow ? workflowUtils.getWorkflowProperty(config.workflow, 'attackRollParts') : undefined;
+    if (!parts?.length || !config.rolls?.[0]) return;
+    config.rolls[0].parts = [...(config.rolls[0].parts ?? []), ...parts];
+    workflowUtils.setWorkflowProperty(config.workflow, 'attackRollParts', []);
+}
 async function postAttackRoll(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRoll, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollBonuses, workflow).run();
@@ -38,9 +44,11 @@ async function postAttackRoll(workflow) {
 }
 async function attackRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollComplete, workflow).run();
+    await effects.specialDuration(workflow, 'attack');
 }
 async function savesComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.savesComplete, workflow).run();
+    await effects.specialDuration(workflow, 'save');
 }
 async function damageRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.damageRoll, workflow).run();
@@ -62,12 +70,13 @@ async function preTargetDamageApplication(token, {workflow, ditem}) {
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageFlatReductions, workflow, token, ditem).run();
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damagePercentReductions, workflow, token, ditem).run();
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageComplete, workflow, token, ditem).run();
+    await effects.specialDuration(workflow, 'damage', {token, ditem});
 }
 async function rollFinished(workflow) {
     await optionalBonus.cleanup(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.rollFinished, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
-    await effects.specialDuration(workflow);
+    await effects.specialDuration(workflow, 'finished');
     await new Events.WorkflowEvent(constants.workflowPasses.cleanup, workflow).run();
 }
 export default {
@@ -75,6 +84,7 @@ export default {
     preItemRoll,
     preambleComplete,
     attackRollConfig,
+    preRollAttack,
     postAttackRoll,
     attackRollComplete,
     savesComplete,

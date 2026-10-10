@@ -1,6 +1,6 @@
 import contextmenu from '../../handlers/contextmenu.mjs';
 import {constants, Logging} from '../../lib/_module.mjs';
-import {automationUtils, dialogUtils, documentUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
+import {animationUtils, automationUtils, dialogUtils, documentUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
 import uiUtils from '../../utilities/uiUtils.mjs';
 import CatApp from '../cat-app.mjs';
 import DialogApp from '../dialog.mjs';
@@ -353,8 +353,10 @@ export default class MedkitApp extends CatApp {
     #buildOption(descriptor, {name, value, configPath, source, identifier} = {}) {
         const {key} = descriptor;
         const label = descriptor.label ? _loc(descriptor.label) : this.#humanize(key);
-        const hint = descriptor.hint || descriptor.tooltip;
-        const option = {key, name, label, value, configPath, tooltip: hint ? _loc(hint) : undefined, i18nOption: descriptor.i18nOption ? _loc(descriptor.i18nOption) : undefined};
+        const hintKey = descriptor.hint || descriptor.tooltip;
+        const hint = hintKey ? _loc(hintKey) : undefined;
+        const i18nOption = descriptor.i18nOption ? _loc(descriptor.i18nOption) : undefined;
+        const option = {key, name, label, value, configPath, hint: i18nOption && i18nOption !== hint ? [hint, i18nOption].filter(Boolean).join(' ') : hint};
         try {
             this.#applyOptionField(option, descriptor, {label, value, source, identifier});
         } catch (err) {
@@ -444,6 +446,7 @@ export default class MedkitApp extends CatApp {
                 option.value = sel?.source ? `${sel.source}|${sel.identifier}` : '';
                 option.animationOptions = this.#animationSubOptions(source, identifier, sel);
                 option.animationCredits = this.#animationCredits(sel);
+                option.animationLabel = this.#animationLabel(sel);
                 break;
             }
             case 'selectIdentifiers':
@@ -473,7 +476,7 @@ export default class MedkitApp extends CatApp {
                         this.#buildOption({key: `summon-name-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Name'}, {name: `${base}.${i}.name`, value: entry.name}),
                         this.#buildOption({key: `summon-avatar-${i}`, type: 'file', label: 'CAT.MEDKIT.Summons.AvatarImg'}, {name: `${base}.${i}.avatarImg`, value: entry.avatarImg}),
                         this.#buildOption({key: `summon-token-${i}`, type: 'file', label: 'CAT.MEDKIT.Summons.TokenImg'}, {name: `${base}.${i}.tokenImg`, value: entry.tokenImg}),
-                        {key: `summon-anim-${i}`, name: `${base}.${i}.animation`, label: _loc('CAT.MEDKIT.Summons.Animation'), value: entry.animation?.source ? `${entry.animation.source}|${entry.animation.identifier}` : '', isAnimationSelect: true, choices: this.#animationChoices(['summon', 'location', 'token']), animationCredits: this.#animationCredits(entry.animation)},
+                        {key: `summon-anim-${i}`, name: `${base}.${i}.animation`, label: _loc('CAT.MEDKIT.Summons.Animation'), value: entry.animation?.source ? `${entry.animation.source}|${entry.animation.identifier}` : '', isAnimationSelect: true, choices: this.#animationChoices(['summon', 'location', 'token']), animationCredits: this.#animationCredits(entry.animation), animationLabel: this.#animationLabel(entry.animation)},
                         this.#buildOption({key: `summon-sound-place-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundPlaced'}, {name: `${base}.${i}.sounds.place`, value: entry.sounds?.place}),
                         this.#buildOption({key: `summon-sound-removed-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundRemoved'}, {name: `${base}.${i}.sounds.removed`, value: entry.sounds?.removed}),
                         this.#buildOption({key: `summon-sound-death-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundDeath'}, {name: `${base}.${i}.sounds.death`, value: entry.sounds?.death})
@@ -685,9 +688,22 @@ export default class MedkitApp extends CatApp {
                 return inputs.length === required.length && inputs.every((v, i) => v === required[i]);
             });
         }
+        return this.#groupAnimationChoices(animations);
+    }
+
+    #groupAnimationChoices(animations) {
+        const byLabel = (a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'});
+        const groups = {};
+        for (const animation of animations) {
+            (groups[animation.category] ??= []).push({value: `${animation.source}|${animation.identifier}`, label: this.#labelOf(animation)});
+        }
+        const categories = Object.keys(groups).map(category => {
+            const key = `CAT.MEDKIT.Animation.Categories.${category}`;
+            return {category, label: game.i18n.has(key) ? _loc(key) : this.#humanize(category)};
+        }).sort((a, b) => (b.category === 'generic') - (a.category === 'generic') || byLabel(a, b));
         return [
             {value: 'none|none', label: _loc('DND5E.None')},
-            ...animations.map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ? _loc(a.name) : a.identifier}))
+            ...categories.map(({category, label}) => ({label, options: groups[category].sort(byLabel)}))
         ];
     }
 
@@ -695,6 +711,16 @@ export default class MedkitApp extends CatApp {
         if (!selection?.source || !selection?.identifier) return [];
         const animation = constants.animations?.getAnimation(selection.source, selection.identifier);
         return animation?.credits ?? [];
+    }
+
+    #labelOf(animation) {
+        return animation.name ? _loc(animation.name) : animation.identifier;
+    }
+
+    #animationLabel(selection) {
+        if (!selection?.source || !selection?.identifier) return '';
+        const animation = constants.animations?.getAnimation(selection.source, selection.identifier);
+        return animation ? this.#labelOf(animation) : '';
     }
 
     #animationSubOptions(source, identifier, selection) {
@@ -712,10 +738,10 @@ export default class MedkitApp extends CatApp {
         const animation = constants.animations?.getAnimation(selection.source, selection.identifier);
         if (!animation?.config) return [];
         return Object.entries(animation.config).map(([key, desc]) => {
-            const normalized = {key, type: desc.type, label: desc.label, default: desc.default, fileType: desc.fileType, sequencer: desc.sequencer};
+            const normalized = {key, type: desc.type, label: desc.label, hint: desc.hint, default: desc.default, fileType: desc.fileType, sequencer: desc.sequencer};
             if (desc.type === 'select') {
                 normalized.options = Object.entries(desc.options ?? {})
-                    .filter(([, opt]) => !opt?.requirements?.length || opt.requirements.every(r => game.modules.get(r)?.active))
+                    .filter(([, opt]) => !opt?.requirements?.length || opt.requirements.every(r => animationUtils.meetsRequirement(r)))
                     .map(([value, opt]) => ({value, label: opt?.label ? _loc(opt.label) : value}));
             }
             const value = stored[key] ?? desc.default;
@@ -723,7 +749,7 @@ export default class MedkitApp extends CatApp {
         });
     }
 
-    _animationFlagOption({key, label, tooltip, path, macroKey}) {
+    _animationFlagOption({key, label, hint, path, macroKey}) {
         const stored = foundry.utils.getProperty(this.#flags, path);
         const selection = stored && typeof stored === 'object' ? stored : undefined;
         const animations = Array.from(constants.animations.animations.values()).filter(a => a.macros?.[macroKey]);
@@ -731,15 +757,13 @@ export default class MedkitApp extends CatApp {
             key,
             name: `flags.cat.${path}`,
             label,
-            tooltip,
+            hint,
             isAnimationSelect: true,
-            choices: [
-                {value: 'none|none', label: _loc('DND5E.None')},
-                ...animations.map(a => ({value: `${a.source}|${a.identifier}`, label: a.name ? _loc(a.name) : a.identifier}))
-            ],
+            choices: this.#groupAnimationChoices(animations),
             value: selection?.source ? `${selection.source}|${selection.identifier}` : '',
             animationOptions: this.#animationConfigOptions(selection, selection?.config ?? {}, `${path}.config`),
-            animationCredits: this.#animationCredits(selection)
+            animationCredits: this.#animationCredits(selection),
+            animationLabel: this.#animationLabel(selection)
         };
     }
 

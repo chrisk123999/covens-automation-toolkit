@@ -58,13 +58,14 @@ function sourceEffectData(name, rules, img = constants.grappleIcon) {
             cat: {
                 automation: {rules},
                 identifier: 'grappleSource',
-                specialDuration: ['incapacitated', 'zeroHP'],
+                specialDuration: ['incapacitated'],
                 macros: {move: [{identifier: 'grapple', rules: 'all', source: 'cat'}]}
             },
             dae: {
                 selfTarget: true,
                 expiryMode: 'delete',
-                stackable: 'noneName'
+                stackable: 'noneName',
+                specialDuration: ['zeroHP']
             }
         }
     };
@@ -78,7 +79,6 @@ function targetEffectData(name, rules, img = constants.grappleIcon) {
                 automation: {rules},
                 identifier: 'grappleTarget',
                 conditions: ['grappled'],
-                specialDuration: ['zeroHP'],
                 macros: {
                     effect: [{identifier: 'grapple', rules: 'all', source: 'cat'}],
                     move: [{identifier: 'grapple', rules: 'all', source: 'cat'}]
@@ -86,7 +86,8 @@ function targetEffectData(name, rules, img = constants.grappleIcon) {
             },
             dae: {
                 expiryMode: 'delete',
-                stackable: 'noneName'
+                stackable: 'noneName',
+                specialDuration: ['zeroHP']
             }
         }
     };

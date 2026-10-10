@@ -100,6 +100,15 @@ const settings = {
         },
         menu: 'interface'
     },
+    placedRegionVisibility: {
+        type: String,
+        default: 'layer',
+        choices: {
+            layer: 'CAT.Settings.PlacedRegionVisibility.layer',
+            always: 'CAT.Settings.PlacedRegionVisibility.always'
+        },
+        menu: 'interface'
+    },
     effectDescriptionsNPC: {
         type: Boolean,
         default: false,

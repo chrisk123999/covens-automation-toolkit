@@ -1,11 +1,11 @@
-import {constants, ColorMatrix} from '../lib/_module.mjs';
+import {ColorMatrix, constants} from '../lib/_module.mjs';
 import {genericUtils} from './_module.mjs';
 const minSequencerVersion = '3.6.0';
 let shownSequencerWarning = false;
 const requirementMap = {
     'animated-spell-effects-cartoon': aseCheck,
     'jb2a_patreon': () => jb2aCheck() === 'patreon',
-    'JB2A_DnD5e': () => jb2aCheck() === 'free'
+    'JB2A_DnD5e': () => !!jb2aCheck()
 };
 
 /**
@@ -22,13 +22,20 @@ function getAnimation({source, identifier}) {
         return;
     }
     const result = constants.animations.getAnimation(source, identifier);
-    if (!result?.requirements?.length) return result;
-    for (const module of result.requirements)
-        if (!requirementMap[module]()) {
-            genericUtils.notify('CAT.Error.NoAnimations', {type: 'warn', format: {module}});
-            return;
-        }
+    const missing = result?.requirements?.find(requirement => !meetsRequirement(requirement));
+    if (missing) {
+        genericUtils.notify('CAT.Error.NoAnimations', {type: 'warn', format: {module: missing}});
+        return;
+    }
     return result;
+}
+/**
+ * Whether an animation requirement is met: a known asset tier or an active module.
+ * @param {string} requirement Requirement key or module id.
+ * @returns {boolean}
+ */
+function meetsRequirement(requirement) {
+    return requirementMap[requirement]?.() ?? !!game.modules.get(requirement)?.active;
 }
 /**
  * Preload animation files for all clients.
@@ -85,15 +92,16 @@ function buildColorOptions(colorMap, {freeColors = [], labelPrefix = '', random,
     return options;
 }
 /**
- * Credit details for Eskie's animation assets.
- * @returns {{name: string, discord: string, patreon: string}}
+ * Credit details for an animation's author.
+ * @param {string} [author] Author key, such as 'eskie'.
+ * @returns {{name: string, discord?: string, patreon?: string}} The Coven when the author is missing or unknown.
  */
-function getEskieCredits() {
-    return {
-        name: 'Eskie',
-        discord: 'https://discord.gg/RXwkJD4hTe',
-        patreon: 'https://www.patreon.com/c/EskieEffects'
+function getCredits(author) {
+    const authors = {
+        eskie: {name: 'Eskie', discord: 'https://discord.gg/RXwkJD4hTe', patreon: 'https://www.patreon.com/c/EskieEffects'},
+        tyler: {name: 'Tyler', discord: 'https://discord.gg/PzzUwU9gdz', patreon: 'https://www.patreon.com/3deathsaves'}
     };
+    return authors[author] ?? {name: 'The Coven'};
 }
 /**
  * Whether Sequencer is active and new enough, warning once if it is outdated.
@@ -155,9 +163,10 @@ export default {
     preloadAnimations,
     simpleAttack,
     buildColorOptions,
-    getEskieCredits,
+    getCredits,
     sequencerCheck,
     jb2aCheck,
+    meetsRequirement,
     aseCheck,
     colorMatrix
 };
