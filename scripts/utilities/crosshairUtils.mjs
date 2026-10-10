@@ -47,13 +47,9 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
     const checkDistance = async (crosshairs) => {
         if (maxRange && drawBoundries) {
             const radius = (canvas.grid.size * ((maxRange + fudgeDistance + widthAdjust) / canvas.grid.distance));
-            // eslint-disable-next-line no-undef
             drawing = new PIXI.Graphics();
             drawing.lineStyle(5, 0xffffff);
-            const matchTemplates = game.settings.get('core', 'gridTemplates') && (game.settings.get('core', 'coneTemplateType') === 'flat');
             drawing.drawCircle(0, 0, radius);
-            if (matchTemplates) drawing.drawCircle(0, 0, radius + (canvas.grid.size / 2));
-            // eslint-disable-next-line no-undef
             container = new PIXI.Container();
             container.addChild(drawing);
             canvas.controls.addChild(container); 
@@ -115,7 +111,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         ...crosshairsConfig
     };
     if (trackDistance) options.label = '0ft';
-    if (token.rotation && options.direction === undefined && !options.lockDirection) options.direction = token.rotation;
+    if (token?.rotation && options.direction === undefined && !options.lockDirection) options.direction = token.rotation;
     if (!maxRange) return await Crosshairs.showCrosshairs(options);
     const result = await Crosshairs.showCrosshairs(options, callbacks);
     if (drawing) {

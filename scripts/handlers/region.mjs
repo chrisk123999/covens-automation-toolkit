@@ -1,4 +1,4 @@
-import {activityUtils, actorUtils, documentUtils, genericUtils, regionUtils, tokenUtils, workflowUtils, combatUtils} from '../utilities/_module.mjs';
+import {activityUtils, actorUtils, dataUtils, documentUtils, genericUtils, regionUtils, tokenUtils, workflowUtils, combatUtils} from '../utilities/_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 function placed(region) {
     const activity = regionUtils.getActivity(region);
@@ -49,7 +49,7 @@ async function updateRegionEffects(token, currentRegions = []) {
                 if (!sourceEffect) return;
                 const effectData = sourceEffect.toObject();
                 delete effectData._id;
-                effectData.origin = activity.uuid;
+                dataUtils.setOrigin(effectData, activity);
                 effectData.showIcon = 2;
                 genericUtils.setProperty(effectData, 'flags.cat.regionIdentifier', identifier);
                 genericUtils.setProperty(effectData, 'flags.cat.castData', castData);
@@ -99,15 +99,12 @@ async function updateRegionEffects(token, currentRegions = []) {
 }
 async function regionEffects(region, isDelete = false) {
     const identifier = documentUtils.getIdentifier(region);
-    const affectedTokens = region.tokens;
-    region.parent.tokens.filter(token => {
-        const effects = actorUtils.getEffects(token.actor);
-        return effects.some(effect => effect.flags.cat?.regionIdentifier === identifier);
-    }).forEach(token => affectedTokens.add(token));
+    const inside = new Set(isDelete ? [] : region.parent.tokens.filter(token => token.testInsideRegion(region)));
+    const affectedTokens = region.parent.tokens.filter(token => token.actor && (inside.has(token) || region.tokens.has(token) || actorUtils.getEffects(token.actor).some(effect => effect.flags.cat?.regionIdentifier === identifier)));
     await Promise.all(affectedTokens.map(async token => {
-        let currentRegions = token.regions;
-        if (isDelete) currentRegions = currentRegions.filter(r => r.id !== region.id);
-        return await updateRegionEffects(token, Array.from(currentRegions));
+        const currentRegions = Array.from(token.regions).filter(r => r.id !== region.id);
+        if (inside.has(token)) currentRegions.push(region);
+        return await updateRegionEffects(token, currentRegions);
     }));
 }
 function getGroupedRegions(regions) {

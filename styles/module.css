@@ -755,23 +755,31 @@ cat-multi-combobox {
 
     }
 
-    .body fieldset {
-        gap: var(--cat-space-sm);
-        display: flex;
-        flex-direction: column;
-        margin: 0 0 var(--cat-space-md) 0;
-        padding: var(--cat-space-sm) var(--cat-space-md) var(--cat-space-md);
-        border: 1px solid var(--cat-border-light);
-        border-radius: var(--cat-radius-sm);
-        background: var(--cat-bg-sunken-soft);
+    .body {
+        .suboptions {
+            gap: var(--cat-space-sm);
+            display: flex;
+            flex-direction: column;
+        }
 
-        > legend {
-            padding: 0 var(--cat-space-sm);
-            color: var(--cat-text-accent);
-            font-weight: 600;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
+        fieldset {
+            gap: var(--cat-space-sm);
+            display: flex;
+            flex-direction: column;
+            margin: 0 0 var(--cat-space-md) 0;
+            padding: var(--cat-space-sm) var(--cat-space-md) var(--cat-space-md);
+            border: 1px solid var(--cat-border-light);
+            border-radius: var(--cat-radius-sm);
+            background: var(--cat-bg-sunken-soft);
+
+            > legend {
+                padding: 0 var(--cat-space-sm);
+                color: var(--cat-text-accent);
+                font-weight: 600;
+                font-size: 0.85em;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
         }
     }
 

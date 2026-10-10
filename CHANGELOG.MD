@@ -1,3 +1,25 @@
+# 0.1.0 Release:
+## Update Notes:
+- Requires dnd5e 6.0 or later, midi-qol 14.6.0 or later, and DAE 14.6.0 or later.
+- Uses dnd5e 6 and core v14 features in place of CAT's own: armor class, senses, status effects, light levels, region movement paths and level-aware line of sight. Devil's Sight grants token sight.
+- Combat events run from core's turn handling on the active GM. Rewinds and skipped turns no longer fire turn events, except turns skipped for defeated combatants.
+## Bug Fixes:
+- Region effects apply when a region is placed, created or moved, and pass-through triggers follow the token's actual path.
+- Summons follow their owner's initiative reliably and copy the caster's spell attack correctly.
+- Effects disabled by armor stay disabled through status changes.
+- Rolls requested from other players and synthetic rolls return complete, correct results.
+- Manual rolls with advantage or disadvantage use the die you enter.
+- Manual rolls detect summon and NPC initiative from the roll's `roll.type` instead of its flavor text.
+- Applying an automation picks from every source by priority and keeps the item's class.
+- Distances on metric scenes are reported in feet.
+## API Update Notes:
+- The `ACFormula` and `ACAbility` alternate attributes add their formulas to dnd5e's native armor class formulas. CAT no longer calculates armor class itself.
+- Combat events come from `Combat` turn wrappers, and their macros receive core's turn context.
+- Workflows aborted during preItemRoll or preambleComplete refund their consumption. Set the `keepConsumption` workflow property to keep it.
+- `workflowUtils.applyWorkflowDamage` takes `itemCardUuid`. `rollUtils.requestRoll` returns a `D20Roll` when another user rolls. `activityUtils.getDuration` returns seconds.
+- Added `effectUtils.durationToSeconds`, `automationUtils.sortByPriority`, `dataUtils.setOrigin`, `regionUtils.spreadAroundCorners`, `regionUtils.getArea`, `regionUtils.isBetweenTokens` and `workflowUtils.getConfigActivity`.
+- CAT wraps `DAE.doActivityEffects` so effects on synthetic items still apply under DAE 14.6.
+
 # 0.0.9 Release:
 ## Update Notes:
 - This is the last version compatible with dnd5e 5.x.

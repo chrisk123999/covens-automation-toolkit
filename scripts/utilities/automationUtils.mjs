@@ -1,6 +1,6 @@
 import {itemEvents} from '../events/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {compendiumUtils, documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
+import {compendiumUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
 /**
  * The registered automation currently applied to this item, matched on its identifier, rules and source. With no source flagged, only an embedded macro automation belonging to this item matches.
  * @param {Item5e} item Item to act on.
@@ -294,15 +294,20 @@ function getSourceDataSources(type, {packsOnly = false} = {}) {
  * @returns {Automation|undefined}
  */
 function getAppliedOrPreferredAutomation(item) {
-    const currentAutomation = getCurrentAutomation(item);
-    if (currentAutomation) return currentAutomation;
-    const allAutomations = getAvailableAutomations(item);
-    if (!allAutomations.length) return;
-    const sources = getAutomationSources();
-    for (const source of sources) {
-        const match = allAutomations.find(automation => automation.source === source);
-        if (match) return match;
-    }
+    return getCurrentAutomation(item) ?? sortByPriority(getAvailableAutomations(item))[0];
+}
+/**
+ * Order automations by the configured source priority. Registered sources the setting doesn't list, such as modules, follow in registration order.
+ * @param {Automation[]} automations Automations to order.
+ * @returns {Automation[]} A new, sorted array.
+ */
+function sortByPriority(automations) {
+    const priority = getAutomationSources();
+    const rank = automation => {
+        const index = priority.indexOf(automation.source);
+        return index === -1 ? Infinity : index;
+    };
+    return [...automations].sort((a, b) => rank(a) - rank(b));
 }
 /**
  * Documents nested under this one that have their own medkit.
@@ -443,8 +448,8 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
         documentData.img = oldDocumentData.img;
     }
     for (const effect of documentData.effects) {
-        if (effect.origin !== sourceDocument.uuid) continue;
-        effect.origin = item.uuid;
+        if (effect.origin !== sourceDocument.uuid && !Object.values(effect.system?.origin ?? {}).includes(sourceDocument.uuid)) continue;
+        dataUtils.setOrigin(effect, item);
     }
     if (item.flags.dnd5e?.cachedFor && item.system.linkedActivity) {
         const enchantId = item.system.linkedActivity.constructor.ENCHANTMENT_ID;
@@ -585,12 +590,8 @@ function getDocumentHash(document) {
     });
     const keepPaths = constants.getItemKeepPaths({spell: document.type === 'spell'});
     const deletions = {};
-    for (const path of keepPaths) {
-        const parts = path.split('.');
-        parts[parts.length - 1] = '-=' + parts[parts.length - 1];
-        deletions[parts.join('.')] = null;
-    }
-    deletions['flags.cat.-=automation'] = null;
+    for (const path of keepPaths) deletions[path] = _del;
+    deletions['flags.cat.automation'] = _del;
     genericUtils.mergeObject(documentData, genericUtils.expandObject(deletions), {applyOperators: true});
     if (genericUtils.isEmpty(documentData.flags?.cat)) delete documentData.flags.cat;
     const jsonDocument = JSON.stringify(documentData);
@@ -708,6 +709,7 @@ export default {
     setGenericConfigValues,
     getAutomationSources,
     getAppliedOrPreferredAutomation,
+    sortByPriority,
     updateItem,
     updateScales,
     getDocumentHash,

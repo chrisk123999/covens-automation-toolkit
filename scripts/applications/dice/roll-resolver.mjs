@@ -148,7 +148,7 @@ export default class CatRollResolver extends RollResolver {
         const actor = this.#actor();
         if (inclusion === 1) return true;
         if (inclusion === 2) return actor?.type === 'character';
-        if ((this.roll.options?.flavor ?? '').toLowerCase().includes('initiative') && actor && (actor.flags.cat?.summon || (actor.type === 'npc' && actor.hasPlayerOwner))) return false;
+        if (this.roll.data?.roll?.type === 'initiative' && actor && (actor.flags.cat?.summon || (actor.type === 'npc' && actor.hasPlayerOwner))) return false;
         if (inclusion === 3) return actor?.prototypeToken?.actorLink === true;
         if (inclusion === 4) return actor?.prototypeToken?.actorLink === true && !!actor?.hasPlayerOwner;
         if (inclusion === 5) return !!actor?.hasPlayerOwner;
@@ -332,8 +332,8 @@ export default class CatRollResolver extends RollResolver {
         if (rollType !== 'save') return null;
         const workflow = this.#workflow();
         const card = workflow ? null : this.#card();
-        const dnd = card?.flags?.dnd5e ?? {};
-        const itemType = workflow?.item?.type ?? dnd.item?.type;
+        const activity = workflow?.activity ?? card?.getAssociatedActivity();
+        const itemType = workflow?.item?.type ?? activity?.item?.type ?? card?.getAssociatedItem()?.type;
         if (!itemType) return null;
         const token = workflow?.token ?? (card?.speaker?.token ? canvas.tokens?.get(card.speaker.token) : null);
         const visible = game.user.isGM || token?.visible;
@@ -342,7 +342,6 @@ export default class CatRollResolver extends RollResolver {
             : _loc('CAT.Manual.UnknownSource');
         const typeKey = `CAT.Manual.ItemType.${itemType}`;
         const type = game.i18n.has(typeKey) ? _loc(typeKey) : itemType;
-        const activity = workflow?.activity ?? (dnd.activity?.uuid ? fromUuidSync(dnd.activity.uuid) : null);
         const caster = workflow?.actor ?? (card?.flags?.['midi-qol']?.sourceActorUuid ? fromUuidSync(card.flags['midi-qol'].sourceActorUuid) : null);
         return {label: _loc('CAT.Manual.SaveContext', {source, type}), icon: null, sub: this.#saveLine(activity, caster)};
     }
@@ -566,6 +565,7 @@ export default class CatRollResolver extends RollResolver {
         const faces = term.faces;
         const n = Math.max(term.number ?? 1, 1);
         const advMode = term.options?.advantageMode ?? (faces === 20 ? (this.roll.options?.advantageMode ?? 0) : 0);
+        const systemDiscards = !!term.options?.pending?.advantage;
         const raw = String(value ?? '');
         if (raw.includes(',')) {
             const parsed = raw.split(/[\s,]+/).filter(part => part !== '').map(Number);
@@ -575,7 +575,7 @@ export default class CatRollResolver extends RollResolver {
                 const keep = advMode > 0 ? Math.max(...values) : Math.min(...values);
                 let taken = false;
                 return values.map(result => {
-                    const active = !taken && result === keep;
+                    const active = systemDiscards || (!taken && result === keep);
                     if (active) taken = true;
                     return {result, active};
                 });
@@ -602,7 +602,7 @@ export default class CatRollResolver extends RollResolver {
         const keptResult = out[0]?.result ?? 1;
         while (out.length < n) {
             const face = term.randomFace();
-            out.push({result: advMode > 0 ? Math.min(face, keptResult) : Math.max(face, keptResult), active: false});
+            out.push({result: advMode > 0 ? Math.min(face, keptResult) : Math.max(face, keptResult), active: systemDiscards});
         }
         return out;
     }

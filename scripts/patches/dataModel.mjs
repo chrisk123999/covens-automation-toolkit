@@ -1,5 +1,4 @@
 import {constants, Logging} from '../lib/_module.mjs';
-import {actorUtils} from '../utilities/_module.mjs';
 const Roll = foundry.dice.Roll;
 /*
 item.flags.cat.alternateAttributes = {
@@ -133,14 +132,21 @@ function formula(wrapped) {
         }
         if (changed) maxRoll.resetFormula();
     }
-    this.custom.enabled = true;
-    this.custom.formula = maxRoll.formula;
     return maxRoll.formula;
 }
-function defineSchema(wrapped, ...args) {
-    const schema = wrapped(...args);
-    schema.attributes.fields.senses.fields.ranges.initialKeys.devilsSight = 'CAT.Senses.DevilsSight';
-    return schema;
+function armorClass(wrapped, rollData) {
+    const actor = this.parent;
+    const formulas = this.attributes.ac.formulas;
+    if (actor && formulas) {
+        const {ACAbility, ACFormula} = constants.alternateAttributes;
+        const context = {actor};
+        for (const item of ACFormula.getFlagHolders(actor)) {
+            context.sourceItem = item;
+            for (const formula of ACFormula.evaluate(context) ?? []) formulas.push({formula, label: item.name});
+            for (const ability of ACAbility.evaluate(context) ?? []) formulas.push({formula: '@attributes.ac.armor + @attributes.ac.clamped.' + ability, label: item.name});
+        }
+    }
+    return wrapped(rollData);
 }
 function visionSourceData(wrapped, ...args) {
     const data = wrapped(...args);
@@ -148,86 +154,20 @@ function visionSourceData(wrapped, ...args) {
     if (ranges?.devilsSight || ranges?.truesight) data.priority = 1;
     return data;
 }
-function armorClass(wrapped, rollData) {
-    wrapped(rollData);
-    const ac = this.attributes.ac;
-    if (ac.calc === 'flat' || ac.calc === 'natural') return;
-    const actor = this.parent;
-    if (!actor) return;
-    const cfg = CONFIG.DND5E.armorClasses[ac.calc];
-    const originalFormula = cfg?.formula ?? ac.formula;
-    const formulas = new Map();
-    const abilities = new Set(['dex']);
-    const context = {actor};
-    const {ACAbility, ACFormula} = constants.alternateAttributes;
-    for (const item of ACFormula.getFlagHolders(actor)) {
-        context.sourceItem = item;
-        const newFormulas = ACFormula.evaluate(context);
-        if (newFormulas?.size) for (const f of newFormulas) formulas.set(f, item);
-        const newAbilities = ACAbility.evaluate(context);
-        if (newAbilities?.size) for (const ability of newAbilities) abilities.add(ability);
-    }
-    const bestAbility = abilities.size > 1 ? actorUtils.getBestAbility(actor, [...abilities]) : 'dex';
-    const property = _loc('DND5E.ArmorClass');
-    let bestFormula = {formula: originalFormula, value: ac.base};
-    for (const [formula, source] of formulas) {
-        if (!formula) continue;
-        try {
-            const replaced = dnd5e.utils.replaceFormulaData(formula, rollData, {actor, property, item: source, missing: null});
-            const value = replaced ? new Roll(replaced).evaluateSync().total : 0;
-            if (value > bestFormula.value) bestFormula = {formula, value, source};
-        } catch (e) {
-            const prepWarning = actor._preparationWarnings.find(w => w.link === source?.uuid);
-            if (prepWarning) Logging.addAttributeError(source, formula, new foundry.data.validation.DataModelValidationError(prepWarning.message));
-            else Logging.addAttributeError(source, formula, e);
-        }
-    }
-    ac.catModified = true;
-    ac.base = bestFormula.value;
-    if (bestFormula.source?.name) {
-        ac.calc = 'custom';
-        ac.formula = bestFormula.formula;
-        ac.label = bestFormula.source.name;
-    }
-    if (bestAbility !== 'dex') {
-        ac.catReplaceDex = bestAbility;
-        ac.dex = this.abilities[ac.catReplaceDex]?.mod ?? 0;
-        if (ac.equippedArmor) {
-            if (ac.equippedArmor.system.type.value === 'heavy') ac.dex = 0;
-            else ac.dex = Math.min(ac.equippedArmor.system.armor.dex ?? Infinity, ac.dex);
-        }
-        if (ac.calc === 'default') ac.base = ac.armor + ac.dex;
-    }
-    if (ac.armor + ac.dex > ac.base) {
-        ac.calc = 'default';
-        ac.base = ac.armor + ac.dex;
-        ac.label = CONFIG.DND5E.armorClasses.default.label;
-    }
-    ac.value = Math.max(ac.min, ac.base + ac.shield + ac.bonus + ac.cover);
-}
-function acLabel(wrapped, property) {
-    if (property !== 'attributes.ac.dex') return wrapped(property);
-    const replaceDex = this.object.system.attributes.ac.catReplaceDex;
-    if (!replaceDex) return wrapped(property);
-    return CONFIG.DND5E.abilities[replaceDex]?.label ?? replaceDex;
-}
 // this is a near identical copy of the wrapped function, except this.formula is always accessed
-function scaledFormula(increase) {
-    if ( increase instanceof dnd5e.documents.Scaling ) increase = increase.increase;
-    switch ( this.scaling.mode ) {
+function scaledFormula(wrapped, increase, options = {}) {
+    let formula = this.formula;
+    const nativeFormula = this.custom.enabled ? this._manualFormula() : this._automaticFormula();
+    if (formula === nativeFormula) return wrapped(increase, options);
+    if (increase instanceof dnd5e.documents.Scaling) increase = increase.increase;
+    switch (this.scaling.mode) {
         case 'whole': break;
         case 'half': increase = Math.floor(increase * .5); break;
         default: increase = 0; break;
     }
-    let formula = this.formula;
     if (!increase) return formula;
     const dieIncrease = (this.scaling.number ?? 0) * increase;
-    if (this.custom.enabled) {
-        formula = this.custom.formula;
-        formula = formula.replace(/^(\d+)d/, (match, number) => `${Number(number) + dieIncrease}d`);
-    } else {
-        formula = this._automaticFormula(dieIncrease);
-    }
+    formula = formula.replace(/^(\d+)d/, (match, number) => `${Number(number) + dieIncrease}d`);
     if (this.scaling.formula) {
         let roll = new Roll(this.scaling.formula);
         roll = roll.alter(increase, 0, {multiplyNumeric: true});
@@ -278,12 +218,9 @@ function range(wrapped, rollData, labels) {
 }
 const patches = [
     {path: 'dnd5e.dataModels.shared.DamageData.prototype.formula',              fn: formula,        wrapType: 'MIXED'},
-    {path: 'dnd5e.dataModels.actor.CharacterData.defineSchema',                 fn: defineSchema,   wrapType: 'WRAPPER'},
-    {path: 'dnd5e.dataModels.actor.NPCData.defineSchema',                       fn: defineSchema,   wrapType: 'WRAPPER'},
-    {path: 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass',         fn: armorClass,     wrapType: 'MIXED'},
-    {path: 'dnd5e.applications.PropertyAttribution.prototype.getPropertyLabel', fn: acLabel,        wrapType: 'MIXED'},
-    {path: 'dnd5e.dataModels.shared.DamageData.prototype.scaledFormula',        fn: scaledFormula,  wrapType: 'OVERRIDE'},
+    {path: 'dnd5e.dataModels.shared.DamageData.prototype.scaledFormula',        fn: scaledFormula,  wrapType: 'MIXED'},
     {path: 'dnd5e.dataModels.shared.RangeField.prepareData',                    fn: range,          wrapType: 'MIXED'},
+    {path: 'dnd5e.dataModels.actor.AttributesFields.prepareArmorClass',         fn: armorClass,     wrapType: 'WRAPPER'},
     {path: 'foundry.canvas.placeables.Token.prototype._getVisionSourceData',    fn: visionSourceData, wrapType: 'WRAPPER'}
 ];
 function patch(enabled) {

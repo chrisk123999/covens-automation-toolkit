@@ -892,7 +892,7 @@ export default class DialogApp extends CatApp {
     #applyTooltip(element) {
         if ('tooltip' in element.dataset) return;
         const uuid = element.dataset.referenceTooltip;
-        element.dataset.tooltip = `<section class="loading" data-uuid="${uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
+        element.dataset.tooltip = dnd5e.utils.loadingTooltip({uuid});
         if (element.dataset.attribution) element.dataset.tooltipClass = 'property-attribution';
     }
 

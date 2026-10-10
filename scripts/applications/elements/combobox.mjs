@@ -1,6 +1,6 @@
 import uiUtils from '../../utilities/uiUtils.mjs';
 
-export default class CatCombobox extends HTMLElement {
+export default class CatCombobox extends foundry.applications.elements.AdoptableHTMLElement {
     static tagName = 'cat-combobox';
 
     #input;
@@ -18,6 +18,7 @@ export default class CatCombobox extends HTMLElement {
     get value() { return this.#hidden.value; }
 
     connectedCallback() {
+        this.ownerDocument.addEventListener('mousedown', this.#onDocumentMousedown);
         if (this.#input) return;
         const name = this.getAttribute('name') ?? '';
         const value = this.getAttribute('value') ?? '';
@@ -68,14 +69,13 @@ export default class CatCombobox extends HTMLElement {
         this.#input.addEventListener('keydown', this.#onKeydown.bind(this));
         this.#list.addEventListener('mousedown', this.#onListMousedown.bind(this));
         this.#clear.addEventListener('click', this.#onClearClick.bind(this));
-        document.addEventListener('mousedown', this.#onDocumentMousedown);
     }
 
     disconnectedCallback() {
-        document.removeEventListener('mousedown', this.#onDocumentMousedown);
-        window.removeEventListener('scroll', this.#reposition, true);
-        window.removeEventListener('resize', this.#reposition);
-        if (this.#list?.parentElement === document.body) this.#list.remove();
+        super.disconnectedCallback();
+        this.ownerDocument.removeEventListener('mousedown', this.#onDocumentMousedown);
+        this.#closePopover();
+        if (this.#list?.parentElement === this.ownerDocument.body) this.#list.remove();
     }
 
     #applyInitialValue(v) {
@@ -183,21 +183,21 @@ export default class CatCombobox extends HTMLElement {
     #openPopover() {
         if (this.#open) return;
         this.#open = true;
-        document.body.append(this.#list);
+        this.ownerDocument.body.append(this.#list);
         this.#reposition();
         this.#list.hidden = false;
         const highlighted = this.#list.querySelector('li.highlighted');
         highlighted?.scrollIntoView({block: 'nearest'});
-        window.addEventListener('scroll', this.#reposition, true);
-        window.addEventListener('resize', this.#reposition);
+        this.ownerDocument.defaultView.addEventListener('scroll', this.#reposition, true);
+        this.ownerDocument.defaultView.addEventListener('resize', this.#reposition);
     }
 
     #closePopover() {
         if (!this.#open) return;
         this.#open = false;
         this.#list.hidden = true;
-        window.removeEventListener('scroll', this.#reposition, true);
-        window.removeEventListener('resize', this.#reposition);
+        this.ownerDocument.defaultView.removeEventListener('scroll', this.#reposition, true);
+        this.ownerDocument.defaultView.removeEventListener('resize', this.#reposition);
     }
 
     #reposition = () => {

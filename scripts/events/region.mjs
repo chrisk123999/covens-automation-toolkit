@@ -3,7 +3,7 @@ import {regions} from '../handlers/_module.mjs';
 import {genericUtils, regionUtils} from '../utilities/_module.mjs';
 async function createRegion(region, options, userId) {
     if (userId != game.user.id) return;
-    if (region.flags.dnd5e?.spellLevel) return;
+    if (region.flags.dnd5e?.activity) return;
     await regions.regionEffects(region);
     await new Events.RegionEvent([region], constants.regionPasses.created, {options}).run();
 }
@@ -21,7 +21,7 @@ async function doRegionMove(region, locationData, {movementPromise} = {}) {
 }
 async function updateRegion(region, updates, options, userId) {
     if (userId != game.user.id) return;
-    const spatialKeys = ['shapes', 'x', 'y', 'elevation', 'bottom', 'top'];
+    const spatialKeys = ['shapes', 'elevation', 'levels', 'restriction'];
     const movedOrReshaped = spatialKeys.some(key => key in updates);
     if (movedOrReshaped) await regions.regionEffects(region);
     const locationData = options.cat?.oldLocation;
@@ -34,8 +34,10 @@ async function deleteRegion(region, options, userId) {
     await new Events.RegionEvent([region], constants.regionPasses.deleted, {options}).run();
 }
 async function createWorkflowRegion(workflow) {
-    await regions.regionEffects(workflow.template);
-    await new Events.RegionEvent([workflow.template], constants.regionPasses.created, {workflow}).run();
+    const placedRegions = (workflow.templateUuids ?? []).map(uuid => fromUuidSync(uuid, {strict: false})).filter(Boolean);
+    if (!placedRegions.length) return;
+    for (const region of placedRegions) await regions.regionEffects(region);
+    await new Events.RegionEvent(placedRegions, constants.regionPasses.created, {workflow}).run();
 }
 function preCreateRegion(region, updates, options, userId) {
     regions.placed(region);

@@ -189,7 +189,7 @@ function getSize(actor, returnString) {
  * @returns {ActiveEffect|undefined}
  */
 function getEffectByStatusID(actor, id) {
-    return getEffects(actor).find(i => i.id === CONFIG.statusEffects.find(j => j.id === id)?._id);
+    return getEffects(actor).find(i => i.id === CONFIG.statusEffects[id]?._id);
 }
 
 /**
@@ -202,7 +202,7 @@ function getStatusSources(actor, ids) {
     const effects = getEffects(actor);
     const hasStatus = new Set();
     for (const condition of ids) {
-        const effect = effects.find(i => i.id === CONFIG.statusEffects.find(j => j.id === condition)?._id);
+        const effect = effects.find(i => i.id === CONFIG.statusEffects[condition]?._id);
         if (!effect) continue;
         if (effect.flags.dae?.autoCreated) {
             const sources = effects.filter(e => e.id !== effect.id && effectUtils.getConditions(e).has(condition));

@@ -1,6 +1,6 @@
 import uiUtils from '../../utilities/uiUtils.mjs';
 
-export default class CatMultiCombobox extends HTMLElement {
+export default class CatMultiCombobox extends foundry.applications.elements.AdoptableHTMLElement {
     static tagName = 'cat-multi-combobox';
 
     #input;
@@ -22,6 +22,7 @@ export default class CatMultiCombobox extends HTMLElement {
     get selected() { return new Map(this.#selected); }
 
     connectedCallback() {
+        this.ownerDocument.addEventListener('mousedown', this.#onDocumentMousedown);
         if (this.#input) return;
         this.#amountsMode = this.hasAttribute('amounts');
         const max = this.getAttribute('max-total');
@@ -95,14 +96,13 @@ export default class CatMultiCombobox extends HTMLElement {
         this.#chipsWrap.addEventListener('input', this.#onChipsInput.bind(this));
         this.#chipsWrap.addEventListener('mouseover', e => this.#tokenHover(e, '.chip', true));
         this.#chipsWrap.addEventListener('mouseout', e => this.#tokenHover(e, '.chip', false));
-        document.addEventListener('mousedown', this.#onDocumentMousedown);
     }
 
     disconnectedCallback() {
-        document.removeEventListener('mousedown', this.#onDocumentMousedown);
-        window.removeEventListener('scroll', this.#reposition, true);
-        window.removeEventListener('resize', this.#reposition);
-        if (this.#list?.parentElement === document.body) this.#list.remove();
+        super.disconnectedCallback();
+        this.ownerDocument.removeEventListener('mousedown', this.#onDocumentMousedown);
+        this.#closePopover();
+        if (this.#list?.parentElement === this.ownerDocument.body) this.#list.remove();
     }
 
     #renderOptions(filter) {
@@ -415,19 +415,19 @@ export default class CatMultiCombobox extends HTMLElement {
     #openPopover() {
         if (this.#open) return;
         this.#open = true;
-        document.body.append(this.#list);
+        this.ownerDocument.body.append(this.#list);
         this.#reposition();
         this.#list.hidden = false;
-        window.addEventListener('scroll', this.#reposition, true);
-        window.addEventListener('resize', this.#reposition);
+        this.ownerDocument.defaultView.addEventListener('scroll', this.#reposition, true);
+        this.ownerDocument.defaultView.addEventListener('resize', this.#reposition);
     }
 
     #closePopover() {
         if (!this.#open) return;
         this.#open = false;
         this.#list.hidden = true;
-        window.removeEventListener('scroll', this.#reposition, true);
-        window.removeEventListener('resize', this.#reposition);
+        this.ownerDocument.defaultView.removeEventListener('scroll', this.#reposition, true);
+        this.ownerDocument.defaultView.removeEventListener('resize', this.#reposition);
     }
 
     #reposition = () => {

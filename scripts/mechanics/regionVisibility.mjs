@@ -7,9 +7,8 @@ export async function regionVisibility(workflow) {
     function isHindering(region) {
         return regionUtils.isObscured(region) || regionUtils.isMagicalDarkness(region);
     }
-    const ray = new foundry.canvas.geometry.Ray(sourceToken.object.center, targetToken.object.center);
     const obscuredRegions = new Set([
-        ...sourceToken.scene.regions.filter(r => isHindering(r) && regionUtils.rayIntersectsRegion(r, ray)),
+        ...sourceToken.scene.regions.filter(r => isHindering(r) && regionUtils.isBetweenTokens(r, sourceToken, targetToken)),
         ...sourceToken.regions.filter(isHindering),
         ...targetToken.regions.filter(isHindering)
     ]);

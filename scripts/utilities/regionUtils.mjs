@@ -1,11 +1,12 @@
+import {documentUtils} from './_module.mjs';
 /**
  * The activity that placed this region.
  * @param {foundry.documents.RegionDocument} region Region to resolve the origin of.
  * @returns {dnd5e.documents.activity.Activity|undefined} Undefined when the region was not placed by an activity.
  */
 function getActivity(region) {
-    const originUuid = region.flags.dnd5e?.origin;
-    if (originUuid) return fromUuidSync(originUuid, {strict: false});
+    const activityUuid = region.flags.dnd5e?.activity;
+    if (activityUuid) return fromUuidSync(activityUuid, {strict: false});
 }
 /**
  * Cast data stamped on this region when it was placed.
@@ -23,6 +24,19 @@ function getCastData(region) {
  */
 function rayIntersectsRegion(region, ray) {
     return getIntersections(region, ray.A, ray.B, true);
+}
+/**
+ * Whether the line between two tokens crosses this region.
+ * @param {foundry.documents.RegionDocument} region Region to test against.
+ * @param {foundry.documents.TokenDocument} sourceToken Token the line starts from.
+ * @param {foundry.documents.TokenDocument} targetToken Token the line ends at.
+ * @returns {boolean}
+ */
+function isBetweenTokens(region, sourceToken, targetToken) {
+    if (!region.includedInLevel(sourceToken._source.level) && !region.includedInLevel(targetToken._source.level)) return false;
+    const origin = sourceToken.getMovementOrigin(sourceToken._source);
+    const destination = targetToken.getMovementOrigin(targetToken._source);
+    return region.segmentizeMovementPath([origin, destination], [{x: 0, y: 0}]).length > 0;
 }
 /**
  * Every point where the segment AB crosses this region's boundary.
@@ -148,13 +162,75 @@ function getRegionMovementTokens(region, locationData) {
     });
     return results;
 }
+/**
+ * The circle this region covers.
+ * @param {foundry.documents.RegionDocument} region Region to read.
+ * @returns {{x: number, y: number, radius: number}} Pixel values.
+ */
+function getArea(region) {
+    const spread = region.flags.cat?.spreadAroundCorners;
+    if (spread) return spread;
+    const {center, width, height} = region.bounds;
+    return {x: center.x, y: center.y, radius: Math.max(width, height) / 2};
+}
+/**
+ * Reshape a circular region so it spreads around wall corners. Token-attached regions are skipped.
+ * @param {foundry.documents.RegionDocument} region Region to reshape.
+ * @param {object} [options] Additional options.
+ * @param {number} [options.depth] How many corners the area may turn.
+ * @returns {Promise<void>}
+ */
+async function spreadAroundCorners(region, {depth = 2} = {}) {
+    const shape = region.shapes[0];
+    if (region.attachment?.token || shape?.type !== 'circle' || region.parent !== canvas.scene) return;
+    const level = region.parent.levels.get(region._source.levels?.[0]);
+    const elevation = Number.isFinite(region.elevation.bottom) ? region.elevation.bottom : 0;
+    const corners = new Map();
+    for (const wall of region.parent.walls) {
+        if (wall.move === CONST.WALL_MOVEMENT_TYPES.NONE) continue;
+        for (const [x, y] of [[wall.c[0], wall.c[1]], [wall.c[2], wall.c[3]]]) {
+            if (Math.hypot(x - shape.x, y - shape.y) < shape.radius) corners.set(x + ',' + y, {x, y});
+        }
+    }
+    const visited = new Set();
+    const polygons = [];
+    const queue = [{x: shape.x, y: shape.y, radius: shape.radius, remaining: depth}];
+    while (queue.length) {
+        const {x, y, radius, remaining} = queue.shift();
+        const polygon = CONFIG.Canvas.polygonBackends.move.create({x, y, elevation}, {type: 'move', radius, level});
+        polygons.push(polygon.points);
+        if (!remaining) continue;
+        const vertices = new Set();
+        for (let i = 0; i < polygon.points.length; i += 2) vertices.add(Math.round(polygon.points[i]) + ',' + Math.round(polygon.points[i + 1]));
+        for (const [key, corner] of corners) {
+            if (visited.has(key) || !vertices.has(key)) continue;
+            const distance = Math.hypot(corner.x - x, corner.y - y);
+            if (!distance || distance >= radius) continue;
+            visited.add(key);
+            queue.push({
+                x: corner.x + ((corner.x - x) / distance * 2),
+                y: corner.y + ((corner.y - y) / distance * 2),
+                radius: radius - distance,
+                remaining: remaining - 1
+            });
+        }
+    }
+    await documentUtils.update(region, {
+        shapes: polygons.map(points => ({type: 'polygon', points})),
+        restriction: {enabled: false},
+        'flags.cat.spreadAroundCorners': {x: shape.x, y: shape.y, radius: shape.radius}
+    });
+}
 export default {
     getActivity,
     getCastData,
     rayIntersectsRegion,
+    isBetweenTokens,
     getIntersections,
     isObscured,
     isMagicalDarkness,
     getShapeAnchor,
-    getRegionMovementTokens
+    getRegionMovementTokens,
+    getArea,
+    spreadAroundCorners
 };

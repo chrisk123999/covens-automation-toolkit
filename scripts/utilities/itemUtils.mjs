@@ -52,7 +52,7 @@ function syntheticItem(itemData, actor) {
 /**
  * Apply an enchantment to an item. The effect data must carry an origin.
  * @param {Item5e} item Item on which to apply effects.
- * @param {object} effectData Coerced to an enchantment.
+ * @param {object} effectData Coerced to an applied enchantment (`transfer` on, `disabled` off).
  * @param {object} [options] Additional options.
  * @param {object[]} [options.effects] Data for additional effects created on the actor, dependent on the enchantment.
  * @param {object[]} [options.items] Data for additional items created on the actor, dependent on the enchantment.
@@ -218,7 +218,7 @@ async function rehideActivities(item, identifiers = [], {all = false, favorite =
 function getAdvancementSourceKey(item) {
     if (!item.actor) return item.flags.cat?.automation?.sourceType;
     if (item.system?.sourceItem) return item.system.sourceItem;
-    let rootItem = item.system?.advancementRootItem ?? item.actor.items.get(item.flags.dnd5e?.advancementOrigin);
+    let rootItem = item.system?.advancementRootItem ?? item.actor.items.get(item.flags.dnd5e?.advancementOrigin?.split('.')[0]);
     if (rootItem) return `${rootItem.type}:${rootItem.identifier}`;
 }
 /**
@@ -386,8 +386,11 @@ function canCast(item) {
 function getSpellAttackBonus(item) {
     const actor = item.actor;
     const ability = item.system.ability || actor.system.attributes.spellcasting || 'int';
-    const bonus = dnd5e.utils.simplifyBonus(actor.system.bonuses?.rsak?.attack, actor.getRollData());
-    return actor.system.attributes.prof + (actor.system.abilities[ability]?.mod ?? 0) + bonus;
+    const rollData = actor.getRollData();
+    const {bonus} = dnd5e.dataModels.shared.D20RollModificationField.combineFields(actor.system, [
+        `abilities.${ability}.attack.roll`, 'rolls.attack', 'rolls.attack.rsak'
+    ], {rules: {category: 'attack', actor, item, rollData}});
+    return actor.system.attributes.prof + (actor.system.abilities[ability]?.mod ?? 0) + dnd5e.utils.simplifyBonus(bonus, rollData);
 }
 /**
  * Append a bonus to the first damage part of every activity in this item's data, in place.

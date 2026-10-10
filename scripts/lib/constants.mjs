@@ -76,7 +76,8 @@ const effectHookNames = {
     updateActiveEffect: 'updateActiveEffect',
     preCreateActiveEffect: 'preCreateActiveEffect',
     preDeleteActiveEffect: 'preDeleteActiveEffect',
-    preUpdateActiveEffect: 'preUpdateActiveEffect'
+    preUpdateActiveEffect: 'preUpdateActiveEffect',
+    suppressionChanged: 'dae.suppressionChanged'
 };
 const effectPasses = {
     created: 'created',
@@ -98,6 +99,7 @@ const combatPasses = {
 const combatHookNames = {
     updateCombat: 'updateCombat',
     combatStart: 'combatStart',
+    preUpdateCombat: 'preUpdateCombat',
     deleteCombat: 'deleteCombat',
     preUpdateCombatant: 'preUpdateCombatant',
     updateCombatant: 'updateCombatant'
@@ -241,7 +243,6 @@ const miscHookNames = {
     daeModifySpecials: 'dae.modifySpecials',
     vaeCreateEffectButtons: 'visual-active-effects.createEffectButtons',
     tidyReady: 'tidy5e-sheet.ready',
-    renderTidy5eItemSheetClassic: 'renderTidy5eItemSheetClassic',
     renderTidy5eItemSheetQuadrone: 'renderTidy5eItemSheetQuadrone',
     renderTidy5eCharacterSheetQuadrone: 'renderTidy5eCharacterSheetQuadrone',
     renderCombatTracker: 'renderCombatTracker',
@@ -298,7 +299,6 @@ const meleeSpellAttacks = [
 ];
 const statusEffectKeys = [
     'macro.CE',
-    'macro.CUB',
     'macro.StatusEffect',
     'StatusEffect'
 ];
@@ -307,6 +307,7 @@ function getItemKeepPaths({spell = false} = {}) {
         '_stats.compendiumSource',
         'flags.ddbimporter',
         'flags.dnd5e.advancementOrigin',
+        'flags.dnd5e.advancementRoot',
         'flags.dnd5e.cachedFor',
         'flags.dnd5e.sourceId',
         'flags.tidy5e-sheet',
@@ -499,7 +500,7 @@ export default {
     get rangedWeaponOptions() { return rangedWeapons; },
     get sizeOptions() { return Object.entries(CONFIG.DND5E.actorSizes).sort((a, b) => a[1].numerical - b[1].numerical).map(i => ({label: i[1].label, value: i[0]})); },
     get skillOptions() { return Object.entries(CONFIG.DND5E.skills).map(i => ({label: i[1].label, value: i[0], image: i[1].icon})); },
-    get statusOptions() { return CONFIG.statusEffects.map(i => ({label: _loc(i.name ?? i.label ?? i.id), value: i.id, image: i.img ?? i.icon})); },
+    get statusOptions() { return Object.values(CONFIG.statusEffects).map(i => ({label: _loc(i.name ?? i.id), value: i.id, image: i.img})); },
     get spellMethodOptions() { return Object.entries(CONFIG.DND5E.spellcasting).map(i => ({label: i[1].label, value: i[0], image: methodIconOverrides[i[0]] ?? i[1].img})); },
     get spellSchoolOptions() { return Object.entries(CONFIG.DND5E.spellSchools).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: true})); },
     get spellSlotOptions() { return Object.entries(CONFIG.DND5E.spellLevels).map(i => i[0] == 0 ? {label: i[1], value: i[0]} : {label: i[1], value: i[0], image: `systems/dnd5e/icons/spell-tiers/${CONFIG.DND5E.spellcasting.spell.getSpellSlotKey(i[0])}.webp`}); },

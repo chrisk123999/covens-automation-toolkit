@@ -229,8 +229,7 @@ async function damage(workflow) {
         }
         await bonus.roll.toMessage({
             flavor: `${bonus.name}: ${Array.from(bonus.targets).map(t => t.name).join(', ')}`,
-            speaker: ChatMessage.implementation.getSpeaker({token: workflow.token}),
-            rollMode: 'roll'
+            speaker: ChatMessage.implementation.getSpeaker({token: workflow.token})
         });
     }
     workflowUtils.setWorkflowProperty(workflow, 'optionalBonusDamage', targetedData);

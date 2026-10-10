@@ -200,7 +200,7 @@ export default class MedkitApp extends CatApp {
         if (!automationUtils.isSelfAutomation(item, {automation: applied}) && (applied || automationUtils.getStoredHash(item))) {
             return automationUtils.isUpToDate(item, {automation: applied}) ? {reason: 'current', applied, available} : {reason: 'outdated', applied, available};
         }
-        return available.length ? {reason: 'available', available} : null;
+        return available.length ? {reason: 'available', available, preferred: automationUtils.sortByPriority(available)[0]} : null;
     }
 
     async _prepareAutomationCounts() {
@@ -876,11 +876,8 @@ export default class MedkitApp extends CatApp {
         }
         if (medkitStatus === 'available') {
             const labelFor = src => constants.automations.getSourceName?.(src) ?? src;
-            const priority = automationUtils.getAutomationSources();
-            const rank = src => { const i = priority.indexOf(src); return i === -1 ? Infinity : i; };
             const seen = new Set();
-            const sources = [...availableAutomations]
-                .sort((a, b) => rank(a.source) - rank(b.source))
+            const sources = automationUtils.sortByPriority(availableAutomations)
                 .filter(a => !seen.has(a.source) && seen.add(a.source))
                 .map(a => ({value: a.source, label: labelFor(a.source), selected: a.source === this.#selectedSource}));
             return {
@@ -1004,7 +1001,7 @@ export default class MedkitApp extends CatApp {
         const max = Number(target.dataset.summonMax) || Infinity;
         const remaining = Number.isFinite(max) ? Math.max(1, max - startIndex) : null;
         const types = new Set(game.documentTypes.Actor);
-        const result = await CompendiumBrowser.select({filters: {locked: {documentClass: 'Actor', types}}, selection: {min: 1, max: remaining}});
+        const result = await CompendiumBrowser.select({tab: 'actors', mode: CompendiumBrowser.MODES.ADVANCED, filters: {locked: {documentClass: 'Actor', types}}, selection: {min: 1, max: remaining}});
         if (!result?.size) return;
         const flags = this._getFlags();
         const list = foundry.utils.getProperty(flags, listPath) ?? [];
@@ -1050,7 +1047,7 @@ export default class MedkitApp extends CatApp {
         const [, listPath, indexStr] = match;
         const startIndex = Number(indexStr);
         const types = new Set(game.documentTypes.Item);
-        const result = await CompendiumBrowser.select({filters: {locked: {documentClass: 'Item', types}}, selection: {min: 1, max: null}});
+        const result = await CompendiumBrowser.select({tab: 'items', mode: CompendiumBrowser.MODES.ADVANCED, filters: {locked: {documentClass: 'Item', types}}, selection: {min: 1, max: null}});
         if (!result?.size) return;
         const flags = this._getFlags();
         const list = foundry.utils.getProperty(flags, listPath) ?? [];
@@ -1144,7 +1141,8 @@ export default class MedkitApp extends CatApp {
         let done = 0;
         for (const entry of applying) {
             const options = choices[this.#massApplyID(entry.item)];
-            await automationUtils.updateItem(entry.item, {source: options.source});
+            const source = options.source ?? entry.preferred?.source;
+            await automationUtils.updateItem(entry.item, {source});
             done++;
             progress.update({pct: done / applying.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: applying.length, name: entry.item.name})});
         }
@@ -1157,20 +1155,19 @@ export default class MedkitApp extends CatApp {
     async #massApplyPrompt(items) {
         const data = {};
         for (const entry of items) {
-            let preferred;
+            const preferred = (entry.preferred ?? automationUtils.sortByPriority(entry.available ?? [])[0])?.source;
             const i = entry.item;
             const subinputs = [];
             const reasonTags = {available: {label: 'CAT.MEDKIT.MassApply.Counts.Available', status: 'available'}, outdated: {label: 'CAT.MEDKIT.MassApply.Counts.Outdated', status: 'outdated'}, current: {label: 'CAT.MEDKIT.MassApply.Counts.UpToDate', status: 'up-to-date'}};
             const reason = {...reasonTags[entry.reason], id: 'reason'};
             const tags = [];
             if (entry.available?.length > 1) {
-                preferred = automationUtils.getAutomationSources().find(s => entry.available.some(e => e.source === s));
                 tags.push({label: 'CAT.MEDKIT.MassApply.ChooseSource', id: 'choose'});
                 subinputs.push(['selectOption', [{
                     label: _loc('CAT.MEDKIT.MassApply.ChooseSource'),
                     name: this.#massApplyID(i) + '.source',
                     options: {
-                        currentValue: preferred ?? entry.available[0].source,
+                        currentValue: preferred,
                         options: entry.available.map(a => ({
                             label: automationUtils.getSourceName(a.source),
                             value: a.source
@@ -1184,7 +1181,7 @@ export default class MedkitApp extends CatApp {
                     }
                 }]]);
             }
-            if (entry.available?.length) tags.unshift({label: automationUtils.getSourceName(preferred ?? entry.available[0].source), id: 'source'});
+            if (preferred) tags.unshift({label: automationUtils.getSourceName(preferred), id: 'source'});
             if (entry.applied) {
                 const version = documentUtils.getVersion(i) ?? '0';
                 const label = entry.reason === 'current' ? version : `${version} ⟶ ${entry.applied.version}`;

@@ -10,7 +10,7 @@ function renderCombatTracker(app, html, data) {
         if (!isFollowerSummon) return;
         const ownerActor = summonData.owner;
         if (ownerActor) {
-            const ownerCombatant = app.viewed.combatants.find(c => c.actorId === ownerActor.id);
+            const ownerCombatant = app.viewed.getCombatantsByActor(ownerActor)[0];
             if (ownerCombatant && ownerCombatant.initiative !== null) return; 
         }
         const rollButton = combatantRow.querySelector(".combatant-control[data-action='rollInitiative']");

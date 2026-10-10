@@ -30,13 +30,21 @@ function getSavedCastData(activity) {
  * @returns {Set<string>}
  */
 function getConditions(activity) {
-    let conditions = new Set();
+    const conditions = getEffectConditions(activity);
+    return activity.otherActivity ? conditions.union(getEffectConditions(activity.otherActivity)) : conditions;
+}
+/**
+ * Status effect IDs conveyed by this activity's own effects.
+ * @param {Activity} activity Activity to read from.
+ * @returns {Set<string>}
+ */
+function getEffectConditions(activity) {
+    const conditions = new Set();
     activity.effects.forEach(i => {
-        if (!i.effect) return;
-        const effectConditions = effectUtils.getConditions(i.effect);
-        effectConditions.forEach(j => conditions.add(j));
+        const effect = activity.item.effects.get(i._id);
+        if (!effect) return;
+        effectUtils.getConditions(effect).forEach(j => conditions.add(j));
     });
-    if (activity._otherActivity) conditions = conditions.union(getConditions(activity._otherActivity));
     return conditions;
 }
 
@@ -183,7 +191,7 @@ function getEffectDuration(activity) {
  * @returns {number|undefined}
  */
 function getDuration(activity) {
-    return getEffectDuration(activity).seconds;
+    return effectUtils.durationToSeconds(getEffectDuration(activity));
 }
 
 /**

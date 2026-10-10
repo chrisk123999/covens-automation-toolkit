@@ -803,7 +803,7 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
         let label = getTokenName(i, {hide: hideNames, counter});
         if (coverToken && !reverseCover) label += ' [' + tokenUtils.checkCover(coverToken, i, {displayName: true}) + ']';
         else if (coverToken) label += ' [' + tokenUtils.checkCover(i, coverToken, {displayName: true}) + ']';
-        if (displayDistance && coverToken) label += ' [' + tokenUtils.getDistance(coverToken, i).toFixed(2) + ' ' + canvas.scene.grid.units + ' ]';
+        if (displayDistance && coverToken) label += ' [' + tokenUtils.getDistance(coverToken, i, {convertToFt: false}).toFixed(2) + ' ' + canvas.scene.grid.units + ' ]';
         targetInputs.push({
             label,
             name: i.id,
