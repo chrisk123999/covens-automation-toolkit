@@ -46,7 +46,7 @@ function setIdentifier(documentData, identifier) {
  * @property {AnimationEntry} deleteAnimation
  * @property {object} createAnimationOptions Options specific to a particular animation, such as color. If absent, defaults are fetched from the registered animation.
  * @property {object} deleteAnimationOptions Options specific to a particular animation, such as color. If absent, defaults are fetched from the registered animation.
- * @property {string[]} specialDuration Deletes effect.
+ * @property {string[]} specialDuration Deletes effect. Keys registered with DAE, such as midi-qol's `1Attack`, are written to DAE's flag.
  * @property {string[]} disableCondition Disables effect.
  * @property {string[]} unhideActivities
  * @property {boolean} favoriteActivities Also favorite the activities named by {@link unhideActivities}.
@@ -92,7 +92,13 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
     if (rules) setRules(effectData, rules);
     if (vae) genericUtils.setProperty(effectData, 'flags.cat.vae.buttons', vae);
     if (parentEntity) genericUtils.setProperty(effectData, 'flags.dnd5e.dependentOn', parentEntity.uuid);
-    if (specialDuration) genericUtils.setProperty(effectData, 'flags.cat.specialDuration', specialDuration);
+    if (specialDuration) {
+        const daeDurations = DAE.daeSpecialDurations();
+        const catKeys = specialDuration.filter(key => !(key in daeDurations));
+        const daeKeys = specialDuration.filter(key => key in daeDurations);
+        if (catKeys.length) genericUtils.setProperty(effectData, 'flags.cat.specialDuration', catKeys);
+        if (daeKeys.length) genericUtils.setProperty(effectData, 'flags.dae.specialDuration', daeKeys);
+    }
     if (disableCondition) genericUtils.setProperty(effectData, 'flags.cat.disableCondition', disableCondition);
     if (unhideActivities) genericUtils.setProperty(effectData, 'flags.cat.unhideActivities', unhideActivities);
     if (favoriteActivities) genericUtils.setProperty(effectData, 'flags.cat.favoriteActivities', true);

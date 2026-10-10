@@ -24,7 +24,6 @@ async function preambleComplete(workflow) {
     event = await new Events.WorkflowEvent(constants.workflowPasses.preambleComplete, workflow).run();
     await refundAborted(workflow);
     if (event) return false;
-    await Promise.all([effects.specialDuration(workflow, 'preamble'), workflowUtils.recordTargets(workflow)]);
 }
 async function attackRollConfig(workflow) {
     await regionVisibility(workflow);

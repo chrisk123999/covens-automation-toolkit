@@ -1,14 +1,15 @@
 # 0.1.2 Release:
 ## Update Notes:
-- Added special duration: Rolled a saving throw.
 - Added setting: Placed Area Visibility. Areas placed by activities are drawn on the Regions layer only by default.
+- Removed special durations that midi-qol already provides: Made an attack, Attack missed, Cast a spell and HP reduced to zero. Use `1Attack`, `1Miss`, `1Spell` and `zeroHP` instead.
 ## Bug Fixes:
 - Special durations triggered by attacks, saves and damage expire at that step of the roll.
 - Forced movement no longer spends a token's movement.
 - Saving settings keeps automation sources registered unless they are disabled, matching startup.
 - CatKit dropdowns stay attached to their field when the window moves.
 ## API Update Notes:
-- Added `workflowUtils.addAttackRollPart`, `workflowUtils.recordTargets`, `animationUtils.meetsRequirement` and `animationUtils.getCredits`.
+- Effect data builders write `specialDuration` keys registered with DAE, such as midi-qol's `1Attack`, to `flags.dae.specialDuration`.
+- Added `workflowUtils.addAttackRollPart`, `animationUtils.meetsRequirement` and `animationUtils.getCredits`.
 - Effect animation `create` and `delete` macros receive `{activity, sourceToken}` as a fourth argument.
 - Animations can require `jb2a_patreon`. The `JB2A_DnD5e` requirement is met by either JB2A module.
 

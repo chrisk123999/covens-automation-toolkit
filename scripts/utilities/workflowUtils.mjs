@@ -585,18 +585,6 @@ async function updateTargets(workflow, targets, userId = game.user.id) {
     else await queryUtils.query('updateTargets', game.users.get(userId), {ids});
 }
 /**
- * Record the workflow's targets on its item card, in the format dnd5e captures at card creation.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- */
-async function recordTargets(workflow) {
-    const chatCard = workflow.chatCard;
-    if (!chatCard?.system?.targets) return;
-    const descriptors = dnd5e.dataModels.chatMessage.fields.TargetsField.getDescriptors(workflow.targets ?? []);
-    const recorded = chatCard.system.targets.map(target => target.token);
-    if (recorded.length === descriptors.length && descriptors.every(target => recorded.includes(target.token))) return;
-    await documentUtils.update(chatCard, {'system.targets': descriptors});
-}
-/**
  * Drop tokens from the workflow's targets, and from the user's own targeting.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @param {foundry.documents.TokenDocument[]} tokens Tokens to drop, as held in the workflow's targets.
@@ -713,7 +701,6 @@ export default {
     applyDamage,
     applyWorkflowDamage,
     updateTargets,
-    recordTargets,
     removeTargets,
     preventZeroHP,
     grantRollModifier,

@@ -117,13 +117,10 @@ const attackedBy = (source, hit) => async ({workflow, target, origin}) => {
     return !!actor && (workflow.actor.id === actor.id) === source;
 };
 const specialDurationTriggers = {
-    castSpell: {stage: 'preamble', side: 'actor', test: ({workflow}) => workflow.item?.type === 'spell'},
     attackedByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, false)},
     attackedBySource: {stage: 'attack', side: 'target', test: attackedBy(true, false)},
     hitByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, true)},
     hitBySource: {stage: 'attack', side: 'target', test: attackedBy(true, true)},
-    attackMissed: {stage: 'attack', side: 'actor', test: ({workflow}) => workflowUtils.isAttackType(workflow, 'attack') && !!workflow.targets.size && !workflow.hitTargets.size},
-    madeAttack: {stage: 'attack', side: 'actor', test: ({workflow}) => workflowUtils.isAttackType(workflow, 'attack')},
     forceSave: {stage: 'save', side: 'actor', test: ({workflow}) => !!workflow.activity?.hasSave && !(workflow.targets.size === 1 && workflow.targets.has(workflow.token))},
     damaged: {stage: 'damage', side: 'target', test: damagedBy()},
     damagedByAlly: {stage: 'damage', side: 'target', test: damagedBy('ally')},
@@ -200,7 +197,6 @@ async function specialDurationHitPoints(actor, updates) {
     if (!hp) return;
     const validTypes = [];
     if (hp.temp === 0) validTypes.push('tempHP');
-    if (hp.value === 0) validTypes.push('zeroHP');
     if (hp.tempmax === 0) validTypes.push('tempMaxHP');
     if (!validTypes.length) return;
     await Promise.all(actorUtils.getEffects(actor, {includeItemEffects: true}).map(async effect => {
@@ -221,11 +217,6 @@ async function specialDurationToolCheck(actor, roll, toolId) {
         }
         if (remove) await documentUtils.deleteDocument(effect);
     }));
-}
-async function specialDurationSave(actor) {
-    const effects = actorUtils.getEffects(actor, {includeItemEffects: true}).filter(i => i.flags.cat?.specialDuration?.includes('rolledSave'));
-    if (!effects.length) return;
-    await documentUtils.deleteEmbeddedDocuments(actor, 'ActiveEffect', effects.map(i => i.id));
 }
 async function specialDurationTurn(token, pass, {round, turn} = {}) {
     const effects = actorUtils.getEffects(token.actor, {includeItemEffects: true}).filter(i => i.flags.cat?.specialDuration?.includes(pass) && !(i.start?.round === round && i.start?.turn === turn));
@@ -276,7 +267,6 @@ export default {
     specialDurationEquipment,
     refreshDisableConditions,
     specialDurationToolCheck,
-    specialDurationSave,
     specialDurationHitPoints,
     specialDurationTurn,
     specialDurationMove,
