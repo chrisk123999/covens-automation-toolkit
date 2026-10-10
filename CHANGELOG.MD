@@ -1,4 +1,4 @@
-# 0.1.0 Release:
+# 0.1.1 Release:
 ## Update Notes:
 - Requires dnd5e 6.0 or later, midi-qol 14.6.0 or later, and DAE 14.6.0 or later.
 - Uses dnd5e 6 and core v14 features in place of CAT's own: armor class, senses, status effects, light levels, region movement paths and level-aware line of sight. Devil's Sight grants token sight.
