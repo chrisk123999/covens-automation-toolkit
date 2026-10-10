@@ -274,8 +274,8 @@ async function requestRoll(actor, request, ability, {rollDC, advantage, disadvan
         case 'deathSave': break;
     }
     const result = (await MidiQOL.socket().executeAsUser('rollAbility', user.id, data))?.[0];
-    if (!result || result instanceof Roll) return result;
-    return result.terms ? Roll.fromData(result) : undefined;
+    if (!result || result instanceof CONFIG.Dice.D20Roll) return result;
+    return result.terms ? CONFIG.Dice.D20Roll.fromData(result) : undefined;
 }
 /**
  * Returns a number representing the target's roll total subtracted from the source's roll total, or undefined for actorless tokens and invalid abilities.

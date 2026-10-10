@@ -27,11 +27,11 @@ async function rollInitiative(wrapped, ids, options) {
 }
 async function onEndTurn(wrapped, combatant, context) {
     await wrapped(combatant, context);
-    if (!context.skipped) await combatEvents.turnEnd(this, combatant, context);
+    if (!context.skipped || combatant.isDefeated) await combatEvents.turnEnd(this, combatant, context);
 }
 async function onStartTurn(wrapped, combatant, context) {
     await wrapped(combatant, context);
-    if (!context.skipped) await combatEvents.turnStart(this, combatant, context);
+    if (!context.skipped || combatant.isDefeated) await combatEvents.turnStart(this, combatant, context);
 }
 async function onStartRound(wrapped, context) {
     await wrapped(context);
