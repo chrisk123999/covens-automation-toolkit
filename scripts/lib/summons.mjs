@@ -289,9 +289,9 @@ export class SummonsManager {
             icon: summonImg,
             size: (summonWidth * token.scene.dimensions.distance) / 2
         };
-        const result = await tokenUtils.aimDestination(token.document, {
+        const result = await tokenUtils.aimDestination(token, {
             range,
-            centerpoint: token.center,
+            centerpoint: token.object?.center,
             crosshairsConfig: crosshairConfig
         });
         if (!result) return;

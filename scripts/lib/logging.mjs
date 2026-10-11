@@ -1,4 +1,4 @@
-import {queryUtils} from '../utilities/_module.mjs';
+import {genericUtils, queryUtils} from '../utilities/_module.mjs';
 const logs = [];
 const macroErrors = {};
 const macroWarnings = {};
@@ -30,7 +30,8 @@ function addMacroError(trigger, error) {
     if (macroErrors[key].length > 10) macroErrors[key].shift();
     console.error('%cCAT%c | ERROR > Execution error in macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
 }
-function addMacroWarning(source, identifier, message, {user} = {}) {
+function addMacroWarning(source, identifier, message, {notify, format, user} = {}) {
+    message = _loc(message, format);
     const key = source + '-' + identifier;
     macroWarnings[key] ??= [];
     macroWarnings[key].push({
@@ -41,6 +42,7 @@ function addMacroWarning(source, identifier, message, {user} = {}) {
         time: Date.now()
     });
     addEntry('WARNING', key + ': ' + message + (user ? ' (' + user + ')' : ''));
+    if (notify && !user) genericUtils.notify(message, {type: notify === true ? 'warn' : notify, localize: false});
     const gm = queryUtils.gmUser();
     if (!user && gm && !gm.isSelf) queryUtils.query('macroWarning', gm, {source, identifier, message, user: game.user.name}).catch(() => {});
 }

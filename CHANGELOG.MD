@@ -36,7 +36,7 @@
 - Added `crosshairUtils.horizontalReach`. 3D range is measured with core's grid rules, height included. `crosshairUtils.aimCrosshair` takes `getElevation` and `ringElevation`, passes the destination to validity functions, and returns its `elevation`.
 - Event pass constants have JSDoc describing their prefixes, arguments and return values.
 - Added `cat.api.registerTroubleshooterCheck` and `cat.api.registerTroubleshooterChecks`. A check is `{id, section, group, run, fix}`. `run` returns rows of `{status, label, detail}`.
-- `Logging.addMacroWarning` also writes a WARNING entry to the log, so early exits show in the Troubleshooter's Logs tab.
+- `Logging.addMacroWarning` writes a WARNING entry to the Troubleshooter's Logs tab, and player warnings are also sent to the GM's log. It takes `{notify, format}`.
 - Added the `catLogEntry` hook, called for every warning and error entry.
 - Added `documentUtils.exportDocument`, `documentUtils.stripDescriptions` and `genericUtils.dateStamp`.
 - `DialogApp.dialog` accepts `config.anchor` `{x, y}` to open at a point.
