@@ -1,3 +1,4 @@
+import {queryUtils} from '../utilities/_module.mjs';
 const logs = [];
 const macroErrors = {};
 const macroWarnings = {};
@@ -29,16 +30,19 @@ function addMacroError(trigger, error) {
     if (macroErrors[key].length > 10) macroErrors[key].shift();
     console.error('%cCAT%c | ERROR > Execution error in macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
 }
-function addMacroWarning(source, identifier, message) {
+function addMacroWarning(source, identifier, message, {user} = {}) {
     const key = source + '-' + identifier;
     macroWarnings[key] ??= [];
     macroWarnings[key].push({
         message,
         source: source,
         identifier,
+        user,
         time: Date.now()
     });
-    addEntry('WARNING', key + ': ' + message);
+    addEntry('WARNING', key + ': ' + message + (user ? ' (' + user + ')' : ''));
+    const gm = queryUtils.gmUser();
+    if (!user && gm && !gm.isSelf) queryUtils.query('macroWarning', gm, {source, identifier, message, user: game.user.name}).catch(() => {});
 }
 function addEmbeddedMacroError(trigger, error) {
     const key = trigger.document.uuid;

@@ -324,6 +324,10 @@ const settings = {
     }
 };
 const menus = {
+    help: {
+        icon: 'fas fa-stethoscope',
+        type: TroubleshooterApp
+    },
     general: {
         icon: 'fas fa-gears'
     },
@@ -354,10 +358,6 @@ const menus = {
     },
     summons: {
         icon: 'fas fa-dragon'
-    },
-    help: {
-        icon: 'fas fa-screwdriver-wrench',
-        type: TroubleshooterApp
     },
     devtools: {
         icon: 'fas fa-tools'

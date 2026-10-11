@@ -881,8 +881,8 @@
         "Hint": "When enabled, the console will show sample event data for every event."
       },
       "Help": {
-        "Name": "Help",
-        "Label": "Help",
+        "Name": "Troubleshooter",
+        "Label": "Open Troubleshooter",
         "Hint": "Help with required module settings and troubleshooting CAT automations."
       },
       "HideNames": {

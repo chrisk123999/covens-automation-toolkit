@@ -1,10 +1,14 @@
 import {documentUtils, effectUtils, itemUtils, workflowUtils} from '../utilities/_module.mjs';
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
+import Logging from './logging.mjs';
 async function dialog({title, content, inputs, buttons, config}) {
     return await DialogApp.dialog(title, content, inputs, buttons, config);
 }
 async function queuedDialog({title, content, inputs, buttons, config}) {
     return await dialogQueue.showDialog(async (...args) => await DialogApp.dialog(...args), title, content, inputs, buttons, config);
+}
+function macroWarning({source, identifier, message, user}) {
+    Logging.addMacroWarning(source, identifier, message, {user});
 }
 async function createEffects({uuid, effectDatas, effectOptions}) {
     const document = await fromUuid(uuid);
@@ -149,7 +153,8 @@ function registerQueries() {
         addFavorites,
         removeFavorites,
         syntheticItemDataRoll,
-        syntheticActivityDataRoll
+        syntheticActivityDataRoll,
+        macroWarning
     };
     for (const [name, fn] of Object.entries(handlers)) {
         globalThis.CONFIG.queries['cat.' + name] = fn;
