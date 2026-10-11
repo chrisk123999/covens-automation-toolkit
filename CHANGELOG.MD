@@ -15,6 +15,7 @@
 - Display Debug Logs and Display Event Data are off by default.
 - The warning for having both JB2A modules active moved from a notification to the Troubleshooter.
 ## Bug Fixes:
+- Players can recall and dismiss their summons without the Delete Tokens permission.
 - Auras only count tokens on the active scene, the scene the GM is viewing, and scenes with a started combat. Linked tokens left on other scenes no longer grant or receive auras.
 - Special durations triggered by attacks, saves and damage expire at that step of the roll.
 - Forced movement no longer spends a token's movement.
@@ -41,6 +42,7 @@
 - Renamed `Logging.addMacroError` to `Logging.logMacroException`. CAT calls it when a macro throws. Macros log with `addMacroWarning` and a `notify` level instead.
 - Added the `catLogEntry` hook, called for every warning and error entry.
 - Added `documentUtils.exportDocument`, `documentUtils.stripDescriptions` and `genericUtils.dateStamp`.
+- `crosshairUtils.aimCrosshair` takes a TokenDocument only.
 - `DialogApp.dialog` accepts `config.anchor` `{x, y}` to open at a point.
 - CatApp windows can declare `headerButtons`.
 

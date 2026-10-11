@@ -291,7 +291,6 @@ export class SummonsManager {
         };
         const result = await tokenUtils.aimDestination(token, {
             range,
-            centerpoint: token.object?.center,
             crosshairsConfig: crosshairConfig
         });
         if (!result) return;

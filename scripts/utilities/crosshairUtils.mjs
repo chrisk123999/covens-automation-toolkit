@@ -80,7 +80,7 @@ function drawRange(center, radius) {
  * @returns {Promise<object>} The crosshair result, plus `elevation` when `getElevation` is given.
  */
 async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, drawBoundries = true, checkOverlap = true, customCallbacks, trackDistance = true, fudgeDistance = 0, validityFunctions = [], getElevation, ringElevation} = {}) {
-    const tokenImg = token?.texture?.src ?? token?.document?.texture?.src;
+    const tokenImg = token?.texture?.src;
     crosshairsConfig = crosshairsConfig || {icon: tokenImg};
     const baseIcon = crosshairsConfig.icon ?? Crosshairs.defaultCrosshairsConfig().icon;
     let widthAdjust = 0;
@@ -93,16 +93,16 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         if (!fudgeDistance && (widthAdjust !== actualHalf * canvas.grid.distance)) fudgeDistance = 2.5;
         fudgeDistance += widthAdjust;
     }
-    const tokenDoc = token?.document ?? token;
-    centerpoint = centerpoint ?? tokenDoc.getCenterPoint();
-    const origin = {x: centerpoint.x, y: centerpoint.y, elevation: tokenDoc.elevation};
-    const tokenSizeIndex = getSizeIndex(tokenDoc);
-    const footprint = {w: (tokenDoc.width ?? 1) * canvas.grid.size, h: (tokenDoc.height ?? 1) * canvas.grid.size};
+    centerpoint = centerpoint ?? token.getCenterPoint();
+    const origin = {x: centerpoint.x, y: centerpoint.y, elevation: token.elevation};
+    const level = token?.parent.levels.get(token.level);
+    const tokenSizeIndex = getSizeIndex(token);
+    const footprint = {w: (token.width ?? 1) * canvas.grid.size, h: (token.height ?? 1) * canvas.grid.size};
     let drawing;
     let elevation;
     const isOverlapping = ({x, y}) => {
         const area = new PIXI.Rectangle(x - (footprint.w / 2) + 1, y - (footprint.h / 2) + 1, footprint.w - 2, footprint.h - 2);
-        return canvas.tokens.placeables.some(t => t.document !== tokenDoc && t.bounds.intersects(area) && Math.abs(tokenSizeIndex - getSizeIndex(t.document)) < 2);
+        return canvas.tokens.placeables.some(t => t.document !== token && t.bounds.intersects(area) && Math.abs(tokenSizeIndex - getSizeIndex(t.document)) < 2);
     };
     const checkDistance = async (crosshairs) => {
         if (maxRange && drawBoundries) {
@@ -121,7 +121,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
             const distance = Math.max(0, canvas.grid.measurePath([origin, measured]).distance.toNearest(0.1) - widthAdjust - fudgeDistance);
             const blocked = (maxRange && distance > maxRange)
                 || (checkOverlap && isOverlapping(measured))
-                || tokenDoc.object?.checkCollision(crosshairs, {origin: tokenDoc.object.center, type: 'move', mode: 'any'})
+                || (level && CONFIG.Canvas.polygonBackends.move.testCollision(token.getCenterPoint(), {x, y}, {type: 'move', mode: 'any', level}))
                 || validityFunctions.some(i => !i(crosshairs, {x, y, elevation}));
             crosshairs.valid = !blocked;
             crosshairs.icon = blocked ? 'icons/svg/hazard.svg' : baseIcon;
@@ -143,7 +143,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
     };
     if (trackDistance) options.label = '0ft';
     if (token?.rotation && options.direction === undefined && !options.lockDirection) options.direction = token.rotation;
-    const [restoreWindows, ghost] = await Promise.all([uiUtils.minimizeWindows(), drawGhost(tokenDoc, centerpoint)]);
+    const [restoreWindows, ghost] = await Promise.all([uiUtils.minimizeWindows(), drawGhost(token, centerpoint)]);
     try {
         const result = await Crosshairs.showCrosshairs(options, callbacks);
         if (getElevation) result.elevation = elevation;

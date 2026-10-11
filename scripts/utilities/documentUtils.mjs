@@ -95,8 +95,7 @@ async function deleteEmbeddedDocuments(document, type, ids, {forceGM = false, op
  * @returns {Promise<foundry.abstract.Document>} The now deleted document.
  */
 async function deleteDocument(document, {options, forceGM = false} = {}) {
-    const hasPermission = queryUtils.hasPermission(document, game.user.id);
-    if (hasPermission && !forceGM) {
+    if (document.canUserModify(game.user, 'delete') && !forceGM) {
         await document.delete(options);
     } else {
         await queryUtils.query('deleteDocument', queryUtils.gmUser(), {uuid: document.uuid, options});
