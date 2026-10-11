@@ -1141,6 +1141,7 @@
       },
       "Fix": {
         "Title": "Apply Fixes",
+        "Content": "The following will be changed, then Foundry will ask to reload:",
         "Label": "Fix",
         "Disable": "Disable Module"
       },

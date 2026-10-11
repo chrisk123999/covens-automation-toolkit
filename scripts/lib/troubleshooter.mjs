@@ -51,7 +51,10 @@ export class RegisteredTroubleshooterChecks {
         const fixable = rows.filter(row => row.fixable);
         const checks = [...new Set(fixable.map(row => row.id))].map(id => this.checks.get(id));
         if (!checks.length) return false;
-        const content = `<ul>${fixable.map(row => `<li>${row.label}</li>`).join('')}</ul>`;
+        const content = await foundry.applications.handlebars.renderTemplate('modules/cat/templates/troubleshooter/card.hbs', {
+            message: 'CAT.Troubleshooter.Fix.Content',
+            groups: Object.entries(Object.groupBy(fixable, row => row.group ?? '')).map(([label, rows]) => ({label, rows}))
+        });
         if (!await dialogUtils.confirm('CAT.Troubleshooter.Fix.Title', content)) return false;
         for (const check of checks) await check.fix();
         await foundry.applications.settings.SettingsConfig.reloadConfirm({world: true});

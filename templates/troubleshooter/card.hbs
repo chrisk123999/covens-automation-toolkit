@@ -17,9 +17,11 @@
             {{/each}}
         </tbody>
     </table>
-    <div class="flexrow">
-        {{#each actions}}
-            <button type="button" data-cat-troubleshooter="{{action}}">{{localize label}}</button>
-        {{/each}}
-    </div>
+    {{#if actions}}
+        <div class="flexrow">
+            {{#each actions}}
+                <button type="button" data-cat-troubleshooter="{{action}}">{{localize label}}</button>
+            {{/each}}
+        </div>
+    {{/if}}
 </div>
