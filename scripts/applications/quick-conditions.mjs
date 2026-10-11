@@ -1,5 +1,5 @@
 import quickConditions from '../handlers/quickConditions.mjs';
-import {documentUtils, uiUtils} from '../utilities/_module.mjs';
+import {documentUtils} from '../utilities/_module.mjs';
 import CatApp from './cat-app.mjs';
 const {Collection} = foundry.utils;
 export default class QuickConditions extends CatApp {
@@ -293,9 +293,7 @@ export default class QuickConditions extends CatApp {
         this._inactiveConditions.set(value, activeCondition);
         this._activeConditions.delete(value);
     }
-    formatInputs() {
-        let context = {};
-        context.title = this.windowTitle;
+    formatInputs(context) {
         context.data = {
             data: {
                 value: this.value,
@@ -316,11 +314,9 @@ export default class QuickConditions extends CatApp {
         this.context = context;
     }
     async _prepareContext(options) {
-        this.formatInputs();
-        return this.context;
-    }
-    bringToFront() {
-        uiUtils.bringToFront(this);
+        const context = await super._prepareContext(options);
+        this.formatInputs(context);
+        return context;
     }
     async _onChangeForm(formConfig, event) {
         let targetInput = event.target;

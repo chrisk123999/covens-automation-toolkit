@@ -4,10 +4,15 @@ const macroWarnings = {};
 const embeddedMacroErrors = {};
 const registrationErrors = {};
 const attributeErrors = {};
+function isVerbose(log) {
+    return ['DEBUG', 'INFO'].includes(log.type);
+}
 function addEntry(type = 'DEBUG', message, {force = false} = {}) {
-    logs.push('CAT | ' + type + ' > ' + message);
+    const entry = {type, message};
+    logs.push(entry);
     if (force || game.settings.get('cat', 'displayDebugLogs')) console.log('%cCAT%c | ' + type + ' > ' + message, 'color: orange; font-weight: bold;', 'color: inherit;');
-    if (logs.length > 100) logs.shift();
+    if (logs.length > 100) logs.splice(Math.max(logs.findIndex(isVerbose), 0), 1);
+    if (!isVerbose(entry)) Hooks.callAll('catLogEntry', entry);
 }
 function addMacroError(trigger, error) {
     const key = trigger.macroClass.identifier + '-' + trigger.macroClass.source + '-' + trigger.macroClass.rules;
@@ -33,6 +38,7 @@ function addMacroWarning(source, identifier, message) {
         identifier,
         time: Date.now()
     });
+    addEntry('WARNING', key + ': ' + message);
 }
 function addEmbeddedMacroError(trigger, error) {
     const key = trigger.document.uuid;
@@ -96,6 +102,7 @@ export default {
     registrationErrors,
     embeddedMacroErrors,
     addEntry,
+    isVerbose,
     addMacroError,
     addAttributeError,
     addEmbeddedMacroError,

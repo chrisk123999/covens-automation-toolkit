@@ -17,10 +17,7 @@ const requirementMap = {
  */
 function getAnimation({source, identifier}) {
     if (!source || !identifier || source === 'none' || identifier === 'none') return;
-    if (!sequencerCheck()) {
-        genericUtils.notify('CAT.Error.NoSequencer', {type: 'warn'});
-        return;
-    }
+    if (!sequencerCheck()) return;
     const result = constants.animations.getAnimation(source, identifier);
     const missing = result?.requirements?.find(requirement => !meetsRequirement(requirement));
     if (missing) {
@@ -57,6 +54,7 @@ async function preloadAnimations(animations, {showProgressBar} = {}) {
  * @param {boolean} [options.missed] Play the miss variant.
  */
 function simpleAttack(sourceToken, targetToken, animation, {sound, missed = false} = {}) {
+    if (!sequencerCheck()) return;
     /* eslint-disable indent */
     new Sequence()
         .effect()
@@ -104,32 +102,26 @@ function getCredits(author) {
     return authors[author] ?? {name: 'The Coven'};
 }
 /**
- * Whether Sequencer is active and new enough, warning once if it is outdated.
+ * Whether Sequencer is active and new enough, warning once per session if not.
  * @returns {boolean}
  */
 function sequencerCheck() {
-    let sequencer = game.modules.get('sequencer');
-    if (!sequencer?.active) return false;
-    if (genericUtils.isNewerVersion(minSequencerVersion, sequencer.version)) {
-        if (!shownSequencerWarning) {
-            shownSequencerWarning = true;
-            genericUtils.notify('CAT.Error.OutdatedSequencer', {type: 'warn', format: {minSequencerVersion}});
-        }
-        return false;
+    const sequencer = game.modules.get('sequencer');
+    const missing = !sequencer?.active;
+    if (!missing && !genericUtils.isNewerVersion(minSequencerVersion, sequencer.version)) return true;
+    if (!shownSequencerWarning) {
+        shownSequencerWarning = true;
+        genericUtils.notify(missing ? 'CAT.Error.NoSequencer' : 'CAT.Error.OutdatedSequencer', {type: 'warn', format: {minSequencerVersion}});
     }
-    return true;
+    return false;
 }
 /**
- * Which JB2A module is active, warning if both are.
+ * Which JB2A module is active, preferring patreon.
  * @returns {'patreon'|'free'|false}
  */
 function jb2aCheck() {
     let patreon = game.modules.get('jb2a_patreon')?.active;
     let free = game.modules.get('JB2A_DnD5e')?.active;
-    if (patreon && free) {
-        genericUtils.notify('CAT.Troubleshooter.BothJB2A', {type: 'warn'});
-        return 'patreon';
-    }
     if (patreon) return 'patreon';
     if (free) return 'free';
     return false;

@@ -1,18 +1,18 @@
-import {genericUtils} from './utilities/_module.mjs';
-import {SettingsMenuBase} from './applications/_module.mjs';
-import {dicePatching} from './patches/_module.mjs';
+import {SettingsMenuBase, TroubleshooterApp} from './applications/_module.mjs';
 import items from './handlers/items.mjs';
+import {dicePatching} from './patches/_module.mjs';
+import {genericUtils} from './utilities/_module.mjs';
 
 /**
  * Settings to register.
- * 
+ *
  * Required properties:
  *  key: {
  *    type,
  *    default,
  *    menu
  *  }
- * 
+ *
  * Optional properties:
  *  {
  *    onChange,
@@ -35,18 +35,18 @@ const settings = {
     },
     displayDebugLogs: {
         type: Boolean,
-        default: true,
+        default: false,
         menu: 'devtools'
     },
     displayDebugEventData: {
         type: Boolean,
-        default: true,
+        default: false,
         menu: 'devtools'
     },
     fixDescriptionEnrichers: {
         type: Boolean,
         default: false,
-        menu: 'automation'
+        menu: 'general'
     },
     automationSources: {
         type: Object,
@@ -99,6 +99,16 @@ const settings = {
             2: 'DND5E.Description'
         },
         menu: 'interface'
+    },
+    autoRecharge: {
+        type: String,
+        default: 'no',
+        choices: {
+            no: 'SETTINGS.DND5E.NPCS.AutoRecharge.No',
+            silent: 'SETTINGS.DND5E.NPCS.AutoRecharge.Silent',
+            yes: 'SETTINGS.DND5E.NPCS.AutoRecharge.Yes'
+        },
+        menu: 'mechanics'
     },
     placedRegionVisibility: {
         type: String,
@@ -247,9 +257,7 @@ const settings = {
     },
     spellListJournals: {
         type: Object,
-        default: {
-            
-        },
+        default: {},
         scope: 'world',
         menu: 'compendiums'
     },
@@ -300,6 +308,19 @@ const settings = {
         default: 4,
         choices: permissionChoices,
         menu: 'permissions'
+    },
+    hideTroubleshooterWarnings: {
+        type: Boolean,
+        default: false,
+        name: 'CAT.Troubleshooter.HideWarnings.Name',
+        hint: 'CAT.Troubleshooter.HideWarnings.Hint'
+    },
+    exportStripDialog: {
+        type: Boolean,
+        default: true,
+        scope: 'client',
+        name: 'CAT.Troubleshooter.StripDialog.Name',
+        hint: 'CAT.Troubleshooter.StripDialog.Hint'
     }
 };
 const menus = {
@@ -335,7 +356,8 @@ const menus = {
         icon: 'fas fa-dragon'
     },
     help: {
-        icon: 'fas fa-screwdriver-wrench'
+        icon: 'fas fa-screwdriver-wrench',
+        type: TroubleshooterApp
     },
     devtools: {
         icon: 'fas fa-tools'

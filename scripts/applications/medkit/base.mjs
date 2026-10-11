@@ -6,6 +6,8 @@ import CatApp from '../cat-app.mjs';
 import DialogApp from '../dialog.mjs';
 import EmbeddedMacroEditorApp from '../embedded-macros.mjs';
 const {fields} = foundry.data;
+const massApplyTabs = {character: 'CAT.MEDKIT.MassApply.Tabs.Characters', npc: 'CAT.MEDKIT.MassApply.Tabs.NPCs', other: 'CAT.MEDKIT.MassApply.Tabs.Other'};
+const massApplyTabOrder = Object.values(massApplyTabs);
 
 Hooks.once('setup', () => {
     foundry.applications.handlebars.loadTemplates([
@@ -87,7 +89,8 @@ export default class MedkitApp extends CatApp {
             openCompendiumActor: MedkitApp.#openCompendiumActor,
             openCompendiumItem: MedkitApp.#openCompendiumItem,
             openSequencerDb: MedkitApp.#openSequencerDb,
-            massApply: MedkitApp.#massApply
+            massApply: MedkitApp.#massApply,
+            openTroubleshooter: MedkitApp.#openTroubleshooter
         }
     };
 
@@ -154,6 +157,10 @@ export default class MedkitApp extends CatApp {
 
     get detachable() {
         return true;
+    }
+
+    get headerButtons() {
+        return game.user.isGM ? [{action: 'openTroubleshooter', icon: 'fa-solid fa-stethoscope', tooltip: 'CAT.Troubleshooter.Open'}] : [];
     }
 
     get footerButtons() {
@@ -235,6 +242,9 @@ export default class MedkitApp extends CatApp {
     }
 
     async _canMassApply() { return true; }
+
+    /** Run mass apply as if its button were clicked. */
+    async massApply() { return await MedkitApp.#massApply.call(this); }
 
     async _preparePartContext(partId, context) {
         const partContext = await super._preparePartContext(partId, context);
@@ -373,7 +383,7 @@ export default class MedkitApp extends CatApp {
             const opts = typeof descriptor.options === 'function' ? descriptor.options(this.#document, this.#flags) : (descriptor.options ?? []);
             return opts.map(o => ({...o, label: _loc(o.label)})).sort((a, b) =>
                 Number.isNumeric(a.value) && Number.isNumeric(b.value) ?
-                    (parseFloat(a.value) - parseFloat(b.value)) : 
+                    (parseFloat(a.value) - parseFloat(b.value)) :
                     ((b.value === '') - (a.value === '') || a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}))
             );
         };
@@ -1132,26 +1142,27 @@ export default class MedkitApp extends CatApp {
         const rawItems = Array.from(await this._getMassApplyItems() ?? []);
         if (!rawItems.length) return;
         const dependencyMap = new Map();
-        rawItems.forEach(item => dependencyMap.set(item.id, itemUtils.getDependencies(item)));
+        rawItems.forEach(item => dependencyMap.set(item.uuid, itemUtils.getDependencies(item)));
         const sortedItems = [];
         const visited = new Set();
         const visiting = new Set();
         let cycleDetected = false;
         const visit = (item) => {
-            if (visited.has(item.id)) return;
-            if (visiting.has(item.id)) {
+            const id = item.uuid;
+            if (visited.has(id)) return;
+            if (visiting.has(id)) {
                 Logging.addEntry('WARNING', 'Circular dependency detected involving item:' + item.name + '(ID: ' + item.id + ')');
                 cycleDetected = true;
                 return;
             }
-            visiting.add(item.id);
-            const deps = dependencyMap.get(item.id) || new Set();
+            visiting.add(id);
+            const deps = dependencyMap.get(id) || new Set();
             deps.forEach(depId => {
-                const depItem = rawItems.find(i => i.id === depId);
+                const depItem = rawItems.find(i => i.id === depId && i.parent === item.parent);
                 if (depItem) visit(depItem);
             });
-            visiting.delete(item.id);
-            visited.add(item.id);
+            visiting.delete(id);
+            visited.add(id);
             const bucket = this._massApplyBucket(item);
             if (bucket && (bucket.reason !== 'current' || bucket.available?.length > 1)) sortedItems.push({item, ...bucket});
         };
@@ -1214,10 +1225,10 @@ export default class MedkitApp extends CatApp {
             tags.push(reason);
             let collection;
             if (i.actor) {
-                data[i.actor.uuid] ??= {name: i.actor.name, inputs: []};
+                data[i.actor.uuid] ??= {name: i.actor.name, tab: massApplyTabs[i.actor.type] ?? massApplyTabs.other, inputs: []};
                 collection = data[i.actor.uuid].inputs;
             } else {
-                data.items ??= {inputs: []};
+                data.items ??= {tab: massApplyTabs.other, inputs: []};
                 collection = data.items.inputs;
             }
             collection.push({
@@ -1233,8 +1244,10 @@ export default class MedkitApp extends CatApp {
             });
         }
         const inputs = Object.values(data)
-            .map(d => (['checkbox', d.inputs, {displayAsRows: true, legend: d.name, requireSelection: true}]))
+            .map(d => (['checkbox', d.inputs, {displayAsRows: true, legend: d.name, requireSelection: true, tab: d.tab}]))
             .sort((a, b) => {
+                const tabDifference = massApplyTabOrder.indexOf(a[2].tab) - massApplyTabOrder.indexOf(b[2].tab);
+                if (tabDifference) return tabDifference;
                 if (!a[2].legend) return 1;
                 if (!b[2].legend) return -1;
                 return a[2].legend.localeCompare(b[2].legend, game.i18n.lang);
@@ -1307,10 +1320,6 @@ export default class MedkitApp extends CatApp {
         const current = foundry.utils.getProperty(this.#flags, path) ?? this.#listValues[path] ?? [];
         foundry.utils.setProperty(this.#flags, path, current.filter(v => v !== target.dataset.value));
         this.render();
-    }
-
-    bringToFront() {
-        uiUtils.bringToFront(this);
     }
 
     async _onChangeForm(formConfig, event) {
@@ -1442,6 +1451,11 @@ export default class MedkitApp extends CatApp {
         if (document) contextmenu.openMedkit(document);
     }
 
+    /** @this {MedkitApp} */
+    static #openTroubleshooter() {
+        new (game.settings.menus.get('cat.help').type)().render({force: true});
+    }
+
     _onRender(context, options) {
         super._onRender(context, options);
         this.#wireDocumentDrop();
@@ -1455,7 +1469,7 @@ export default class MedkitApp extends CatApp {
 
     #warnIfLocked() {
         const pack = this.#document?.compendium ?? this.#document?.item?.compendium;
-        if (pack?.locked) ui.notifications.warn(_loc('CAT.MEDKIT.LockedPack', {pack: pack.metadata.label}));
+        if (pack?.locked) genericUtils.notify('CAT.MEDKIT.LockedPack', {type: 'warn', format: {pack: pack.metadata.label}});
     }
 
     #fitNavToOneRow() {

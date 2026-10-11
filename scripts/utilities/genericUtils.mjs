@@ -119,7 +119,15 @@ function notify(message, {type = 'info', localize = true, format, progress = fal
 function isNewerVersion(v1, v0) {
     return foundry.utils.isNewerVersion(v1, v0);
 }
+/**
+ * Today's local date as YYYYMMDD, for export filenames.
+ * @returns {string}
+ */
+function dateStamp() {
+    return new Date().toDateInputString().replaceAll('-', '');
+}
 export default {
+    dateStamp,
     setProperty,
     getProperty,
     duplicate,

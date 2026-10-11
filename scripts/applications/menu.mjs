@@ -1,8 +1,8 @@
-import CatApp from './cat-app.mjs';
-import {uiUtils, genericUtils, automationUtils} from '../utilities/_module.mjs';
-import {constants} from '../lib/_module.mjs';
 import {ddbi} from '../integration/_modules.mjs';
-const {StringField, BooleanField, SetField} = foundry.data.fields;
+import {constants} from '../lib/_module.mjs';
+import {automationUtils, genericUtils} from '../utilities/_module.mjs';
+import CatApp from './cat-app.mjs';
+const {StringField, BooleanField} = foundry.data.fields;
 
 export default class MenuApp extends CatApp {
     #context;
@@ -25,7 +25,7 @@ export default class MenuApp extends CatApp {
 
     static DEFAULT_OPTIONS = {
         id: 'cat-menu-app',
-        classes: ['cat', 'cat-dialog'],
+        classes: ['cat', 'cat-dialog', 'cat-menu'],
         tag: 'form',
         form: {
             handler: MenuApp.#formHandler,
@@ -38,7 +38,7 @@ export default class MenuApp extends CatApp {
             contentClasses: ['standard-form']
         },
         position: {
-            width: 'auto',
+            width: 560,
             height: 'auto'
         }
     };
@@ -73,6 +73,7 @@ export default class MenuApp extends CatApp {
     /** @this {MenuApp} */
     static async #formHandler(event, form, formData) {
         const data = genericUtils.expandObject(formData.object);
+        form.querySelectorAll('cat-multi-combobox').forEach(element => data[element.name] = JSON.parse(element.value || '[]'));
         form.querySelectorAll('.priority').forEach(widget => {
             const sourceSetting = widget.dataset.sourceSetting;
             if (!sourceSetting) return;
@@ -83,8 +84,8 @@ export default class MenuApp extends CatApp {
                     const priority = Number(row.querySelector('.rank').value);
                     const id = row.dataset.sourceId;
                     sources[id] = {
-                        enabled: enabled, 
-                        priority: priority, 
+                        enabled: enabled,
+                        priority: priority,
                         pack: id.includes('.')
                     };
                 });
@@ -125,14 +126,13 @@ export default class MenuApp extends CatApp {
     }
 
     #buildUsers(input) {
-        const choices = game.users.reduce((acc, user) => { acc[user.id] = user.name; return acc; }, {});
+        const selected = new Set(input.value ?? []);
         return {
-            useHelper: true,
-            options: [{
-                field: new SetField(new StringField({choices, blank: false}), {label: _loc(input.label), hint: _loc(input.hint)}),
-                name: input.name,
-                value: input.value ?? []
-            }]
+            isMultiCombobox: true,
+            name: input.name,
+            label: input.label,
+            hint: input.hint,
+            options: game.users.map(user => ({value: user.id, label: user.name, selected: selected.has(user.id)}))
         };
     }
 
@@ -182,11 +182,11 @@ export default class MenuApp extends CatApp {
                 if (!pack || sourceIds.has(pack.metadata.packageName)) continue;
             }
             rows.push({
-                id, 
-                kind: isPack ? 'pack' : 'source', 
-                kindLabel: isPack ? packTag : sourceTag, 
-                name: automationUtils.getSourceName(id), 
-                enabled: cfg.enabled ?? false, 
+                id,
+                kind: isPack ? 'pack' : 'source',
+                kindLabel: isPack ? packTag : sourceTag,
+                name: automationUtils.getSourceName(id),
+                enabled: cfg.enabled ?? false,
                 priority: cfg.priority ?? 50
             });
         }
@@ -194,11 +194,11 @@ export default class MenuApp extends CatApp {
             const id = pack.metadata.id;
             if (pack.metadata.type !== 'Item' || sourceIds.has(pack.metadata.packageName) || owned.has(id) || sourceIds.has(id)) continue;
             rows.push({
-                id, 
-                kind: 'pack', 
-                kindLabel: packTag, 
-                name: pack.metadata.label, 
-                enabled: false, 
+                id,
+                kind: 'pack',
+                kindLabel: packTag,
+                name: pack.metadata.label,
+                enabled: false,
                 priority: 50
             });
         }
@@ -257,10 +257,6 @@ export default class MenuApp extends CatApp {
         }
     }
 
-    bringToFront() {
-        uiUtils.bringToFront(this);
-    }
-
     #wireTabs() {
         const nav = this.element?.querySelector('nav');
         if (!nav || nav.dataset.wired === '1') return;
@@ -271,7 +267,7 @@ export default class MenuApp extends CatApp {
             const name = tab.dataset.tab;
             nav.querySelectorAll('.tab-link').forEach(t => t.classList.toggle('active', t === tab));
             this.element.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.dataset.tabPanel === name));
-            this.setPosition({width: 'auto', height: 'auto'});
+            this.setPosition({height: 'auto'});
         });
     }
 
@@ -414,7 +410,7 @@ export default class MenuApp extends CatApp {
         this.#wirePriority();
         if (options.isFirstRender) {
             this.element.addEventListener('cat-resize', () => {
-                this.setPosition({width: 'auto', height: 'auto'});
+                this.setPosition({height: 'auto'});
             });
         }
     }

@@ -1,0 +1,55 @@
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
+    {{#if subtabs}}{{> "modules/cat/templates/medkit/shared/nav.hbs" tabs=subtabs}}{{/if}}
+    {{#each panels}}
+        <fieldset{{#if tab}} class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+            data-tab="{{tab.id}}" {{/if}}>
+            <legend>{{localize label}}</legend>
+            {{#if section.counts}}
+                <div class="counts">
+                    {{#each section.counts}}
+                        <div class="count" data-medkit-status="{{status}}">
+                            <span class="value">{{count}}</span>
+                            <span class="label">{{localize label}}</span>
+                        </div>
+                    {{/each}}
+                </div>
+            {{/if}}
+            {{#each section.groups}}
+                {{#if label}}<span class="subgroup">{{label}}</span>{{/if}}
+                <ul class="embedded-list">
+                    {{#each rows}}
+                        <li{{#if faded}} class="faded" {{/if}}>
+                            <span class="name" {{#if labelStatus}} data-medkit-status="{{labelStatus}}"
+                                {{/if}}>{{label}}{{#each tags}} <span class="cat-combobox-tag" {{#if status}}
+                                        data-medkit-status="{{status}}" {{/if}}>{{label}}</span>{{/each}}</span>
+                            {{#if users}}
+                                <span class="meta users">
+                                    {{#each users}}
+                                        <span
+                                            data-medkit-status="{{#if allowed}}up-to-date{{else}}outdated{{/if}}">{{name}}</span>
+                                    {{/each}}
+                                </span>
+                            {{else}}
+                                <span class="meta">{{detail}}</span>
+                            {{/if}}
+                            {{#if button}}
+                                <button type="button" data-action="{{button.action}}" data-check-id="{{id}}"
+                                    data-tooltip="{{localize button.label}}" aria-label="{{localize button.label}}">
+                                    <i class="{{icon}} status" data-medkit-status="{{medkitStatus}}"
+                                        aria-hidden="true"></i>
+                                    <i class="fa-solid fa-wrench" aria-hidden="true"></i>
+                                </button>
+                            {{else if icon}}
+                                <i class="{{icon}} status" data-medkit-status="{{medkitStatus}}"
+                                    data-tooltip="{{localize statusLabel}}"></i>
+                            {{/if}}
+                            </li>
+                    {{/each}}
+                </ul>
+            {{else}}
+                <p class="hint">{{localize "CAT.Troubleshooter.Empty"}}</p>
+            {{/each}}
+            </fieldset>
+    {{/each}}
+</section>

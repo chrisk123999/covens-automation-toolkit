@@ -32,7 +32,7 @@
     <fieldset data-section="rules-toggle">
         <legend>{{localize "CAT.MEDKIT.Sections.Rules"}}</legend>
         {{#if canToggleRules}}
-            {{formGroup fields.rules name="system.source.rules" value=rules hint=(localize "CAT.MEDKIT.RulesToggle.Hint")}}
+            {{formGroup fields.rules name="system.source.rules" value=rules hint=(localize "CAT.MEDKIT.RulesToggle.Hint") rootId=@root.rootId}}
         {{else}}
             <p class="hint">{{localize "CAT.MEDKIT.RulesToggle.NotApplicable"}}</p>
         {{/if}}
@@ -44,15 +44,15 @@
 
     <fieldset data-section="automation">
         <legend>{{localize "CAT.MEDKIT.Sections.Automation"}}</legend>
-        {{formGroup fields.identifier disabled=true value=document.identifier hint=(localize "CAT.MEDKIT.Identifier.Hint")}}
+        {{formGroup fields.identifier disabled=true value=document.identifier hint=(localize "CAT.MEDKIT.Identifier.Hint") rootId=@root.rootId}}
         {{#if (or sourceType inCompendium)}}
-            {{formGroup fields.sourceType disabled=(not inCompendium) name="flags.cat.automation.sourceType" value=sourceType hint=(localize "CAT.MEDKIT.SourceType.Hint")}}
+            {{formGroup fields.sourceType disabled=(not inCompendium) name="flags.cat.automation.sourceType" value=sourceType hint=(localize "CAT.MEDKIT.SourceType.Hint") rootId=@root.rootId}}
         {{/if}}
-        {{formGroup fields.source name="selectedSource" disabled=disableSources choices=availableSources value=source hint=(localize (ifThen disableSources "CAT.MEDKIT.Source.HintNone" "CAT.MEDKIT.Source.Hint"))}}
+        {{formGroup fields.source name="selectedSource" disabled=disableSources choices=availableSources value=source hint=(localize (ifThen disableSources "CAT.MEDKIT.Source.HintNone" "CAT.MEDKIT.Source.Hint")) rootId=@root.rootId}}
         {{#if version}}
-            {{formGroup fields.version disabled=(not inCompendium) name="flags.cat.automation.version" value=version hint=(localize "CAT.MEDKIT.Version.Hint")}}
+            {{formGroup fields.version disabled=(not inCompendium) name="flags.cat.automation.version" value=version hint=(localize "CAT.MEDKIT.Version.Hint") rootId=@root.rootId}}
         {{/if}}
-        {{formGroup fields.ignore name="flags.cat.ignoreItem" value=ignoreItem hint=(localize "CAT.MEDKIT.IgnoreItem.Hint")}}
+        {{formGroup fields.ignore name="flags.cat.ignoreItem" value=ignoreItem hint=(localize "CAT.MEDKIT.IgnoreItem.Hint") rootId=@root.rootId}}
     </fieldset>
 
     {{#if notes}}

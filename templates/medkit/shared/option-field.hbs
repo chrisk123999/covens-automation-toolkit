@@ -1,8 +1,8 @@
 {{#if field}}
-    {{formGroup field name=name value=value hint=hint}}
+    {{formGroup field name=name value=value hint=hint rootId=@root.rootId}}
 {{else if isCombobox}}
     <div class="form-group">
-        <label>{{label}}</label>
+        <label for="cat-medkit-opt-{{key}}">{{label}}</label>
         <div class="form-fields">
             <cat-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
                 {{#if allowBlank}}
@@ -33,7 +33,7 @@
     </div>
 {{else if isMultiCombobox}}
     <div class="form-group">
-        <label>{{label}}</label>
+        <label for="cat-medkit-opt-{{key}}">{{label}}</label>
         <div class="form-fields">
             <cat-multi-combobox input-id="cat-medkit-opt-{{key}}" name="{{name}}">
                 {{#each choices}}
@@ -48,7 +48,7 @@
     </div>
 {{else if isSequencerFile}}
     <div class="form-group">
-        <label>{{label}}</label>
+        <label for="cat-medkit-opt-{{key}}">{{label}}</label>
         <div class="form-fields">
             <file-picker input-id="cat-medkit-opt-{{key}}" name="{{name}}" type="{{fileType}}"
                 value="{{value}}"></file-picker>
@@ -63,7 +63,7 @@
     </div>
 {{else if isAnimationSelect}}
     <div class="form-group">
-        <label>{{label}}</label>
+        <label for="cat-medkit-opt-{{key}}">{{label}}</label>
         <div class="form-fields">
             <cat-combobox data-animation-select input-id="cat-medkit-opt-{{key}}" name="{{name}}" value="{{value}}">
                 <option value=""></option>
@@ -147,7 +147,7 @@
     </div>
 {{else if isList}}
     <div class="form-group documents" data-flag-path="{{configPath}}" data-validate="{{validate}}">
-        <label>{{label}}</label>
+        <label for="cat-medkit-opt-{{key}}">{{label}}</label>
         <div class="form-fields">
             <input id="cat-medkit-opt-{{key}}" type="text" placeholder="{{localize placeholder}}">
             <button type="button" data-action="addListEntry" data-tooltip="{{localize addTooltip}}">

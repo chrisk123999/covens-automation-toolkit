@@ -23,10 +23,12 @@ Hooks.once('init', () => {
     lib.constants.automations = new lib.Automations.RegisteredAutomations();
     lib.constants.scales = new lib.Scales.RegisteredScales();
     lib.constants.animations = new lib.Animations.RegisteredAnimations();
+    lib.constants.troubleshooter = new lib.Troubleshooter.RegisteredTroubleshooterChecks();
     lib.constants.alternateAttributes = lib.AlternateAttributes.buildAttributes();
     handlers.quickConditions.registerHelpers();
     handlers.movement.register();
     handlers.weapon.register();
+    handlers.troubleshooter.registerChecks();
     CONFIG.DND5E.senses.devilsSight = {label: 'CAT.Senses.DevilsSight', grantsSight: true};
     globalThis.cat = {
         api: buildApi(),

@@ -1,5 +1,4 @@
 import {constants} from '../lib/_module.mjs';
-import {uiUtils} from '../utilities/_module.mjs';
 import CatApp from './cat-app.mjs';
 const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundry.data.fields;
 
@@ -20,6 +19,7 @@ Hooks.once('setup', () => {
 
 // Generic dialog for macros. API matches CPR v13 DialogApp.
 export default class DialogApp extends CatApp {
+    #anchor;
     #context;
     #resolveResults;
     #resultsPromise;
@@ -33,6 +33,7 @@ export default class DialogApp extends CatApp {
             if (config.height != null) init.position.height = config.height;
         }
         super(init);
+        this.#anchor = config?.anchor;
         this._armResults();
         if (!options?.length) return;
         this.windowTitle = _loc(title);
@@ -53,7 +54,8 @@ export default class DialogApp extends CatApp {
         actions: {
             confirm: DialogApp.#confirm,
             request: DialogApp.#request,
-            toggleCollapsed: DialogApp.#toggleCollapsed
+            toggleCollapsed: DialogApp.#toggleCollapsed,
+            switchTab: DialogApp.#switchTab
         },
         window: {
             frame: false,
@@ -108,6 +110,7 @@ export default class DialogApp extends CatApp {
         this.inputs = inputs;
         this.buttons = buttons;
         this.#context = null;
+        this.#activeTab = undefined;
         this.#expandedSections.clear();
         this.#queuedOpenSections.clear();
         this._armResults();
@@ -123,6 +126,29 @@ export default class DialogApp extends CatApp {
     /** @this {DialogApp} */
     #expandedSections = new Map();
     #queuedOpenSections = new Set();
+    #activeTab;
+
+    /** @this {DialogApp} */
+    static #switchTab(_event, target) {
+        this.#activeTab = target.dataset.tab;
+        this.element.querySelectorAll('.body [data-tab]').forEach(element => element.classList.toggle('active', element.dataset.tab === this.#activeTab));
+        this.setPosition({width: 'auto', height: 'auto'});
+    }
+
+    /**
+     * Split inputs that set a `tab` option into tabs, when they use more than one.
+     * @returns {{tabs?: object[], untabbed?: object[]}}
+     */
+    #tabContext() {
+        const inputs = this.#context.inputs;
+        const labels = [...new Set(inputs.map(input => input.tab).filter(Boolean))];
+        if (labels.length < 2) return {};
+        if (!labels.includes(this.#activeTab)) this.#activeTab = labels[0];
+        return {
+            untabbed: inputs.filter(input => !input.tab),
+            tabs: labels.map(label => ({label, active: label === this.#activeTab, inputs: inputs.filter(input => input.tab === label)}))
+        };
+    }
 
     /** @this {DialogApp} */
     static #toggleCollapsed(_event, target) {
@@ -162,7 +188,7 @@ export default class DialogApp extends CatApp {
      * @param {string} content - Header content (HTML or localization key).
      * @param {Array} inputs - [type, fields[], options][]. Types: button, checkbox, radio, selectAmount, selectMany, selectOption, combobox, text, number, filePicker.
      * @param {'yesNo'|'okCancel'|'ok'|'cancel'} [buttons]
-     * @param {{id?: string, width?: number|string, height?: number|string}} [config]
+     * @param {{id?: string, width?: number|string, height?: number|string, anchor?: {x: number, y: number}}} [config]
      * @returns {Promise<object|null>}
      */
     static async dialog(...options) {
@@ -259,6 +285,7 @@ export default class DialogApp extends CatApp {
             const index = inputOptions?.header ? subheaders.length : built.length;
             const entry = this.#buildInput(inputType, inputFields, inputOptions, index, parentIndex);
             if (entry) {
+                entry.tab = inputOptions?.tab;
                 if (entry.header) subheaders.push(entry);
                 else built.push(entry);
             }
@@ -655,6 +682,7 @@ export default class DialogApp extends CatApp {
                     field: new StringField({label: f.label, hint: f.hint, choices, required: true, blank: false}),
                     name: f.name,
                     value: f.options?.currentValue ?? '',
+                    hidden: f.options?.hidden,
                     onchange: f.options?.onchange,
                     id: DialogApp.#makeID(index, idx, {parentIndex, header: opts?.header})
                 };
@@ -733,14 +761,16 @@ export default class DialogApp extends CatApp {
         };
     }
 
-    #buildText(fields, opts, _index, _parentIndex) {
+    #buildText(fields, opts, index, parentIndex) {
         return {
             useHelper: true,
-            options: fields.map(f => ({
+            options: fields.map((f, idx) => ({
                 field: new StringField({label: f.label, hint: f.hint}),
                 name: f.name,
                 value: f.options?.currentValue ?? '',
-                onchange: f.options?.onchange
+                hidden: f.options?.hidden,
+                onchange: f.options?.onchange,
+                id: DialogApp.#makeID(index, idx, {parentIndex, header: opts?.header})
             })),
             header: opts?.header,
             legend: opts?.legend
@@ -784,7 +814,7 @@ export default class DialogApp extends CatApp {
     async _prepareContext(options) {
         if (!this.#context) this.#formatInputs();
         const context = await super._prepareContext(options);
-        return {...this.#context, ...context};
+        return {...this.#context, ...this.#tabContext(), ...context};
     }
 
     // Cap each option's max so combined weighted amounts stay under totalMax.
@@ -864,6 +894,7 @@ export default class DialogApp extends CatApp {
                 ctx.input.isChecked = targetInput.checked;
                 changed = true;
                 break;
+            case 'text':
             case 'range-picker':
                 ctx.input.value = targetInput.value;
                 break;
@@ -885,7 +916,9 @@ export default class DialogApp extends CatApp {
             else this.#queueOpenCollapsible(targetInput);
         }
 
-        if (changed) this.render(true);
+        if (!changed) return;
+        await this.render(true);
+        this.setPosition({height: 'auto'});
     }
 
     // dnd5e fills the tooltip on hover via this placeholder.
@@ -896,16 +929,13 @@ export default class DialogApp extends CatApp {
         if (element.dataset.attribution) element.dataset.tooltipClass = 'property-attribution';
     }
 
-    bringToFront() {
-        uiUtils.bringToFront(this);
-    }
-
     _onRender(context, options) {
         super._onRender(context, options);
         const counter = this.element?.querySelector(':scope > .body .budget');
         const header = this.element?.querySelector(':scope > header');
         if (counter && header) header.insertBefore(counter, header.querySelector('[data-action="toggleDetach"]'));
         if (options.isFirstRender) {
+            if (this.#anchor) this.setPosition({left: this.#anchor.x - this.element.offsetWidth / 2, top: this.#anchor.y - 16});
             this.element.addEventListener('cat-resize', () => {
                 this.setPosition({width: 'auto', height: 'auto'});
             });

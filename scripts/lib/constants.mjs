@@ -9,33 +9,75 @@ const rules = {
     2014: '2014',
     2024: '2024'
 };
+/**
+ * Roll workflow passes, in firing order.
+ *
+ * A macro binds to `<prefix><Pass>`, such as `activityDamageRollComplete` or `targetAttackRollConfig`. The prefix
+ * names where the macro is stored relative to the roll:
+ * - `activity`, `item`, `enchantment`: the activity used, its item, or an enchantment applied to that item.
+ * - `castEnchantment`: the activity that cast a spell item, when the item came from a cast activity.
+ * - `actor`: the user, its token, and its items, activities and active effects.
+ * - `token`, `region`, `level`, `scene`, `nearby`: the user's token, its regions, its level, or the scene.
+ * - `target`: each target's token, actor documents and regions.
+ * - `group`, `encounter`, `vehicle`: groups, encounters and vehicles the user belongs to.
+ *
+ * Macros receive `{workflow, activity, item, actor, token, scene, regions, level, document, castData}`.
+ * Target-prefixed macros also receive `sourceToken`, the target's token.
+ * @enum {string}
+ */
 const workflowPasses = {
+    /** Before targets are chosen. Receives `config`, `dialog` and `message` instead of `workflow`. Return true to cancel the use. */
     preTargeting: 'preTargeting',
+    /** Before the activity rolls. Return true to cancel the use. Consumption is refunded unless the `keepConsumption` workflow property is set. */
     preItemRoll: 'preItemRoll',
-    targeting: 'targeting', // For editing targets
-    preambleComplete: 'preambleComplete', // Other stuff
-    attackRollConfig: 'attackRollConfig', // For adjustments to attack roll advantage and disadvantage.
-    attackRoll: 'attackRoll', // Regular adjustments to attack rolls, such as re-rolling them or editing the formula. Do not re-roll an attack after this pass.
-    attackRollBonuses: 'attackRollBonuses', // Add bonuses to attack rolls but before target AC checks.
-    attackRollMissedBonuses: 'attackRollMissedBonuses', // Add bonuses to attack rolls after checking target AC.
-    optionalBonusAttack: 'optionalBonusAttack', // Combined optional bonus attack dialog.
-    attackRollComplete: 'attackRollComplete', // Finalized attack roll, no adjustments can be made here.
-    savesComplete: 'savesComplete', // Can adjust the hitTargets and failedSaves set here (not often used).
-    damageRoll: 'damageRoll', // Regular adjustments to damage rolls, such as re-rolling them or editing the formula. Do not re-roll damage after this pass.
-    optionalBonusDamage: 'optionalBonusDamage', // Combined optional bonus damage dialog.
-    damageRollBonuses: 'damageRollBonuses', // Add bonuses to damage rolls.
-    damageRollComplete: 'damageRollComplete', // Finalized damage rolls, no adjustments should be made here.
-    utilityRoll: 'utilityRoll', // Regular adjustments to utility rolls, such as re-rolling them or editing the formula. Do not re-roll after this pass.
-    utilityRollBonuses: 'utilityRollBonuses', // Add bonuses to utility rolls.
-    utilityRollComplete: 'utilityRollComplete', // Finalized utility rolls, no adjustments should be made here.
-    damage: 'damage', // Regular adjustments to target damage item.
-    damageBonuses: 'damageBonuses', // Bonus damage to specific targets.
-    damageFlatReductions: 'damageFlatReductions', // Flat reductions of damage to specific targets.
-    damagePercentReductions: 'damagePercentReductions', // Percent reductions of damage to specific targets.
-    damageComplete: 'damageComplete', // Other edits to damage such as preventing death.
-    rollFinished: 'rollFinished', // All other things that don't required workflow edits or adjustments.
-    onHit: 'onHit', // For retaliation-like macros.
-    cleanup: 'cleanup' // For extra late clean-up stuff.
+    /** Edit the target set. Return true to skip `preambleComplete`. */
+    targeting: 'targeting',
+    /** Targets are final. Return true to cancel the use. */
+    preambleComplete: 'preambleComplete',
+    /** Before the attack roll. Adjust advantage, disadvantage and roll parts. */
+    attackRollConfig: 'attackRollConfig',
+    /** After the attack roll. Re-roll or edit the roll here; do not re-roll it in a later pass. */
+    attackRoll: 'attackRoll',
+    /** Add attack bonuses before the result is compared to target AC. */
+    attackRollBonuses: 'attackRollBonuses',
+    /** Add attack bonuses after the result is compared to target AC. */
+    attackRollMissedBonuses: 'attackRollMissedBonuses',
+    /** Collects optional attack bonuses for the combined dialog. Return a `D20Bonus`. */
+    optionalBonusAttack: 'optionalBonusAttack',
+    /** The attack roll is final. Read only. */
+    attackRollComplete: 'attackRollComplete',
+    /** Saves are rolled. `hitTargets` and `failedSaves` can still be edited. */
+    savesComplete: 'savesComplete',
+    /** After the damage roll. Re-roll or edit the rolls here; do not re-roll them in a later pass. */
+    damageRoll: 'damageRoll',
+    /** Collects optional damage bonuses for the combined dialog. Return a `DamageBonus`. */
+    optionalBonusDamage: 'optionalBonusDamage',
+    /** Add damage bonuses to the rolls. */
+    damageRollBonuses: 'damageRollBonuses',
+    /** The damage rolls are final. Read only. */
+    damageRollComplete: 'damageRollComplete',
+    /** After the utility roll. Re-roll or edit the roll here; do not re-roll it in a later pass. */
+    utilityRoll: 'utilityRoll',
+    /** Add bonuses to the utility roll. */
+    utilityRollBonuses: 'utilityRollBonuses',
+    /** The utility roll is final. Read only. */
+    utilityRollComplete: 'utilityRollComplete',
+    /** Per target, before damage applies. Also receives `targetToken` and `ditem`. Adjust that target's damage. */
+    damage: 'damage',
+    /** Per target. Add damage for that target only. */
+    damageBonuses: 'damageBonuses',
+    /** Per target. Flat damage reductions. */
+    damageFlatReductions: 'damageFlatReductions',
+    /** Per target. Percentage damage reductions. */
+    damagePercentReductions: 'damagePercentReductions',
+    /** Per target. Final edits, such as preventing death. */
+    damageComplete: 'damageComplete',
+    /** The roll is done. For macros that do not edit the workflow. */
+    rollFinished: 'rollFinished',
+    /** After `rollFinished`. Reactions to being hit, such as retaliation. */
+    onHit: 'onHit',
+    /** Last pass. Clean up anything left by earlier passes. */
+    cleanup: 'cleanup'
 };
 const workflowHookNames = {
     preTargeting: 'midi-qol.preTargeting',
@@ -53,19 +95,44 @@ const workflowHookNames = {
     rollFinished: 'midi-qol.premades.postRollFinished',
     regionPlaced: 'midi-qol.premades.postTemplatePlaced'
 };
+/**
+ * Grapple and shove passes. Descriptor key: `grapple`.
+ *
+ * Prefixes: `token`, `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle` for the grappler, and `target` for the creature grappled or shoved.
+ * Macros also receive `targetToken` and `data`.
+ * @enum {string}
+ */
 const grapplePasses = {
+    /** Before the size check. Return a number to add to the grappler's size category. Receives `data.identifier` and `data.size`. */
     sizeCheck: 'grappleShoveSizeCheck',
+    /** Before the grapple or shove applies. */
     preGrapple: 'preGrapple',
+    /** After the grapple or shove applies. */
     postGrapple: 'postGrapple',
+    /** Before an escape attempt. The grappled creature is `targetToken`. */
     preEscape: 'preEscape',
+    /** After an escape attempt. */
     postEscape: 'postEscape'
 };
+/**
+ * Token movement passes. Descriptor key: `move`.
+ *
+ * Prefixes: `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle`.
+ * Macros also receive `options`, `destination`, `animation`, `range`, `sourceToken`, `teleport` and `action`.
+ * @enum {string}
+ */
 const movementPasses = {
+    /** After the token moves. */
     moved: 'moved',
+    /** Before the teleport crosshair is shown. Return true to cancel the teleport. */
     aimTeleport: 'aimTeleport',
+    /** Before a teleport moves the token. Return true to cancel it. */
     preTeleport: 'preTeleport',
+    /** After a teleport moves the token. */
     postTeleport: 'postTeleport',
+    /** Before a displacement moves the token. Return true to cancel it. */
     displace: 'displace',
+    /** Before a push or pull. Return a number to add to the distance, or 0 to cancel the move. */
     slide: 'slide'
 };
 const movementHookNames = {
@@ -80,21 +147,49 @@ const effectHookNames = {
     preUpdateActiveEffect: 'preUpdateActiveEffect',
     suppressionChanged: 'dae.suppressionChanged'
 };
+/**
+ * Active effect passes. Descriptor key: `effect`.
+ *
+ * The effect's own macros bind to the bare pass name, such as `created`. Other macros use the prefixes
+ * `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle` for the effect's actor.
+ * Macros also receive `effect`, `options` and `updates`.
+ * @enum {string}
+ */
 const effectPasses = {
+    /** After the effect is created. */
     created: 'created',
+    /** After the effect is deleted. */
     deleted: 'deleted',
+    /** After the effect is updated. */
     updated: 'updated',
+    /** Before the effect is created. Runs synchronously. */
     preCreated: 'preCreated',
+    /** Before the effect is deleted. Runs synchronously. */
     preDeleted: 'preDeleted',
+    /** Before the effect is updated. Runs synchronously. */
     preUpdated: 'preUpdated',
+    /** Before creation, with the effect data as `effect`. Return true to prevent the effect being created. */
     doCreated: 'doCreated',
+    /** Before an actor's own effect is deleted. Return true to prevent the deletion. */
     doDeleted: 'doDeleted'
 };
+/**
+ * Combat passes. Descriptor key: `combat`.
+ *
+ * Prefixes: `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle`.
+ * Macros also receive `context`, `combatant`, `previousCombatant`, `round`, `turn`, `previousRound` and `previousTurn`.
+ * @enum {string}
+ */
 const combatPasses = {
+    /** For the combatant whose turn ended. */
     turnEnd: 'turnEnd',
+    /** For every token in the scene, at the start of each turn. */
     everyTurn: 'everyTurn',
+    /** For the combatant whose turn started. */
     turnStart: 'turnStart',
+    /** For each combatant when combat starts. */
     combatStart: 'combatStart',
+    /** For each combatant when combat is deleted. */
     combatEnd: 'combatEnd'
 };
 const combatHookNames = {
@@ -105,7 +200,12 @@ const combatHookNames = {
     preUpdateCombatant: 'preUpdateCombatant',
     updateCombatant: 'updateCombatant'
 };
+/**
+ * Aura passes. Descriptor key: `aura`.
+ * @enum {string}
+ */
 const auraPasses = {
+    /** Decides whether a token is inside an aura. Receives `source`, `target`, `sourceToken`, `targetToken`, `descriptor` and `distance`. Return true to include the token. */
     filter: 'filter'
 };
 const auraHookNames = {
@@ -141,29 +241,65 @@ const regionHooksNames = {
     preCreateRegion: 'preCreateRegion',
     preUpdateRegion: 'preUpdateRegion'
 };
+/**
+ * Region passes. Descriptor key: `region`.
+ *
+ * The region's own macros bind to the bare pass name, such as `enter`. Macros receive `tokens`, `workflow`, `options` and `updates`.
+ * `left`, `enter`, `stay` and `passedThrough` fire when a token moves. `entered`, `exited`, `stayed` and `passedOver` fire when the region moves.
+ * @enum {string}
+ */
 const regionPasses = {
+    /** After the region is created. Regions placed by an activity also receive `workflow`. */
     created: 'created',
+    /** After the region is updated. */
     updated: 'updated',
+    /** After the region is deleted. */
     deleted: 'deleted',
+    /** A moving token left the region. */
     left: 'left',
+    /** A moving token entered the region. */
     enter: 'enter',
+    /** A moving token stayed inside the region. */
     stay: 'stay',
+    /** A moving token entered and left the region in one move. */
     passedThrough: 'passedThrough',
+    /** The moving region now covers the token. */
     entered: 'entered',
+    /** The moving region no longer covers the token. */
     exited: 'exited',
+    /** The moving region still covers the token. */
     stayed: 'stayed',
+    /** The moving region passed over the token. */
     passedOver: 'passedOver'
 };
+/**
+ * Item passes. Descriptor key: `item`.
+ *
+ * The item's own macros bind to the bare pass name, such as `equipped`. Other macros use the prefixes
+ * `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle` for the item's actor.
+ * Macros also receive `options` and `updates`.
+ * @enum {string}
+ */
 const itemPasses = {
+    /** After the item is created. */
     created: 'created',
+    /** After the item is deleted. */
     deleted: 'deleted',
+    /** After the item is updated. */
     updated: 'updated',
+    /** Once for a batch of items. CAT does not fire it. */
     bulkUpdated: 'bulkUpdated',
+    /** For each item on an actor imported by D&D Beyond Importer. Receives `ddbCharacter`. */
     munched: 'munched',
+    /** After the item is equipped. */
     equipped: 'equipped',
+    /** After the item is unequipped. */
     unequipped: 'unequipped',
+    /** After the item becomes active: equipped, and attuned if it requires attunement. */
     attuned: 'attuned',
+    /** After the item stops being active. */
     unattuned: 'unattuned',
+    /** After an automation is applied to the item on an actor. */
     medkit: 'medkit'
 };
 const itemHookNames = {
@@ -198,39 +334,92 @@ const sheetHookNames = {
 const restHookNames = {
     restCompleted: 'dnd5e.restCompleted'
 };
+/**
+ * Rest passes. Descriptor key: `rest`.
+ *
+ * Prefixes: `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle`.
+ * Macros also receive `result` and `config`.
+ * @enum {string}
+ */
 const restPasses = {
+    /** After any rest, including a long rest. */
     short: 'short',
+    /** After a long rest. */
     long: 'long'
 };
+/**
+ * Check, save, skill and tool roll passes. Descriptor keys: `check`, `save`, `skill` and `tool`.
+ *
+ * Prefixes: `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle`.
+ * Macros also receive `config`, `dialog`, `message`, `options`, `D20Bonus` and the roll's id as `checkId`, `saveId`,
+ * `skillId` or `toolId`. Passes after the roll also receive `roll`.
+ * @enum {string}
+ */
 const rollPasses = {
+    /** Before the roll. Edit `options` to add advantage, disadvantage or other roll options. */
     situational: 'situational',
+    /** Before the roll. Return `{type, label}`, with `type` of `advantage` or `disadvantage`, to offer it in a dialog. */
     context: 'context',
+    /** After the roll. Return a `Roll` to replace it. */
     bonus: 'bonus',
+    /** Collects optional bonuses for the combined dialog. Return a `D20Bonus`. */
     optionalBonus: 'optionalBonus',
+    /** After the roll is posted to chat. Read only. */
     post: 'post',
+    /** As `situational`, only for rolls requested by an activity. */
     targetSituational: 'targetSituational'
 };
+/**
+ * Phases of the combined optional bonus dialog.
+ * @enum {string}
+ */
 const bonusPhases = {
+    /** Before the roll. */
     preRoll: 'preRoll',
+    /** After the roll, before success or failure is known. */
     preResult: 'preResult',
+    /** After success or failure is known. */
     postResult: 'postResult'
 };
 const timeHookNames = {
     updateWorldTime: 'updateWorldTime'
 };
+/**
+ * World time passes. Descriptor key: `time`.
+ *
+ * Prefixes: `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle`.
+ * Fires for each actor with a token on the viewed scene and for every player character.
+ * Macros also receive `worldTime`, `diff` and `options`.
+ * @enum {string}
+ */
 const timePasses = {
+    /** After world time changes. */
     timeUpdated: 'timeUpdated'
 };
 const actorHookNames = {
     updateActor: 'updateActor',
     preDeleteActor: 'preDeleteActor'
 };
+/**
+ * Summon passes. Descriptor key: `summon`.
+ *
+ * The document that summoned binds to the bare pass name, such as `create`. Other macros use the prefixes
+ * `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle` for the summoner.
+ * Macros also receive `summon` and `updates`.
+ * @enum {string}
+ */
 const summonPasses = {
+    /** Before the summon is created. Edit `updates` to change it. */
     preCreate: 'preCreate',
+    /** After the summon is created. */
     create: 'create',
+    /** Before the summon is deleted. */
     preDelete: 'preDelete',
+    /** After the summon is deleted. */
     delete: 'delete',
+    /** Reserved. CAT does not fire it. */
     placed: 'placed',
+    /** Before the summon's token is removed from the scene. */
     removed: 'removed'
 };
 const tokenHookNames = {
@@ -247,7 +436,8 @@ const miscHookNames = {
     renderTidy5eItemSheetQuadrone: 'renderTidy5eItemSheetQuadrone',
     renderTidy5eCharacterSheetQuadrone: 'renderTidy5eCharacterSheetQuadrone',
     renderCombatTracker: 'renderCombatTracker',
-    macroautocomplete: 'macro-autocomplete.ready'
+    macroautocomplete: 'macro-autocomplete.ready',
+    renderChatMessageHTML: 'renderChatMessageHTML'
 };
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',
@@ -420,6 +610,8 @@ export default {
     scales: undefined,
     /** @type {RegisteredAnimations} */
     animations: undefined,
+    /** @type {RegisteredTroubleshooterChecks} */
+    troubleshooter: undefined,
     /** @type {SummonsManager} */
     summons: undefined,
     alternateAttributes: undefined,

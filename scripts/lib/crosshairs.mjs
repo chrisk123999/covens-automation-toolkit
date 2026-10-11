@@ -1,8 +1,9 @@
+import {genericUtils} from '../utilities/_module.mjs';
 export class Crosshairs extends foundry.canvas.placeables.Region {
     constructor(config, callbacks = {}) {
         const shapes = [];
         const shapeType = config.shape ?? 'circle';
-        const size = config.size ?? (canvas.dimensions.distance / 2); 
+        const size = config.size ?? (canvas.dimensions.distance / 2);
         if (shapeType === 'rect') {
             shapes.push({type: 'rectangle', width: size, height: size, x: config.x, y: config.y});
         } else if (shapeType === 'circle') {
@@ -129,7 +130,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
     static ERROR_TEXTURE = 'icons/svg/hazard.svg';
     async drawPreview() {
         await this.draw();
-        canvas.regions.preview.addChild(this); 
+        canvas.regions.preview.addChild(this);
         this.layer.interactiveChildren = false;
         this.inFlight = true;
         this.activatePreviewListeners();
@@ -247,6 +248,10 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
             this.handlers.lc = event => {
                 if (event.data?.button !== 0) return;
                 event.stopPropagation();
+                if (this.valid === false) {
+                    genericUtils.notify('CAT.Crosshairs.Invalid', {type: 'warn'});
+                    return;
+                }
                 const currentLoc = {x: this.document.shapes[0].x, y: this.document.shapes[0].y};
                 const destination = Crosshairs.getSnappedPosition(currentLoc, this.resolution);
                 let distance = this.document.shapes[0].radius ?? this.document.shapes[0].width ?? 1;
@@ -269,7 +274,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
             this.handlers.mw = event => {
                 if (event.ctrlKey) event.preventDefault();
                 if (!event.altKey) event.stopPropagation();
-                 
+
                 const delta = canvas.grid.type > CONST.GRID_TYPES.SQUARE ? 30 : 15;
                 const snap = event.ctrlKey ? delta : 5;
                 if (event.shiftKey && !this.lockSize) {
@@ -277,10 +282,10 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
                     let currentDist = shapes[0].radius ?? shapes[0].width ?? 1;
                     let distance = currentDist + 0.25 * (Math.sign(event.deltaY));
                     distance = Math.max(distance, 0.25);
-                    
+
                     if (shapes[0].type === 'circle') shapes[0].radius = distance;
                     else { shapes[0].width = distance; shapes[0].height = distance; }
-                    
+
                     this.document.updateSource({shapes});
                     this.radius = (distance / canvas.dimensions.distance) * canvas.dimensions.size;
                     this.distance = distance;
@@ -311,7 +316,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
     destroy(options) {
         this._destroyed = true;
         this.clearHandlers();
-        if (this.parent) this.parent.removeChild(this); 
+        if (this.parent) this.parent.removeChild(this);
         if (super.destroy) super.destroy(options);
     }
     computeShape() {
@@ -320,9 +325,9 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
         let distance = shapeData.radius ?? shapeData.width ?? (canvas.dimensions.distance / 2);
         let distancePixels = (distance / canvas.dimensions.distance) * canvas.dimensions.size;
         if (shapeData.type === 'rectangle') {
-            let length = distancePixels * 2; 
+            let length = distancePixels * 2;
             return new PIXI.Rectangle(-length / 2, -length / 2, length, length);
-        } 
+        }
         else if (shapeData.type === 'circle') {
             let radius = distancePixels;
             if (!shapeData.gridBased) {

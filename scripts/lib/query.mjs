@@ -56,12 +56,13 @@ async function createFolder({folderData}) {
     const folder = await Folder.create(folderData);
     return folder.id;
 }
-async function manualRoll({roll: rollData}) {
+async function manualRoll({roll: rollData, label}) {
     const ResolverClass = CONFIG.Dice.fulfillment.methods.cat?.resolver;
     if (!ResolverClass) return [];
     const roll = Roll.fromData(rollData);
     const resolver = new ResolverClass(roll);
     resolver._forcePrompt = true;
+    resolver._remoteLabel = label;
     await resolver.awaitFulfillment();
     const results = Roll.defaultImplementation.identifyFulfillableTerms(roll.terms).map(term => term.results.map(result => result.result));
     await resolver.close();

@@ -50,6 +50,10 @@
                 "compatibility":{
                     "minimum":"14.6.0"
                 }
+            },
+            {
+                "id":"lib-wrapper",
+                "type":"module"
             }
         ]
     }

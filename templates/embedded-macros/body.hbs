@@ -3,9 +3,9 @@
         {{#each inputs as |input key|}}
             {{#if input.singleCombobox}}
                 <div class="form-group">
-                    <label>{{input.label}}</label>
+                    <label for="{{@root.rootId}}-{{key}}">{{input.label}}</label>
                     <div class="form-fields">
-                        <cat-combobox name="{{key}}" value="{{input.value}}">
+                        <cat-combobox input-id="{{@root.rootId}}-{{key}}" name="{{key}}" value="{{input.value}}">
                             {{#each input.options}}
                                 <option value="{{value}}" {{#if group}} data-group="{{group}}" {{/if}}{{#if selected}}
                                     selected{{/if}}>{{label}}</option>
@@ -15,9 +15,9 @@
                 </div>
             {{else if input.combobox}}
                 <div class="form-group">
-                    <label>{{input.label}}</label>
+                    <label for="{{@root.rootId}}-{{key}}">{{input.label}}</label>
                     <div class="form-fields">
-                        <cat-multi-combobox name="{{key}}">
+                        <cat-multi-combobox input-id="{{@root.rootId}}-{{key}}" name="{{key}}">
                             {{#each input.options}}
                                 <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
                             {{/each}}
@@ -25,7 +25,7 @@
                     </div>
                 </div>
             {{else}}
-                {{formGroup input.field value=input.value name=key}}
+                {{formGroup input.field value=input.value name=key rootId=@root.rootId}}
             {{/if}}
         {{/each}}
     </div>

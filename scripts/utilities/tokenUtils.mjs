@@ -1,6 +1,6 @@
 import {grapple as grappleHandler} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {crosshairUtils, genericUtils, queryUtils} from './_module.mjs';
+import {crosshairUtils, dialogUtils, queryUtils} from './_module.mjs';
 /**
  * Movement action for drag ruler. 'catForce' does not consume movement.
  * @typedef {'blink'|'burrow'|'catForce'|'climb'|'crawl'|'displace'|'fly'|'jump'|'swim'|'walk'} MovementAction
@@ -27,7 +27,7 @@ function getSavedCastData(token) {
  * @returns {number}
  */
 function getDistance(token, target, {wallsBlock, checkCover, convertToFt = true} = {}) {
-    const distance = MidiQOL.computeDistance(token.object, target.object, {wallsBlock, includeCover: checkCover});
+    const distance = MidiQOL.getDistance(token.object, target.object, {wallsBlock, includeCover: checkCover});
     const units = token.parent.grid.units;
     if (!convertToFt || distance < 0 || units === 'ft') return distance;
     return dnd5e.utils.convertLength(distance, units, 'ft', {strict: false}).toNearest(0.01);
@@ -117,13 +117,148 @@ async function moveToken(token, waypoints, options = {}) {
     if (token.object && constrainOptions.ignoreWalls !== true) {
         const origin = {x: token.x, y: token.y, elevation: token.elevation};
         const [path] = token.object.constrainMovementPath([origin, ...waypoints], {...constrainOptions, preview: false});
-        if (!path.some(waypoint => !waypoint.intermediate && (waypoint.x !== token.x || waypoint.y !== token.y))) return;
+        const moved = waypoint => waypoint.x !== token.x || waypoint.y !== token.y || (waypoint.elevation ?? token.elevation) !== token.elevation || (waypoint.level ?? token.level) !== token.level;
+        if (!path.some(waypoint => !waypoint.intermediate && moved(waypoint))) return;
     }
+    const startLevel = token.level;
     const hasPermission = queryUtils.hasPermission(token, game.user.id);
-    if (hasPermission) {
-        return await token.move(waypoints, options);
-    } else {
-        return await queryUtils.query('moveToken', queryUtils.gmUser(), {uuid: token.uuid, waypoints, options});
+    const result = hasPermission ? await token.move(waypoints, options) : await queryUtils.query('moveToken', queryUtils.gmUser(), {uuid: token.uuid, waypoints, options});
+    const level = waypoints.at(-1)?.level;
+    if (level && level !== startLevel && token.object?.controlled) await token.parent.view({level});
+    return result;
+}
+/**
+ * Waypoint fields for a destination elevation and level.
+ * @param {foundry.documents.TokenDocument} token Token being moved.
+ * @param {object} [options] Additional options.
+ * @param {number} [options.elevation] Destination elevation.
+ * @param {string} [options.level] Destination Level id.
+ * @returns {{elevation?: number, level?: string}}
+ */
+function heightAndLevel(token, {elevation, level} = {}) {
+    const fields = {};
+    if (level && level !== token.level) {
+        fields.level = level;
+        elevation ??= token.parent.levels.get(level)?.elevation.bottom;
+    }
+    if (elevation !== undefined) fields.elevation = elevation;
+    return fields;
+}
+/**
+ * A token's vision source, built temporarily if core has none.
+ * @param {foundry.documents.TokenDocument} token Token looking.
+ * @returns {{source?: PointVisionSource, release: Function}} Call `release` when done.
+ */
+function getVisionSource(token) {
+    const placeable = token.object;
+    if (placeable?.vision?.active) return {source: placeable.vision, release: () => {}};
+    if (!placeable?.hasSight) return {release: () => {}};
+    const source = new CONFIG.Canvas.visionSourceClass({sourceId: placeable.sourceId + '.cat', object: placeable});
+    Object.assign(source.blinded, placeable._getVisionBlindedStates());
+    source.initialize(placeable._getVisionSourceData());
+    return {source, release: () => source.destroy()};
+}
+/**
+ * Whether a token can see a point.
+ * @param {foundry.documents.TokenDocument} token Token looking.
+ * @param {{x: number, y: number, elevation?: number}} point Point being looked at.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.level] Level id of the point.
+ * @param {PointVisionSource} [options.source] Vision source to test with.
+ * @returns {boolean}
+ */
+function canSeePoint(token, point, {level, source} = {}) {
+    const vision = source ? undefined : getVisionSource(token);
+    source ??= vision.source;
+    if (!source) return true;
+    try {
+        const config = canvas.visibility._createVisibilityTestConfig([point], {tolerance: 0});
+        const pointLevel = token.parent.levels.get(level);
+        if (pointLevel) {
+            config.level = pointLevel;
+            config.tests.forEach(test => test.level = pointLevel);
+        }
+        const modes = CONFIG.Canvas.detectionModes;
+        return ['basicSight', 'lightPerception'].some(id => {
+            const mode = token.detectionModes[id];
+            return !!mode && modes[id].testVisibility(source, mode, config);
+        });
+    } finally {
+        vision?.release();
+    }
+}
+/**
+ * Floors on other levels within a token's range.
+ * @param {foundry.documents.TokenDocument} token Token moving.
+ * @param {number} range Range in scene units.
+ * @returns {Map<string, {level: Level, surfaces: object[], ground?: number}>} Keyed by level id.
+ */
+function reachableSurfaces(token, range) {
+    const origin = token.getCenterPoint();
+    const pixels = canvas.grid.size / canvas.grid.distance;
+    const halfToken = token.width * canvas.grid.size / 2;
+    const reachable = new Map();
+    const lowest = token.parent.levels.contents.reduce((low, level) => (level.elevation.bottom ?? -Infinity) < (low.elevation.bottom ?? -Infinity) ? level : low);
+    for (const level of token.parent.levels) {
+        if (level.id === token.level) continue;
+        const ground = level === lowest ? level.elevation.bottom ?? 0 : undefined;
+        if (ground !== undefined && crosshairUtils.horizontalReach(origin, range, ground) >= 0) reachable.set(level.id, {level, surfaces: [], ground});
+        for (const surface of token.parent.getSurfaces({type: 'move', level})) {
+            const reach = crosshairUtils.horizontalReach(origin, range, surface.elevation);
+            if (reach < 0 || !surface.region.polygonTree.testPoint(origin, (reach * pixels) + halfToken)) continue;
+            if (!reachable.has(level.id)) reachable.set(level.id, {level, surfaces: []});
+            reachable.get(level.id).surfaces.push(surface);
+        }
+    }
+    return reachable;
+}
+/**
+ * Aim a destination, offering other levels with a floor in range.
+ * @param {foundry.documents.TokenDocument} token Token the range is measured from.
+ * @param {object} [options] Additional options.
+ * @param {number} [options.range] Maximum distance in scene units.
+ * @param {object} [options.centerpoint] Measure from here instead of the token's centre.
+ * @param {object} [options.crosshairsConfig] Crosshair config.
+ * @param {boolean} [options.requireSight] Only allow spaces the token can see.
+ * @returns {Promise<object|undefined>} Crosshair result with `level` and `elevation`; undefined if cancelled.
+ */
+async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true} = {}) {
+    const startView = canvas.level?.id;
+    const reachable = reachableSurfaces(token, range);
+    let targetLevel = token.level;
+    if (reachable.size) {
+        const ownLevel = token.parent.levels.get(token.level);
+        const choices = [ownLevel, ...Array.from(reachable.values(), entry => entry.level)].filter(Boolean).sort((a, b) => b.elevation.bottom - a.elevation.bottom);
+        const buttons = choices.map(choice => [choice.id === token.level ? _loc('CAT.Teleport.Current', {name: choice.name}) : choice.name, choice.id]);
+        targetLevel = await dialogUtils.buttonDialog('CAT.Teleport.Title', 'CAT.Teleport.WhichLevel', buttons);
+        if (!targetLevel) return;
+    }
+    const onOwnLevel = targetLevel === token.level;
+    const {surfaces = [], ground} = reachable.get(targetLevel) ?? {};
+    const floorAt = crosshairs => {
+        if (onOwnLevel) return token.elevation;
+        const under = surfaces.filter(surface => surface.region.polygonTree.testPoint(crosshairs.position));
+        return under.length ? Math.max(...under.map(surface => surface.elevation)) : ground;
+    };
+    const vision = requireSight ? getVisionSource(token) : undefined;
+    const standable = (_crosshairs, {x, y, elevation}) => elevation !== undefined
+        && (!vision?.source || canSeePoint(token, {x, y, elevation: elevation + 0.01}, {level: targetLevel, source: vision.source}));
+    try {
+        if (canvas.level?.id !== targetLevel) await token.parent.view({level: targetLevel});
+        const result = await crosshairUtils.aimCrosshair({
+            centerpoint,
+            token,
+            crosshairsConfig,
+            maxRange: range,
+            validityFunctions: [standable],
+            getElevation: floorAt,
+            ringElevation: onOwnLevel ? undefined : Math.min(...surfaces.map(surface => surface.elevation), ground ?? Infinity)
+        });
+        if (!result || result.cancelled) return;
+        return {...result, level: targetLevel};
+    } finally {
+        vision?.release();
+        if (startView && canvas.level?.id !== startView) await token.parent.view({level: startView});
     }
 }
 /**
@@ -134,15 +269,18 @@ async function moveToken(token, waypoints, options = {}) {
  * @param {object} [options.centerpoint] If {@link destination} is not provided, the crosshair range will be measured from this point rather than from {@link token}.
  * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
  * @param {number} [options.range] Maximum distance in scene units.
+ * @param {number} [options.elevation] Destination elevation.
+ * @param {string} [options.level] Destination Level id.
+ * @param {boolean} [options.requireSight] Only allow spaces the token can see.
  * @returns {Promise<undefined>}
  */
-async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30} = {}) {
+async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true} = {}) {
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
-        destination = await crosshairUtils.aimCrosshair({centerpoint, token, maxRange: range});
+        destination = await aimDestination(token, {range, centerpoint, requireSight});
     }
-    if (!destination || destination?.cancelled) return;
+    if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
@@ -151,6 +289,7 @@ async function teleportToken(token, {destination, centerpoint, animation, option
         {
             x: destination.x,
             y: destination.y,
+            ...heightAndLevel(token, {elevation: elevation ?? destination.elevation, level: level ?? destination.level}),
             action: 'displace'
         }
     ]);
@@ -168,11 +307,14 @@ async function teleportToken(token, {destination, centerpoint, animation, option
  * @param {foundry.documents.TokenDocument} [options.sourceToken] Origin of the movement.
  * @param {MovementAction} [options.action] See {@link MovementAction}.
  * @param {number} [options.range] Maximum distance in scene units.
+ * @param {number} [options.elevation] Destination elevation.
+ * @param {string} [options.level] Destination Level id.
+ * @param {boolean} [options.requireSight] Only allow spaces the token can see.
  * @returns {Promise<undefined>}
  */
-async function displaceToken(token, {sourceToken, destination, centerpoint, animation, range = 5, action = 'catForce'} = {}) {
-    destination ??= await crosshairUtils.aimCrosshair({token, maxRange: range, centerpoint});
-    if (!destination || destination?.cancelled) return;
+async function displaceToken(token, {sourceToken, destination, centerpoint, animation, range = 5, action = 'catForce', elevation, level, requireSight = false} = {}) {
+    destination ??= await aimDestination(token, {range, centerpoint, requireSight});
+    if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation, action, destination, range}).run();
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
@@ -181,6 +323,7 @@ async function displaceToken(token, {sourceToken, destination, centerpoint, anim
         {
             x: destination.x,
             y: destination.y,
+            ...heightAndLevel(token, {elevation: elevation ?? destination.elevation, level: level ?? destination.level}),
             action
         }
     ],{
@@ -347,6 +490,9 @@ export default {
     swapTokens,
     slideToken,
     canSee,
+    canSeePoint,
+    reachableSurfaces,
+    aimDestination,
     canSense,
     getNonSightModes,
     grapple,

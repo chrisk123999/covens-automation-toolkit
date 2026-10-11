@@ -21,6 +21,29 @@ async function turnEnd(combat, combatant, context = {}) {
     await Auras.turnEvent(token, constants.auraTriggers.turnEnd, {combat, round, combatantId: combatant.id});
     await effects.specialDurationTurn(token, constants.combatPasses.turnEnd, {round, turn});
 }
+/**
+ * Roll recharge for a non-NPC combatant's spent uses.
+ * @param {Combatant5e} combatant Combatant whose turn started.
+ */
+async function rechargeUses(combatant) {
+    const mode = game.settings.get('cat', 'autoRecharge');
+    const actor = combatant.actor;
+    if (mode === 'no' || !actor || actor.system.isNPC || combatant.isDefeated) return;
+    const message = {create: mode !== 'silent'};
+    const updates = [];
+    for (const item of actor.items) {
+        if (item.isHidden) continue;
+        const update = {};
+        if (item.system.uses?.spent) genericUtils.mergeObject(update, (await item.system.uses.rollRecharge?.({apply: false}, {}, message))?.updates ?? {});
+        for (const activity of item.system.activities ?? []) {
+            if (!activity.uses?.spent) continue;
+            const result = await activity.uses.rollRecharge?.({apply: false}, {}, message);
+            if (result?.updates) genericUtils.mergeObject(update, {['system.activities.' + activity.id]: result.updates});
+        }
+        if (!genericUtils.isEmpty(update)) updates.push({_id: item.id, ...update});
+    }
+    if (updates.length) await actor.updateEmbeddedDocuments('Item', updates);
+}
 async function turnStart(combat, combatant, context = {}) {
     const {round, turn} = context;
     const token = combatant?.token;
@@ -35,6 +58,7 @@ async function turnStart(combat, combatant, context = {}) {
     await new Events.CombatEvent(combat, constants.combatPasses.turnStart, token, {context, combatant, round, turn, previousCombatant, previousRound, previousTurn}).run();
     await Auras.turnEvent(token, constants.auraTriggers.turnStart, {combat, round, combatantId: combatant.id});
     await effects.specialDurationTurn(token, constants.combatPasses.turnStart, {round, turn});
+    await rechargeUses(combatant);
 }
 async function combatStart(combat, context = {}) {
     const {round} = context;

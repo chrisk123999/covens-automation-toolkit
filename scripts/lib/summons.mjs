@@ -1,5 +1,5 @@
 import {summonEvents} from '../events/_module.mjs';
-import {actorUtils, folderUtils, genericUtils, documentUtils, crosshairUtils, animationUtils, itemUtils, dialogUtils, queryUtils, tokenUtils} from '../utilities/_module.mjs';
+import {actorUtils, animationUtils, dialogUtils, documentUtils, folderUtils, genericUtils, itemUtils, queryUtils, tokenUtils} from '../utilities/_module.mjs';
 import {constants} from './_module.mjs';
 export class SummonsManager {
     #summons = new Map();
@@ -289,14 +289,13 @@ export class SummonsManager {
             icon: summonImg,
             size: (summonWidth * token.scene.dimensions.distance) / 2
         };
-        const result = await crosshairUtils.aimCrosshair({
-            token,
-            maxRange: range,
+        const result = await tokenUtils.aimDestination(token.document, {
+            range,
             centerpoint: token.center,
             crosshairsConfig: crosshairConfig
         });
-        if (!result || result.cancelled) return;
-        return await this.spawnSummon(summon, token.scene, result, {elevation: token.elevation, level: token.level});
+        if (!result) return;
+        return await this.spawnSummon(summon, token.scene, result, {elevation: result.elevation, level: result.level});
     }
     async moveSummon(summon, range, {token, action} = {}) {
         if (!summon.token) return await this.placeSummon(summon, range, {token});
@@ -347,7 +346,7 @@ export class SummonsManager {
         const spawnedTokens = [];
         for (const summon of summons) {
             const resultToken = await this.placeSummon(summon, range, {token});
-            if (!resultToken) break; 
+            if (!resultToken) break;
             spawnedTokens.push(resultToken);
         }
         return spawnedTokens;

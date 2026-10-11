@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {genericUtils, uiUtils} from '../utilities/_module.mjs';
+import {genericUtils} from '../utilities/_module.mjs';
 import CatApp from './cat-app.mjs';
 const {fields} = foundry.data;
 
@@ -141,9 +141,5 @@ export default class DocPropertyEditorApp extends CatApp {
         if (this.#onSubmit?.(entry) !== false) this.close();
     }
 
-
-    bringToFront() {
-        uiUtils.bringToFront(this);
-    }
 
 }
