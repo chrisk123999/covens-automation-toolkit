@@ -1,7 +1,7 @@
-import CatApp from './cat-app.mjs';
-import {constants} from '../lib/_module.mjs';
-import {genericUtils, uiUtils} from '../utilities/_module.mjs';
 import {macroautocomplete} from '../integration/_modules.mjs';
+import {constants} from '../lib/_module.mjs';
+import {genericUtils} from '../utilities/_module.mjs';
+import CatApp from './cat-app.mjs';
 
 const {fields} = foundry.data;
 
@@ -231,10 +231,6 @@ export default class EmbeddedMacroEditorApp extends CatApp {
         if (this.#onSubmit?.(cleaned) !== false) this.close();
     }
 
-
-    bringToFront() {
-        uiUtils.bringToFront(this);
-    }
 
     _onRender(context, options) {
         super._onRender(context, options);

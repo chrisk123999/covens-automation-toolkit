@@ -17,8 +17,8 @@
             <i class="fa-solid fa-download"></i>
             {{localize "CAT.MEDKIT.MassApply.Button"}}
         </button>
-        {{formGroup fields.name name="flags.cat.identifier" value=identifierOverride hint=(localize "CAT.MEDKIT.Actor.Name.Hint")}}
-        {{formGroup fields.ignoreActor name="flags.cat.ignoreActor" value=ignoreActor hint=(localize "CAT.MEDKIT.Actor.IgnoreActor.Hint")}}
+        {{formGroup fields.name name="flags.cat.identifier" value=identifierOverride hint=(localize "CAT.MEDKIT.Actor.Name.Hint") rootId=@root.rootId}}
+        {{formGroup fields.ignoreActor name="flags.cat.ignoreActor" value=ignoreActor hint=(localize "CAT.MEDKIT.Actor.IgnoreActor.Hint") rootId=@root.rootId}}
     </fieldset>
     {{#if automationTree.rows.length}}
         <fieldset data-section="automation-tree">

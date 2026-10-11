@@ -15,3 +15,4 @@ export {default as AttributeRestrictions} from './restriction.mjs';
 export {default as Scales} from './scales.mjs';
 export {Summon, SummonsManager} from './summons.mjs';
 export {default as Triggers} from './trigger.mjs';
+export {default as Troubleshooter} from './troubleshooter.mjs';

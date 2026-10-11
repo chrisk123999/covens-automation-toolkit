@@ -4,6 +4,7 @@ export function buildApi() {
     const automations = constants.automations;
     const registeredScales = constants.scales;
     const registeredAnimations = constants.animations;
+    const troubleshooter = constants.troubleshooter;
     return {
         registerFnMacro: registeredMacros.registerFnMacro.bind(registeredMacros),
         registerFnMacros: registeredMacros.registerFnMacros.bind(registeredMacros),
@@ -15,6 +16,8 @@ export function buildApi() {
         registerScale: registeredScales.registerScale.bind(registeredScales),
         registerScales: registeredScales.registerScales.bind(registeredScales),
         registerAnimation: registeredAnimations.registerAnimation.bind(registeredAnimations),
-        registerAnimations: registeredAnimations.registerAnimations.bind(registeredAnimations)
+        registerAnimations: registeredAnimations.registerAnimations.bind(registeredAnimations),
+        registerTroubleshooterCheck: troubleshooter.registerTroubleshooterCheck.bind(troubleshooter),
+        registerTroubleshooterChecks: troubleshooter.registerTroubleshooterChecks.bind(troubleshooter)
     };
 };

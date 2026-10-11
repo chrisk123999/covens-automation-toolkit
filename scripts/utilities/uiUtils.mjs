@@ -214,8 +214,19 @@ function followAnchor(anchor, popover, onDetached) {
     step();
     return () => view.cancelAnimationFrame(frame);
 }
+/**
+ * Minimize every open window.
+ * @returns {Promise<Function>} Restores them.
+ */
+async function minimizeWindows() {
+    const windows = [...foundry.applications.instances.values(), ...Object.values(ui.windows)]
+        .filter(app => app.rendered && !(app.minimized ?? app._minimized) && app.options?.window?.positioned !== false);
+    await Promise.all(windows.map(app => app.minimize()));
+    return () => Promise.all(windows.map(app => app.maximize()));
+}
 export default {
     followAnchor,
+    minimizeWindows,
     fallbackIcon,
     fadeOut,
     enableWindowDrag,

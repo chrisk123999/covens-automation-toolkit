@@ -4,7 +4,7 @@
 
     <fieldset data-section="visibility">
         <legend>{{localize "CAT.MEDKIT.Region.Visibility"}}</legend>
-        {{formGroup fields.magicalDarkness name="flags.cat.visibility.magicalDarkness" value=magicalDarkness hint=(localize "CAT.MEDKIT.Region.MagicalDarkness.Hint")}}
-        {{formGroup fields.obscured name="flags.cat.visibility.obscured" value=obscured hint=(localize "CAT.MEDKIT.Region.Obscured.Hint")}}
+        {{formGroup fields.magicalDarkness name="flags.cat.visibility.magicalDarkness" value=magicalDarkness hint=(localize "CAT.MEDKIT.Region.MagicalDarkness.Hint") rootId=@root.rootId}}
+        {{formGroup fields.obscured name="flags.cat.visibility.obscured" value=obscured hint=(localize "CAT.MEDKIT.Region.Obscured.Hint") rootId=@root.rootId}}
     </fieldset>
 </section>

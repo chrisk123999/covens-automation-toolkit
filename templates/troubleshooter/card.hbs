@@ -1,0 +1,27 @@
+<div class="cat-troubleshooter-card">
+    <p>{{localize message}}</p>
+    <table>
+        <tbody>
+            {{#each groups}}
+                {{#if label}}
+                    <tr>
+                        <th colspan="2">{{label}}</th>
+                    </tr>
+                {{/if}}
+                {{#each rows}}
+                    <tr>
+                        <td>{{label}}</td>
+                        <td>{{detail}}</td>
+                    </tr>
+                {{/each}}
+            {{/each}}
+        </tbody>
+    </table>
+    {{#if actions}}
+        <div class="flexrow">
+            {{#each actions}}
+                <button type="button" data-cat-troubleshooter="{{action}}">{{localize label}}</button>
+            {{/each}}
+        </div>
+    {{/if}}
+</div>

@@ -63,7 +63,7 @@ function syntheticItem(itemData, actor) {
  */
 async function enchantItem(item, effectData, {effects = [], items = [], effectOptions, forceGM, favoriteItems} = {}) {
     if (!effectData.origin) {
-        Logging.addMacroError('Enchantments must have an origin!');
+        Logging.addMacroWarning('cat', 'enchant-item', 'Enchantments must have an origin!', {notify: 'error'});
         return;
     }
     effectData.transfer = true;

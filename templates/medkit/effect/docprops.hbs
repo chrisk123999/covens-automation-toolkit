@@ -5,7 +5,7 @@
     <fieldset data-section="conditions">
         <legend>{{localize "CAT.MEDKIT.Effect.Conditions.Label"}}</legend>
         <div class="form-group combo">
-            <label>{{localize "CAT.MEDKIT.Effect.Conditions.Label"}}</label>
+            <label for="cat-medkit-effect-conditions">{{localize "CAT.MEDKIT.Effect.Conditions.Label"}}</label>
             <cat-multi-combobox input-id="cat-medkit-effect-conditions" name="flags.cat.conditions">
                 {{#each conditionChoices}}
                     <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
@@ -18,7 +18,7 @@
     <fieldset data-section="special-durations">
         <legend>{{localize "CAT.MEDKIT.Effect.SpecialDuration.Label"}}</legend>
         <div class="form-group combo">
-            <label>{{localize "CAT.MEDKIT.Effect.SpecialDuration.Label"}}</label>
+            <label for="cat-medkit-effect-durations">{{localize "CAT.MEDKIT.Effect.SpecialDuration.Label"}}</label>
             <cat-multi-combobox input-id="cat-medkit-effect-durations" name="flags.cat.specialDuration">
                 {{#each specialDurationGroups}}
                     <optgroup label="{{label}}">
@@ -35,7 +35,7 @@
     <fieldset data-section="disable-conditions">
         <legend>{{localize "CAT.MEDKIT.Effect.DisableCondition.Label"}}</legend>
         <div class="form-group combo">
-            <label>{{localize "CAT.MEDKIT.Effect.DisableCondition.Label"}}</label>
+            <label for="cat-medkit-disable-conditions">{{localize "CAT.MEDKIT.Effect.DisableCondition.Label"}}</label>
             <cat-multi-combobox input-id="cat-medkit-disable-conditions" name="flags.cat.disableCondition">
                 {{#each disableConditionGroups}}
                     <optgroup label="{{label}}">
@@ -51,7 +51,7 @@
 
     <fieldset data-section="animation">
         <legend>{{localize "CAT.MEDKIT.Effect.Animation"}}</legend>
-        {{formGroup fields.noAnimation name="flags.cat.noAnimation" value=noAnimation hint=(localize "CAT.MEDKIT.Effect.NoAnimation.Hint")}}
+        {{formGroup fields.noAnimation name="flags.cat.noAnimation" value=noAnimation hint=(localize "CAT.MEDKIT.Effect.NoAnimation.Hint") rootId=@root.rootId}}
         <span class="subgroup">{{localize "CAT.MEDKIT.Effect.AnimationApply"}}</span>
         {{> "modules/cat/templates/medkit/shared/option-field.hbs" animationCreate}}
         <span class="subgroup">{{localize "CAT.MEDKIT.Effect.AnimationRemove"}}</span>

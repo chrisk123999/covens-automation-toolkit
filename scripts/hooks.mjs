@@ -1,5 +1,5 @@
 import * as events from './events/_module.mjs';
-import {activities, combat, conditionResistanceAndVulnerability, contextmenu, effects, quickConditions} from './handlers/_module.mjs';
+import {activities, combat, conditionResistanceAndVulnerability, contextmenu, effects, quickConditions, troubleshooter} from './handlers/_module.mjs';
 import {dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
 import {constants} from './lib/_module.mjs';
 import {queryUtils} from './utilities/_module.mjs';
@@ -74,9 +74,13 @@ export function readyHooks() {
         Hooks.on(constants.combatHookNames.deleteCombat, events.combatEvents.deleteCombat);
         Hooks.on(constants.combatHookNames.updateCombatant, events.combatEvents.updateCombatant);
         Hooks.once(constants.auraHookNames.catReady, events.auraEvents.catReady);
+        Hooks.once(constants.auraHookNames.catReady, troubleshooter.startup);
         Hooks.on(constants.auraHookNames.canvasReady, events.auraEvents.canvasReady);
         Hooks.on(constants.auraHookNames.createScene, events.auraEvents.createScene);
         Hooks.on(constants.auraHookNames.deleteScene, events.auraEvents.deleteScene);
+        Hooks.on(constants.auraHookNames.updateScene, events.auraEvents.updateScene);
+        Hooks.on(constants.auraHookNames.updateCombat, events.auraEvents.updateCombat);
+        Hooks.on(constants.auraHookNames.deleteCombat, events.auraEvents.combatChanged);
         Hooks.on(constants.auraHookNames.createToken, events.auraEvents.createToken);
         Hooks.on(constants.auraHookNames.updateToken, events.auraEvents.updateToken);
         Hooks.on(constants.auraHookNames.deleteToken, events.auraEvents.deleteToken);
@@ -109,6 +113,7 @@ export function initHooks() {
     Hooks.on(constants.contextMenuHookNames.getSheetActivityContextOptions, contextmenu.appendActivityOption);
     // Handlers
     Hooks.on(constants.miscHookNames.applyActiveEffect, effects.applyActiveEffect);
+    Hooks.on(constants.miscHookNames.renderChatMessageHTML, troubleshooter.onRenderChatMessage);
     // Integration
     Hooks.on(constants.miscHookNames.daeModifySpecials, dae.modifySpecials);
     Hooks.once(constants.miscHookNames.tidyReady, tidy5e.headerControls);

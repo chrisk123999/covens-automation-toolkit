@@ -1,17 +1,50 @@
 # 0.1.2 Release:
 ## Update Notes:
 - Added setting: Placed Area Visibility. Areas placed by activities are drawn on the Regions layer only by default.
-- Removed special durations that midi-qol already provides: Made an attack, Attack missed, Cast a spell and HP reduced to zero. Use `1Attack`, `1Miss`, `1Spell` and `zeroHP` instead.
+- Removed special durations that midi-qol already provides.
+- Added setting: Recharge Player Abilities. Rolls recharge for non-NPC abilities at the start of their turn, which the system only does for NPCs.
+- Teleports aimed with a crosshair only allow spaces the token can see, including across levels.
+- On scenes with levels, teleports, displacements and summon placement offer any other level with a floor in reach.
+- Fix Description Enrichers moved from the Automation Sources menu to the General menu.
+- Mass apply splits its confirmation into Characters, NPCs and Other.
+- Mass apply on a locked compendium copies it into a new or existing unlocked compendium.
+- Added the Troubleshooter, opened from the Help settings menu or the stethoscope button on CatKit and mass apply windows.
+- The Discord button copies the report and opens the CPR Discord.
+- The GM is whispered a chat card at startup when required settings are wrong or a defunct or incompatible module is active.
+- Export Data on a sidebar entry asks whether to strip descriptions.
+- Display Debug Logs and Display Event Data are off by default.
+- The warning for having both JB2A modules active moved from a notification to the Troubleshooter.
 ## Bug Fixes:
+- Players can recall and dismiss their summons without the Delete Tokens permission.
+- Auras only count tokens on the active scene, the scene the GM is viewing, and scenes with a started combat. Linked tokens left on other scenes no longer grant or receive auras.
 - Special durations triggered by attacks, saves and damage expire at that step of the roll.
 - Forced movement no longer spends a token's movement.
 - Saving settings keeps automation sources registered unless they are disabled, matching startup.
 - CatKit dropdowns stay attached to their field when the window moves.
+- The Quick Conditions window's close, Cancel and Ok buttons work.
+- Manual rolls skip midi's automatic successes and failures.
+- Manual rolls in Roll Total mode subtract the modifier for dice inside functions, so hit dice no longer add CON twice.
+- Crosshair range boundaries match the scene's diagonal rule.
+- Clicking a crosshair on an invalid space is refused and aiming continues.
+- Aiming a crosshair minimizes open windows and restores them afterwards.
+- Animations warn once per session when Sequencer is missing or outdated, instead of failing silently or erroring.
+- `tokenUtils.getDistance` uses midi's `getDistance`, so distances follow midi's Distance Measurement setting and match its range checks.
 ## API Update Notes:
-- Effect data builders write `specialDuration` keys registered with DAE, such as midi-qol's `1Attack`, to `flags.dae.specialDuration`.
 - Added `workflowUtils.addAttackRollPart`, `animationUtils.meetsRequirement` and `animationUtils.getCredits`.
 - Effect animation `create` and `delete` macros receive `{activity, sourceToken}` as a fourth argument.
 - Animations can require `jb2a_patreon`. The `JB2A_DnD5e` requirement is met by either JB2A module.
+- `tokenUtils.teleportToken` and `tokenUtils.displaceToken` accept `elevation` and `level`.
+- Added `tokenUtils.aimDestination`, `tokenUtils.canSeePoint` and `tokenUtils.reachableSurfaces`. `tokenUtils.teleportToken` takes `requireSight`, on by default.
+- Added `crosshairUtils.horizontalReach`. 3D range is measured with core's grid rules, height included. `crosshairUtils.aimCrosshair` takes `getElevation` and `ringElevation`, passes the destination to validity functions, and returns its `elevation`.
+- Event pass constants have JSDoc describing their prefixes, arguments and return values.
+- Added `cat.api.registerTroubleshooterCheck` and `cat.api.registerTroubleshooterChecks`. A check is `{id, section, group, run, fix}`. `run` returns rows of `{status, label, detail}`.
+- `Logging.addMacroWarning` writes a WARNING entry to the Troubleshooter's Logs tab, and player warnings are also sent to the GM's log. It takes `{notify, format}`.
+- Renamed `Logging.addMacroError` to `Logging.logMacroException`. CAT calls it when a macro throws. Macros log with `addMacroWarning` and a `notify` level instead.
+- Added the `catLogEntry` hook, called for every warning and error entry.
+- Added `documentUtils.exportDocument`, `documentUtils.stripDescriptions` and `genericUtils.dateStamp`.
+- `crosshairUtils.aimCrosshair` takes a TokenDocument only.
+- `DialogApp.dialog` accepts `config.anchor` `{x, y}` to open at a point.
+- CatApp windows can declare `headerButtons`.
 
 # 0.1.1 Release:
 ## Update Notes:

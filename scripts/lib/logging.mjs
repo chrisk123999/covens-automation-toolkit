@@ -1,15 +1,21 @@
+import {genericUtils, queryUtils} from '../utilities/_module.mjs';
 const logs = [];
 const macroErrors = {};
 const macroWarnings = {};
 const embeddedMacroErrors = {};
 const registrationErrors = {};
 const attributeErrors = {};
-function addEntry(type = 'DEBUG', message, {force = false} = {}) {
-    logs.push('CAT | ' + type + ' > ' + message);
-    if (force || game.settings.get('cat', 'displayDebugLogs')) console.log('%cCAT%c | ' + type + ' > ' + message, 'color: orange; font-weight: bold;', 'color: inherit;');
-    if (logs.length > 100) logs.shift();
+function isVerbose(log) {
+    return ['DEBUG', 'INFO'].includes(log.type);
 }
-function addMacroError(trigger, error) {
+function addEntry(type = 'DEBUG', message, {force = false} = {}) {
+    const entry = {type, message};
+    logs.push(entry);
+    if (force || game.settings.get('cat', 'displayDebugLogs')) console.log('%cCAT%c | ' + type + ' > ' + message, 'color: orange; font-weight: bold;', 'color: inherit;');
+    if (logs.length > 100) logs.splice(Math.max(logs.findIndex(isVerbose), 0), 1);
+    if (!isVerbose(entry)) Hooks.callAll('catLogEntry', entry);
+}
+function logMacroException(trigger, error) {
     const key = trigger.macroClass.identifier + '-' + trigger.macroClass.source + '-' + trigger.macroClass.rules;
     macroErrors[key] ??= [];
     macroErrors[key].push({
@@ -24,15 +30,21 @@ function addMacroError(trigger, error) {
     if (macroErrors[key].length > 10) macroErrors[key].shift();
     console.error('%cCAT%c | ERROR > Execution error in macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
 }
-function addMacroWarning(source, identifier, message) {
+function addMacroWarning(source, identifier, message, {notify, format, user} = {}) {
+    message = _loc(message, format);
     const key = source + '-' + identifier;
     macroWarnings[key] ??= [];
     macroWarnings[key].push({
         message,
         source: source,
         identifier,
+        user,
         time: Date.now()
     });
+    addEntry('WARNING', key + ': ' + message + (user ? ' (' + user + ')' : ''));
+    if (notify && !user) genericUtils.notify(message, {type: notify === true ? 'warn' : notify, localize: false});
+    const gm = queryUtils.gmUser();
+    if (!user && gm && !gm.isSelf) queryUtils.query('macroWarning', gm, {source, identifier, message, user: game.user.name}).catch(() => {});
 }
 function addEmbeddedMacroError(trigger, error) {
     const key = trigger.document.uuid;
@@ -96,7 +108,8 @@ export default {
     registrationErrors,
     embeddedMacroErrors,
     addEntry,
-    addMacroError,
+    isVerbose,
+    logMacroException,
     addAttributeError,
     addEmbeddedMacroError,
     addRegistrationError,

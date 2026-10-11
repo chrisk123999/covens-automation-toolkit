@@ -21,8 +21,16 @@ export default class CatApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return false;
     }
 
+    get headerButtons() {
+        return [];
+    }
+
     get footerButtons() {
         return [];
+    }
+
+    bringToFront() {
+        uiUtils.bringToFront(this);
     }
 
     async _prepareContext(options) {
@@ -30,6 +38,8 @@ export default class CatApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
             ...context,
             title: this.title,
+            rootId: this.id,
+            headerButtons: this.headerButtons,
             buttons: this.footerButtons,
             detachable: this.detachable,
             closeAction: this.closeAction,

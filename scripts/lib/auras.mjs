@@ -275,6 +275,9 @@ function buildIndex(scene) {
 function isWorldScene(scene) {
     return !!scene && !scene.inCompendium && game.scenes.get(scene.id) === scene;
 }
+function isCountedScene(scene) {
+    return !!scene && (scene.active || scene === state.canvasScene || game.combats.some(combat => combat.started && combat.scene?.id === scene.id));
+}
 function ensureIndex(scene) {
     if (!isWorldScene(scene)) return;
     return state.scenes.get(scene.id) ?? buildIndex(scene);
@@ -326,7 +329,7 @@ function pickWinners(candidates, currents) {
 function getWinners(actor) {
     const currents = new Map(actor.effects.filter(isAuraEffect).map(effect => [effect.flags.cat.aura.key, effect.flags.cat.aura]));
     const candidates = [];
-    getTokens(actor, {linked: true}).forEach(token => {
+    getTokens(actor, {linked: true}).filter(token => isCountedScene(token.parent)).forEach(token => {
         const index = state.scenes.get(token.parent.id);
         index?.membership.get(token.id)?.forEach((distance, key) => {
             const entry = index.entries.get(key);
@@ -389,7 +392,7 @@ function getReconcileActors() {
 }
 function emitDiffs() {
     if (!state.diffs.size) return;
-    const diffs = Array.from(state.diffs.values()).filter(diff => diff.entered.size || diff.exited.size).map(diff => {
+    const diffs = Array.from(state.diffs.values()).filter(diff => isCountedScene(diff.token.parent) && (diff.entered.size || diff.exited.size)).map(diff => {
         const entries = state.scenes.get(diff.token.parent?.id)?.entries;
         return {
             token: diff.token,
@@ -431,7 +434,14 @@ function viewScene(scene) {
     const scenes = new Set([state.canvasScene, scene].filter(isWorldScene));
     state.canvasScene = scene;
     scenes.forEach(scene => buildIndex(scene));
+    resyncScenes(scenes);
     return reconcile();
+}
+function resyncScenes(scenes) {
+    if (!queryUtils.isTheGM() || !state.ready) return;
+    scenes.forEach(scene => {
+        if (isWorldScene(scene)) scene.tokens.forEach(token => addDirty(token.actor));
+    });
 }
 function indexScene(scene) {
     if (isWorldScene(scene)) buildIndex(scene);
@@ -562,6 +572,7 @@ export default {
     isReady,
     isWorldScene,
     viewScene,
+    resyncScenes,
     indexScene,
     forgetScene,
     refreshTokens,

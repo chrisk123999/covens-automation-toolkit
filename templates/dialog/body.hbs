@@ -3,5 +3,19 @@
         <div class="content{{#unless inputs}} only{{/unless}}">{{{localize content}}}
         </div>
     {{/if}}
-    {{> (lookup @root 'inputTemplate') inputs=inputs inputTemplate=inputTemplate}}
+    {{#if tabs}}
+        {{> (lookup @root 'inputTemplate') inputs=untabbed inputTemplate=inputTemplate}}
+        <nav>
+            {{#each tabs}}
+                <a class="tab-link{{#if active}} active{{/if}}" data-action="switchTab" data-tab="{{label}}">{{localize label}}</a>
+            {{/each}}
+        </nav>
+        {{#each tabs}}
+            <div class="tab-panel{{#if active}} active{{/if}}" data-tab="{{label}}">
+                {{> (lookup @root 'inputTemplate') inputs=inputs inputTemplate=@root.inputTemplate}}
+            </div>
+        {{/each}}
+    {{else}}
+        {{> (lookup @root 'inputTemplate') inputs=inputs inputTemplate=inputTemplate}}
+    {{/if}}
 </div>

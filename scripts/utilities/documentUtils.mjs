@@ -1,4 +1,5 @@
-import {activityUtils, actorUtils, dataUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
+import {constants} from '../lib/_module.mjs';
+import {activityUtils, actorUtils, automationUtils, dataUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, tokenUtils} from './_module.mjs';
 /** @import {CatEffectData} from './dataUtils.mjs' */
 /** @import {EffectDurationData} from '@client/documents/_types.mjs' */
 /**
@@ -94,8 +95,7 @@ async function deleteEmbeddedDocuments(document, type, ids, {forceGM = false, op
  * @returns {Promise<foundry.abstract.Document>} The now deleted document.
  */
 async function deleteDocument(document, {options, forceGM = false} = {}) {
-    const hasPermission = queryUtils.hasPermission(document, game.user.id);
-    if (hasPermission && !forceGM) {
+    if (document.canUserModify(game.user, 'delete') && !forceGM) {
         await document.delete(options);
     } else {
         await queryUtils.query('deleteDocument', queryUtils.gmUser(), {uuid: document.uuid, options});
@@ -269,6 +269,52 @@ function getBaseEffectData(document, {name, img, origin, identifier, changes = [
     if (identifier) dataUtils.setIdentifier(effectData, identifier);
     return dataUtils.buildEffectData(effectData, buildOptions);
 }
+/**
+ * Blank every string nested under a description key, at any depth.
+ * @param {*} data Document source data, modified in place.
+ * @param {boolean} [inside] Whether data already sits under a description key.
+ * @returns {*}
+ */
+function stripDescriptions(data, inside = false) {
+    const DESCRIPTION_KEYS = ['description', 'biography', 'hint', 'chatFlavor'];
+    if (typeof data === 'string') return inside ? '' : data;
+    if (!data || typeof data !== 'object') return data;
+    const targetsDescription = typeof data.key === 'string' && data.key.split('.').some(part => DESCRIPTION_KEYS.includes(part));
+    for (const key of Object.keys(data)) data[key] = stripDescriptions(data[key], inside || DESCRIPTION_KEYS.includes(key) || (targetsDescription && key === 'value'));
+    return data;
+}
+/**
+ * Get a document's CAT automation status, plus the registered automation an item matches.
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @returns {{status: string, source: string|undefined, identifier: string|undefined, version: string|undefined}}
+ */
+function automationInfo(document) {
+    const status = automationUtils.getAutomationStatus(document);
+    const automation = document.documentName === 'Item' ? automationUtils.getCurrentAutomation(document) : undefined;
+    return {
+        status: foundry.utils.invertObject(constants.automationStatus)[status],
+        source: automation?.source,
+        identifier: automation?.identifier,
+        version: automation?.version
+    };
+}
+/**
+ * Save a document's JSON with every description blanked.
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @param {object} [options] Additional options.
+ * @param {boolean} [options.automation] Include CAT automation info for the document and its items.
+ */
+function exportDocument(document, {automation = false} = {}) {
+    const data = stripDescriptions(document.toCompendium(null, {clearSource: false}));
+    data._stats ??= {};
+    data._stats.exportSource = {worldId: game.world.id, uuid: document.uuid, coreVersion: game.version, systemId: game.system.id, systemVersion: game.system.version};
+    if (automation) {
+        data.catAutomation = automationInfo(document);
+        for (const item of data.items ?? []) item.catAutomation = automationInfo(document.items.get(item._id));
+    }
+    const filename = ['fvtt', document.documentName, document.name?.slugify(), document.id, genericUtils.dateStamp()].filterJoin('-');
+    foundry.utils.saveDataToFile(JSON.stringify(data, null, 2), 'application/json', `${filename}.json`);
+}
 export default {
     getRules,
     getSource,
@@ -285,5 +331,7 @@ export default {
     makeDependent,
     modifyBatch,
     getEffectData,
-    getBaseEffectData
+    getBaseEffectData,
+    stripDescriptions,
+    exportDocument
 };

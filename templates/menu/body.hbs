@@ -12,8 +12,22 @@
         {{/if}}
         {{#if useHelper}}
             {{#each options}}
-                {{formGroup field name=name value=value}}
+                {{formGroup field name=name value=value rootId=@root.rootId}}
             {{/each}}
+        {{else if isMultiCombobox}}
+            <div class="form-group">
+                <label for="{{@root.rootId}}-{{name}}">{{localize label}}</label>
+                <div class="form-fields">
+                    <cat-multi-combobox input-id="{{@root.rootId}}-{{name}}" name="{{name}}">
+                        {{#each options}}
+                            <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
+                        {{/each}}
+                    </cat-multi-combobox>
+                </div>
+                {{#if hint}}
+                    <p class="hint">{{localize hint}}</p>
+                {{/if}}
+            </div>
         {{else if isPriority}}
             <div class="priority" data-source-setting="{{name}}" data-pack-setting="{{packSetting}}">
                 {{#unless ../tabbed}}{{#if label}}

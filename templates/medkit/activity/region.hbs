@@ -3,15 +3,15 @@
     <p class="hint">{{localize "CAT.MEDKIT.Activity.PlacedRegion.Hint"}}</p>
     <fieldset data-section="region-visibility">
         <legend>{{localize "CAT.MEDKIT.Region.Visibility"}}</legend>
-        {{formGroup fields.magicalDarkness name="flags.cat.placed.region.visibility.magicalDarkness" value=magicalDarkness hint=(localize "CAT.MEDKIT.Region.MagicalDarkness.Hint")}}
-        {{formGroup fields.obscured name="flags.cat.placed.region.visibility.obscured" value=obscured hint=(localize "CAT.MEDKIT.Region.Obscured.Hint")}}
+        {{formGroup fields.magicalDarkness name="flags.cat.placed.region.visibility.magicalDarkness" value=magicalDarkness hint=(localize "CAT.MEDKIT.Region.MagicalDarkness.Hint") rootId=@root.rootId}}
+        {{formGroup fields.obscured name="flags.cat.placed.region.visibility.obscured" value=obscured hint=(localize "CAT.MEDKIT.Region.Obscured.Hint") rootId=@root.rootId}}
     </fieldset>
 
     <fieldset data-section="region-effects">
         <legend>{{localize "CAT.MEDKIT.Activity.Effects.Label"}}</legend>
         {{#if effectChoices.length}}
             <div class="form-group">
-                <label>{{localize "CAT.MEDKIT.Activity.Effects.Field"}}</label>
+                <label for="cat-medkit-region-effects">{{localize "CAT.MEDKIT.Activity.Effects.Field"}}</label>
                 <div class="form-fields">
                     <cat-multi-combobox input-id="cat-medkit-region-effects" name="flags.cat.placed.region.effects">
                         {{#each effectChoices}}
@@ -30,7 +30,7 @@
         <legend>{{localize "CAT.MEDKIT.Activity.RegionMacros.Label"}}</legend>
         {{#if regionMacroChoices.length}}
             <div class="form-group combo">
-                <label>{{localize "CAT.MEDKIT.Macros.Picker.Field"}}</label>
+                <label for="cat-medkit-region-macros">{{localize "CAT.MEDKIT.Macros.Picker.Field"}}</label>
                 <cat-multi-combobox input-id="cat-medkit-region-macros" name="flags.cat.placed.region.macros">
                     {{#each regionMacroChoices}}
                         <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
@@ -47,7 +47,7 @@
         <legend>{{localize "CAT.MEDKIT.Activity.Activities.Label"}}</legend>
         {{#if activityChoices.length}}
             <div class="form-group">
-                <label>{{localize "CAT.MEDKIT.Activity.Activities.Field"}}</label>
+                <label for="cat-medkit-region-activities">{{localize "CAT.MEDKIT.Activity.Activities.Field"}}</label>
                 <div class="form-fields">
                     <cat-multi-combobox input-id="cat-medkit-region-activities"
                         name="flags.cat.placed.region.activities">

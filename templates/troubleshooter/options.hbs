@@ -1,0 +1,16 @@
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
+    <fieldset>
+        <legend>{{localize tab.label}}</legend>
+        {{#each options}}
+            <div class="form-group">
+                <label for="cat-troubleshooter-{{key}}">{{localize name}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" id="cat-troubleshooter-{{key}}" data-setting="{{key}}" {{checked value}}
+                        {{disabled disabled}}>
+                </div>
+                <p class="hint">{{localize hint}}</p>
+            </div>
+        {{/each}}
+    </fieldset>
+</section>

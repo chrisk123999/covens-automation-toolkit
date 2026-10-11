@@ -6,6 +6,12 @@
         <span class="dirty"
             data-tooltip="{{localize 'CAT.MEDKIT.Dirty.Tooltip'}}">{{localize "CAT.MEDKIT.Dirty.Label"}}</span>
     {{/if}}
+    {{#each headerButtons}}
+        <button type="button" data-action="{{action}}" data-tooltip="{{localize tooltip}}"
+            aria-label="{{localize tooltip}}">
+            <i class="{{icon}}" aria-hidden="true"></i>
+        </button>
+    {{/each}}
     {{#if detachable}}
         <button type="button" data-action="toggleDetach" data-tooltip="{{localize detachLabel}}"
             aria-label="{{localize detachLabel}}">

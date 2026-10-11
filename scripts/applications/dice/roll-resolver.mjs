@@ -120,7 +120,17 @@ export default class CatRollResolver extends RollResolver {
         };
     }
 
+    /**
+     * Whether midi has made this roll an automatic success or failure, set as a minimum of 99 or a maximum of 1.
+     * @param {Roll} roll Roll to check.
+     * @returns {boolean}
+     */
+    static isAutoResult(roll) {
+        return roll.options?.minimum === 99 || roll.options?.maximum === 1;
+    }
+
     async awaitFulfillment() {
+        if (CatRollResolver.isAutoResult(this.roll)) return this.#digitalRoll();
         if (!this._forcePrompt) {
             if (this.#isDamage()) return this.#digitalRoll();
             if (!this.#checkPreferences()) return this.#digitalRoll();
@@ -129,7 +139,7 @@ export default class CatRollResolver extends RollResolver {
         if (game.settings.get('cat', 'manualRollsGMFulfill') && gm && !queryUtils.isTheGM()) {
             const fulfillable = Roll.defaultImplementation.identifyFulfillableTerms(this.roll.terms);
             if (!fulfillable.length) return;
-            const results = await queryUtils.query('manualRoll', gm, {roll: this.roll.toJSON()}, 300000);
+            const results = await queryUtils.query('manualRoll', gm, {roll: this.roll.toJSON(), label: this.#contextLabel()}, 300000);
             fulfillable.forEach((term, i) => {
                 term._id ??= foundry.utils.randomID();
                 for (const result of results?.[i] ?? []) term.results.push({result, active: true});
@@ -204,7 +214,7 @@ export default class CatRollResolver extends RollResolver {
             }
             if (groupMod && (damage || term?.faces !== 20)) {
                 group.modifier = CatRollResolver.#signed(groupMod);
-                group.modifierTooltip = info?.tip ?? this.#modifierBreakdown();
+                group.modifierTooltip = info?.tip ?? this.#modifierBreakdown(this.#rollContaining(term));
             }
             if (term?.faces === 20) {
                 const mod = this.#flatModifier();
@@ -220,7 +230,7 @@ export default class CatRollResolver extends RollResolver {
             }
             if (total) {
                 const n = term.number ?? 1;
-                const useRollTotal = rollTotal && this.roll.terms.includes(term);
+                const useRollTotal = rollTotal && !!this.#rollContaining(term);
                 const mod = useRollTotal ? groupMod : 0;
                 group.results = [{...group.results[0], value: '', readonly: false, disabled: false, text: n > 1, minValue: n + mod, maxValue: n * term.faces + mod, denomination: _loc(useRollTotal ? 'CAT.Manual.RollTotal' : 'CAT.Manual.DiceTotal')}];
             } else {
@@ -309,6 +319,7 @@ export default class CatRollResolver extends RollResolver {
     }
 
     #contextLabel() {
+        if (this._remoteLabel) return this._remoteLabel;
         if (game.settings.get('cat', 'manualRollsRichContext')) {
             const save = this.#saveContext();
             if (save) return save;
@@ -438,9 +449,9 @@ export default class CatRollResolver extends RollResolver {
         };
     }
 
-    #flatModifier() {
+    #flatModifier(roll = this.roll) {
         let total = 0, sign = 1;
-        for (const term of this.roll.terms) {
+        for (const term of roll.terms) {
             if (term.operator) { sign = term.operator === '-' ? -1 : 1; continue; }
             if (term.faces === undefined && term.number !== undefined) total += sign * term.number;
             sign = 1;
@@ -448,8 +459,8 @@ export default class CatRollResolver extends RollResolver {
         return total;
     }
 
-    #modifierBreakdown() {
-        return CatRollResolver.#breakdown(this.roll.data, this.roll.terms);
+    #modifierBreakdown(roll = this.roll) {
+        return CatRollResolver.#breakdown(this.roll.data, (roll ?? this.roll).terms);
     }
 
     static #breakdown(data, terms) {
@@ -570,7 +581,7 @@ export default class CatRollResolver extends RollResolver {
         if (raw.includes(',')) {
             const parsed = raw.split(/[\s,]+/).filter(part => part !== '').map(Number);
             if (advMode) {
-                const mod = (mode === 'rollTotal' && this.roll.terms.includes(term)) ? this.#groupModifier(term) : 0;
+                const mod = (mode === 'rollTotal' && this.#rollContaining(term)) ? this.#groupModifier(term) : 0;
                 const values = Array.from({length: n}, (entry, i) => parsed[i] === undefined ? term.randomFace() : Math.clamp(parsed[i] - mod, 1, faces));
                 const keep = advMode > 0 ? Math.max(...values) : Math.min(...values);
                 let taken = false;
@@ -585,7 +596,7 @@ export default class CatRollResolver extends RollResolver {
         const kept = advMode ? 1 : n;
         const critical = this.roll.options?.criticalSuccess ?? this.roll.options?.critical;
         const max = kept * faces;
-        const useRollTotal = mode === 'rollTotal' && this.roll.terms.includes(term);
+        const useRollTotal = mode === 'rollTotal' && !!this.#rollContaining(term);
         let total = (Number(value) || 0) - (useRollTotal ? this.#groupModifier(term) : 0);
         const out = [];
         let left = kept;
@@ -609,7 +620,8 @@ export default class CatRollResolver extends RollResolver {
 
     #groupModifier(term) {
         if (this._termInfo) return this._termInfo.get(term)?.mod ?? 0;
-        return term === this.#firstDiceTerm() ? this.#flatModifier() : 0;
+        const roll = this.#rollContaining(term);
+        return roll && term === this.#firstDiceTerm(roll) ? this.#flatModifier(roll) : 0;
     }
 
     static #knownType(value) {
@@ -629,7 +641,21 @@ export default class CatRollResolver extends RollResolver {
         return value > 0 ? `${gap}+${gap}${value}` : `${gap}−${gap}${Math.abs(value)}`;
     }
 
-    #firstDiceTerm() {
-        return this.roll.terms.find(term => term.faces !== undefined);
+    #firstDiceTerm(roll = this.roll) {
+        return roll.terms.find(term => term.faces !== undefined);
+    }
+
+    /**
+     * The roll whose own terms hold a die: the top-level roll, or one nested in a function, pool or bracket.
+     * @param {DiceTerm} term Die to find.
+     * @param {Roll} [roll] Roll to search.
+     * @returns {Roll|undefined}
+     */
+    #rollContaining(term, roll = this.roll) {
+        if (roll.terms.includes(term)) return roll;
+        for (const inner of roll.terms.flatMap(t => t.rolls ?? (t.roll instanceof Roll ? [t.roll] : []))) {
+            const found = this.#rollContaining(term, inner);
+            if (found) return found;
+        }
     }
 }

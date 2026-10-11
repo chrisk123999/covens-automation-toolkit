@@ -2,13 +2,13 @@
     data-tab="{{tab.id}}">
     <fieldset data-section="activity-properties">
         <legend>{{localize "CAT.MEDKIT.TABS.DocProps"}}</legend>
-        {{formGroup fields.hidden name="flags.cat.hidden" value=hidden hint=(localize "CAT.MEDKIT.Activity.Hidden.Hint")}}
+        {{formGroup fields.hidden name="flags.cat.hidden" value=hidden hint=(localize "CAT.MEDKIT.Activity.Hidden.Hint") rootId=@root.rootId}}
     </fieldset>
 
     {{#if showSpellIdentifier}}
         <fieldset data-section="spell-identifier">
             <legend>{{localize "CAT.MEDKIT.Activity.SpellIdentifier.Label"}}</legend>
-            {{formGroup fields.spellIdentifier name="flags.cat.spellIdentifier" value=spellIdentifier hint=(localize "CAT.MEDKIT.Activity.SpellIdentifier.Hint")}}
+            {{formGroup fields.spellIdentifier name="flags.cat.spellIdentifier" value=spellIdentifier hint=(localize "CAT.MEDKIT.Activity.SpellIdentifier.Hint") rootId=@root.rootId}}
         </fieldset>
     {{/if}}
 
@@ -16,7 +16,7 @@
         <fieldset data-section="other-abilities">
             <legend>{{localize "CAT.MEDKIT.DocProps.otherAbilities.Label"}}</legend>
             <div class="form-group">
-                <label>{{localize "CAT.MEDKIT.DocProps.otherAbilities.Field"}}</label>
+                <label for="cat-medkit-other-abilities">{{localize "CAT.MEDKIT.DocProps.otherAbilities.Field"}}</label>
                 <div class="form-fields">
                     <cat-multi-combobox input-id="cat-medkit-other-abilities" name="flags.cat.otherAbilities">
                         {{#each otherAbilityChoices}}

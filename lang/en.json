@@ -30,12 +30,25 @@
         "Started": "Mass apply started.",
         "Progress": "Applying {done}/{total} — {name}",
         "Done": "Mass apply complete.",
-        "PackLocked": "{pack} is locked. Unlock the compendium to apply automations to it.",
+        "PackLocked": "{pack} is locked. Copy it into another compendium and apply automations there.",
+        "Destination": "Destination",
+        "NewCompendium": "New Compendium",
+        "Replace": "Replace",
+        "Modes": {
+          "Matching": "Documents with the same name",
+          "All": "Everything in the compendium"
+        },
+        "PackLockedTitle": "Compendium locked",
         "PackTitle": "Apply to a package compendium?",
         "PackWarning": "{pack} belongs to {package}, not to this world. Updating {package} will overwrite anything applied here.",
         "CycleWarning": "Circular dependency detected among items. Some updates may occur out of sequence!",
         "NoUpdates": "There are no items in need of updates!",
-        "ChooseSource": "Choose Source"
+        "ChooseSource": "Choose Source",
+        "Tabs": {
+          "Characters": "Characters",
+          "NPCs": "NPCs",
+          "Other": "Other"
+        }
       },
       "Identifier": {
         "Label": "Document Identifier",
@@ -764,7 +777,7 @@
     "Settings": {
       "FixDescriptionEnrichers": {
         "Name": "Fix Description Enrichers",
-        "Hint": "When an automation updates, rewrite bare [[/damage]] and [[/save]] enrichers using that item's values."
+        "Hint": "Fill in bare [[/damage]] and [[/save]] enrichers when an automation is applied."
       },
       "Automation": {
         "Name": "Automation Sources",
@@ -819,7 +832,7 @@
       },
       "AutomationSources": {
         "Name": "Automation Sources",
-        "Hint": "Sources and compendiums used for automation. Drag to set priority, the lowest number takes priority.",
+        "Hint": "Sources and compendiums used for automation. Lowest value is priority.",
         "Priority": "Priority",
         "Enabled": "Enabled",
         "Disabled": "Inactive",
@@ -840,19 +853,19 @@
       },
       "MonsterCompendiums": {
         "Name": "Monsters",
-        "Hint": "Compendiums searched when an automation requests a monster. Drag to set priority, the lowest number takes priority."
+        "Hint": "Compendiums search for monster automations. Lowest value is priority."
       },
       "ItemCompendiums": {
         "Name": "Items",
-        "Hint": "Compendiums searched when an automation requests an item. Drag to set priority, the lowest number takes priority."
+        "Hint": "Compendiums search for item automations. Lowest value is priority."
       },
       "SpellCompendiums": {
         "Name": "Spells",
-        "Hint": "Compendiums searched when an automation requests a spell. Drag to set priority, the lowest number takes priority."
+        "Hint": "Compendiums search for spell automations. Lowest value is priority."
       },
       "MacroCompendiums": {
         "Name": "Macros",
-        "Hint": "Overwrites registered macros with the macros from the selected compendiums. Every macro in these compendiums is executed on load. Drag to set priority, the lowest number takes priority."
+        "Hint": "Overwrites registered macros with the macros from the selected compendiums. Lowest value is priority."
       },
       "Devtools": {
         "Name": "Development Tools",
@@ -868,8 +881,8 @@
         "Hint": "When enabled, the console will show sample event data for every event."
       },
       "Help": {
-        "Name": "Help",
-        "Label": "Help",
+        "Name": "Troubleshooter",
+        "Label": "Open Troubleshooter",
         "Hint": "Help with required module settings and troubleshooting CAT automations."
       },
       "HideNames": {
@@ -877,7 +890,7 @@
         "Hint": "When enabled, various dialogs will not show enemy token names."
       },
       "DiceSoNice": {
-        "Name": "Dice So Nice Compatibility",
+        "Name": "Dice So Nice",
         "Hint": "When enabled, Dice So Nice damage roll animations will be delayed until after all damage roll macros are complete."
       },
       "General": {
@@ -898,6 +911,10 @@
       "EffectDescriptions": {
         "Name": "Automatic Effect Descriptions",
         "Hint": "When enabled, effects without descriptions will automatically be filled in from the origin item."
+      },
+      "AutoRecharge": {
+        "Name": "Recharge Player Abilities",
+        "Hint": "Roll to recharge abilities automatically at the start of a non-NPC's turn."
       },
       "PlacedRegionVisibility": {
         "Name": "Placed Area Visibility",
@@ -992,6 +1009,7 @@
       "Chat": "Chat",
       "Ok": "Ok",
       "Cancel": "Cancel",
+      "Name": "Name",
       "Resize": "Resize"
     },
     "QuickConditions": {
@@ -1032,6 +1050,14 @@
     "Summons": {
       "SummonFolder": "Summons"
     },
+    "Teleport": {
+      "Title": "Teleport",
+      "WhichLevel": "Which level?",
+      "Current": "{name} (Current)"
+    },
+    "Crosshairs": {
+      "Invalid": "That space cannot be chosen."
+    },
     "Movement": {
       "Forced": "Forced Movement"
     },
@@ -1053,7 +1079,118 @@
       "OutdatedSequencer": "Sequencer is out of date! In order to use animations, CAT requires a minimum of version {minSequencerVersion}"
     },
     "Troubleshooter": {
-      "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version."
+      "Title": "CAT Troubleshooter",
+      "Open": "Open Troubleshooter",
+      "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version.",
+      "World": "World",
+      "Empty": "Nothing to report.",
+      "Copied": "Troubleshooter report copied to the clipboard.",
+      "Discord": "Copy the report and open the Discord",
+      "Sections": {
+        "required": "Required Settings",
+        "info": "Info",
+        "modules": "Modules",
+        "foundry": "Foundry",
+        "permissions": "Permissions",
+        "importer": "Importer",
+        "settings": "Settings",
+        "logs": "Logs",
+        "options": "Options"
+      },
+      "Tags": {
+        "Required": "Required",
+        "Optional": "Optional",
+        "AutomationSource": "Automation Source",
+        "AnimationsLibrary": "Animations",
+        "Defunct": "Defunct",
+        "Incompatible": "Incompatible"
+      },
+      "Groups": {
+        "Core": "Core",
+        "CatRelated": "CAT Related",
+        "Active": "Active Modules",
+        "Inactive": "Inactive Modules",
+        "Conflicts": "Conflicts",
+        "Automations": "Automations",
+        "Scene": "Scene",
+        "Game": "Game",
+        "Errors": "Errors"
+      },
+      "Status": {
+        "pass": "Pass",
+        "warn": "Warning",
+        "fail": "Fail",
+        "info": "Info"
+      },
+      "Footer": {
+        "FixAll": "Fix All",
+        "Save": "Save Troubleshooter"
+      },
+      "Save": {
+        "Title": "Save Troubleshooter",
+        "Drop": "Optionally drop an actor or item you're having issues with here.",
+        "Saved": "Troubleshooter report saved."
+      },
+      "HideWarnings": {
+        "Name": "Hide Troubleshooter Warnings",
+        "Hint": "Stop whispering the troubleshooter's startup warning cards to GMs."
+      },
+      "StripDialog": {
+        "Name": "Ask Before Stripping Exports",
+        "Hint": "Ask to strip descriptions prompt when exporting document data."
+      },
+      "Fix": {
+        "Title": "Apply Fixes",
+        "Content": "The following will be changed, then Foundry will ask to reload:",
+        "Label": "Fix",
+        "Disable": "Disable Module"
+      },
+      "Required": {
+        "Expected": "{value} → {fix}",
+        "ClientScope": "(client setting)",
+        "GmAutoDamage": "GM Auto Roll Damage"
+      },
+      "Card": {
+        "settings": "Some settings CAT relies on are not set as expected:",
+        "modules": "Some active modules are defunct or conflict with CAT:",
+        "fix": "Fix",
+        "open": "Troubleshooter"
+      },
+      "Export": {
+        "Title": "Export Data",
+        "Strip": "Strip descriptions",
+        "Settings": "Export Settings",
+        "Exported": "CAT settings exported.",
+        "Imported": "Imported {count} CAT settings.",
+        "ImportSettings": "Import Settings",
+        "ImportTitle": "Import CAT Settings",
+        "ImportContent": "Overwrite your CAT settings with the imported file?"
+      },
+      "Report": {
+        "Inactive": "Inactive",
+        "NotInstalled": "Not installed",
+        "Defunct": "Defunct module",
+        "Incompatible": "Incompatible module",
+        "ASEFork": "Chris's Fork",
+        "BossLoot": "Boss Loot FX animates this item alongside its CAT automation",
+        "Language": "Language",
+        "GridType": "Grid Type",
+        "GridUnits": "Grid Units",
+        "GridDistance": "Grid Distance",
+        "ActorlessTokens": "Tokens without an actor",
+        "LinkedMultiple": "Linked actor with multiple tokens",
+        "Invalid": "Invalid {type}",
+        "Token": "Controlled Token",
+        "Actor": "Actor",
+        "Importer": {
+          "Label": "Detected Importer",
+          "None": "None",
+          "Molten": "Scruvy"
+        },
+        "Permissions": {
+          "Users": "Allowed: {allowed}; Denied: {denied}"
+        }
+      }
     },
     "Summon": {
       "DeadTitle": "CAT Summons",

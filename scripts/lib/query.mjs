@@ -1,10 +1,14 @@
 import {documentUtils, effectUtils, itemUtils, workflowUtils} from '../utilities/_module.mjs';
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
+import Logging from './logging.mjs';
 async function dialog({title, content, inputs, buttons, config}) {
     return await DialogApp.dialog(title, content, inputs, buttons, config);
 }
 async function queuedDialog({title, content, inputs, buttons, config}) {
     return await dialogQueue.showDialog(async (...args) => await DialogApp.dialog(...args), title, content, inputs, buttons, config);
+}
+function macroWarning({source, identifier, message, user}) {
+    Logging.addMacroWarning(source, identifier, message, {user});
 }
 async function createEffects({uuid, effectDatas, effectOptions}) {
     const document = await fromUuid(uuid);
@@ -56,12 +60,13 @@ async function createFolder({folderData}) {
     const folder = await Folder.create(folderData);
     return folder.id;
 }
-async function manualRoll({roll: rollData}) {
+async function manualRoll({roll: rollData, label}) {
     const ResolverClass = CONFIG.Dice.fulfillment.methods.cat?.resolver;
     if (!ResolverClass) return [];
     const roll = Roll.fromData(rollData);
     const resolver = new ResolverClass(roll);
     resolver._forcePrompt = true;
+    resolver._remoteLabel = label;
     await resolver.awaitFulfillment();
     const results = Roll.defaultImplementation.identifyFulfillableTerms(roll.terms).map(term => term.results.map(result => result.result));
     await resolver.close();
@@ -148,7 +153,8 @@ function registerQueries() {
         addFavorites,
         removeFavorites,
         syntheticItemDataRoll,
-        syntheticActivityDataRoll
+        syntheticActivityDataRoll,
+        macroWarning
     };
     for (const [name, fn] of Object.entries(handlers)) {
         globalThis.CONFIG.queries['cat.' + name] = fn;

@@ -25,7 +25,7 @@ async function buildEvaluate(wrapped, rolls = [], config = {}, message = {}) {
         const diceConfig = game.settings.get('core', Roll.DICE_CONFIGURATION_SETTING) ?? {};
         const isCat = term => (diceConfig[term.denomination] || diceConfig.default || CONFIG.Dice.fulfillment.defaultMethod) === 'cat';
         const isDamage = roll => CONFIG.Dice?.DamageRoll && roll instanceof CONFIG.Dice.DamageRoll;
-        const manualRolls = rolls.filter(roll => !isDamage(roll) && Roll.defaultImplementation.identifyFulfillableTerms(roll.terms).some(isCat));
+        const manualRolls = rolls.filter(roll => !isDamage(roll) && !resolverClass.isAutoResult(roll) && Roll.defaultImplementation.identifyFulfillableTerms(roll.terms).some(isCat));
         if (manualRolls.length) {
             const subject = config.subject;
             const workflowId = config.midiOptions?.workflowId ?? subject?.uuid;

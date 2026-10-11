@@ -73,6 +73,21 @@ function appendEntryOption(app, entries) {
         onClick: async (event, target) => openMedkit(await resolveEntry(app, target))
     };
     entries.push(entry);
+    wrapExportEntry(app, entries);
+}
+function wrapExportEntry(app, entries) {
+    const exportEntry = entries.find(entry => entry.label === 'SIDEBAR.Export');
+    if (!exportEntry) return;
+    const coreExport = exportEntry.onClick;
+    exportEntry.onClick = async (event, target) => {
+        if (!game.settings.get('cat', 'exportStripDialog')) return coreExport(event, target);
+        const selection = await applications.DialogApp.dialog('CAT.Troubleshooter.Export.Title', undefined, [
+            ['checkbox', [{label: _loc('CAT.Troubleshooter.Export.Strip'), name: 'strip', options: {isChecked: true}}]]
+        ], 'okCancel', {anchor: {x: event.clientX, y: event.clientY}});
+        if (!selection?.buttons) return;
+        if (!selection.strip) return coreExport(event, target);
+        documentUtils.exportDocument(await resolveEntry(app, target));
+    };
 }
 function resolvePack(target) {
     const pack = game.packs.get(target.closest('[data-pack]')?.dataset.pack);

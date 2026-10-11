@@ -13,7 +13,7 @@
                 <p class="hint">{{valueHint}}</p>
             </div>
         {{else}}
-            {{formGroup valueField value=value name=valuePath hint=valueHint label=valueLabel}}
+            {{formGroup valueField value=value name=valuePath hint=valueHint label=valueLabel rootId=@root.rootId}}
         {{/if}}
         <fieldset>
             <legend>{{localize "CAT.MEDKIT.DocProps.Restrictions.Legend"}}</legend>
@@ -48,7 +48,7 @@
                         <p class="hint" id="cat-docprop-hint-{{r.key}}">{{r.hint}}</p>
                     </div>
                 {{else}}
-                    {{formGroup r.field value=r.value name=r.valuePath hint=r.hint label=r.label}}
+                    {{formGroup r.field value=r.value name=r.valuePath hint=r.hint label=r.label rootId=@root.rootId}}
                 {{/if}}
             {{/each}}
         </fieldset>
