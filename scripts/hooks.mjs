@@ -78,6 +78,9 @@ export function readyHooks() {
         Hooks.on(constants.auraHookNames.canvasReady, events.auraEvents.canvasReady);
         Hooks.on(constants.auraHookNames.createScene, events.auraEvents.createScene);
         Hooks.on(constants.auraHookNames.deleteScene, events.auraEvents.deleteScene);
+        Hooks.on(constants.auraHookNames.updateScene, events.auraEvents.updateScene);
+        Hooks.on(constants.auraHookNames.updateCombat, events.auraEvents.updateCombat);
+        Hooks.on(constants.auraHookNames.deleteCombat, events.auraEvents.combatChanged);
         Hooks.on(constants.auraHookNames.createToken, events.auraEvents.createToken);
         Hooks.on(constants.auraHookNames.updateToken, events.auraEvents.updateToken);
         Hooks.on(constants.auraHookNames.deleteToken, events.auraEvents.deleteToken);

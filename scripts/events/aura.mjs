@@ -14,6 +14,15 @@ function createScene(scene) {
 function deleteScene(scene) {
     Auras.forgetScene(scene);
 }
+function updateScene(scene, changes) {
+    if ('active' in changes) Auras.resyncScenes([scene]);
+}
+function combatChanged(combat) {
+    Auras.resyncScenes([combat.scene]);
+}
+function updateCombat(combat, changes) {
+    if ('scene' in changes || [0, 1].includes(changes.round)) Auras.resyncScenes([combat.scene]);
+}
 function createToken(token) {
     Auras.refreshTokens([token], {reindex: true});
 }
@@ -50,6 +59,9 @@ export default {
     canvasReady: whenReady(canvasReady),
     createScene: whenReady(createScene),
     deleteScene: whenReady(deleteScene),
+    updateScene: whenReady(updateScene),
+    combatChanged: whenReady(combatChanged),
+    updateCombat: whenReady(updateCombat),
     createToken: whenReady(createToken),
     updateToken: whenReady(updateToken),
     deleteToken: whenReady(deleteToken),

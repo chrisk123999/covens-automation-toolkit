@@ -15,6 +15,7 @@
 - Display Debug Logs and Display Event Data are off by default.
 - The warning for having both JB2A modules active moved from a notification to the Troubleshooter.
 ## Bug Fixes:
+- Auras only count tokens on the active scene, the scene the GM is viewing, and scenes with a started combat. Linked tokens left on other scenes no longer grant or receive auras.
 - Special durations triggered by attacks, saves and damage expire at that step of the roll.
 - Forced movement no longer spends a token's movement.
 - Saving settings keeps automation sources registered unless they are disabled, matching startup.
