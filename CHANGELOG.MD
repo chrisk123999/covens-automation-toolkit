@@ -37,6 +37,7 @@
 - Event pass constants have JSDoc describing their prefixes, arguments and return values.
 - Added `cat.api.registerTroubleshooterCheck` and `cat.api.registerTroubleshooterChecks`. A check is `{id, section, group, run, fix}`. `run` returns rows of `{status, label, detail}`.
 - `Logging.addMacroWarning` writes a WARNING entry to the Troubleshooter's Logs tab, and player warnings are also sent to the GM's log. It takes `{notify, format}`.
+- Renamed `Logging.addMacroError` to `Logging.logMacroException`. CAT calls it when a macro throws. Macros log with `addMacroWarning` and a `notify` level instead.
 - Added the `catLogEntry` hook, called for every warning and error entry.
 - Added `documentUtils.exportDocument`, `documentUtils.stripDescriptions` and `genericUtils.dateStamp`.
 - `DialogApp.dialog` accepts `config.anchor` `{x, y}` to open at a point.

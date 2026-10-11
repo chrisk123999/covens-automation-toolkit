@@ -15,7 +15,7 @@ function addEntry(type = 'DEBUG', message, {force = false} = {}) {
     if (logs.length > 100) logs.splice(Math.max(logs.findIndex(isVerbose), 0), 1);
     if (!isVerbose(entry)) Hooks.callAll('catLogEntry', entry);
 }
-function addMacroError(trigger, error) {
+function logMacroException(trigger, error) {
     const key = trigger.macroClass.identifier + '-' + trigger.macroClass.source + '-' + trigger.macroClass.rules;
     macroErrors[key] ??= [];
     macroErrors[key].push({
@@ -109,7 +109,7 @@ export default {
     embeddedMacroErrors,
     addEntry,
     isVerbose,
-    addMacroError,
+    logMacroException,
     addAttributeError,
     addEmbeddedMacroError,
     addRegistrationError,

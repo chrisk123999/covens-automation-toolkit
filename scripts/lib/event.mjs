@@ -258,7 +258,7 @@ class CatEvent {
                 try {
                     result = await trigger.macro(trigger);
                 } catch (error) {
-                    Logging.addMacroError(trigger, error);
+                    Logging.logMacroException(trigger, error);
                 }
             }
             if (result) {
@@ -287,7 +287,7 @@ class CatEvent {
                 try {
                     result = trigger.macro(trigger);
                 } catch (error) {
-                    Logging.addMacroError(trigger, error);
+                    Logging.logMacroException(trigger, error);
                 }
             }
             if (result) {
@@ -547,7 +547,7 @@ class RegionEvent extends CatEvent {
                 try {
                     await trigger.macro(trigger);
                 } catch (error) {
-                    Logging.addMacroError(trigger, error);
+                    Logging.logMacroException(trigger, error);
                 }
             }
         }
