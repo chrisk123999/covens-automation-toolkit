@@ -392,7 +392,7 @@ export default class DialogApp extends CatApp {
                             add
                         });
                     }
-                } else dice.push({
+                } else if (t.total !== 0) dice.push({
                     tooltip: t.options.source || t.formula,
                     dieClass: 'generic',
                     value: t.formula,

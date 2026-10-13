@@ -1,3 +1,7 @@
+# 0.1.3 Release: (work in progress)
+## Bug Fixes:
+- Third party optional bonuses no longer add costs to local bonuses during validation.
+
 # 0.1.2 Release:
 ## Update Notes:
 - Added setting: Placed Area Visibility. Areas placed by activities are drawn on the Regions layer only by default.

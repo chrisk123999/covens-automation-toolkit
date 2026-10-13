@@ -1,1280 +1,1282 @@
 {
-  "CAT": {
-    "MEDKIT": {
-      "Title": "Coven's Automation Toolkit Configuration: {name}",
-      "HeaderLabel": "CAT Medkit",
-      "LockedPack": "{pack} is locked. Changes made here will not be saved until the compendium is unlocked.",
-      "NoPermission": "You do not have permission to modify this tab.",
-      "ReloadWarning": "The registered automation will not reflect your changes until the world is reloaded!",
-      "TABS": {
-        "Automation": "Info",
-        "Automations": "Automations",
-        "Configuration": "Configuration",
-        "Generic": "Generic Automations",
-        "Embedded": "Embedded Macros",
-        "Macros": "Registered Macros",
-        "DocProps": "Document Properties",
-        "PlacedRegion": "Placed Region"
-      },
-      "MassApply": {
-        "Counts": {
-          "UpToDate": "Up to date",
-          "Available": "Available",
-          "Outdated": "Out of date"
+    "CAT": {
+        "MEDKIT": {
+            "Title": "Coven's Automation Toolkit Configuration: {name}",
+            "HeaderLabel": "CAT Medkit",
+            "LockedPack": "{pack} is locked. Changes made here will not be saved until the compendium is unlocked.",
+            "NoPermission": "You do not have permission to modify this tab.",
+            "ReloadWarning": "The registered automation will not reflect your changes until the world is reloaded!",
+            "TABS": {
+                "Automation": "Info",
+                "Automations": "Automations",
+                "Configuration": "Configuration",
+                "Generic": "Generic Automations",
+                "Embedded": "Embedded Macros",
+                "Macros": "Registered Macros",
+                "DocProps": "Document Properties",
+                "PlacedRegion": "Placed Region"
+            },
+            "MassApply": {
+                "Counts": {
+                    "UpToDate": "Up to date",
+                    "Available": "Available",
+                    "Outdated": "Out of date"
+                },
+                "Label": "Mass Apply / Update",
+                "Button": "Mass Apply / Update",
+                "Tooltip": "Apply / update automations for every item under this document.",
+                "ConfirmTitle": "Mass apply automations?",
+                "ConfirmPrompt": "Apply registered automations to every item under this document? This rewrites their data and cannot be undone.",
+                "Started": "Mass apply started.",
+                "Progress": "Applying {done}/{total} — {name}",
+                "Done": "Mass apply complete.",
+                "PackLocked": "{pack} is locked. Copy it into another compendium and apply automations there.",
+                "Destination": "Destination",
+                "NewCompendium": "New Compendium",
+                "Replace": "Replace",
+                "Modes": {
+                    "Matching": "Documents with the same name",
+                    "All": "Everything in the compendium"
+                },
+                "PackLockedTitle": "Compendium locked",
+                "PackTitle": "Apply to a package compendium?",
+                "PackWarning": "{pack} belongs to {package}, not to this world. Updating {package} will overwrite anything applied here.",
+                "CycleWarning": "Circular dependency detected among items. Some updates may occur out of sequence!",
+                "NoUpdates": "There are no items in need of updates!",
+                "ChooseSource": "Choose Source",
+                "Tabs": {
+                    "Characters": "Characters",
+                    "NPCs": "NPCs",
+                    "Other": "Other"
+                }
+            },
+            "Identifier": {
+                "Label": "Document Identifier",
+                "Hint": "Item & Activity identifiers must be modified on the respective document sheet.",
+                "OverrideHint": "Overrides the identifier used to match this document to an automation. Defaults to the slugified name."
+            },
+            "Source": {
+                "Label": "Automation Source",
+                "Hint": "Pick which module provides the automation for this document.",
+                "HintNone": "No automation sources have registered an automation for this document."
+            },
+            "SourceType": {
+                "Label": "Granted By",
+                "Hint": "A key that represents the class, feat, race, etc. that granted this document, e.g. 'class:cleric'."
+            },
+            "Version": {
+                "Label": "Automation Version",
+                "Hint": "Reported by the selected automation source."
+            },
+            "Notes": {
+                "Label": "Automation Notes"
+            },
+            "IgnoreItem": {
+                "Label": "Ignore Item",
+                "Hint": "Skip this item during mass apply / update operations."
+            },
+            "Sections": {
+                "Rules": "Rules",
+                "Automation": "Automation",
+                "Embedded": "Embedded Macros"
+            },
+            "Embedded": {
+                "Count": "{count} embedded macro(s) on this document.",
+                "Empty": "No embedded macros on this document.",
+                "Add": "Add macro",
+                "Edit": "Edit macro"
+            },
+            "EmbeddedMacros": {
+                "Title": "Embedded Macros: {name}",
+                "Invalid": "Macro \"{name}\" needs a name, event, and pass before saving.",
+                "Duplicate": "A macro named \"{name}\" already exists on this document.",
+                "Fields": {
+                    "Name": "Name",
+                    "Event": "Event",
+                    "Pass": "Pass",
+                    "Priority": "Priority",
+                    "Macro": "Macro",
+                    "Distance": "Distance",
+                    "ConfigDistance": "Distance Config Key",
+                    "Dispositions": "Dispositions",
+                    "ConfigDispositions": "Dispositions Config Key",
+                    "Disabled": "Skip If Target Is",
+                    "ConfigDisabled": "Skip If Target Is Config Key"
+                },
+                "Disposition": {
+                    "All": "All",
+                    "Ally": "Ally",
+                    "Enemy": "Enemy"
+                },
+                "Disabled": {
+                    "Incapacitated": "Incapacitated",
+                    "Dead": "Dead",
+                    "Unconscious": "Unconscious"
+                }
+            },
+            "DocProps": {
+                "Add": "Add",
+                "Empty": "None defined.",
+                "Hint": "Document properties feed the dnd5e patches ({list}).",
+                "InvalidValue": "A value is required.",
+                "NotDefined": "\"{type}\" is not a registered attribute!",
+                "Title": "{type}: {name}",
+                "Props": {
+                    "Ability": {
+                        "Field": "Abilities",
+                        "Hint": "Extra abilities any matching attack, check, or save activity may use.",
+                        "Label": "Alternate Activity Abilities"
+                    },
+                    "ACAbility": {
+                        "Field": "Ability",
+                        "Hint": "Replace dexterity in default AC calculations, e.g. Half Plate: 15 + int (max 2)",
+                        "Label": "Alternate AC Ability"
+                    },
+                    "ACFormula": {
+                        "Field": "Formula",
+                        "Hint": "Formula offered as an alternative. The highest value is used for base AC.",
+                        "Label": "Alternate AC Formula"
+                    },
+                    "DamageFormula": {
+                        "Field": "Formula",
+                        "Hint": "Roll formula offered as an alternative; the highest-rolling option is used.",
+                        "Label": "Alternate Damage Formulas"
+                    },
+                    "Range": {
+                        "Field": "Spell Range",
+                        "Hint": "A formula added to the range of any matching spells. This can stack.",
+                        "Label": "Spell Range Bonus"
+                    },
+                    "RollModifier": {
+                        "Field": "Modifiers",
+                        "Hint": "Comma-separated dice modifiers (e.g. x, min1, kh1).",
+                        "Invalid": "At least one modifier is required.",
+                        "Label": "Damage Roll Modifiers"
+                    }
+                },
+                "otherAbilities": {
+                    "Field": "Abilities",
+                    "Hint": "Extra abilities this attack may use.",
+                    "Label": "Other Abilities"
+                },
+                "Restrictions": {
+                    "Legend": "Restrictions",
+                    "Hint": "Leave a restriction empty to skip it. Comma-separate free-form values.",
+                    "Invert": "Invert",
+                    "RequireAll": "Require All",
+                    "ExcludeAll": "Exclude If Matches All",
+                    "Ability": {
+                        "Label": "Abilities",
+                        "Hint": "Match spells that use any selected ability.",
+                        "InvertedHint": "Exclude spells that use selected abilities."
+                    },
+                    "Armor": {
+                        "Label": "Equipped Armor",
+                        "Hint": "Any or all selected must be equipped.",
+                        "InvertedHint": "Any or all selected must not be equipped."
+                    },
+                    "DamagePart": {
+                        "Label": "Damage Part",
+                        "Hint": "Target selected damage parts on matched items. \"Base\" is default if this is empty.",
+                        "Base": "Base",
+                        "First": "First Part",
+                        "Second": "Second Part",
+                        "Third": "Third Part"
+                    },
+                    "DamageType": {
+                        "Label": "Damage Type",
+                        "Hint": "Match any selected damage type.",
+                        "InvertedHint": "Exclude selected damage types."
+                    },
+                    "HasActivity": {
+                        "Label": "Has Activity",
+                        "Hint": "Match any selected activity type.",
+                        "InvertedHint": "Exclude selected activity types."
+                    },
+                    "Identifier": {
+                        "Label": "Target Identifiers",
+                        "Hint": "A comma separated list. Match one or more particular items by identifier: item|activity|partIndex."
+                    },
+                    "Level": {
+                        "Label": "Spell Level",
+                        "Hint": "Match any selected spell level.",
+                        "InvertedHint": "Exclude selected spell levels."
+                    },
+                    "Method": {
+                        "Label": "Spell Method",
+                        "Hint": "Match any selected spellcasting method.",
+                        "InvertedHint": "Exclude selected spellcasting methods."
+                    },
+                    "MinimumBaseRange": {
+                        "Label": "Minimum Base Range",
+                        "Hint": "The unmodified range must be equal to or greater than this value."
+                    },
+                    "Property": {
+                        "Label": "Properties",
+                        "Hint": "Match any or all selected item properties.",
+                        "InvertedHint": "Exclude any or all selected item properties."
+                    },
+                    "RangeUnits": {
+                        "Label": "Range Units",
+                        "Hint": "Match any selected units.",
+                        "InvertedHint": "Exclude selected units."
+                    },
+                    "School": {
+                        "Label": "Spell School",
+                        "Hint": "Match any selected spell school.",
+                        "InvertedHint": "Exclude selected spell schools"
+                    },
+                    "SourceType": {
+                        "Label": "Source Type",
+                        "Hint": "A comma separated list of source keys, such as 'class:cleric' or 'race:human'. Match items granted by those sources."
+                    },
+                    "Type": {
+                        "Label": "Item Type",
+                        "Hint": "Match any selected item type.",
+                        "InvertedHint": "Exclude selected item types."
+                    },
+                    "Weapon": {
+                        "Label": "Equipped Weapons",
+                        "Hint": "Any or all selected must be equipped.",
+                        "InvertedHint": "Any or all selected must not be equipped."
+                    },
+                    "WeaponType": {
+                        "Label": "Weapon Type",
+                        "Hint": "Match any selected weapon type.",
+                        "InvertedHint": "Exclude selected weapon types."
+                    }
+                }
+            },
+            "Hero": {
+                "Unavailable": {
+                    "Heading": "No automation registered",
+                    "Copy": "No source provides automation for this item."
+                },
+                "Available": {
+                    "Heading": "Automation available!",
+                    "CTA": "Apply selected source"
+                },
+                "Outdated": {
+                    "Heading": "Update available",
+                    "Copy": "{source} has a newer automation.",
+                    "CTA": "Update now"
+                },
+                "UpToDate": {
+                    "Heading": "Up to date",
+                    "Copy": "Running latest from {source}."
+                },
+                "Configurable": {
+                    "CTA": "Configure >"
+                },
+                "Generic": {
+                    "CTA": "Manage features >"
+                }
+            },
+            "Notif": {
+                "Updated": "Updated {identifier} from v{before} to v{after}.",
+                "Applied": "Applied {source} v{version}."
+            },
+            "Footer": {
+                "Cancel": "Cancel",
+                "Close": "Close",
+                "CancelTooltip": "Discard pending changes and close.",
+                "Save": "Save",
+                "SaveTooltip": "Commit pending changes.",
+                "SaveClose": "Save & Close",
+                "SaveCloseTooltip": "Commit pending changes and close.",
+                "DiscardTitle": "Discard changes?",
+                "DiscardPrompt": "You have unsaved changes. Discard them and close?"
+            },
+            "Dirty": {
+                "Label": "Unsaved",
+                "Tooltip": "You have unsaved changes."
+            },
+            "RulesToggle": {
+                "2014": "2014",
+                "2024": "2024",
+                "Current": "Current Rules",
+                "Hint": "Switch between 2014 (Legacy) and 2024 (Modern) rule sets.",
+                "OtherRulesAvailable": "Automation available under {otherRulesLabel} rules.",
+                "NotApplicable": "Rules selection not applicable for this document."
+            },
+            "STATUSES": {
+                "HasUnregistered": "Unregistered Automation",
+                "Available": "Automation Available",
+                "Outdated": "Automation Outdated",
+                "UpToDate": "Automation Up-To-Date",
+                "Configurable": "Automation Configurable",
+                "Generic": "Generic Feature Applied",
+                "Unavailable": "No Automations Found"
+            },
+            "Indicator": {
+                "configuration": {
+                    "One": "{count} configurable option",
+                    "Other": "{count} configurable options"
+                },
+                "generic": {
+                    "One": "{count} generic automation",
+                    "Other": "{count} generic automations"
+                },
+                "inherited": {
+                    "One": "{count} nested generic automation",
+                    "Other": "{count} nested generic automations"
+                },
+                "embedded": {
+                    "One": "{count} embedded macro",
+                    "Other": "{count} embedded macros"
+                },
+                "macros": {
+                    "One": "{count} registered macro",
+                    "Other": "{count} registered macros"
+                },
+                "docprops": {
+                    "One": "{count} document property",
+                    "Other": "{count} document properties"
+                },
+                "region": {
+                    "One": "{count} region activity",
+                    "Other": "{count} region activities"
+                }
+            },
+            "Tree": {
+                "Legend": "Related Automations",
+                "Config": {
+                    "config": "Configured",
+                    "genericConfig": "Generic",
+                    "macros": "Macros",
+                    "embeddedMacros": "Embedded",
+                    "alternateAttributes": "Doc Props",
+                    "placed": "Region",
+                    "animation": "Animation"
+                },
+                "Kind": {
+                    "Item": "Item",
+                    "Activity": "Activity",
+                    "ActiveEffect": "Effect",
+                    "Region": "Region",
+                    "Token": "Token"
+                }
+            },
+            "Configuration": {
+                "None": "No configurable options for this automation."
+            },
+            "ClassBonus": {
+                "Label": "Class Spellcasting Bonuses",
+                "Hint": "Flat spell save DC and attack bonuses granted per class while this item is equipped (e.g. Bloodwell Vial).",
+                "Empty": "No class bonuses defined.",
+                "Class": "Class",
+                "DC": "Save DC",
+                "Attack": "Attack",
+                "Add": "Add class bonus",
+                "AddPlaceholder": "Class identifier",
+                "Duplicate": "A bonus for class \"{identifier}\" already exists."
+            },
+            "FeatureRollMode": {
+                "Add": "Add activity identifier",
+                "AddPlaceholder": "Activity identifier",
+                "Duplicate": "An entry for identifier \"{identifier}\" already exists."
+            },
+            "Categories": {
+                "behavior": {
+                    "Label": "Behavior",
+                    "Tooltip": "How the automation triggers and what it applies."
+                },
+                "tuning": {
+                    "Label": "Tuning",
+                    "Tooltip": "Numeric and selection tuning for the automation."
+                },
+                "visuals": {
+                    "Label": "Visuals",
+                    "Tooltip": "Icons, images, and other visual hooks."
+                },
+                "linked": {
+                    "Label": "Linked Items",
+                    "Tooltip": "Documents this automation references."
+                },
+                "general": {
+                    "Label": "General",
+                    "Tooltip": "General settings."
+                },
+                "homebrew": {
+                    "Label": "Homebrew",
+                    "Tooltip": "Optional homebrew adjustments to the automation."
+                },
+                "mechanics": {
+                    "Label": "Mechanics",
+                    "Tooltip": "How the automation behaves mechanically."
+                },
+                "utility": {
+                    "Label": "Utility",
+                    "Tooltip": "General-purpose utility automation."
+                },
+                "targeting": {
+                    "Label": "Targeting",
+                    "Tooltip": "How the automation selects targets."
+                },
+                "damage": {
+                    "Label": "Damage",
+                    "Tooltip": "Damage adjustments applied by the automation."
+                },
+                "movement": {
+                    "Label": "Movement",
+                    "Tooltip": "Movement effects applied by the automation."
+                },
+                "summons": {
+                    "Label": "Summons",
+                    "Tooltip": "Summoned creatures and their configuration."
+                },
+                "animations": {
+                    "Label": "Animations",
+                    "Tooltip": "Visual animations played by the automation."
+                }
+            },
+            "Documents": {
+                "Placeholder": "Paste UUID or drag a document here",
+                "Add": "Add document",
+                "InvalidUuid": "No document found for that UUID.",
+                "WrongType": "Expected a {type} document."
+            },
+            "Summons": {
+                "Actor": "Summon Actor",
+                "Name": "Name Override",
+                "AvatarImg": "Actor Image Override",
+                "TokenImg": "Token Image Override",
+                "Animation": "Animation",
+                "Initiative": "Initiative",
+                "InitiativeStandard": "Roll Initiative",
+                "InitiativeFollows": "Follows Summoner",
+                "InitiativeNone": "None",
+                "SoundPlaced": "Placed Sound",
+                "SoundRemoved": "Removed Sound",
+                "SoundDeath": "Death Sound",
+                "CompendiumPick": "Select actor from compendium",
+                "Add": "Add summon",
+                "Item": "Item",
+                "MatchDC": "Match Save DC",
+                "MatchAttack": "Match Attack Bonus",
+                "Equip": "Equip",
+                "Attune": "Attune",
+                "Method": "Spell Method",
+                "Prepared": "Preparation",
+                "UsesMax": "Max Uses",
+                "UsesRecovery": "Uses Recovery",
+                "RechargeValue": "Recharge Value",
+                "Description": "Description Override",
+                "ItemCompendiumPick": "Select item from compendium",
+                "AddItem": "Add item"
+            },
+            "PackFolder": {
+                "Folder": "Folder",
+                "Pack": "Pack"
+            },
+            "Sequencer": {
+                "Browse": "Browse Sequencer Database"
+            },
+            "Animation": {
+                "Categories": {
+                    "attack": "Attack",
+                    "classFeature": "Class Feature",
+                    "default": "Other",
+                    "generic": "Generic",
+                    "rangedAttack": "Ranged Attack",
+                    "spell": "Spell",
+                    "weaponAttacks": "Weapon Attack"
+                },
+                "Credits": "Animation by",
+                "Discord": "Discord",
+                "Patreon": "Patreon"
+            },
+            "Region": {
+                "Visibility": "Visibility",
+                "MagicalDarkness": {
+                    "Label": "Magical Darkness",
+                    "Hint": "Tokens inside this region are blocked from non-magical light sources."
+                },
+                "Obscured": {
+                    "Label": "Obscured",
+                    "Hint": "Tokens inside this region are heavily obscured."
+                }
+            },
+            "Actor": {
+                "Ability": {
+                    "All": "All"
+                },
+                "Automations": "Automations",
+                "ConditionResistance": {
+                    "Label": "Condition Resistance",
+                    "Hint": "Conditions this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
+                },
+                "ConditionVulnerability": {
+                    "Label": "Condition Vulnerability",
+                    "Hint": "Conditions this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
+                },
+                "FeatureFailure": {
+                    "Label": "Feature Failure",
+                    "Hint": "Activity identifiers on which this actor should auto-fail. Click All for any save, or pick specific abilities to scope it."
+                },
+                "FeatureImmunity": {
+                    "Label": "Feature Immunity",
+                    "Hint": "Activity identifiers on which this actor should auto-succeed. Click All for any save, or pick specific abilities to scope it."
+                },
+                "FeatureResistance": {
+                    "Label": "Feature Resistance",
+                    "Hint": "Activity identifiers this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
+                },
+                "FeatureVulnerability": {
+                    "Label": "Feature Vulnerability",
+                    "Hint": "Activity identifiers this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
+                },
+                "IgnoreActor": {
+                    "Label": "Ignore Actor",
+                    "Hint": "Skip this actor during mass compendium / scene updates."
+                },
+                "Name": {
+                    "Label": "Match Name",
+                    "Hint": "Match this actor against automations under a different name."
+                }
+            },
+            "Activity": {
+                "SpellIdentifier": {
+                    "Label": "Spell Identifier",
+                    "Hint": "The spell this cast activity links to. On a CatKit update the link is swapped to the first match in your Spell compendiums."
+                },
+                "Hidden": {
+                    "Label": "Hidden Activity",
+                    "Hint": "Hide this activity from the activity-use selection dialog."
+                },
+                "PlacedRegion": {
+                    "Hint": "Configuration applied to any region this activity creates."
+                },
+                "Effects": {
+                    "Label": "Region Effects",
+                    "Field": "Apply effects",
+                    "Hint": "Effects from this item applied to tokens inside a region this activity creates.",
+                    "None": "This item has no effects to apply."
+                },
+                "RegionMacros": {
+                    "Label": "Region Registered Macros",
+                    "Hint": "Registered macros copied onto a region this activity creates."
+                },
+                "Activities": {
+                    "Label": "Region Activities",
+                    "Field": "Trigger activities",
+                    "Hint": "Activities from this item that fire when tokens interact with a region this activity creates.",
+                    "NoneAvailable": "This item has no other activities to trigger.",
+                    "Triggers": "Triggers",
+                    "Disposition": "Targets",
+                    "OncePerTurn": "Once per turn"
+                },
+                "Triggers": {
+                    "enter": "Token enters",
+                    "left": "Token leaves",
+                    "stay": "Token stays",
+                    "passedThrough": "Token passes through",
+                    "entered": "Region onto token",
+                    "exited": "Region off token",
+                    "stayed": "Region stays on",
+                    "passedOver": "Region passes over",
+                    "turnStart": "Turn start",
+                    "turnEnd": "Turn end",
+                    "everyTurn": "Every turn"
+                },
+                "Disposition": {
+                    "all": "All",
+                    "ally": "Allies",
+                    "enemy": "Enemies"
+                }
+            },
+            "Effect": {
+                "Conditions": {
+                    "Label": "Conditions",
+                    "Hint": "Conditions applied to the actor while this effect is active."
+                },
+                "DisableCondition": {
+                    "Label": "Disable Conditions",
+                    "Hint": "Triggers that automatically disable this effect."
+                },
+                "SpecialDuration": {
+                    "Label": "Special Durations",
+                    "Hint": "Triggers that automatically remove this effect."
+                },
+                "SpecialDurations": {
+                    "endOfWorkflow": "End of workflow",
+                    "forceSave": "Forced a save",
+                    "dealtDamage": "Dealt damage",
+                    "turnStart": "Start of this creature's turn",
+                    "turnEnd": "End of this creature's turn",
+                    "damaged": "Took damage",
+                    "damagedByAlly": "Damaged by ally",
+                    "damagedByEnemy": "Damaged by enemy",
+                    "hitByAnotherCreature": "Hit by another creature",
+                    "attackedByAnotherCreature": "Attacked by another creature",
+                    "hitBySource": "Hit by effect source",
+                    "attackedBySource": "Attacked by effect source",
+                    "moveFinished": "Movement finished",
+                    "zeroSpeed": "Speed reduced to zero",
+                    "tempHP": "Temporary HP lost",
+                    "tempMaxHP": "Temporary max HP lost",
+                    "Groups": {
+                        "Workflow": "Workflow",
+                        "Turn": "Turn",
+                        "Movement": "Movement",
+                        "HitPoints": "Hit Points",
+                        "ConditionAdded": "Condition Added",
+                        "ConditionRemoved": "Condition Removed",
+                        "Equipped": "Armor Equipped",
+                        "Unequipped": "Armor Unequipped",
+                        "ToolRolled": "Tool Rolled",
+                        "ToolFailed": "Tool Check Failed",
+                        "ToolSucceeded": "Tool Check Succeeded"
+                    }
+                },
+                "Animation": "Animation",
+                "NoAnimation": {
+                    "Label": "Disable Animation",
+                    "Hint": "Suppress effect apply/remove animations for this effect."
+                },
+                "AnimationCreate": {
+                    "Label": "Apply Animation",
+                    "Tooltip": "Animation played when this effect is applied."
+                },
+                "AnimationDelete": {
+                    "Label": "Remove Animation",
+                    "Tooltip": "Animation played when this effect is removed."
+                },
+                "AnimationApply": "Apply",
+                "AnimationRemove": "Remove"
+            },
+            "Generic": {
+                "SelectLabel": "Generic Features",
+                "SelectField": "Apply features",
+                "NoMacros": "No generic features registered.",
+                "NoneSelected": "No generic features selected.",
+                "NoConfig": "No configuration for this feature.",
+                "IdentifierPlaceholder": "Identifier",
+                "AddIdentifier": "Add identifier"
+            },
+            "Macros": {
+                "Picker": {
+                    "Label": "Registered Macros",
+                    "Field": "Apply registered macros",
+                    "Hint": "Select which registered macros run on this document. Each picked macro fires for every event it declares."
+                },
+                "None": "No macros are registered in the global registry."
+            }
         },
-        "Label": "Mass Apply / Update",
-        "Button": "Mass Apply / Update",
-        "Tooltip": "Apply / update automations for every item under this document.",
-        "ConfirmTitle": "Mass apply automations?",
-        "ConfirmPrompt": "Apply registered automations to every item under this document? This rewrites their data and cannot be undone.",
-        "Started": "Mass apply started.",
-        "Progress": "Applying {done}/{total} — {name}",
-        "Done": "Mass apply complete.",
-        "PackLocked": "{pack} is locked. Copy it into another compendium and apply automations there.",
-        "Destination": "Destination",
-        "NewCompendium": "New Compendium",
-        "Replace": "Replace",
-        "Modes": {
-          "Matching": "Documents with the same name",
-          "All": "Everything in the compendium"
+        "Region": {
+            "AttackerCantSeeTarget": "Attacker Can't See Target",
+            "TargetCantSeeAttacker": "Target Can't See Attacker"
         },
-        "PackLockedTitle": "Compendium locked",
-        "PackTitle": "Apply to a package compendium?",
-        "PackWarning": "{pack} belongs to {package}, not to this world. Updating {package} will overwrite anything applied here.",
-        "CycleWarning": "Circular dependency detected among items. Some updates may occur out of sequence!",
-        "NoUpdates": "There are no items in need of updates!",
-        "ChooseSource": "Choose Source",
-        "Tabs": {
-          "Characters": "Characters",
-          "NPCs": "NPCs",
-          "Other": "Other"
-        }
-      },
-      "Identifier": {
-        "Label": "Document Identifier",
-        "Hint": "Item & Activity identifiers must be modified on the respective document sheet.",
-        "OverrideHint": "Overrides the identifier used to match this document to an automation. Defaults to the slugified name."
-      },
-      "Source": {
-        "Label": "Automation Source",
-        "Hint": "Pick which module provides the automation for this document.",
-        "HintNone": "No automation sources have registered an automation for this document."
-      },
-      "SourceType": {
-        "Label": "Granted By",
-        "Hint": "A key that represents the class, feat, race, etc. that granted this document, e.g. 'class:cleric'."
-      },
-      "Version": {
-        "Label": "Automation Version",
-        "Hint": "Reported by the selected automation source."
-      },
-      "Notes": {
-        "Label": "Automation Notes"
-      },
-      "IgnoreItem": {
-        "Label": "Ignore Item",
-        "Hint": "Skip this item during mass apply / update operations."
-      },
-      "Sections": {
-        "Rules": "Rules",
-        "Automation": "Automation",
-        "Embedded": "Embedded Macros"
-      },
-      "Embedded": {
-        "Count": "{count} embedded macro(s) on this document.",
-        "Empty": "No embedded macros on this document.",
-        "Add": "Add macro",
-        "Edit": "Edit macro"
-      },
-      "EmbeddedMacros": {
-        "Title": "Embedded Macros: {name}",
-        "Invalid": "Macro \"{name}\" needs a name, event, and pass before saving.",
-        "Duplicate": "A macro named \"{name}\" already exists on this document.",
-        "Fields": {
-          "Name": "Name",
-          "Event": "Event",
-          "Pass": "Pass",
-          "Priority": "Priority",
-          "Macro": "Macro",
-          "Distance": "Distance",
-          "ConfigDistance": "Distance Config Key",
-          "Dispositions": "Dispositions",
-          "ConfigDispositions": "Dispositions Config Key",
-          "Disabled": "Skip If Target Is",
-          "ConfigDisabled": "Skip If Target Is Config Key"
+        "Dialog": {
+            "Request": {
+                "Approved": "Approved",
+                "Automatic": "Automatic Approval",
+                "Declined": "Declined",
+                "Pending": "Pending",
+                "Request": "Request",
+                "Self": "Self Request"
+            },
+            "Combobox": {
+                "Filter": "Type to filter...",
+                "NoMatches": "No matches"
+            },
+            "HitDieLabel": "{className}: {remaining}/{max} {denomination}",
+            "SkipDeadAndUnconscious": "Skip Dead and Unconscious",
+            "Total": "Total",
+            "UnknownTarget": "Unknown Target",
+            "Use": "Use {document}?",
+            "UseExtraCost": "Use {document}? (Costs {quantity} {resource})",
+            "UseRecover": "Use {document} to recover {spent}/{max} {resource}?",
+            "UseRollTotal": "Use {document}? (Roll Total: {rollTotal})",
+            "UseForRollTotal": "Use {document} for {name}? (Roll Total: {rollTotal})"
         },
-        "Disposition": {
-          "All": "All",
-          "Ally": "Ally",
-          "Enemy": "Enemy"
+        "Common": {
+            "AttackType": {
+                "attack": "Attack",
+                "meleeAttack": "Melee Attack",
+                "meleeSpellAttack": "Melee Spell Attack",
+                "meleeWeaponAttack": "Melee Weapon Attack",
+                "rangedAttack": "Ranged Attack",
+                "rangedSpellAttack": "Ranged Spell Attack",
+                "rangedWeaponAttack": "Ranged Weapon Attack",
+                "spellAttack": "Spell Attack",
+                "weaponAttack": "Weapon Attack"
+            },
+            "Cover": "{amount} {cover}"
         },
-        "Disabled": {
-          "Incapacitated": "Incapacitated",
-          "Dead": "Dead",
-          "Unconscious": "Unconscious"
-        }
-      },
-      "DocProps": {
-        "Add": "Add",
-        "Empty": "None defined.",
-        "Hint": "Document properties feed the dnd5e patches ({list}).",
-        "InvalidValue": "A value is required.",
-        "NotDefined": "\"{type}\" is not a registered attribute!",
-        "Title": "{type}: {name}",
-        "Props": {
-          "Ability": {
-            "Field": "Abilities",
-            "Hint": "Extra abilities any matching attack, check, or save activity may use.",
-            "Label": "Alternate Activity Abilities"
-          },
-          "ACAbility": {
-            "Field": "Ability",
-            "Hint": "Replace dexterity in default AC calculations, e.g. Half Plate: 15 + int (max 2)",
-            "Label": "Alternate AC Ability"
-          },
-          "ACFormula": {
-            "Field": "Formula",
-            "Hint": "Formula offered as an alternative. The highest value is used for base AC.",
-            "Label": "Alternate AC Formula"
-          },
-          "DamageFormula": {
-            "Field": "Formula",
-            "Hint": "Roll formula offered as an alternative; the highest-rolling option is used.",
-            "Label": "Alternate Damage Formulas"
-          },
-          "Range": {
-            "Field": "Spell Range",
-            "Hint": "A formula added to the range of any matching spells. This can stack.",
-            "Label": "Spell Range Bonus"
-          },
-          "RollModifier": {
-            "Field": "Modifiers",
-            "Hint": "Comma-separated dice modifiers (e.g. x, min1, kh1).",
-            "Invalid": "At least one modifier is required.",
-            "Label": "Damage Roll Modifiers"
-          }
+        "Skill": {
+            "Title": "Skill Check"
         },
-        "otherAbilities": {
-          "Field": "Abilities",
-          "Hint": "Extra abilities this attack may use.",
-          "Label": "Other Abilities"
+        "Check": {
+            "Title": "Ability Check"
         },
-        "Restrictions": {
-          "Legend": "Restrictions",
-          "Hint": "Leave a restriction empty to skip it. Comma-separate free-form values.",
-          "Invert": "Invert",
-          "RequireAll": "Require All",
-          "ExcludeAll": "Exclude If Matches All",
-          "Ability": {
-            "Label": "Abilities",
-            "Hint": "Match spells that use any selected ability.",
-            "InvertedHint": "Exclude spells that use selected abilities."
-          },
-          "Armor": {
-            "Label": "Equipped Armor",
-            "Hint": "Any or all selected must be equipped.",
-            "InvertedHint": "Any or all selected must not be equipped."
-          },
-          "DamagePart": {
-            "Label": "Damage Part",
-            "Hint": "Target selected damage parts on matched items. \"Base\" is default if this is empty.",
-            "Base": "Base",
-            "First": "First Part",
-            "Second": "Second Part",
-            "Third": "Third Part"
-          },
-          "DamageType": {
-            "Label": "Damage Type",
-            "Hint": "Match any selected damage type.",
-            "InvertedHint": "Exclude selected damage types."
-          },
-          "HasActivity": {
-            "Label": "Has Activity",
-            "Hint": "Match any selected activity type.",
-            "InvertedHint": "Exclude selected activity types."
-          },
-          "Identifier": {
-            "Label": "Target Identifiers",
-            "Hint": "A comma separated list. Match one or more particular items by identifier: item|activity|partIndex."
-          },
-          "Level": {
-            "Label": "Spell Level",
-            "Hint": "Match any selected spell level.",
-            "InvertedHint": "Exclude selected spell levels."
-          },
-          "Method": {
-            "Label": "Spell Method",
-            "Hint": "Match any selected spellcasting method.",
-            "InvertedHint": "Exclude selected spellcasting methods."
-          },
-          "MinimumBaseRange": {
-            "Label": "Minimum Base Range",
-            "Hint": "The unmodified range must be equal to or greater than this value."
-          },
-          "Property": {
-            "Label": "Properties",
-            "Hint": "Match any or all selected item properties.",
-            "InvertedHint": "Exclude any or all selected item properties."
-          },
-          "RangeUnits": {
-            "Label": "Range Units",
-            "Hint": "Match any selected units.",
-            "InvertedHint": "Exclude selected units."
-          },
-          "School": {
-            "Label": "Spell School",
-            "Hint": "Match any selected spell school.",
-            "InvertedHint": "Exclude selected spell schools"
-          },
-          "SourceType": {
-            "Label": "Source Type",
-            "Hint": "A comma separated list of source keys, such as 'class:cleric' or 'race:human'. Match items granted by those sources."
-          },
-          "Type": {
-            "Label": "Item Type",
-            "Hint": "Match any selected item type.",
-            "InvertedHint": "Exclude selected item types."
-          },
-          "Weapon": {
-            "Label": "Equipped Weapons",
-            "Hint": "Any or all selected must be equipped.",
-            "InvertedHint": "Any or all selected must not be equipped."
-          },
-          "WeaponType": {
-            "Label": "Weapon Type",
-            "Hint": "Match any selected weapon type.",
-            "InvertedHint": "Exclude selected weapon types."
-          }
-        }
-      },
-      "Hero": {
-        "Unavailable": {
-          "Heading": "No automation registered",
-          "Copy": "No source provides automation for this item."
+        "Save": {
+            "Title": "Saving Throw"
         },
-        "Available": {
-          "Heading": "Automation available!",
-          "CTA": "Apply selected source"
+        "Tool": {
+            "Title": "Tool Check"
         },
-        "Outdated": {
-          "Heading": "Update available",
-          "Copy": "{source} has a newer automation.",
-          "CTA": "Update now"
+        "Manual": {
+            "MethodLabel": "Coven's Automation Toolkit",
+            "Title": "Roll!",
+            "Part": {
+                "Mod": "Mod",
+                "Prof": "Prof",
+                "Magic": "Magic",
+                "Bonus": "Bonus",
+                "Situational": "Situational"
+            },
+            "Context": {
+                "weapon": {
+                    "attack": "{source} attacks {target} with {item}",
+                    "attackNoTarget": "{source} attacks with {item}",
+                    "damage": "{source} hits {target} with {item}, roll damage!",
+                    "damageNoTarget": "{source} hits with {item}, roll damage!"
+                },
+                "spell": {
+                    "attack": "{source} casts {item} at {target}, roll to hit!",
+                    "attackNoTarget": "{source} casts {item}, roll to hit!",
+                    "damage": "{source} casts {item} on {target}, roll damage!",
+                    "damageNoTarget": "{source} casts {item}, roll damage!"
+                },
+                "feat": {
+                    "attack": "{source} uses {item} on {target}, roll to hit!",
+                    "attackNoTarget": "{source} uses {item}, roll to hit!",
+                    "damage": "{source} uses {item} on {target}, roll damage!",
+                    "damageNoTarget": "{source} uses {item}, roll damage!"
+                }
+            },
+            "SaveContext": "{source} targets you with a {type}, roll to save!",
+            "SaveLine": "DC {dc} {ability} Saving Throw",
+            "SaveLineNoDC": "{ability} Saving Throw",
+            "UnknownSource": "Someone",
+            "WithAdvantage": "With Advantage",
+            "WithDisadvantage": "With Disadvantage",
+            "ItemType": {
+                "spell": "spell",
+                "weapon": "weapon",
+                "feat": "feature",
+                "consumable": "item"
+            },
+            "Unknown": "an unseen target",
+            "DiceTotal": "Dice Total",
+            "RollTotal": "Roll Total",
+            "RerollDepth": "Maximum reroll/explode depth reached — resolve modified rolls manually before entering a total.",
+            "Submit": "Submit Rolls",
+            "Outcome": {
+                "Fumble": "Fumble",
+                "Miss": "Miss",
+                "Hit": "Hit",
+                "Critical": "Critical",
+                "Failure": "Failure",
+                "Success": "Success"
+            }
         },
-        "UpToDate": {
-          "Heading": "Up to date",
-          "Copy": "Running latest from {source}."
+        "Senses": {
+            "DevilsSight": "Devil's Sight"
         },
-        "Configurable": {
-          "CTA": "Configure >"
+        "Settings": {
+            "FixDescriptionEnrichers": {
+                "Name": "Fix Description Enrichers",
+                "Hint": "Fill in bare [[/damage]] and [[/save]] enrichers when an automation is applied."
+            },
+            "Automation": {
+                "Name": "Automation Sources",
+                "Label": "Configure Automation Sources",
+                "Hint": "Enable automation sources, set their priority, and pick extra compendiums to use."
+            },
+            "ManualRolls": {
+                "Name": "Manual Rolls",
+                "Label": "Configure Manual Rolls",
+                "Hint": "Settings for CAT's roll resolver designed for manually rolling dice."
+            },
+            "ManualRollsEnabled": {
+                "Name": "Manual Rolls",
+                "Hint": "Enable the Roll Resolver for unfulfilled rolls."
+            },
+            "ManualRollsUsers": {
+                "Name": "Manual Rolls Enabled For",
+                "Hint": "Configure which users use Manual Rolls."
+            },
+            "ManualRollsInclusion": {
+                "0": "None - No Manual Rolls",
+                "1": "All - Prompt for Any Actor",
+                "2": "All Characters Only",
+                "3": "All Linked Only",
+                "4": "Player Owned Linked Only",
+                "5": "All Player Owned and Controlled",
+                "Name": "Manual Rolls Inclusion",
+                "Hint": "What actor's rolls should be prompted for."
+            },
+            "ManualRollsPromptOnMiss": {
+                "Name": "Prompt on Miss",
+                "Hint": "Prompt for damage rolls even for missed attacks."
+            },
+            "ManualRollsPromptNoData": {
+                "Name": "Prompt on No Data",
+                "Hint": "Prompt for rolls with no data, likely used in macros."
+            },
+            "ManualRollsEntryMode": {
+                "Name": "Manual Rolls Input",
+                "Hint": "How dice results are entered when fulfilling rolls manually.",
+                "rollTotal": "Roll Total - Includes Modifiers",
+                "diceTotal": "Dice Total - Excludes Modifiers",
+                "perDie": "Per Die - Each Result"
+            },
+            "ManualRollsGMFulfill": {
+                "Name": "Gamemaster Fulfils Rolls",
+                "Hint": "When enabled the Gamemaster fulfils all rolls."
+            },
+            "ManualRollsRichContext": {
+                "Name": "Manual Rolls Rich Context",
+                "Hint": "Show full roll context (targets, save DCs, damage phrasing) in the prompt instead of a plain heading."
+            },
+            "AutomationSources": {
+                "Name": "Automation Sources",
+                "Hint": "Sources and compendiums used for automation. Lowest value is priority.",
+                "Priority": "Priority",
+                "Enabled": "Enabled",
+                "Disabled": "Inactive",
+                "Disable": "Disable",
+                "Enable": "Enable",
+                "SourceTag": "Source",
+                "PackTag": "Pack"
+            },
+            "Backups": {
+                "Name": "Backups",
+                "Label": "Configure Backups",
+                "Hint": "Settings for automatically creating actor backups."
+            },
+            "Compendiums": {
+                "Name": "Compendiums",
+                "Label": "Configure Compendiums",
+                "Hint": "Configure compendiums from which automations will retrieve documents."
+            },
+            "MonsterCompendiums": {
+                "Name": "Monsters",
+                "Hint": "Compendiums search for monster automations. Lowest value is priority."
+            },
+            "ItemCompendiums": {
+                "Name": "Items",
+                "Hint": "Compendiums search for item automations. Lowest value is priority."
+            },
+            "SpellCompendiums": {
+                "Name": "Spells",
+                "Hint": "Compendiums search for spell automations. Lowest value is priority."
+            },
+            "MacroCompendiums": {
+                "Name": "Macros",
+                "Hint": "Overwrites registered macros with the macros from the selected compendiums. Lowest value is priority."
+            },
+            "Devtools": {
+                "Name": "Development Tools",
+                "Label": "Configure Development Tools",
+                "Hint": "Settings for developers."
+            },
+            "DisplayDebugLogs": {
+                "Name": "Display Debug Logs",
+                "Hint": "When enabled, the console will show debug logs."
+            },
+            "DisplayDebugEventData": {
+                "Name": "Display Event Data",
+                "Hint": "When enabled, the console will show sample event data for every event."
+            },
+            "Help": {
+                "Name": "Troubleshooter",
+                "Label": "Open Troubleshooter",
+                "Hint": "Help with required module settings and troubleshooting CAT automations."
+            },
+            "HideNames": {
+                "Name": "Hide Token Names",
+                "Hint": "When enabled, various dialogs will not show enemy token names."
+            },
+            "DiceSoNice": {
+                "Name": "Dice So Nice",
+                "Hint": "When enabled, Dice So Nice damage roll animations will be delayed until after all damage roll macros are complete."
+            },
+            "General": {
+                "Name": "General",
+                "Label": "Configure Settings",
+                "Hint": "General module and API settings."
+            },
+            "Integration": {
+                "Name": "Integration",
+                "Label": "Configure Integrations",
+                "Hint": "Settings for various module integrations."
+            },
+            "Interface": {
+                "Name": "Interface",
+                "Label": "Configure Interface",
+                "Hint": "Settings for the user interface."
+            },
+            "EffectDescriptions": {
+                "Name": "Automatic Effect Descriptions",
+                "Hint": "When enabled, effects without descriptions will automatically be filled in from the origin item."
+            },
+            "AutoRecharge": {
+                "Name": "Recharge Player Abilities",
+                "Hint": "Roll to recharge abilities automatically at the start of a non-NPC's turn."
+            },
+            "PlacedRegionVisibility": {
+                "Name": "Placed Area Visibility",
+                "Hint": "Where areas placed by activities are drawn once placed. Their effects apply either way.",
+                "layer": "Regions Layer Only",
+                "always": "Always"
+            },
+            "EffectDescriptionsNPC": {
+                "Name": "Hide NPC Effect Descriptions",
+                "Hint": "When enabled, the Automatic Effect Description setting will not apply for NPC created effects."
+            },
+            "Mechanics": {
+                "Name": "Mechanics",
+                "Label": "Configure Mechanics",
+                "Hint": "Settings for game mechanics automations."
+            },
+            "Permissions": {
+                "Name": "Permissions",
+                "Label": "Configure Permissions",
+                "Hint": "Settings for user permissions for CAT automation and configuration menus."
+            },
+            "PermissionsAutomation": {
+                "Name": "Automation Tab",
+                "Hint": "Minimum user role allowed to modify the Automation tab."
+            },
+            "PermissionsConfiguration": {
+                "Name": "Configuration Tab",
+                "Hint": "Minimum user role allowed to modify the Configuration tab."
+            },
+            "PermissionsGeneric": {
+                "Name": "Generic Tab",
+                "Hint": "Minimum user role allowed to modify the Generic tab."
+            },
+            "PermissionsEmbedded": {
+                "Name": "Embedded Macros Tab",
+                "Hint": "Minimum user role allowed to modify the Embedded Macros tab."
+            },
+            "PermissionsDocProps": {
+                "Name": "Document Properties Tab",
+                "Hint": "Minimum user role allowed to modify the Document Properties tab."
+            },
+            "PermissionsMacros": {
+                "Name": "Registered Macros Tab",
+                "Hint": "Minimum user role allowed to modify the Registered Macros tab."
+            },
+            "PermissionsPlacedRegion": {
+                "Name": "Placed Region Tab",
+                "Hint": "Minimum user role allowed to modify the Placed Region tab."
+            },
+            "Summons": {
+                "Name": "Summons",
+                "Label": "Configure Summons",
+                "Hint": "Settings for summons use and management."
+            }
+        },
+        "DAE": {
+            "CV": {
+                "Category": "CAT Condition Vulnerability",
+                "Name": "{condition} Condition Vulnerability",
+                "Description": "Condition Vulnerability to {condition}, roll at disadvantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
+            "CR": {
+                "Category": "CAT Condition Resistance",
+                "Name": "{condition} Condition Resistance",
+                "Description": "Condition Resistance to {condition}, roll at advantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
+            "FeatureRollModes": "CAT Feature Roll Modes",
+            "FF": {
+                "Name": "Feature Failure",
+                "Description": "Feature Failure on an activity by identifier, auto-fail saves. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
+            "FI": {
+                "Name": "Feature Immunity",
+                "Description": "Feature Immunity to an activity by identifier, auto-succeed saves. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
+            "FV": {
+                "Name": "Feature Vulnerability",
+                "Description": "Feature Vulnerability to an activity by identifier, roll at disadvantage to save. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
+            "FR": {
+                "Name": "Feature Resistance",
+                "Description": "Feature Resistance to an activity by identifier, roll at advantage to save. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
+            "IgnoreDifficultTerrainTokens": {
+                "Name": "Ignore Difficult Terrain: Other Tokens",
+                "Description": "This actor does not consider other tokens as difficult terrain."
+            },
+            "Other": "CAT Other"
         },
         "Generic": {
-          "CTA": "Manage features >"
-        }
-      },
-      "Notif": {
-        "Updated": "Updated {identifier} from v{before} to v{after}.",
-        "Applied": "Applied {source} v{version}."
-      },
-      "Footer": {
-        "Cancel": "Cancel",
-        "Close": "Close",
-        "CancelTooltip": "Discard pending changes and close.",
-        "Save": "Save",
-        "SaveTooltip": "Commit pending changes.",
-        "SaveClose": "Save & Close",
-        "SaveCloseTooltip": "Commit pending changes and close.",
-        "DiscardTitle": "Discard changes?",
-        "DiscardPrompt": "You have unsaved changes. Discard them and close?"
-      },
-      "Dirty": {
-        "Label": "Unsaved",
-        "Tooltip": "You have unsaved changes."
-      },
-      "RulesToggle": {
-        "2014": "2014",
-        "2024": "2024",
-        "Current": "Current Rules",
-        "Hint": "Switch between 2014 (Legacy) and 2024 (Modern) rule sets.",
-        "OtherRulesAvailable": "Automation available under {otherRulesLabel} rules.",
-        "NotApplicable": "Rules selection not applicable for this document."
-      },
-      "STATUSES": {
-        "HasUnregistered": "Unregistered Automation",
-        "Available": "Automation Available",
-        "Outdated": "Automation Outdated",
-        "UpToDate": "Automation Up-To-Date",
-        "Configurable": "Automation Configurable",
-        "Generic": "Generic Feature Applied",
-        "Unavailable": "No Automations Found"
-      },
-      "Indicator": {
-        "configuration": {
-          "One": "{count} configurable option",
-          "Other": "{count} configurable options"
+            "Disabled": "Disabled",
+            "Chat": "Chat",
+            "Ok": "Ok",
+            "Cancel": "Cancel",
+            "Name": "Name",
+            "Resize": "Resize"
         },
-        "generic": {
-          "One": "{count} generic automation",
-          "Other": "{count} generic automations"
+        "QuickConditions": {
+            "Legend": "Available Conditions",
+            "Placeholder": "Click below to add conditions",
+            "Title": "CAT Quick Conditions",
+            "Unknown": {
+                "Tooltip": "Unable to match to any condition search keys"
+            },
+            "Logic": {
+                "And": "And",
+                "Or": "Or"
+            },
+            "Comparators": {
+                "lt": "less than",
+                "le": "at most",
+                "gt": "greater than",
+                "ge": "at least"
+            },
+            "Not": {
+                "Is": "is",
+                "IsNot": "isn't"
+            },
+            "Conditions": {
+                "typeOrRace": "Type or Race",
+                "checkNearby": "Check Nearby",
+                "reaction": "Reaction",
+                "targetActorSize": "Target Size",
+                "activityType": "Activity Type",
+                "damageType": "Damage Type",
+                "critical": "Critical Hit",
+                "alignment": "Alignment",
+                "ability": "Ability Score",
+                "hasCondition": "Has Condition",
+                "itemType": "Item Type"
+            }
         },
-        "inherited": {
-          "One": "{count} nested generic automation",
-          "Other": "{count} nested generic automations"
+        "Summons": {
+            "SummonFolder": "Summons"
         },
-        "embedded": {
-          "One": "{count} embedded macro",
-          "Other": "{count} embedded macros"
+        "Teleport": {
+            "Title": "Teleport",
+            "WhichLevel": "Which level?",
+            "Current": "{name} (Current)"
         },
-        "macros": {
-          "One": "{count} registered macro",
-          "Other": "{count} registered macros"
+        "Crosshairs": {
+            "Invalid": "That space cannot be chosen."
         },
-        "docprops": {
-          "One": "{count} document property",
-          "Other": "{count} document properties"
+        "Movement": {
+            "Forced": "Forced Movement"
         },
-        "region": {
-          "One": "{count} region activity",
-          "Other": "{count} region activities"
-        }
-      },
-      "Tree": {
-        "Legend": "Related Automations",
         "Config": {
-          "config": "Configured",
-          "genericConfig": "Generic",
-          "macros": "Macros",
-          "embeddedMacros": "Embedded",
-          "alternateAttributes": "Doc Props",
-          "placed": "Region",
-          "animation": "Animation"
+            "AvatarImg": "Portrait Image",
+            "ImgPriority": "Image Priority",
+            "TokenImg": "Token Image",
+            "None": "None",
+            "Dispositions": "Dispositions",
+            "CreatureTypes": "Creature Types",
+            "Effect": "Effect"
         },
-        "Kind": {
-          "Item": "Item",
-          "Activity": "Activity",
-          "ActiveEffect": "Effect",
-          "Region": "Region",
-          "Token": "Token"
+        "Error": {
+            "MissingCostActivity": "This feature is missing its cost activity!",
+            "NoAnimations": "An animation on this automation requires a missing asset module with id: {module}.",
+            "NoMonsterCompendiums": "You do not have any monster compendiums enabled in settings!",
+            "NoSequencer": "Sequencer is disabled or not installed! Sequencer is required to use animations.",
+            "NoSpellCompendiums": "You do not have any spell compendiums enabled in settings!",
+            "OutdatedSequencer": "Sequencer is out of date! In order to use animations, CAT requires a minimum of version {minSequencerVersion}"
+        },
+        "Troubleshooter": {
+            "Title": "CAT Troubleshooter",
+            "Open": "Open Troubleshooter",
+            "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version.",
+            "World": "World",
+            "Empty": "Nothing to report.",
+            "Copied": "Troubleshooter report copied to the clipboard.",
+            "Discord": "Copy the report and open the Discord",
+            "Sections": {
+                "required": "Required Settings",
+                "info": "Info",
+                "modules": "Modules",
+                "foundry": "Foundry",
+                "permissions": "Permissions",
+                "importer": "Importer",
+                "settings": "Settings",
+                "logs": "Logs",
+                "options": "Options"
+            },
+            "Tags": {
+                "Required": "Required",
+                "Optional": "Optional",
+                "AutomationSource": "Automation Source",
+                "AnimationsLibrary": "Animations",
+                "Defunct": "Defunct",
+                "Incompatible": "Incompatible"
+            },
+            "Groups": {
+                "Core": "Core",
+                "CatRelated": "CAT Related",
+                "Active": "Active Modules",
+                "Inactive": "Inactive Modules",
+                "Conflicts": "Conflicts",
+                "Automations": "Automations",
+                "Scene": "Scene",
+                "Game": "Game",
+                "Errors": "Errors"
+            },
+            "Status": {
+                "pass": "Pass",
+                "warn": "Warning",
+                "fail": "Fail",
+                "info": "Info"
+            },
+            "Footer": {
+                "FixAll": "Fix All",
+                "Save": "Save Troubleshooter"
+            },
+            "Save": {
+                "Title": "Save Troubleshooter",
+                "Drop": "Optionally drop an actor or item you're having issues with here.",
+                "Saved": "Troubleshooter report saved."
+            },
+            "HideWarnings": {
+                "Name": "Hide Troubleshooter Warnings",
+                "Hint": "Stop whispering the troubleshooter's startup warning cards to GMs."
+            },
+            "StripDialog": {
+                "Name": "Ask Before Stripping Exports",
+                "Hint": "Ask to strip descriptions prompt when exporting document data."
+            },
+            "Fix": {
+                "Title": "Apply Fixes",
+                "Content": "The following will be changed, then Foundry will ask to reload:",
+                "Label": "Fix",
+                "Disable": "Disable Module"
+            },
+            "Required": {
+                "Expected": "{value} → {fix}",
+                "ClientScope": "(client setting)",
+                "GmAutoDamage": "GM Auto Roll Damage"
+            },
+            "Card": {
+                "settings": "Some settings CAT relies on are not set as expected:",
+                "modules": "Some active modules are defunct or conflict with CAT:",
+                "fix": "Fix",
+                "open": "Troubleshooter"
+            },
+            "Export": {
+                "Title": "Export Data",
+                "Strip": "Strip descriptions",
+                "Settings": "Export Settings",
+                "Exported": "CAT settings exported.",
+                "Imported": "Imported {count} CAT settings.",
+                "ImportSettings": "Import Settings",
+                "ImportTitle": "Import CAT Settings",
+                "ImportContent": "Overwrite your CAT settings with the imported file?"
+            },
+            "Report": {
+                "Inactive": "Inactive",
+                "NotInstalled": "Not installed",
+                "Defunct": "Defunct module",
+                "Incompatible": "Incompatible module",
+                "ASEFork": "Chris's Fork",
+                "BossLoot": "Boss Loot FX animates this item alongside its CAT automation",
+                "Language": "Language",
+                "GridType": "Grid Type",
+                "GridUnits": "Grid Units",
+                "GridDistance": "Grid Distance",
+                "ActorlessTokens": "Tokens without an actor",
+                "LinkedMultiple": "Linked actor with multiple tokens",
+                "Invalid": "Invalid {type}",
+                "Token": "Controlled Token",
+                "Actor": "Actor",
+                "Importer": {
+                    "Label": "Detected Importer",
+                    "None": "None",
+                    "Molten": "Scruvy"
+                },
+                "Permissions": {
+                    "Users": "Allowed: {allowed}; Denied: {denied}"
+                }
+            }
+        },
+        "Summon": {
+            "DeadTitle": "CAT Summons",
+            "DeadContext": "Summon creature {name} reached 0 hp, delete actor and token?"
+        },
+        "OptionalBonus": {
+            "Applied": "Already Applied",
+            "Content": "Choose and configure bonuses for this roll.",
+            "Contextual": "Contextual Bonuses",
+            "DamageType": "Damage Type",
+            "DamageTypeChoice": "Choose Type",
+            "Failure": "Failure",
+            "Hit": "Hit",
+            "Invalid": "Bonus disabled: {reason}",
+            "InvalidResources": "not enough resources!",
+            "Miss": "Miss",
+            "NoDC": "No DC",
+            "NoRequest": "bonus has no request handler!",
+            "Optional": "Optional Bonuses",
+            "Phase": {
+                "All": "Any Phase",
+                "PostResult": "After the Result",
+                "PreResult": "Before the Result",
+                "PreRoll": "Before the Roll"
+            },
+            "Scaleable": "Scalable",
+            "Scaling": "Scaling",
+            "Success": "Success",
+            "Targeted": "Targeted",
+            "Targets": "Targets",
+            "ThirdParty": "Third Party Bonuses",
+            "Title": "Optional Bonus",
+            "Unknown": "?"
+        },
+        "CompendiumBrowser": {
+            "SpellPicker": "Choose spells from the {lists} list:",
+            "Title": "CAT Compendium Browser"
+        },
+        "GrappleShove": {
+            "Grapple": "Grapple",
+            "GrappledBy": "Grappled By {name}",
+            "GrappleEscape": "Escape Grapple",
+            "Grappling": "Grappling {name}",
+            "GrappleImmune": "Target cannot be grappled!",
+            "GrappleSize": "Target is too big to be grappled!",
+            "ShoveSize": "Target is too big to be shoved!",
+            "ShoveProneImmune": "Target cannot be shoved prone!",
+            "Surrendered": "Attacker Surrendered"
+        },
+        "Macros": {
+            "Aura": {
+                "CreatureTypesHint": "Only tokens of these creature types are affected. The source itself is unaffected by this check.",
+                "DispositionsHint": "Which tokens the aura reaches.",
+                "EffectHint": "Effect on this item copied onto every token inside the aura. Write @auraValue in a change value to insert the aura value.",
+                "EnemyEffect": "Enemy Effect",
+                "EnemyEffectHint": "When set, Effect applies to allies and this effect applies to enemies, ignoring Dispositions. All other settings are shared.",
+                "EnterActivity": "Enter Activity",
+                "EnterActivityHint": "Activity rolled on a token when it enters the aura.",
+                "ExitActivity": "Exit Activity",
+                "ExitActivityHint": "Activity rolled on a token when it leaves the aura.",
+                "Filter": "Filter",
+                "FilterHint": "Aura filter macro run for every token in range. The aura applies only when it returns true. Embedded filters use the aura event and the filter pass.",
+                "IncludeSelf": "Include Self",
+                "IncludeSelfHint": "The source token is inside its own aura.",
+                "OncePerTurn": "Once Per Turn",
+                "OncePerTurnHint": "Each activity rolls at most once per token per turn.",
+                "Radius": "Radius",
+                "RadiusHint": "Radius in scene distance units. Accepts a formula using the source's roll data.",
+                "SourceDisable": "Source Disabled By",
+                "SourceDisableHint": "The aura is suppressed while the source has any of these statuses.",
+                "SourceStatuses": "Requires Status From Source",
+                "SourceStatusesHint": "Only tokens with one of these statuses applied by the aura source are affected.",
+                "StackHighest": "Highest Value Wins",
+                "StackHighestHint": "When several sources project this aura, the one with the highest value applies. Otherwise the nearest source applies.",
+                "TargetDisable": "Target Disabled By",
+                "TargetDisableHint": "A token with any of these statuses is not affected.",
+                "TurnEndActivity": "Turn End Activity",
+                "TurnEndActivityHint": "Activity rolled on a token that ends its turn inside the aura.",
+                "TurnStartActivity": "Turn Start Activity",
+                "TurnStartActivityHint": "Activity rolled on a token that starts its turn inside the aura.",
+                "Value": "Value Formula",
+                "ValueHint": "Formula evaluated against the source's roll data and inserted as @auraValue.",
+                "Walls": "Blocked by Walls",
+                "WallsHint": "Walls between the source and a token block the aura."
+            }
         }
-      },
-      "Configuration": {
-        "None": "No configurable options for this automation."
-      },
-      "ClassBonus": {
-        "Label": "Class Spellcasting Bonuses",
-        "Hint": "Flat spell save DC and attack bonuses granted per class while this item is equipped (e.g. Bloodwell Vial).",
-        "Empty": "No class bonuses defined.",
-        "Class": "Class",
-        "DC": "Save DC",
-        "Attack": "Attack",
-        "Add": "Add class bonus",
-        "AddPlaceholder": "Class identifier",
-        "Duplicate": "A bonus for class \"{identifier}\" already exists."
-      },
-      "FeatureRollMode": {
-        "Add": "Add activity identifier",
-        "AddPlaceholder": "Activity identifier",
-        "Duplicate": "An entry for identifier \"{identifier}\" already exists."
-      },
-      "Categories": {
-        "behavior": {
-          "Label": "Behavior",
-          "Tooltip": "How the automation triggers and what it applies."
-        },
-        "tuning": {
-          "Label": "Tuning",
-          "Tooltip": "Numeric and selection tuning for the automation."
-        },
-        "visuals": {
-          "Label": "Visuals",
-          "Tooltip": "Icons, images, and other visual hooks."
-        },
-        "linked": {
-          "Label": "Linked Items",
-          "Tooltip": "Documents this automation references."
-        },
-        "general": {
-          "Label": "General",
-          "Tooltip": "General settings."
-        },
-        "homebrew": {
-          "Label": "Homebrew",
-          "Tooltip": "Optional homebrew adjustments to the automation."
-        },
-        "mechanics": {
-          "Label": "Mechanics",
-          "Tooltip": "How the automation behaves mechanically."
-        },
-        "utility": {
-          "Label": "Utility",
-          "Tooltip": "General-purpose utility automation."
-        },
-        "targeting": {
-          "Label": "Targeting",
-          "Tooltip": "How the automation selects targets."
-        },
-        "damage": {
-          "Label": "Damage",
-          "Tooltip": "Damage adjustments applied by the automation."
-        },
-        "movement": {
-          "Label": "Movement",
-          "Tooltip": "Movement effects applied by the automation."
-        },
-        "summons": {
-          "Label": "Summons",
-          "Tooltip": "Summoned creatures and their configuration."
-        },
-        "animations": {
-          "Label": "Animations",
-          "Tooltip": "Visual animations played by the automation."
-        }
-      },
-      "Documents": {
-        "Placeholder": "Paste UUID or drag a document here",
-        "Add": "Add document",
-        "InvalidUuid": "No document found for that UUID.",
-        "WrongType": "Expected a {type} document."
-      },
-      "Summons": {
-        "Actor": "Summon Actor",
-        "Name": "Name Override",
-        "AvatarImg": "Actor Image Override",
-        "TokenImg": "Token Image Override",
-        "Animation": "Animation",
-        "Initiative": "Initiative",
-        "InitiativeStandard": "Roll Initiative",
-        "InitiativeFollows": "Follows Summoner",
-        "InitiativeNone": "None",
-        "SoundPlaced": "Placed Sound",
-        "SoundRemoved": "Removed Sound",
-        "SoundDeath": "Death Sound",
-        "CompendiumPick": "Select actor from compendium",
-        "Add": "Add summon",
-        "Item": "Item",
-        "MatchDC": "Match Save DC",
-        "MatchAttack": "Match Attack Bonus",
-        "Equip": "Equip",
-        "Attune": "Attune",
-        "Method": "Spell Method",
-        "Prepared": "Preparation",
-        "UsesMax": "Max Uses",
-        "UsesRecovery": "Uses Recovery",
-        "RechargeValue": "Recharge Value",
-        "Description": "Description Override",
-        "ItemCompendiumPick": "Select item from compendium",
-        "AddItem": "Add item"
-      },
-      "PackFolder": {
-        "Folder": "Folder",
-        "Pack": "Pack"
-      },
-      "Sequencer": {
-        "Browse": "Browse Sequencer Database"
-      },
-      "Animation": {
-        "Categories": {
-          "attack": "Attack",
-          "classFeature": "Class Feature",
-          "default": "Other",
-          "generic": "Generic",
-          "rangedAttack": "Ranged Attack",
-          "spell": "Spell",
-          "weaponAttacks": "Weapon Attack"
-        },
-        "Credits": "Animation by",
-        "Discord": "Discord",
-        "Patreon": "Patreon"
-      },
-      "Region": {
-        "Visibility": "Visibility",
-        "MagicalDarkness": {
-          "Label": "Magical Darkness",
-          "Hint": "Tokens inside this region are blocked from non-magical light sources."
-        },
-        "Obscured": {
-          "Label": "Obscured",
-          "Hint": "Tokens inside this region are heavily obscured."
-        }
-      },
-      "Actor": {
-        "Ability": {
-          "All": "All"
-        },
-        "Automations": "Automations",
-        "ConditionResistance": {
-          "Label": "Condition Resistance",
-          "Hint": "Conditions this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
-        },
-        "ConditionVulnerability": {
-          "Label": "Condition Vulnerability",
-          "Hint": "Conditions this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
-        },
-        "FeatureFailure": {
-          "Label": "Feature Failure",
-          "Hint": "Activity identifiers on which this actor should auto-fail. Click All for any save, or pick specific abilities to scope it."
-        },
-        "FeatureImmunity": {
-          "Label": "Feature Immunity",
-          "Hint": "Activity identifiers on which this actor should auto-succeed. Click All for any save, or pick specific abilities to scope it."
-        },
-        "FeatureResistance": {
-          "Label": "Feature Resistance",
-          "Hint": "Activity identifiers this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
-        },
-        "FeatureVulnerability": {
-          "Label": "Feature Vulnerability",
-          "Hint": "Activity identifiers this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
-        },
-        "IgnoreActor": {
-          "Label": "Ignore Actor",
-          "Hint": "Skip this actor during mass compendium / scene updates."
-        },
-        "Name": {
-          "Label": "Match Name",
-          "Hint": "Match this actor against automations under a different name."
-        }
-      },
-      "Activity": {
-        "SpellIdentifier": {
-          "Label": "Spell Identifier",
-          "Hint": "The spell this cast activity links to. On a CatKit update the link is swapped to the first match in your Spell compendiums."
-        },
-        "Hidden": {
-          "Label": "Hidden Activity",
-          "Hint": "Hide this activity from the activity-use selection dialog."
-        },
-        "PlacedRegion": {
-          "Hint": "Configuration applied to any region this activity creates."
-        },
-        "Effects": {
-          "Label": "Region Effects",
-          "Field": "Apply effects",
-          "Hint": "Effects from this item applied to tokens inside a region this activity creates.",
-          "None": "This item has no effects to apply."
-        },
-        "RegionMacros": {
-          "Label": "Region Registered Macros",
-          "Hint": "Registered macros copied onto a region this activity creates."
-        },
-        "Activities": {
-          "Label": "Region Activities",
-          "Field": "Trigger activities",
-          "Hint": "Activities from this item that fire when tokens interact with a region this activity creates.",
-          "NoneAvailable": "This item has no other activities to trigger.",
-          "Triggers": "Triggers",
-          "Disposition": "Targets",
-          "OncePerTurn": "Once per turn"
-        },
-        "Triggers": {
-          "enter": "Token enters",
-          "left": "Token leaves",
-          "stay": "Token stays",
-          "passedThrough": "Token passes through",
-          "entered": "Region onto token",
-          "exited": "Region off token",
-          "stayed": "Region stays on",
-          "passedOver": "Region passes over",
-          "turnStart": "Turn start",
-          "turnEnd": "Turn end",
-          "everyTurn": "Every turn"
-        },
-        "Disposition": {
-          "all": "All",
-          "ally": "Allies",
-          "enemy": "Enemies"
-        }
-      },
-      "Effect": {
-        "Conditions": {
-          "Label": "Conditions",
-          "Hint": "Conditions applied to the actor while this effect is active."
-        },
-        "DisableCondition": {
-          "Label": "Disable Conditions",
-          "Hint": "Triggers that automatically disable this effect."
-        },
-        "SpecialDuration": {
-          "Label": "Special Durations",
-          "Hint": "Triggers that automatically remove this effect."
-        },
-        "SpecialDurations": {
-          "endOfWorkflow": "End of workflow",
-          "forceSave": "Forced a save",
-          "dealtDamage": "Dealt damage",
-          "turnStart": "Start of this creature's turn",
-          "turnEnd": "End of this creature's turn",
-          "damaged": "Took damage",
-          "damagedByAlly": "Damaged by ally",
-          "damagedByEnemy": "Damaged by enemy",
-          "hitByAnotherCreature": "Hit by another creature",
-          "attackedByAnotherCreature": "Attacked by another creature",
-          "hitBySource": "Hit by effect source",
-          "attackedBySource": "Attacked by effect source",
-          "moveFinished": "Movement finished",
-          "zeroSpeed": "Speed reduced to zero",
-          "tempHP": "Temporary HP lost",
-          "tempMaxHP": "Temporary max HP lost",
-          "Groups": {
-            "Workflow": "Workflow",
-            "Turn": "Turn",
-            "Movement": "Movement",
-            "HitPoints": "Hit Points",
-            "ConditionAdded": "Condition Added",
-            "ConditionRemoved": "Condition Removed",
-            "Equipped": "Armor Equipped",
-            "Unequipped": "Armor Unequipped",
-            "ToolRolled": "Tool Rolled",
-            "ToolFailed": "Tool Check Failed",
-            "ToolSucceeded": "Tool Check Succeeded"
-          }
-        },
-        "Animation": "Animation",
-        "NoAnimation": {
-          "Label": "Disable Animation",
-          "Hint": "Suppress effect apply/remove animations for this effect."
-        },
-        "AnimationCreate": {
-          "Label": "Apply Animation",
-          "Tooltip": "Animation played when this effect is applied."
-        },
-        "AnimationDelete": {
-          "Label": "Remove Animation",
-          "Tooltip": "Animation played when this effect is removed."
-        },
-        "AnimationApply": "Apply",
-        "AnimationRemove": "Remove"
-      },
-      "Generic": {
-        "SelectLabel": "Generic Features",
-        "SelectField": "Apply features",
-        "NoMacros": "No generic features registered.",
-        "NoneSelected": "No generic features selected.",
-        "NoConfig": "No configuration for this feature.",
-        "IdentifierPlaceholder": "Identifier",
-        "AddIdentifier": "Add identifier"
-      },
-      "Macros": {
-        "Picker": {
-          "Label": "Registered Macros",
-          "Field": "Apply registered macros",
-          "Hint": "Select which registered macros run on this document. Each picked macro fires for every event it declares."
-        },
-        "None": "No macros are registered in the global registry."
-      }
-    },
-    "Region": {
-      "AttackerCantSeeTarget": "Attacker Can't See Target",
-      "TargetCantSeeAttacker": "Target Can't See Attacker"
-    },
-    "Dialog": {
-      "Request": {
-        "Approved": "Approved",
-        "Automatic": "Automatic Approval",
-        "Declined": "Declined",
-        "Pending": "Pending",
-        "Request": "Request"
-      },
-      "Combobox": {
-        "Filter": "Type to filter...",
-        "NoMatches": "No matches"
-      },
-      "HitDieLabel": "{className}: {remaining}/{max} {denomination}",
-      "SkipDeadAndUnconscious": "Skip Dead and Unconscious",
-      "Total": "Total",
-      "UnknownTarget": "Unknown Target",
-      "Use": "Use {document}?",
-      "UseExtraCost": "Use {document}? (Costs {quantity} {resource})",
-      "UseRecover": "Use {document} to recover {spent}/{max} {resource}?",
-      "UseRollTotal": "Use {document}? (Roll Total: {rollTotal})",
-      "UseForRollTotal": "Use {document} for {name}? (Roll Total: {rollTotal})"
-    },
-    "Common": {
-      "AttackType": {
-        "attack": "Attack",
-        "meleeAttack": "Melee Attack",
-        "meleeSpellAttack": "Melee Spell Attack",
-        "meleeWeaponAttack": "Melee Weapon Attack",
-        "rangedAttack": "Ranged Attack",
-        "rangedSpellAttack": "Ranged Spell Attack",
-        "rangedWeaponAttack": "Ranged Weapon Attack",
-        "spellAttack": "Spell Attack",
-        "weaponAttack": "Weapon Attack"
-      },
-      "Cover": "{amount} {cover}"
-    },
-    "Skill": {
-      "Title": "Skill Check"
-    },
-    "Check": {
-      "Title": "Ability Check"
-    },
-    "Save": {
-      "Title": "Saving Throw"
-    },
-    "Tool": {
-      "Title": "Tool Check"
-    },
-    "Manual": {
-      "MethodLabel": "Coven's Automation Toolkit",
-      "Title": "Roll!",
-      "Part": {
-        "Mod": "Mod",
-        "Prof": "Prof",
-        "Magic": "Magic",
-        "Bonus": "Bonus",
-        "Situational": "Situational"
-      },
-      "Context": {
-        "weapon": {
-          "attack": "{source} attacks {target} with {item}",
-          "attackNoTarget": "{source} attacks with {item}",
-          "damage": "{source} hits {target} with {item}, roll damage!",
-          "damageNoTarget": "{source} hits with {item}, roll damage!"
-        },
-        "spell": {
-          "attack": "{source} casts {item} at {target}, roll to hit!",
-          "attackNoTarget": "{source} casts {item}, roll to hit!",
-          "damage": "{source} casts {item} on {target}, roll damage!",
-          "damageNoTarget": "{source} casts {item}, roll damage!"
-        },
-        "feat": {
-          "attack": "{source} uses {item} on {target}, roll to hit!",
-          "attackNoTarget": "{source} uses {item}, roll to hit!",
-          "damage": "{source} uses {item} on {target}, roll damage!",
-          "damageNoTarget": "{source} uses {item}, roll damage!"
-        }
-      },
-      "SaveContext": "{source} targets you with a {type}, roll to save!",
-      "SaveLine": "DC {dc} {ability} Saving Throw",
-      "SaveLineNoDC": "{ability} Saving Throw",
-      "UnknownSource": "Someone",
-      "WithAdvantage": "With Advantage",
-      "WithDisadvantage": "With Disadvantage",
-      "ItemType": {
-        "spell": "spell",
-        "weapon": "weapon",
-        "feat": "feature",
-        "consumable": "item"
-      },
-      "Unknown": "an unseen target",
-      "DiceTotal": "Dice Total",
-      "RollTotal": "Roll Total",
-      "RerollDepth": "Maximum reroll/explode depth reached — resolve modified rolls manually before entering a total.",
-      "Submit": "Submit Rolls",
-      "Outcome": {
-        "Fumble": "Fumble",
-        "Miss": "Miss",
-        "Hit": "Hit",
-        "Critical": "Critical",
-        "Failure": "Failure",
-        "Success": "Success"
-      }
-    },
-    "Senses": {
-      "DevilsSight": "Devil's Sight"
-    },
-    "Settings": {
-      "FixDescriptionEnrichers": {
-        "Name": "Fix Description Enrichers",
-        "Hint": "Fill in bare [[/damage]] and [[/save]] enrichers when an automation is applied."
-      },
-      "Automation": {
-        "Name": "Automation Sources",
-        "Label": "Configure Automation Sources",
-        "Hint": "Enable automation sources, set their priority, and pick extra compendiums to use."
-      },
-      "ManualRolls": {
-        "Name": "Manual Rolls",
-        "Label": "Configure Manual Rolls",
-        "Hint": "Settings for CAT's roll resolver designed for manually rolling dice."
-      },
-      "ManualRollsEnabled": {
-        "Name": "Manual Rolls",
-        "Hint": "Enable the Roll Resolver for unfulfilled rolls."
-      },
-      "ManualRollsUsers": {
-        "Name": "Manual Rolls Enabled For",
-        "Hint": "Configure which users use Manual Rolls."
-      },
-      "ManualRollsInclusion": {
-        "0": "None - No Manual Rolls",
-        "1": "All - Prompt for Any Actor",
-        "2": "All Characters Only",
-        "3": "All Linked Only",
-        "4": "Player Owned Linked Only",
-        "5": "All Player Owned and Controlled",
-        "Name": "Manual Rolls Inclusion",
-        "Hint": "What actor's rolls should be prompted for."
-      },
-      "ManualRollsPromptOnMiss": {
-        "Name": "Prompt on Miss",
-        "Hint": "Prompt for damage rolls even for missed attacks."
-      },
-      "ManualRollsPromptNoData": {
-        "Name": "Prompt on No Data",
-        "Hint": "Prompt for rolls with no data, likely used in macros."
-      },
-      "ManualRollsEntryMode": {
-        "Name": "Manual Rolls Input",
-        "Hint": "How dice results are entered when fulfilling rolls manually.",
-        "rollTotal": "Roll Total - Includes Modifiers",
-        "diceTotal": "Dice Total - Excludes Modifiers",
-        "perDie": "Per Die - Each Result"
-      },
-      "ManualRollsGMFulfill": {
-        "Name": "Gamemaster Fulfils Rolls",
-        "Hint": "When enabled the Gamemaster fulfils all rolls."
-      },
-      "ManualRollsRichContext": {
-        "Name": "Manual Rolls Rich Context",
-        "Hint": "Show full roll context (targets, save DCs, damage phrasing) in the prompt instead of a plain heading."
-      },
-      "AutomationSources": {
-        "Name": "Automation Sources",
-        "Hint": "Sources and compendiums used for automation. Lowest value is priority.",
-        "Priority": "Priority",
-        "Enabled": "Enabled",
-        "Disabled": "Inactive",
-        "Disable": "Disable",
-        "Enable": "Enable",
-        "SourceTag": "Source",
-        "PackTag": "Pack"
-      },
-      "Backups": {
-        "Name": "Backups",
-        "Label": "Configure Backups",
-        "Hint": "Settings for automatically creating actor backups."
-      },
-      "Compendiums": {
-        "Name": "Compendiums",
-        "Label": "Configure Compendiums",
-        "Hint": "Configure compendiums from which automations will retrieve documents."
-      },
-      "MonsterCompendiums": {
-        "Name": "Monsters",
-        "Hint": "Compendiums search for monster automations. Lowest value is priority."
-      },
-      "ItemCompendiums": {
-        "Name": "Items",
-        "Hint": "Compendiums search for item automations. Lowest value is priority."
-      },
-      "SpellCompendiums": {
-        "Name": "Spells",
-        "Hint": "Compendiums search for spell automations. Lowest value is priority."
-      },
-      "MacroCompendiums": {
-        "Name": "Macros",
-        "Hint": "Overwrites registered macros with the macros from the selected compendiums. Lowest value is priority."
-      },
-      "Devtools": {
-        "Name": "Development Tools",
-        "Label": "Configure Development Tools",
-        "Hint": "Settings for developers."
-      },
-      "DisplayDebugLogs": {
-        "Name": "Display Debug Logs",
-        "Hint": "When enabled, the console will show debug logs."
-      },
-      "DisplayDebugEventData": {
-        "Name": "Display Event Data",
-        "Hint": "When enabled, the console will show sample event data for every event."
-      },
-      "Help": {
-        "Name": "Troubleshooter",
-        "Label": "Open Troubleshooter",
-        "Hint": "Help with required module settings and troubleshooting CAT automations."
-      },
-      "HideNames": {
-        "Name": "Hide Token Names",
-        "Hint": "When enabled, various dialogs will not show enemy token names."
-      },
-      "DiceSoNice": {
-        "Name": "Dice So Nice",
-        "Hint": "When enabled, Dice So Nice damage roll animations will be delayed until after all damage roll macros are complete."
-      },
-      "General": {
-        "Name": "General",
-        "Label": "Configure Settings",
-        "Hint": "General module and API settings."
-      },
-      "Integration": {
-        "Name": "Integration",
-        "Label": "Configure Integrations",
-        "Hint": "Settings for various module integrations."
-      },
-      "Interface": {
-        "Name": "Interface",
-        "Label": "Configure Interface",
-        "Hint": "Settings for the user interface."
-      },
-      "EffectDescriptions": {
-        "Name": "Automatic Effect Descriptions",
-        "Hint": "When enabled, effects without descriptions will automatically be filled in from the origin item."
-      },
-      "AutoRecharge": {
-        "Name": "Recharge Player Abilities",
-        "Hint": "Roll to recharge abilities automatically at the start of a non-NPC's turn."
-      },
-      "PlacedRegionVisibility": {
-        "Name": "Placed Area Visibility",
-        "Hint": "Where areas placed by activities are drawn once placed. Their effects apply either way.",
-        "layer": "Regions Layer Only",
-        "always": "Always"
-      },
-      "EffectDescriptionsNPC": {
-        "Name": "Hide NPC Effect Descriptions",
-        "Hint": "When enabled, the Automatic Effect Description setting will not apply for NPC created effects."
-      },
-      "Mechanics": {
-        "Name": "Mechanics",
-        "Label": "Configure Mechanics",
-        "Hint": "Settings for game mechanics automations."
-      },
-      "Permissions": {
-        "Name": "Permissions",
-        "Label": "Configure Permissions",
-        "Hint": "Settings for user permissions for CAT automation and configuration menus."
-      },
-      "PermissionsAutomation": {
-        "Name": "Automation Tab",
-        "Hint": "Minimum user role allowed to modify the Automation tab."
-      },
-      "PermissionsConfiguration": {
-        "Name": "Configuration Tab",
-        "Hint": "Minimum user role allowed to modify the Configuration tab."
-      },
-      "PermissionsGeneric": {
-        "Name": "Generic Tab",
-        "Hint": "Minimum user role allowed to modify the Generic tab."
-      },
-      "PermissionsEmbedded": {
-        "Name": "Embedded Macros Tab",
-        "Hint": "Minimum user role allowed to modify the Embedded Macros tab."
-      },
-      "PermissionsDocProps": {
-        "Name": "Document Properties Tab",
-        "Hint": "Minimum user role allowed to modify the Document Properties tab."
-      },
-      "PermissionsMacros": {
-        "Name": "Registered Macros Tab",
-        "Hint": "Minimum user role allowed to modify the Registered Macros tab."
-      },
-      "PermissionsPlacedRegion": {
-        "Name": "Placed Region Tab",
-        "Hint": "Minimum user role allowed to modify the Placed Region tab."
-      },
-      "Summons": {
-        "Name": "Summons",
-        "Label": "Configure Summons",
-        "Hint": "Settings for summons use and management."
-      }
-    },
-    "DAE": {
-      "CV": {
-        "Category": "CAT Condition Vulnerability",
-        "Name": "{condition} Condition Vulnerability",
-        "Description": "Condition Vulnerability to {condition}, roll at disadvantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
-      },
-      "CR": {
-        "Category": "CAT Condition Resistance",
-        "Name": "{condition} Condition Resistance",
-        "Description": "Condition Resistance to {condition}, roll at advantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
-      },
-      "FeatureRollModes": "CAT Feature Roll Modes",
-      "FF": {
-        "Name": "Feature Failure",
-        "Description": "Feature Failure on an activity by identifier, auto-fail saves. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
-      },
-      "FI": {
-        "Name": "Feature Immunity",
-        "Description": "Feature Immunity to an activity by identifier, auto-succeed saves. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
-      },
-      "FV": {
-        "Name": "Feature Vulnerability",
-        "Description": "Feature Vulnerability to an activity by identifier, roll at disadvantage to save. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
-      },
-      "FR": {
-        "Name": "Feature Resistance",
-        "Description": "Feature Resistance to an activity by identifier, roll at advantage to save. Replace 'identifier' with your own. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
-      },
-      "IgnoreDifficultTerrainTokens": {
-        "Name": "Ignore Difficult Terrain: Other Tokens",
-        "Description": "This actor does not consider other tokens as difficult terrain."
-      },
-      "Other": "CAT Other"
-    },
-    "Generic": {
-      "Disabled": "Disabled",
-      "Chat": "Chat",
-      "Ok": "Ok",
-      "Cancel": "Cancel",
-      "Name": "Name",
-      "Resize": "Resize"
-    },
-    "QuickConditions": {
-      "Legend": "Available Conditions",
-      "Placeholder": "Click below to add conditions",
-      "Title": "CAT Quick Conditions",
-      "Unknown": {
-        "Tooltip": "Unable to match to any condition search keys"
-      },
-      "Logic": {
-        "And": "And",
-        "Or": "Or"
-      },
-      "Comparators": {
-        "lt": "less than",
-        "le": "at most",
-        "gt": "greater than",
-        "ge": "at least"
-      },
-      "Not": {
-        "Is": "is",
-        "IsNot": "isn't"
-      },
-      "Conditions": {
-        "typeOrRace": "Type or Race",
-        "checkNearby": "Check Nearby",
-        "reaction": "Reaction",
-        "targetActorSize": "Target Size",
-        "activityType": "Activity Type",
-        "damageType": "Damage Type",
-        "critical": "Critical Hit",
-        "alignment": "Alignment",
-        "ability": "Ability Score",
-        "hasCondition": "Has Condition",
-        "itemType": "Item Type"
-      }
-    },
-    "Summons": {
-      "SummonFolder": "Summons"
-    },
-    "Teleport": {
-      "Title": "Teleport",
-      "WhichLevel": "Which level?",
-      "Current": "{name} (Current)"
-    },
-    "Crosshairs": {
-      "Invalid": "That space cannot be chosen."
-    },
-    "Movement": {
-      "Forced": "Forced Movement"
-    },
-    "Config": {
-      "AvatarImg": "Portrait Image",
-      "ImgPriority": "Image Priority",
-      "TokenImg": "Token Image",
-      "None": "None",
-      "Dispositions": "Dispositions",
-      "CreatureTypes": "Creature Types",
-      "Effect": "Effect"
-    },
-    "Error": {
-      "MissingCostActivity": "This feature is missing its cost activity!",
-      "NoAnimations": "An animation on this automation requires a missing asset module with id: {module}.",
-      "NoMonsterCompendiums": "You do not have any monster compendiums enabled in settings!",
-      "NoSequencer": "Sequencer is disabled or not installed! Sequencer is required to use animations.",
-      "NoSpellCompendiums": "You do not have any spell compendiums enabled in settings!",
-      "OutdatedSequencer": "Sequencer is out of date! In order to use animations, CAT requires a minimum of version {minSequencerVersion}"
-    },
-    "Troubleshooter": {
-      "Title": "CAT Troubleshooter",
-      "Open": "Open Troubleshooter",
-      "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version.",
-      "World": "World",
-      "Empty": "Nothing to report.",
-      "Copied": "Troubleshooter report copied to the clipboard.",
-      "Discord": "Copy the report and open the Discord",
-      "Sections": {
-        "required": "Required Settings",
-        "info": "Info",
-        "modules": "Modules",
-        "foundry": "Foundry",
-        "permissions": "Permissions",
-        "importer": "Importer",
-        "settings": "Settings",
-        "logs": "Logs",
-        "options": "Options"
-      },
-      "Tags": {
-        "Required": "Required",
-        "Optional": "Optional",
-        "AutomationSource": "Automation Source",
-        "AnimationsLibrary": "Animations",
-        "Defunct": "Defunct",
-        "Incompatible": "Incompatible"
-      },
-      "Groups": {
-        "Core": "Core",
-        "CatRelated": "CAT Related",
-        "Active": "Active Modules",
-        "Inactive": "Inactive Modules",
-        "Conflicts": "Conflicts",
-        "Automations": "Automations",
-        "Scene": "Scene",
-        "Game": "Game",
-        "Errors": "Errors"
-      },
-      "Status": {
-        "pass": "Pass",
-        "warn": "Warning",
-        "fail": "Fail",
-        "info": "Info"
-      },
-      "Footer": {
-        "FixAll": "Fix All",
-        "Save": "Save Troubleshooter"
-      },
-      "Save": {
-        "Title": "Save Troubleshooter",
-        "Drop": "Optionally drop an actor or item you're having issues with here.",
-        "Saved": "Troubleshooter report saved."
-      },
-      "HideWarnings": {
-        "Name": "Hide Troubleshooter Warnings",
-        "Hint": "Stop whispering the troubleshooter's startup warning cards to GMs."
-      },
-      "StripDialog": {
-        "Name": "Ask Before Stripping Exports",
-        "Hint": "Ask to strip descriptions prompt when exporting document data."
-      },
-      "Fix": {
-        "Title": "Apply Fixes",
-        "Content": "The following will be changed, then Foundry will ask to reload:",
-        "Label": "Fix",
-        "Disable": "Disable Module"
-      },
-      "Required": {
-        "Expected": "{value} → {fix}",
-        "ClientScope": "(client setting)",
-        "GmAutoDamage": "GM Auto Roll Damage"
-      },
-      "Card": {
-        "settings": "Some settings CAT relies on are not set as expected:",
-        "modules": "Some active modules are defunct or conflict with CAT:",
-        "fix": "Fix",
-        "open": "Troubleshooter"
-      },
-      "Export": {
-        "Title": "Export Data",
-        "Strip": "Strip descriptions",
-        "Settings": "Export Settings",
-        "Exported": "CAT settings exported.",
-        "Imported": "Imported {count} CAT settings.",
-        "ImportSettings": "Import Settings",
-        "ImportTitle": "Import CAT Settings",
-        "ImportContent": "Overwrite your CAT settings with the imported file?"
-      },
-      "Report": {
-        "Inactive": "Inactive",
-        "NotInstalled": "Not installed",
-        "Defunct": "Defunct module",
-        "Incompatible": "Incompatible module",
-        "ASEFork": "Chris's Fork",
-        "BossLoot": "Boss Loot FX animates this item alongside its CAT automation",
-        "Language": "Language",
-        "GridType": "Grid Type",
-        "GridUnits": "Grid Units",
-        "GridDistance": "Grid Distance",
-        "ActorlessTokens": "Tokens without an actor",
-        "LinkedMultiple": "Linked actor with multiple tokens",
-        "Invalid": "Invalid {type}",
-        "Token": "Controlled Token",
-        "Actor": "Actor",
-        "Importer": {
-          "Label": "Detected Importer",
-          "None": "None",
-          "Molten": "Scruvy"
-        },
-        "Permissions": {
-          "Users": "Allowed: {allowed}; Denied: {denied}"
-        }
-      }
-    },
-    "Summon": {
-      "DeadTitle": "CAT Summons",
-      "DeadContext": "Summon creature {name} reached 0 hp, delete actor and token?"
-    },
-    "OptionalBonus": {
-      "Applied": "Already Applied",
-      "Content": "Choose and configure bonuses for this roll.",
-      "Contextual": "Contextual Bonuses",
-      "DamageType": "Damage Type",
-      "DamageTypeChoice": "Choose Type",
-      "Failure": "Failure",
-      "Hit": "Hit",
-      "Invalid": "Bonus disabled: {reason}",
-      "InvalidResources": "not enough resources!",
-      "Miss": "Miss",
-      "NoDC": "No DC",
-      "NoRequest": "bonus has no request handler!",
-      "Optional": "Optional Bonuses",
-      "Phase": {
-        "PostResult": "After the Result",
-        "PreResult": "Before the Result",
-        "PreRoll": "Before the Roll"
-      },
-      "Scaleable": "Scalable",
-      "Scaling": "Scaling",
-      "Success": "Success",
-      "Targeted": "Targeted",
-      "Targets": "Targets",
-      "ThirdParty": "Third Party Bonuses",
-      "Title": "Optional Bonus",
-      "Unknown": "?"
-    },
-    "CompendiumBrowser": {
-      "SpellPicker": "Choose spells from the {lists} list:",
-      "Title": "CAT Compendium Browser"
-    },
-    "GrappleShove": {
-      "Grapple": "Grapple",
-      "GrappledBy": "Grappled By {name}",
-      "GrappleEscape": "Escape Grapple",
-      "Grappling": "Grappling {name}",
-      "GrappleImmune": "Target cannot be grappled!",
-      "GrappleSize": "Target is too big to be grappled!",
-      "ShoveSize": "Target is too big to be shoved!",
-      "ShoveProneImmune": "Target cannot be shoved prone!",
-      "Surrendered": "Attacker Surrendered"
-    },
-    "Macros": {
-      "Aura": {
-        "CreatureTypesHint": "Only tokens of these creature types are affected. The source itself is unaffected by this check.",
-        "DispositionsHint": "Which tokens the aura reaches.",
-        "EffectHint": "Effect on this item copied onto every token inside the aura. Write @auraValue in a change value to insert the aura value.",
-        "EnemyEffect": "Enemy Effect",
-        "EnemyEffectHint": "When set, Effect applies to allies and this effect applies to enemies, ignoring Dispositions. All other settings are shared.",
-        "EnterActivity": "Enter Activity",
-        "EnterActivityHint": "Activity rolled on a token when it enters the aura.",
-        "ExitActivity": "Exit Activity",
-        "ExitActivityHint": "Activity rolled on a token when it leaves the aura.",
-        "Filter": "Filter",
-        "FilterHint": "Aura filter macro run for every token in range. The aura applies only when it returns true. Embedded filters use the aura event and the filter pass.",
-        "IncludeSelf": "Include Self",
-        "IncludeSelfHint": "The source token is inside its own aura.",
-        "OncePerTurn": "Once Per Turn",
-        "OncePerTurnHint": "Each activity rolls at most once per token per turn.",
-        "Radius": "Radius",
-        "RadiusHint": "Radius in scene distance units. Accepts a formula using the source's roll data.",
-        "SourceDisable": "Source Disabled By",
-        "SourceDisableHint": "The aura is suppressed while the source has any of these statuses.",
-        "SourceStatuses": "Requires Status From Source",
-        "SourceStatusesHint": "Only tokens with one of these statuses applied by the aura source are affected.",
-        "StackHighest": "Highest Value Wins",
-        "StackHighestHint": "When several sources project this aura, the one with the highest value applies. Otherwise the nearest source applies.",
-        "TargetDisable": "Target Disabled By",
-        "TargetDisableHint": "A token with any of these statuses is not affected.",
-        "TurnEndActivity": "Turn End Activity",
-        "TurnEndActivityHint": "Activity rolled on a token that ends its turn inside the aura.",
-        "TurnStartActivity": "Turn Start Activity",
-        "TurnStartActivityHint": "Activity rolled on a token that starts its turn inside the aura.",
-        "Value": "Value Formula",
-        "ValueHint": "Formula evaluated against the source's roll data and inserted as @auraValue.",
-        "Walls": "Blocked by Walls",
-        "WallsHint": "Walls between the source and a token block the aura."
-      }
     }
-  }
 }

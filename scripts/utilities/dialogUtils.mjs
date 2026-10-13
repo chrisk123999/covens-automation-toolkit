@@ -480,7 +480,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
         if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
         const fieldset = bonus.optional ? bonus.isThirdParty ? thirdParty : optional : contextual;
         fieldset.push({
-            label: bonus.name,
+            label: bonus.isThirdParty ? `[${bonus.actor.name}] ${bonus.name}` : bonus.name,
             hints: bonus.validateHints,
             name: name + '.active',
             onrequest: async () => await bonus.request(workflow, bonuses, rollTotal),
@@ -540,7 +540,12 @@ function getSpellSlotOptions(actor) {
     return Object.entries(actor.system.spells ?? {})
         .filter(([, slot]) => slot.value > 0 && slot.max > 0 && slot.level > 0)
         .sort(([, a], [, b]) => a.level - b.level)
-        .map(([key, slot]) => ({value: key, level: slot.level, label: slot.label + (key === 'pact' ? ' (' + slot.level + ')' : ''), image: 'systems/dnd5e/icons/spell-tiers/spell' + slot.level + '.webp'}));
+        .map(([key, slot]) => ({
+            value: key,
+            level: slot.level,
+            image: 'systems/dnd5e/icons/spell-tiers/spell' + slot.level + '.webp',
+            label: `${slot.label}${key === 'pact' ? ' (' + slot.level + ')' : ''} - ${slot.value}/${slot.max}`
+        }));
 }
 /**
  * Prompt for one of this actor's languages, skipping the prompt when it knows one or none.

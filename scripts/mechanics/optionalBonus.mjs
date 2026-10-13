@@ -53,7 +53,7 @@ class BonusSession {
         }
     }
 
-    async phase(phaseId, {rolls, damageRolls = [], prompt = true} = {}) {
+    async phase(phaseId, {rolls, damageRolls = [], prompt = true, rollLabel} = {}) {
         if (this.#ran.has(phaseId)) return;
         this.#ran.add(phaseId);
         const workflow = this.#workflow;
@@ -72,7 +72,10 @@ class BonusSession {
         this.#app ??= new PhasedDialogApp('CAT.OptionalBonus.Title', {
             phases: this.#phaseIds.map(id => ({id, label: phaseLabels[id]}))
         });
-        const choices = await this.#app.showPhase(phaseId, {content: built?.hasOptional ? 'CAT.OptionalBonus.Content' : undefined, inputs: built?.inputs ?? []});
+        const lines = [];
+        if (rollLabel) lines.push(`<p><b>${_loc(rollLabel)}</b></p>`);
+        if (built?.hasOptional) lines.push(_loc('CAT.OptionalBonus.Content'));
+        const choices = await this.#app.showPhase(phaseId, {content: lines.join('') || undefined, inputs: built?.inputs ?? []});
         if (!choices) {
             this.#dismissed = true;
             this.#app = undefined;
@@ -162,7 +165,7 @@ async function attackPhase(workflow, session, phase, {prompt} = {}) {
     await applyPending(workflow, session);
     const preview = getAttackPreview(workflow);
     const rolls = workflow.attackRoll ? [workflow.attackRoll] : preview ? [preview] : undefined;
-    await session.phase(phase, {rolls, prompt});
+    await session.phase(phase, {rolls, prompt, rollLabel: 'DND5E.AttackRoll'});
     await applyPending(workflow, session);
 }
 
@@ -195,7 +198,7 @@ async function damage(workflow) {
     const session = new BonusSession({phaseIds: [constants.bonusPhases.postResult], workflow});
     session.outcome = getDamageOutcome(workflow);
     session.collect(await collectBonuses(workflow, constants.workflowPasses.optionalBonusDamage), {targetActor: workflow.actor});
-    await session.phase(constants.bonusPhases.postResult, {damageRolls: workflow.damageRolls});
+    await session.phase(constants.bonusPhases.postResult, {damageRolls: workflow.damageRolls, rollLabel: 'DND5E.DamageRoll'});
     await session.close();
     const bonuses = session.damageBonuses;
     if (!bonuses.length) return;
@@ -257,9 +260,9 @@ function rollSession() {
     return new BonusSession();
 }
 
-async function rollPhase(actor, roll, session, phase, {prompt} = {}) {
+async function rollPhase(actor, roll, session, phase, {prompt, rollLabel} = {}) {
     roll = await session.applyD20(roll, actor);
-    await session.phase(phase, {rolls: [roll], prompt});
+    await session.phase(phase, {rolls: [roll], prompt, rollLabel});
     return await session.applyD20(roll, actor);
 }
 
@@ -267,18 +270,27 @@ async function rollPreRoll(type, actor, data, session) {
     const event = new Events[rollEvents[type]](actor, constants.rollPasses.optionalBonus, data);
     const bonuses = (await event.run({multiResult: true, canOverlap: true})).filter(i => i.document);
     session.collect(bonuses, {targetActor: actor});
-    await session.phase(constants.bonusPhases.preRoll);
+    await session.phase(constants.bonusPhases.preRoll, {rollLabel: getRollLabel(data)});
 }
 
 async function rollResult(type, actor, data, session) {
     const fumble = type === 'save' && data.roll.isFumble && MidiQOL.checkRule('criticalSaves');
-    let roll = await rollPhase(actor, data.roll, session, constants.bonusPhases.preResult, {prompt: !fumble});
+    let roll = await rollPhase(actor, data.roll, session, constants.bonusPhases.preResult, {prompt: !fumble, rollLabel: getRollLabel(data)});
     session.outcome = {isCritical: roll.isCritical, isFumble: roll.isFumble};
     if (!roll.isSuccess && !roll.isFailure) session.outcome.noDC = true;
     else session.outcome.success = roll.isSuccess;
-    roll = await rollPhase(actor, roll, session, constants.bonusPhases.postResult, {prompt: !fumble && !session.outcome.success});
+    roll = await rollPhase(actor, roll, session, constants.bonusPhases.postResult, {prompt: !fumble && !session.outcome.success, rollLabel: getRollLabel(data)});
     await session.close();
     return roll;
+}
+
+function getRollLabel(data) {
+    const {abilities, skills} = CONFIG.DND5E;
+    const ability = abilities[data.config.ability]?.label ?? data.config.ability;
+    if (data.checkId) return _loc('DND5E.AbilityPromptTitle', {ability});
+    if (data.saveId) return _loc('DND5E.SavePromptTitle', {ability});
+    if (data.skillId) return _loc('DND5E.SkillPromptTitle', {ability, skill: skills[data.config.skill]?.label ?? data.config.skill});
+    if (data.toolId) return _loc('DND5E.ToolPromptTitle', {tool: constants.toolOptions.find(o => o.value === data.config.tool)?.label ?? data.config.tool});
 }
 
 export default {

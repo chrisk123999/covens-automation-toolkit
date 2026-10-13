@@ -45,11 +45,11 @@ function addFlags(fieldData) {
     for (const [category, fields] of Object.entries(daeBrowserFields))
         fieldData[category] = Array.from(fields);
 }
-// TODO define a combobox field for CR/CV flags
+// TODO define a combobox field for CR/CV and feature roll mode
 function modifySpecials(specKey, specials) {
     for (const fieldset of Object.values(daeBrowserFields))
         for (const field of fieldset)
-            specials[field] = (console.log(field), [new foundry.data.fields.StringField(), 'custom']);
+            specials[field] = [new foundry.data.fields.StringField(), 'custom'];
 }
 export default {
     initFlags,

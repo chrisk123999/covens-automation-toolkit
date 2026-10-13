@@ -109,6 +109,7 @@ class RollBonus {
         this.#optional = optional;
         this.#scalingIncrease = 0;
         this.#cost = {};
+        if (Number.isFinite(formula)) formula = String(formula);
         this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.() ?? this.#actor?.getRollData());
         this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
@@ -291,7 +292,7 @@ class RollBonus {
         if (!(value instanceof CONFIG.Actor.documentClass)) return;
         this.#targetActor = value;
     }
-    /** @type {boolean} */
+    /** @type {boolean} True when the actor who benefits from this bonus is not the same as the one who spends resources for it. */
     get isThirdParty() {
         return this.actor.id !== this.targetActor.id;
     }
@@ -613,7 +614,7 @@ class RollBonus {
         if (!RollBonus.CheckCost(bonus)) return {result: false, reason: _loc('CAT.OptionalBonus.InvalidResources')};
         if (bonus.autoApproveRequests) return {result: true, reason: _loc('CAT.Dialog.Request.Automatic')};
         const user = queryUtils.firstOwner(bonus.actor);
-        if (user.id === game.user.id) return {result: true, reason: _loc('CAT.Dialog.Request.Automatic')};
+        if (user.id === game.user.id) return {result: true, reason: _loc('CAT.Dialog.Request.Self')};
         const name = bonus.targetActor?.name ?? _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally');
         const document = {name: `${bonus.name} (+${bonus.roll.formula})`};
         if (Number.isNumeric(rollTotal)) {
@@ -652,6 +653,7 @@ class RollBonus {
      */
     static AddCosts(budget, bonuses) {
         for (const bonus of bonuses) {
+            if (bonus.isThirdParty) continue;
             for (const type of RollBonus.#resourceTypes) {
                 if (!bonus.cost[type]) continue;
                 budget[type] ??= {};
@@ -703,8 +705,8 @@ class RollBonus {
                 b.active = false;
                 return false;
             }
-            const hasEnough = RollBonus.CheckCost(b, cumulativeCosts);
-            if (hasEnough) {
+            if (b.isThirdParty) return true;
+            if (RollBonus.CheckCost(b, cumulativeCosts)) {
                 for (const type of RollBonus.#resourceTypes) {
                     cumulativeCosts[type] ??= {};
                     for (const [key, data] of Object.entries(b.cost[type] ?? {}))
@@ -714,7 +716,7 @@ class RollBonus {
             }
             b.active = false;
             b.validateHints.push({label: _loc('CAT.OptionalBonus.Invalid', {reason: _loc('CAT.OptionalBonus.InvalidResources')})});
-            return hasEnough;
+            return false;
         });
     }
     /**

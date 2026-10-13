@@ -675,6 +675,7 @@ export default {
     get armorOptions() { return Object.entries(CONFIG.DND5E.armorTypes).map(i => ({label: i[1], value: i[0]})); },
     attackTypes,
     get attackTypeOptions() { return attackTypes.map(i => ({label: _loc('CAT.Common.AttackType.' + i), value: i})); },
+    get bonusPhaseOptions() { return [...Object.keys(bonusPhases), 'all'].map(p => ({value: p, label: _loc('CAT.OptionalBonus.Phase.' + p.capitalize())})); },
     get characterLevelOptions() { return Array.from({length: CONFIG.DND5E.maxLevel}, (_, i) => ({label: _loc('DND5E.LevelNumber', {level: i + 1}), value: i + 1})); },
     get coverOptions() { return [
         CONFIG.statusEffects.coverHalf,
