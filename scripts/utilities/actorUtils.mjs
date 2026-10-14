@@ -523,7 +523,7 @@ async function removeFavorites(actor, entities) {
  * @returns {boolean}
  */
 function isBloodied(actor) {
-    return actor.system.attributes.hp.value <= Math.floor(actor.system.attributes.hp.max / 2);
+    return actor.system.attributes.hp.value <= Math.floor(actor.system.attributes.hp.effectiveMax / 2);
 }
 /**
  * Whether this actor has lost any hit points.

@@ -1,5 +1,6 @@
 import {CatCompendiumBrowser} from '../applications/_module.mjs';
 import {genericUtils, itemUtils} from './_module.mjs';
+import {Logging} from '../lib/_module.mjs';
 /**
  * Prompt the compendium browser for a selection of documents.
  * @param {string} tab The browser tab to open, e.g. 'spells' or 'monsters'.
@@ -147,23 +148,28 @@ function getEnabledCompendiumIds(settingKey) {
  * @param {number} [options.amount] The number of spells that can be chosen.
  * @param {number} [options.minLevel] The minimum spell level offered as an option.
  * @param {number} [options.maxLevel] The maxmium spell level offered as an option.
+ * @param {string[]} [options.castTime] Allowed casting times for the spell.
  * @param {string[]} [options.packIds] Pack ids to use instead of the spell compendiums configured in settings.
  * @param {string[]} [options.exceptions] Item identifiers for spells that should be offered despite failing other filters.
  * @returns {Promise<foundry.documents.Item[]|undefined>}
  */
-async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, packIds, exceptions, filters, icon, title = 'CAT.CompendiumBrowser.Title'} = {}) {
+async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, castTime, packIds, exceptions, filters, icon, title = 'CAT.CompendiumBrowser.Title'} = {}) {
     if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
-    if (!packIds.length) return genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
+    if (!packIds.length) return Logging.addMacroWarning('cat', 'selectSpellFromLists', 'CAT.Error.NoSpellCompendiums', {notify: 'warn'});
     const labels = [];
     const validKeys = [];
     for (const key of listKeys) {
         const label = dnd5e.registry.spellLists.options.find(o => o.value === key)?.label;
-        if (!label) continue;
+        if (!label) {
+            Logging.addMacroWarning('cat', 'selectSpellFromLists', 'CAT.Error.UnregisteredSpellList', {notify: 'warn', format: {key}});
+            continue;
+        }
         labels.push(label);
         validKeys.push(key);
     }
     if (!validKeys.length) return;
     const lockedFilters = {additional: {spelllist: makeBrowserFilter(validKeys)}};
+    if (castTime?.length) lockedFilters.additional.activationType = makeBrowserFilter(castTime);
     if (Number.isInteger(parseInt(minLevel))) genericUtils.setProperty(lockedFilters, 'additional.level.min', minLevel);
     if (Number.isInteger(parseInt(maxLevel))) genericUtils.setProperty(lockedFilters, 'additional.level.max', maxLevel);
     const result = await selectFromCompendiumBrowser('spells', {

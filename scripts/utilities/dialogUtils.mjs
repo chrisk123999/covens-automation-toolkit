@@ -300,13 +300,17 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
     let rollTotal;
     if (rolls?.length) {
         if (rolls.every(r => r._evaluated)) rollTotal = rolls.reduce((t, r) => {
-            if (r.d20) r.options.originalD20 = r.d20.results;
+            r.terms.forEach((term, i) => {
+                if (term.faces) genericUtils.setProperty(r.options, 'original.' + i, term.results);
+            });
             return t + r.total;
         }, 0);
         rolls = rolls.map(r => {
             if (!r._evaluated) return r;
             const clone = r.clone();
-            if (clone.options.originalD20) clone.d20.results = clone.options.originalD20;
+            if (clone.options.original) 
+                for (const [index, results] of Object.entries(clone.options.original))
+                    clone.terms[index].results = results;
             return clone;
         });
     }

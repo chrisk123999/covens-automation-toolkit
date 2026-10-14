@@ -603,11 +603,11 @@ async function removeTargets(workflow, tokens, userId = game.user.id) {
  * @param {boolean} [options.killedOutright] Only intervene when the damage would not kill outright.
  * @param {Actor5e} [options.actor] Required by deathOnly and killedOutright.
  */
-async function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutright = false, actor} = {}) {
+function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutright = false, actor} = {}) {
     if (deathOnly || killedOutright) {
         if (!actor) return;
         const resultingHP = ditem.oldHP + (ditem.oldTempHP ?? 0) - ditem.totalDamage;
-        const maxHP = actor.system.attributes.hp.max;
+        const maxHP = actor.system.attributes.hp.effectiveMax;
         if (deathOnly && resultingHP > -maxHP) return;
         if (killedOutright && resultingHP <= -maxHP) return;
     }
