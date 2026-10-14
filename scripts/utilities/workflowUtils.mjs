@@ -620,7 +620,8 @@ function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutright =
     ditem.newHP = targetHP;
     ditem.newTempHP = 0;
     ditem.damageDetail.forEach(i => i.value = 0);
-    ditem.damageDetail[0].value = totalDamage;
+    if (hpDamage < 0) ditem.damageDetail.push({value: hpDamage, type: 'healing'});
+    else ditem.damageDetail[0].value = totalDamage;
     ditem.rawDamageDetail.forEach(i => i.value = 0);
     ditem.rawDamageDetail[0].value = totalDamage;
 }

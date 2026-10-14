@@ -474,6 +474,7 @@ export default class DialogApp extends CatApp {
             locked: f.options?.locked ?? false,
             disabled: f.options?.disabled ?? false,
             onchange: f.options?.onchange,
+            weight: f.options?.weight,
             tags: f.options?.tags?.map(t => ({
                 tooltip: t.tooltip,
                 label: t.label,
@@ -489,7 +490,7 @@ export default class DialogApp extends CatApp {
             options,
             totalMax: opts?.totalMax ?? 99,
             showCounter: opts?.totalMax != null,
-            currentNum: options.filter(i => i.isChecked).length,
+            currentNum: options.reduce((t, o) => t += o.isChecked * (o.weight ?? 1), 0),
             requireSelection: opts?.requireSelection,
             hasSubinputs: options.some(i => i.subinputs?.length),
             header: opts?.header,
@@ -879,7 +880,7 @@ export default class DialogApp extends CatApp {
         switch (targetInput.type || targetInput.localName) {
             case 'checkbox':
                 ctx.input.isChecked = targetInput.checked;
-                ctx.group.currentNum = ctx.group.options.reduce((acc, c) => acc += c.isChecked, 0);
+                ctx.group.currentNum = ctx.group.options.reduce((acc, c) => acc += c.isChecked * (c.weight ?? 1), 0);
                 if (ctx.group.showCounter) changed = true;
                 break;
             case 'select-one':
