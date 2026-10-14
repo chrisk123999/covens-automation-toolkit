@@ -5,6 +5,7 @@
         <legend>{{localize "CAT.MEDKIT.Region.Visibility"}}</legend>
         {{formGroup fields.magicalDarkness name="flags.cat.placed.region.visibility.magicalDarkness" value=magicalDarkness hint=(localize "CAT.MEDKIT.Region.MagicalDarkness.Hint") rootId=@root.rootId}}
         {{formGroup fields.obscured name="flags.cat.placed.region.visibility.obscured" value=obscured hint=(localize "CAT.MEDKIT.Region.Obscured.Hint") rootId=@root.rootId}}
+        {{formGroup fields.attachToCaster name="flags.cat.placed.region.attachToCaster" value=attachToCaster hint=(localize "CAT.MEDKIT.Activity.AttachToCaster.Hint") rootId=@root.rootId}}
     </fieldset>
 
     <fieldset data-section="region-effects">
@@ -76,6 +77,12 @@
                     <button type="button" class="ability{{#if row.oncePerTurn}} active{{/if}}"
                         data-action="toggleRegionOncePerTurn"
                         data-activity-id="{{row.id}}">{{localize "CAT.MEDKIT.Activity.Activities.OncePerTurn"}}</button>
+                    <button type="button" class="ability{{#if row.dependentEffects}} active{{/if}}"
+                        data-action="toggleRegionDependentEffects" data-activity-id="{{row.id}}"
+                        data-tooltip="CAT.MEDKIT.Activity.Activities.DependentEffectsHint">{{localize "CAT.MEDKIT.Activity.Activities.DependentEffects"}}</button>
+                    <span class="label">{{localize "CAT.MEDKIT.Activity.Activities.PerDistance"}}</span>
+                    <input type="number" min="0" step="1" value="{{row.perDistance}}" data-region-field="perDistance"
+                        data-activity-id="{{row.id}}" data-tooltip="CAT.MEDKIT.Activity.Activities.PerDistanceHint">
                 </div>
             {{/each}}
         {{else}}

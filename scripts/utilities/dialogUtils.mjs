@@ -18,6 +18,7 @@ function getTokenName(token, {hide, counter} = {}) {
     return Number.isNumeric(counter?.value) ? name + '(' + counter.value++ + ')' : name;
 }
 
+const rememberedChoices = new Map();
 /**
  * Show a dialog, routed through a query when {@link userId} is not the current user.
  * @param {string} userId User the dialog is shown to.
@@ -604,17 +605,36 @@ async function selectSpellSlots(actor, title, content, {maxAmount, maxAmountMode
  * @param {boolean} [options.addNo] Append a decline button returning false.
  * @param {string} [options.userId] User the dialog is shown to.
  * @param {'alphabetical'|null} [options.sort] How the entries are ordered.
+ * @param {'combat'|'cast'} [options.remember] Offer to reuse the choice for the rest of this combat or cast.
+ * @param {{scopeId: string, uuid: string}} [options.rememberKey] Combat or workflow id, and the uuid of the document asking.
  * @returns {Promise<string|false>}
  */
-async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id, sort = null} = {}) {
+async function selectDamageType(damageTypes, title, content, {addNo = false, userId = game.user.id, sort = null, remember, rememberKey} = {}) {
     if (!damageTypes?.length) return false;
-    let buttons = damageTypes.map(t => {
-        const config = constants.damageTypeOptions.find(o => o.value === t);
-        return [config?.label ?? t, t, {image: config?.image, invertColor: config?.invertColor}];
+    const key = remember && rememberKey?.scopeId ? [remember, rememberKey.scopeId, rememberKey.uuid, [...damageTypes].sort().join(',')].join('|') : undefined;
+    if (key && rememberedChoices.has(key)) return rememberedChoices.get(key);
+    const damageTypeOptions = constants.damageTypeOptions;
+    const buttons = damageTypes.map(t => {
+        const config = damageTypeOptions.find(o => o.value === t);
+        return {label: config?.label ?? t, name: t, group: config?.group ?? constants.getDamageTypeGroup(t), options: {image: config?.image, invertColor: config?.invertColor}};
     });
-    if (sort === 'alphabetical') buttons.sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'en', {sensitivity: 'base'}));
-    if (addNo) buttons.push(['No', false, {image: constants.damageIcons.no}]);
-    return await buttonDialog(title, content, buttons, {userId});
+    if (sort === 'alphabetical') buttons.sort((a, b) => String(a.label).localeCompare(String(b.label), 'en', {sensitivity: 'base'}));
+    const groups = damageTypes.length > 4 ? Object.keys(constants.damageTypeGroups) : [undefined];
+    const inputs = groups.map(group => ['button', buttons.filter(button => !group || button.group === group), {displayAsRows: true, legend: group && constants.damageTypeGroups[group]}]).filter(([, fields]) => fields.length);
+    if (addNo) inputs.push(['button', [{label: 'No', name: false, options: {image: constants.damageIcons.no}}], {displayAsRows: true}]);
+    if (key) inputs.push(['checkbox', [{label: _loc('CAT.Dialog.Remember.' + remember.capitalize()), name: 'remember'}]]);
+    const result = await runDialog(userId, title, content, inputs, undefined, {width: 400});
+    const choice = result?.buttons ?? false;
+    if (key && result?.remember && choice) rememberedChoices.set(key, choice);
+    return choice;
+}
+/**
+ * Forget remembered dialog choices.
+ * @param {string} [scopeId] Combat or workflow id. Clears every choice when omitted.
+ */
+function clearRemembered(scopeId) {
+    if (!scopeId) return rememberedChoices.clear();
+    for (const key of rememberedChoices.keys()) if (key.split('|')[1] === scopeId) rememberedChoices.delete(key);
 }
 /**
  * Prompt for hit dice across this actor's classes, and optionally other items with uses.
@@ -889,6 +909,7 @@ export default {
     getSpellSlotOptions,
     selectLanguage,
     selectDamageType,
+    clearRemembered,
     selectHitDie,
     confirm,
     confirmUseItem,

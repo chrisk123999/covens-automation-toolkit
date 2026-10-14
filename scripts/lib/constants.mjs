@@ -328,6 +328,8 @@ const sheetHookNames = {
     getHeaderControlsActorSheetV2: 'getHeaderControlsActorSheetV2',
     getHeaderControlsCompendium: 'getHeaderControlsCompendium',
     getHeaderControlsItemSheet5e: 'getHeaderControlsItemSheet5e',
+    renderItemSheet5e: 'renderItemSheet5e',
+    renderBaseActorSheet: 'renderBaseActorSheet',
     getHeaderControlsLevelConfig: 'getHeaderControlsLevelConfig',
     getHeaderControlsRegionConfig: 'getHeaderControlsRegionConfig',
     getHeaderControlsSceneConfig: 'getHeaderControlsSceneConfig',
@@ -436,11 +438,15 @@ const miscHookNames = {
     daeModifySpecials: 'dae.modifySpecials',
     vaeCreateEffectButtons: 'visual-active-effects.createEffectButtons',
     tidyReady: 'tidy5e-sheet.ready',
+    tidyGetActivitiesForPlay: 'tidy5e-sheet.getActivitiesForPlay',
     renderTidy5eItemSheetQuadrone: 'renderTidy5eItemSheetQuadrone',
     renderTidy5eCharacterSheetQuadrone: 'renderTidy5eCharacterSheetQuadrone',
+    renderTidy5eNpcSheetQuadrone: 'renderTidy5eNpcSheetQuadrone',
     renderCombatTracker: 'renderCombatTracker',
     macroautocomplete: 'macro-autocomplete.ready',
-    renderChatMessageHTML: 'renderChatMessageHTML'
+    renderChatMessageHTML: 'renderChatMessageHTML',
+    aaWorkflowStart: 'AutomatedAnimations-WorkflowStart',
+    preUseActivity: 'dnd5e.preUseActivity'
 };
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',
@@ -551,6 +557,18 @@ const damageIcons = {
     thunder: 'icons/magic/sonic/explosion-shock-wave-teal.webp',
     no: 'icons/svg/cancel.svg'
 };
+const elementalDamageTypes = ['acid', 'cold', 'fire', 'lightning', 'thunder'];
+const damageTypeGroups = {
+    physical: 'CAT.Generic.DamageGroups.Physical',
+    elemental: 'CAT.Generic.DamageGroups.Elemental',
+    other: 'CAT.Generic.DamageGroups.Other'
+};
+const damageTypeGroupOrder = Object.keys(damageTypeGroups);
+function getDamageTypeGroup(type) {
+    if (CONFIG.DND5E.damageTypes[type]?.isPhysical) return 'physical';
+    if (elementalDamageTypes.includes(type)) return 'elemental';
+    return 'other';
+}
 const tempConditionIcon = 'icons/magic/time/arrows-circling-green.webp';
 const grappleIcon = 'icons/magic/control/buff-strength-muscle-damage-red.webp';
 const grappleEscapeIcon = 'icons/skills/movement/arrows-up-trio-red.webp';
@@ -666,6 +684,8 @@ export default {
     tokenHookNames,
     massApplyExcludeSources,
     damageIcons,
+    damageTypeGroups,
+    getDamageTypeGroup,
     grappleIcon,
     grappleEscapeIcon,
     tempConditionIcon,
@@ -684,7 +704,12 @@ export default {
     ].map(i => ({label: i.name, value: i.coverBonus ?? 999, image: i.img})); },
     get creatureTypeOptions() { return Object.entries(CONFIG.DND5E.creatureTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon})); },
     get spiritTypeOptions() { return this.creatureTypeOptions.filter(option => ['celestial', 'fey', 'fiend'].includes(option.value)); },
-    get damageTypeOptions() { return Object.entries(CONFIG.DND5E.damageTypes).map(i => ({label: i[1].label, value: i[0], image: damageIcons[i[0]] ?? i[1].icon, invertColor: ['midi-none', 'none', 'vitality'].includes(i[0])})); },
+    get damageTypeOptions() {
+        return Object.entries(CONFIG.DND5E.damageTypes).map(([value, config]) => {
+            const group = getDamageTypeGroup(value);
+            return {label: config.label, value, image: damageIcons[value] ?? config.icon, invertColor: ['midi-none', 'none', 'vitality'].includes(value), group, tag: _loc(damageTypeGroups[group])};
+        }).sort((a, b) => damageTypeGroupOrder.indexOf(a.group) - damageTypeGroupOrder.indexOf(b.group));
+    },
     get diceSizeOptions() { return [4, 6, 8, 10, 12, 20].map(i => ({label: `d${i}`, value: `d${i}`, image: `systems/dnd5e/icons/svg/dice/d${i}.svg`})); },
     get dispositionOptions() { return [
         {value: 'ally', label: _loc('DND5E.TARGET.Type.Ally.Label')},

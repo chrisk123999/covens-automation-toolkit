@@ -142,8 +142,7 @@ async function getChangedDamageRoll(origRoll, newType) {
  * @returns {Promise<foundry.dice.Roll>}
  */
 async function addToRoll(roll, formula, {rollData} = {}) {
-    const bonusRoll = await new Roll(String(formula), rollData).evaluate();
-    const newRoll = MidiQOL.addRollTo(roll, bonusRoll);
+    const newRoll = await MidiQOL.addRollToAsync(roll, new Roll(String(formula), rollData));
     newRoll.data = roll.data;
     return newRoll;
 }

@@ -98,7 +98,8 @@ function createEntry(token, document, descriptor) {
             template: getTemplate(document, descriptor),
             dispositions: descriptor.dispositions?.length ? descriptor.dispositions : ['all'],
             sourceDisable: descriptor.sourceDisable ?? [],
-            targetDisable: descriptor.targetDisable ?? []
+            targetDisable: descriptor.targetDisable ?? [],
+            quietCreate: descriptor.enterOnCreate === false
         };
     } catch (error) {
         logOnce(document.uuid + '.' + descriptor.id + '.descriptor', 'Invalid aura descriptor ' + descriptor.id + ' on ' + document.uuid + ': ' + error.message);
@@ -242,10 +243,11 @@ function computeTarget(index, token, {silent = false} = {}) {
     else index.membership.delete(token.id);
     markDirty(token, new Set(before.keys()), members, {silent, force: true});
 }
-function computeSource(index, token, previousKeys = []) {
+function computeSource(index, token, previousKeys = [], {reindex = false} = {}) {
     const entries = index.sources.get(token.id) ?? [];
     const keys = new Set([...previousKeys, ...entries.map(entry => entry.key)]);
     if (!keys.size) return;
+    const quietKeys = reindex ? new Set(entries.filter(entry => entry.quietCreate && !previousKeys.includes(entry.key)).map(entry => entry.key)) : new Set();
     index.scene.tokens.forEach(target => {
         const members = index.membership.get(target.id) ?? new Map();
         const before = new Set(members.keys());
@@ -262,7 +264,8 @@ function computeSource(index, token, previousKeys = []) {
         if (!touched) return;
         if (members.size) index.membership.set(target.id, members);
         else index.membership.delete(target.id);
-        markDirty(target, before, members, {force: previousKeys.length > 0});
+        const quiet = quietKeys.size ? [...members.keys()].filter(key => quietKeys.has(key) && !before.has(key)) : [];
+        markDirty(target, quiet.length ? new Set([...before, ...quiet]) : before, members, {force: previousKeys.length > 0 || quiet.length > 0});
     });
 }
 function buildIndex(scene) {
@@ -296,7 +299,7 @@ function refreshTokens(tokens, {reindex = false} = {}) {
     tokens.forEach(token => {
         const index = ensureIndex(token.parent);
         if (!index) return;
-        if (reindex) computeSource(index, token, indexToken(index, token));
+        if (reindex) computeSource(index, token, indexToken(index, token), {reindex: true});
         else if (index.sources.has(token.id)) computeSource(index, token);
         computeTarget(index, token);
     });
@@ -506,11 +509,16 @@ function getTriggerActivity(entry, reference) {
     return item.system.activities.get(reference) ?? itemUtils.getActivityByIdentifier(item, reference);
 }
 function getTokenCombat(token) {
-    return game.combats.find(combat => combat.started && combat.combatants.some(combatant => combatant.tokenId === token.id && combatant.sceneId === token.parent?.id));
+    return game.combats.find(combat => combat.started && combat.combatants.some(combatant => combatant.sceneId === token.parent?.id && (combatant.tokenId === token.id || (token.actorLink && combatant.actorId === token.actorId))));
 }
 function getTurnKey(combat, round = combat?.round, combatantId = combat?.combatant?.id) {
     if (!combat?.started) return;
     return combat.id + '.' + round + '.' + combatantId;
+}
+function linkedPeerMemberships(token) {
+    if (!token.actorLink) return [];
+    const membership = state.scenes.get(token.parent?.id)?.membership;
+    return token.parent.tokens.filter(other => other.id !== token.id && other.actorLink && other.actorId === token.actorId).map(other => membership?.get(other.id)).filter(Boolean);
 }
 function pickTriggered(target, candidates, event) {
     if (!target.actor) return [];
@@ -529,7 +537,7 @@ async function runTriggers(target, entries, event, turnKey) {
             }
             if (!activity.item?.actor?.items.has(activity.item.id)) continue;
             if (trigger.oncePerTurn && turnKey) {
-                const stampKey = entry.key + '.' + target.id + '.' + activity.id;
+                const stampKey = entry.key + '.' + (target.actorLink ? target.actorId : target.id) + '.' + activity.id;
                 if (state.stamps.get(stampKey) === turnKey) continue;
                 state.stamps.set(stampKey, turnKey);
             }
@@ -546,8 +554,10 @@ function membershipTriggers(diffs) {
     diffs.forEach(({token, entered, exited}) => {
         const turnKey = getTurnKey(getTokenCombat(token));
         const members = state.scenes.get(token.parent?.id)?.membership.get(token.id);
-        const enterEntries = pickTriggered(token, entered.map(entry => ({entry, distance: members?.get(entry.key) ?? Infinity})), constants.auraTriggers.enter);
-        const exitEntries = pickTriggered(token, exited.map(entry => ({entry, distance: Infinity})), constants.auraTriggers.exit);
+        const peers = linkedPeerMemberships(token);
+        const peerInside = entry => peers.some(peer => peer.has(entry.key));
+        const enterEntries = pickTriggered(token, entered.filter(entry => !peerInside(entry)).map(entry => ({entry, distance: members?.get(entry.key) ?? Infinity})), constants.auraTriggers.enter);
+        const exitEntries = pickTriggered(token, exited.filter(entry => !peerInside(entry)).map(entry => ({entry, distance: Infinity})), constants.auraTriggers.exit);
         if (enterEntries.length) enqueue(() => runTriggers(token, enterEntries, constants.auraTriggers.enter, turnKey));
         if (exitEntries.length) enqueue(() => runTriggers(token, exitEntries, constants.auraTriggers.exit, turnKey));
     });

@@ -1,5 +1,5 @@
-import {activityUtils, actorUtils, dataUtils, documentUtils, genericUtils, regionUtils, tokenUtils, workflowUtils, combatUtils} from '../utilities/_module.mjs';
-import {Logging} from '../lib/_module.mjs';
+import {activityUtils, actorUtils, dataUtils, documentUtils, effectUtils, genericUtils, regionUtils, tokenUtils, workflowUtils, combatUtils} from '../utilities/_module.mjs';
+import {constants, Logging} from '../lib/_module.mjs';
 function placed(region) {
     const activity = regionUtils.getActivity(region);
     if (!activity) return;
@@ -24,11 +24,15 @@ function placed(region) {
     const coreVisibility = activity.flags.cat?.placed?.region?.coreVisibility;
     if (coreVisibility !== undefined) sourceUpdates.visibility = coreVisibility;
     else if (region.visibility === CONST.REGION_VISIBILITY.ALWAYS && game.settings.get('cat', 'placedRegionVisibility') === 'layer') sourceUpdates.visibility = CONST.REGION_VISIBILITY.LAYER;
+    if (activity.flags.cat?.placed?.region?.attachToCaster) {
+        const casterToken = activity.actor?.token ?? activity.actor?.getActiveTokens(false, true).find(token => token.parent === region.parent);
+        if (casterToken?.parent === region.parent) sourceUpdates.attachment = {token: casterToken.id};
+    }
     const effects = activity.flags.cat?.placed?.region?.effects;
     if (effects) sourceUpdates.flags.cat.effects = effects;
     const activities = activity.flags.cat?.placed?.region?.activities;
     if (activities) {
-        const activitiesData = activities.map(data => ({uuid: activity.item.system.activities.get(data.id)?.uuid, triggers: data.triggers, disposition: data.disposition, oncePerTurn: data.oncePerTurn})).filter(i => i.uuid);
+        const activitiesData = activities.map(data => ({uuid: activity.item.system.activities.get(data.id)?.uuid, triggers: data.triggers, disposition: data.disposition, oncePerTurn: data.oncePerTurn, perDistance: data.perDistance, dependentEffects: data.dependentEffects})).filter(i => i.uuid);
         if (activitiesData.length) sourceUpdates.flags.cat.activities = activitiesData;
     }
     region.updateSource(sourceUpdates);
@@ -85,6 +89,11 @@ async function updateRegionEffects(token, currentRegions = []) {
     for (const existing of existingEffects) {
         if (!matchedExistingIds.has(existing.id)) effectIdsToDelete.push(existing.id);
     }
+    const heldDependents = new Set(Array.from(currentRegions).flatMap(region => getDependentActivityUuids(region)));
+    actorUtils.getEffects(token.actor).forEach(effect => {
+        const dependentUuid = effect.flags.cat?.regionDependent;
+        if (dependentUuid && !heldDependents.has(dependentUuid)) effectIdsToDelete.push(effect.id);
+    });
     if (effectIdsToDelete.length) {
         await documentUtils.deleteEmbeddedDocuments(token.actor, 'ActiveEffect', effectIdsToDelete);
         Logging.addEntry('DEBUG', 'Deleting region effects for ' + token.name);
@@ -100,12 +109,54 @@ async function updateRegionEffects(token, currentRegions = []) {
 }
 async function regionEffects(region, isDelete = false) {
     const identifier = documentUtils.getIdentifier(region);
+    const dependentUuids = new Set(getDependentActivityUuids(region));
     const inside = new Set(isDelete ? [] : region.parent.tokens.filter(token => token.testInsideRegion(region)));
-    const affectedTokens = region.parent.tokens.filter(token => token.actor && (inside.has(token) || region.tokens.has(token) || actorUtils.getEffects(token.actor).some(effect => effect.flags.cat?.regionIdentifier === identifier)));
+    const affectedTokens = region.parent.tokens.filter(token => token.actor && (inside.has(token) || region.tokens.has(token) || actorUtils.getEffects(token.actor).some(effect => effect.flags.cat?.regionIdentifier === identifier || dependentUuids.has(effect.flags.cat?.regionDependent))));
     await Promise.all(affectedTokens.map(async token => {
         const currentRegions = Array.from(token.regions).filter(r => r.id !== region.id);
         if (inside.has(token)) currentRegions.push(region);
         return await updateRegionEffects(token, currentRegions);
+    }));
+}
+function getDependentActivityUuids(region) {
+    return (region.flags.cat?.activities ?? []).filter(i => i.dependentEffects).map(i => i.uuid);
+}
+function hasDependentEffect(token, activityUuid) {
+    return !!token.actor && actorUtils.getEffects(token.actor).some(effect => effect.flags.cat?.regionDependent === activityUuid);
+}
+async function runRegionActivity(sourceActivity, token, castLevel, {times = 1, dependentEffects = false} = {}) {
+    const existingIds = new Set(dependentEffects && token.actor ? actorUtils.getEffects(token.actor).map(effect => effect.id) : []);
+    for (let i = 0; i < times; i++) await workflowUtils.completeActivityUse(sourceActivity, [token], {atLevel: castLevel});
+    if (!dependentEffects || !token.actor) return;
+    const itemUuid = sourceActivity.item.uuid;
+    const updates = actorUtils.getEffects(token.actor).filter(effect => !existingIds.has(effect.id) && (effectUtils.getOriginActivitySync(effect)?.item?.uuid === itemUuid || effect.origin?.startsWith(itemUuid))).map(effect => ({_id: effect.id, 'flags.cat.regionDependent': sourceActivity.uuid}));
+    if (updates.length) await documentUtils.updateEmbeddedDocuments(token.actor, 'ActiveEffect', updates);
+}
+function getMovedDistance(token, region, waypoints = []) {
+    const grid = token.parent.grid;
+    if (grid.isGridless) return token.segmentizeRegionMovementPath(region, waypoints).filter(segment => segment.type === CONST.REGION_MOVEMENT_SEGMENTS.MOVE).reduce((total, segment) => total + grid.measurePath([segment.from, segment.to]).distance, 0);
+    let cells = 0;
+    for (let i = 1; i < waypoints.length; i++) {
+        const from = waypoints[i - 1];
+        const to = waypoints[i];
+        const path = grid.getDirectPath([token.getMovementOrigin(from), token.getMovementOrigin(to)]);
+        const start = grid.getCenterPoint(path[0]);
+        cells += path.slice(1).filter(offset => {
+            const center = grid.getCenterPoint(offset);
+            return token.testInsideRegion(region, {...to, x: from.x + center.x - start.x, y: from.y + center.y - start.y});
+        }).length;
+    }
+    return cells * grid.distance;
+}
+async function stampCastTargets(workflow) {
+    const placedRegions = (workflow.templateUuids ?? []).map(uuid => fromUuidSync(uuid, {strict: false})).filter(region => region?.flags.cat?.activities?.some(i => i.oncePerTurn));
+    if (!placedRegions.length || !workflow.hitTargets?.size) return;
+    const tokens = Array.from(workflow.hitTargets).map(token => token.document ?? token);
+    await Promise.all(placedRegions.map(async region => {
+        const currentStamps = region.flags.cat.processedTokens ?? [];
+        const processedTokens = tokens.reduce((stamps, token) => combatUtils.addTurnStamp(stamps, token.id, tokenUtils.getCombatData(token)), currentStamps);
+        if (processedTokens === currentStamps) return;
+        await documentUtils.updateEmbeddedDocuments(region.parent, 'Region', [{_id: region.id, 'flags.cat.processedTokens': processedTokens}]);
     }));
 }
 function getGroupedRegions(regions) {
@@ -137,7 +188,7 @@ function isValidDispositionTarget(sourceActivity, token, targetDisposition) {
     if (targetDisposition === 'enemy' && !isEnemy) return false;
     return true;
 }
-async function processRegionActivities(token, currentRegions, triggerType, {combatData} = {}) {
+async function processRegionActivities(token, currentRegions, triggerType, {combatData, waypoints} = {}) {
     Logging.addEntry('DEBUG', 'Processing region activities for pass ' + triggerType + ' for ' + token.name);
     if (!currentRegions.length) return;
     const groupedRegions = getGroupedRegions(currentRegions);
@@ -152,15 +203,23 @@ async function processRegionActivities(token, currentRegions, triggerType, {comb
         if (!matchedActivities.length) continue;
         const processedTokens = region.flags.cat?.processedTokens || [];
         let requiresStampUpdate = false;
+        let movedDistance;
         for (const actConfig of matchedActivities) {
             const sourceActivity = await fromUuid(actConfig.uuid);
             if (!isValidDispositionTarget(sourceActivity, token, actConfig.disposition)) continue;
-            const isOncePerTurn = actConfig.oncePerTurn; 
+            let times = 1;
+            if (triggerType === constants.movementPasses.moved) {
+                movedDistance ??= getMovedDistance(token, region, waypoints);
+                times = actConfig.perDistance ? Math.floor(movedDistance / actConfig.perDistance) : Number(movedDistance > 0);
+                if (!times) continue;
+            }
+            if (actConfig.dependentEffects && hasDependentEffect(token, actConfig.uuid)) continue;
+            const isOncePerTurn = actConfig.oncePerTurn;
             if (isOncePerTurn && combatData.inCombat) {
                 if (combatUtils.isStampedThisTurn(processedTokens, token.id, combatData)) continue;
                 requiresStampUpdate = true;
             }
-            await workflowUtils.completeActivityUse(sourceActivity, [token], {atLevel: regionUtils.getCastData(region).castLevel});
+            await runRegionActivity(sourceActivity, token, regionUtils.getCastData(region).castLevel, {times, dependentEffects: actConfig.dependentEffects});
         }
         if (requiresStampUpdate && combatData.inCombat) {
             const newProcessedArray = combatUtils.addTurnStamp(processedTokens, token.id, combatData);
@@ -204,9 +263,10 @@ async function processMovedRegionActivities(region, tokens, triggerType) {
         for (const actConfig of matchedActivities) {
             const sourceActivity = await fromUuid(actConfig.uuid);
             if (!isValidDispositionTarget(sourceActivity, token, actConfig.disposition)) continue;
+            if (actConfig.dependentEffects && hasDependentEffect(token, actConfig.uuid)) continue;
             const isOncePerTurn = actConfig.oncePerTurn;
             if (isOncePerTurn && combatData.inCombat) tokenGotStamped = true;
-            await workflowUtils.completeActivityUse(sourceActivity, [token], {atLevel: movingCastData.castLevel});
+            await runRegionActivity(sourceActivity, token, movingCastData.castLevel, {dependentEffects: actConfig.dependentEffects});
         }
         if (tokenGotStamped) {
             processedTokens = combatUtils.addTurnStamp(processedTokens, token.id, combatData);
@@ -220,5 +280,6 @@ export default {
     updateRegionEffects,
     regionEffects,
     processRegionActivities,
-    processMovedRegionActivities
+    processMovedRegionActivities,
+    stampCastTargets
 };

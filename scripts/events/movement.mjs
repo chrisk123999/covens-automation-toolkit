@@ -65,6 +65,8 @@ async function moveToken(token, movement, options, user) {
             await regions.processRegionActivities(token, enteredAndLeftRegions, constants.regionPasses.passedThrough);
             await new Events.RegionEvent(enteredAndLeftRegions, constants.regionPasses.passedThrough, {tokens: [token]}).run();
         }
+        const movedRegions = teleport ? [] : Array.from(new Set([...previousRegions, ...currentRegions, ...enteredAndLeftRegions]));
+        if (movedRegions.length) await regions.processRegionActivities(token, movedRegions, constants.movementPasses.moved, {waypoints});
     }
     if (movement.passed.waypoints.at(-1)?.action !== 'fall') await effects.specialDurationMove(token.actor);
 }

@@ -2,7 +2,7 @@ import MedkitApp from './base.mjs';
 const {fields} = foundry.data;
 
 // Region-activity trigger types an activity-placed region can fire on (see handlers/region.mjs).
-const REGION_TRIGGERS = ['enter', 'left', 'stay', 'passedThrough', 'entered', 'exited', 'stayed', 'passedOver', 'turnStart', 'turnEnd', 'everyTurn'];
+const REGION_TRIGGERS = ['enter', 'left', 'stay', 'passedThrough', 'entered', 'exited', 'stayed', 'passedOver', 'turnStart', 'turnEnd', 'everyTurn', 'moved'];
 const DISPOSITIONS = ['all', 'ally', 'enemy'];
 
 export default class ActivityMedkit extends MedkitApp {
@@ -12,7 +12,8 @@ export default class ActivityMedkit extends MedkitApp {
         actions: {
             toggleRegionTrigger: ActivityMedkit.#toggleRegionTrigger,
             setRegionDisposition: ActivityMedkit.#setRegionDisposition,
-            toggleRegionOncePerTurn: ActivityMedkit.#toggleRegionOncePerTurn
+            toggleRegionOncePerTurn: ActivityMedkit.#toggleRegionOncePerTurn,
+            toggleRegionDependentEffects: ActivityMedkit.#toggleRegionDependentEffects
         }
     };
 
@@ -56,6 +57,7 @@ export default class ActivityMedkit extends MedkitApp {
             hidden: new fields.BooleanField({label: _loc('CAT.MEDKIT.Activity.Hidden.Label')}),
             magicalDarkness: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.MagicalDarkness.Label')}),
             obscured: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.Obscured.Label')}),
+            attachToCaster: new fields.BooleanField({label: _loc('CAT.MEDKIT.Activity.AttachToCaster.Label')}),
             spellIdentifier: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.SpellIdentifier.Label')})
         };
         context.hidden = flags.hidden ?? false;
@@ -64,6 +66,7 @@ export default class ActivityMedkit extends MedkitApp {
         const placed = flags.placed?.region ?? {};
         context.magicalDarkness = placed.visibility?.magicalDarkness ?? false;
         context.obscured = placed.visibility?.obscured ?? false;
+        context.attachToCaster = placed.attachToCaster ?? false;
         context.regionMacroChoices = this._prepareRegisteredMacros('placed.region.macros').choices;
         // Region effects are item-relative ActiveEffect ids (resolved against the origin item), not UUIDs.
         const pickedEffects = new Set(Array.isArray(placed.effects) ? placed.effects : []);
@@ -93,6 +96,8 @@ export default class ActivityMedkit extends MedkitApp {
                 id: entry.id,
                 label: activities?.get(entry.id)?.name ?? entry.id,
                 oncePerTurn: !!entry.oncePerTurn,
+                dependentEffects: !!entry.dependentEffects,
+                perDistance: entry.perDistance ?? '',
                 triggers: REGION_TRIGGERS.map(key => ({key, label: _loc(`CAT.MEDKIT.Activity.Triggers.${key}`), active: activeTriggers.has(key)})),
                 dispositions: DISPOSITIONS.map(key => ({key, label: _loc(`CAT.MEDKIT.Activity.Disposition.${key}`), active: disposition === key}))
             };
@@ -103,6 +108,14 @@ export default class ActivityMedkit extends MedkitApp {
     async _onChangeForm(formConfig, event) {
         const target = event.target;
         const name = target?.name ?? target?.getAttribute?.('name');
+        if (target?.dataset?.regionField === 'perDistance') {
+            const perDistance = Number(target.value);
+            this.#mutateRegionActivity(target.dataset.activityId, entry => {
+                if (perDistance > 0) entry.perDistance = perDistance;
+                else delete entry.perDistance;
+            });
+            return;
+        }
         const multi = target?.closest?.('cat-multi-combobox');
         if (multi && (name === 'flags.cat.placed.region.macros' || name === 'flags.cat.placed.region.activities' || name === 'flags.cat.otherAbilities')) {
             const raw = multi.querySelector('input[type="hidden"]')?.value ?? '';
@@ -156,5 +169,10 @@ export default class ActivityMedkit extends MedkitApp {
     /** @this {ActivityMedkit} */
     static #toggleRegionOncePerTurn(_event, target) {
         this.#mutateRegionActivity(target.dataset.activityId, entry => entry.oncePerTurn = !entry.oncePerTurn);
+    }
+
+    /** @this {ActivityMedkit} */
+    static #toggleRegionDependentEffects(_event, target) {
+        this.#mutateRegionActivity(target.dataset.activityId, entry => entry.dependentEffects = !entry.dependentEffects);
     }
 }

@@ -1,5 +1,5 @@
 /** @import Actor5e from '../../dnd5e/module/documents/actor/actor.mjs'; */
-import {documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
+import {automationUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
 
 /**
  * Get all applicable effects on an actor, optionally including item-applied enchantments (not by default).
@@ -344,6 +344,31 @@ async function recoverSpellSlots(actor, level, {amount = 1} = {}) {
 }
 
 /**
+ * Spend the dice picked with dialogUtils.selectHitDie and roll them.
+ * @param {Actor5e} actor Actor whose roll data the roll uses.
+ * @param {Array<{document: Item5e, amount: number}>|false} selections Result of dialogUtils.selectHitDie.
+ * @param {object} [options] Additional options.
+ * @param {boolean} [options.roll] Evaluate a roll of the spent dice.
+ * @returns {Promise<{count: number, formula: string, roll: Roll|undefined}>} Formula is empty and roll undefined when nothing was spent.
+ */
+async function spendHitDice(actor, selections, {roll = true} = {}) {
+    const spent = (selections || []).filter(selection => selection.amount > 0);
+    const dice = spent.map(({document, amount}) => {
+        const denomination = document.type === 'class' ? document.system.hd.denomination : automationUtils.getConfigValue(document, 'diceSize');
+        const faces = String(denomination ?? '').toLowerCase().match(/d(\d+)$/)?.[1];
+        return faces ? amount + 'd' + faces : undefined;
+    }).filter(Boolean);
+    await Promise.all(spent.map(({document, amount}) => {
+        if (document.type === 'class') return documentUtils.update(document, {'system.hd.spent': document.system.hd.spent + amount});
+        return documentUtils.update(document, {'system.uses.spent': document.system.uses.spent + amount});
+    }));
+    const count = spent.reduce((total, selection) => total + selection.amount, 0);
+    const formula = dice.join(' + ');
+    if (!roll || !formula) return {count, formula, roll: undefined};
+    return {count, formula, roll: await new Roll(formula, actor.getRollData()).evaluate()};
+}
+
+/**
  * Get all spells which are currently castable by the actor, considering each spell's consumption, optionally
  * filtering by a list of provided identifiers.
  * @param {Actor5e} actor Actor to act on.
@@ -533,6 +558,7 @@ export default {
     getSpellSlotKey,
     spendSpellSlots,
     recoverSpellSlots,
+    spendHitDice,
     getCastableSpells,
     hasUsedReaction,
     setReactionUsed,

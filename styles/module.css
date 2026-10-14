@@ -2598,3 +2598,36 @@ cat-multi-combobox {
         padding: 0.3125rem;
     }
 }
+.cat-hidden-activity {
+    .activity-name {
+        .title {
+            font-style: italic;
+        }
+        .item-image {
+            display: none;
+        }
+    }
+    .tidy-table-row-use-button {
+        .item-image {
+            display: none;
+        }
+        .cat-hidden-activity-icon {
+            position: static !important;
+            opacity: 1 !important;
+            color: var(--cat-status-blue) !important;
+        }
+    }
+    .tidy-table-cell.primary .item-name {
+        font-style: italic;
+    }
+    .cat-hidden-activity-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 var(--cat-icon-size);
+        width: var(--cat-icon-size);
+        height: var(--cat-icon-size);
+        font-size: calc(var(--cat-icon-size) * 0.75);
+        color: var(--cat-status-blue);
+    }
+}

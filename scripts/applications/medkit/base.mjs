@@ -381,10 +381,11 @@ export default class MedkitApp extends CatApp {
         const COMBOBOX_THRESHOLD = 8;
         const sortedOptions = () => {
             const opts = typeof descriptor.options === 'function' ? descriptor.options(this.#document, this.#flags) : (descriptor.options ?? []);
-            return opts.map(o => ({...o, label: _loc(o.label)})).sort((a, b) =>
+            const groups = Object.keys(constants.damageTypeGroups);
+            return opts.map(o => ({...o, label: _loc(o.label)})).sort((a, b) => (a.group ? groups.indexOf(a.group) : 0) - (b.group ? groups.indexOf(b.group) : 0) || (
                 Number.isNumeric(a.value) && Number.isNumeric(b.value) ?
                     (parseFloat(a.value) - parseFloat(b.value)) :
-                    ((b.value === '') - (a.value === '') || a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}))
+                    ((b.value === '') - (a.value === '') || a.label.localeCompare(b.label, 'en', {sensitivity: 'base'})))
             );
         };
         switch (type) {
@@ -406,7 +407,7 @@ export default class MedkitApp extends CatApp {
                 const sorted = sortedOptions();
                 if (sorted.length > COMBOBOX_THRESHOLD) {
                     option.isCombobox = true;
-                    option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, invert: o.invertColor}));
+                    option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, invert: o.invertColor, tag: o.tag}));
                 } else {
                     const choices = sorted.reduce((acc, o) => { acc[o.value] = o.label; return acc; }, {});
                     option.field = new fields.StringField({label, choices, required: true, blank: false});
@@ -417,7 +418,7 @@ export default class MedkitApp extends CatApp {
                 const sorted = sortedOptions();
                 const selectedValues = Array.isArray(value) ? value : [];
                 option.isMultiCombobox = true;
-                option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, invert: o.invertColor, selected: selectedValues.includes(o.value)}));
+                option.choices = sorted.map(o => ({value: o.value, label: o.label, image: o.image, invert: o.invertColor, tag: o.tag, selected: selectedValues.includes(o.value)}));
                 option.value = selectedValues;
                 break;
             }
@@ -457,6 +458,7 @@ export default class MedkitApp extends CatApp {
                 option.animationOptions = this.#animationSubOptions(source, identifier, sel);
                 option.animationCredits = this.#animationCredits(sel);
                 option.animationLabel = this.#animationLabel(sel);
+                option.moduleAnimations = animationUtils.getModuleAnimations(this.#document.item ?? this.#document);
                 break;
             }
             case 'selectIdentifiers':
@@ -716,6 +718,7 @@ export default class MedkitApp extends CatApp {
             ...categories.map(({category, label}) => ({label, options: groups[category].sort(byLabel)}))
         ];
     }
+
 
     #animationCredits(selection) {
         if (!selection?.source || !selection?.identifier) return [];

@@ -542,7 +542,8 @@
                 },
                 "Hidden": {
                     "Label": "Hidden Activity",
-                    "Hint": "Hide this activity from the activity-use selection dialog."
+                    "Hint": "Hide this activity from the activity-use selection dialog.",
+                    "Badge": "This activity is managed by an automation. Avoid editing directly unless you know what you're doing."
                 },
                 "PlacedRegion": {
                     "Hint": "Configuration applied to any region this activity creates."
@@ -564,7 +565,11 @@
                     "NoneAvailable": "This item has no other activities to trigger.",
                     "Triggers": "Triggers",
                     "Disposition": "Targets",
-                    "OncePerTurn": "Once per turn"
+                    "OncePerTurn": "Once per turn",
+                    "DependentEffects": "Remove on exit",
+                    "DependentEffectsHint": "Effects this activity applies are removed when the creature leaves the region or the region is deleted. The activity does not fire again while the creature still has one.",
+                    "PerDistance": "Per distance",
+                    "PerDistanceHint": "With the Token moves inside trigger, fire once for every this many scene units moved inside the region. Leave empty to fire once per move."
                 },
                 "Triggers": {
                     "enter": "Token enters",
@@ -577,12 +582,17 @@
                     "passedOver": "Region passes over",
                     "turnStart": "Turn start",
                     "turnEnd": "Turn end",
-                    "everyTurn": "Every turn"
+                    "everyTurn": "Every turn",
+                    "moved": "Token moves inside"
                 },
                 "Disposition": {
                     "all": "All",
                     "ally": "Allies",
                     "enemy": "Enemies"
+                },
+                "AttachToCaster": {
+                    "Label": "Attach to Caster",
+                    "Hint": "The region follows the caster's token when it moves."
                 }
             },
             "Effect": {
@@ -607,6 +617,8 @@
                     "damaged": "Took damage",
                     "damagedByAlly": "Damaged by ally",
                     "damagedByEnemy": "Damaged by enemy",
+                    "damagedBySourceOrAlly": "Damaged by effect source or its allies",
+                    "damagedBySourceAlly": "Damaged by an ally of the effect source",
                     "hitByAnotherCreature": "Hit by another creature",
                     "attackedByAnotherCreature": "Attacked by another creature",
                     "hitBySource": "Hit by effect source",
@@ -668,6 +680,11 @@
             "TargetCantSeeAttacker": "Target Can't See Attacker"
         },
         "Dialog": {
+            "Remember": {
+                "Combat": "Don't ask again this combat",
+                "Cast": "Don't ask again this cast",
+                "Permanent": "Don't ask again. Clear the saved choice in this item's CAT configuration tab."
+            },
             "Request": {
                 "Approved": "Approved",
                 "Automatic": "Automatic Approval",
@@ -890,9 +907,20 @@
                 "Name": "Hide Token Names",
                 "Hint": "When enabled, various dialogs will not show enemy token names."
             },
+            "HideActivitiesOnActorSheet": {
+                "Name": "Hide Hidden Activities on Actor Sheets",
+                "Hint": "When enabled, activities marked as hidden in the CatKit are removed from actor sheets. Item sheets always show them."
+            },
             "DiceSoNice": {
                 "Name": "Dice So Nice",
                 "Hint": "When enabled, Dice So Nice damage roll animations will be delayed until after all damage roll macros are complete."
+            },
+            "AnimationPriority": {
+                "Name": "Animation Priority",
+                "Hint": "Which animation plays when an item has a CAT animation and Automated Animations or Boss Loot FX also animates it.",
+                "Cat": "CAT (block Automated Animations and Boss Loot FX automatic animations)",
+                "Module": "Automated Animations and Boss Loot FX (skip the CAT animation)",
+                "Both": "Play both"
             },
             "General": {
                 "Name": "General",
@@ -1011,6 +1039,11 @@
             "Ok": "Ok",
             "Cancel": "Cancel",
             "Name": "Name",
+            "DamageGroups": {
+                "Physical": "Physical",
+                "Elemental": "Elemental",
+                "Other": "Other"
+            },
             "Resize": "Resize"
         },
         "QuickConditions": {
@@ -1173,7 +1206,7 @@
                 "Defunct": "Defunct module",
                 "Incompatible": "Incompatible module",
                 "ASEFork": "Chris's Fork",
-                "BossLoot": "Boss Loot FX animates this item alongside its CAT automation",
+                "ModuleAnimation": "{module} also animates this item",
                 "Language": "Language",
                 "GridType": "Grid Type",
                 "GridUnits": "Grid Units",
@@ -1212,10 +1245,10 @@
             "NoRequest": "bonus has no request handler!",
             "Optional": "Optional Bonuses",
             "Phase": {
-                "All": "Any Phase",
                 "PostResult": "After the Result",
                 "PreResult": "Before the Result",
-                "PreRoll": "Before the Roll"
+                "PreRoll": "Before the Roll",
+                "All": "Any Phase"
             },
             "Scaleable": "Scalable",
             "Scaling": "Scaling",
@@ -1250,6 +1283,8 @@
                 "EnemyEffectHint": "When set, Effect applies to allies and this effect applies to enemies, ignoring Dispositions. All other settings are shared.",
                 "EnterActivity": "Enter Activity",
                 "EnterActivityHint": "Activity rolled on a token when it enters the aura.",
+                "EnterOnCreate": "Enter on Creation",
+                "EnterOnCreateHint": "Tokens already inside the aura when it appears count as entering it.",
                 "ExitActivity": "Exit Activity",
                 "ExitActivityHint": "Activity rolled on a token when it leaves the aura.",
                 "Filter": "Filter",

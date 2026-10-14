@@ -1,6 +1,32 @@
-# 0.1.3 Release: (work in progress)
+# 0.1.3 Release:
+## Update Notes:
+- Requires midi-qol 14.6.1 or later and DAE 14.6.1 or later.
+- Added setting: Animation Priority. Choose what plays when an item has a CAT animation and Automated Animations or Boss Loot FX also animates it: CAT (default), the other module, or both.
+  - CAT blocks Automated Animations and Boss Loot FX Premium's automatic animations for the item.
+  - The other module skips the CAT animation when Automated Animations or a Boss Loot FX macro animates the item.
+- CatKit animation options and the troubleshooter warn when Automated Animations or Boss Loot FX also animates the item.
+- New special durations: Damaged by Source or Ally and Damaged by Source's Ally.
+- Auras have an Enter on Create option. Turn it off so creatures already in range when the aura appears do not count as entering.
+- Hidden activities show the CatKit icon on item and actor sheets, including Tidy5e, for GMs.
+- Added setting: Hide Hidden Activities on Actor Sheets. Off by default. Item sheets always show them.
+- Damage type pickers group types into Physical, Elemental and Other.
+- Damage type prompts can offer "Don't ask again this combat" or "this cast".
+- Placed areas can attach to the caster's token and follow it.
+- New area trigger: Moved, with an optional per-distance count.
+- Area activities can make their effects depend on the area. The effects end when the creature leaves or the area ends.
 ## Bug Fixes:
+- An activity's macros no longer replace its item's macros of the same pass.
+- A linked actor with several tokens on a scene runs its scene, nearby, level and every-turn macros once.
+- Aura enter, exit and once-per-turn triggers count a linked actor once, whichever of its tokens moves.
+- Dismissing a summon removes the areas and effects that depended on its effects.
+- Once-per-turn area activities no longer hit the cast's own targets again in the same turn.
+- Summon features that match the caster's DC or attack bonus use the spellcasting values when the spell does not come from a class.
 - Third party optional bonuses no longer add costs to local bonuses during validation.
+## API Update Notes:
+- `dialogUtils.selectDamageType` accepts `remember` and `rememberKey`. Added `dialogUtils.clearRemembered`.
+- Added `constants.damageTypeGroups` and `constants.getDamageTypeGroup`.
+- Added `effectUtils.endConcentration`.
+- Added `actorUtils.spendHitDice`.
 
 # 0.1.2 Release:
 ## Update Notes:

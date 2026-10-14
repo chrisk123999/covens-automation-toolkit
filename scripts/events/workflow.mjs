@@ -1,7 +1,7 @@
 import {constants, Events} from '../lib/_module.mjs';
 import {optionalBonus, regionVisibility} from '../mechanics/_module.mjs';
 import {diceSoNice} from '../integration/_modules.mjs';
-import {effects, manualRolls} from '../handlers/_module.mjs';
+import {effects, manualRolls, regions} from '../handlers/_module.mjs';
 import {workflowUtils} from '../utilities/_module.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
     let event = await new Events.PreTargetingWorkflowEvent(constants.workflowPasses.preTargeting, {activity, token, config, dialog, message}).run();
@@ -74,6 +74,7 @@ async function preTargetDamageApplication(token, {workflow, ditem}) {
 }
 async function rollFinished(workflow) {
     await optionalBonus.cleanup(workflow);
+    await regions.stampCastTargets(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.rollFinished, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
     await effects.specialDuration(workflow, 'finished');

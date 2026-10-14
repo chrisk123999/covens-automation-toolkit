@@ -1,6 +1,6 @@
 import * as applications from '../applications/_module.mjs';
 import {constants, Logging} from '../lib/_module.mjs';
-import {automationUtils} from '../utilities/_module.mjs';
+import {animationUtils, automationUtils} from '../utilities/_module.mjs';
 
 const TROUBLESHOOTER = {
     modules: {
@@ -207,16 +207,15 @@ const REPORT_CHECKS = [
         }
     },
     {
-        id: 'modules.bossLoot',
+        id: 'modules.animationModules',
         section: 'modules',
         group: 'CAT.Troubleshooter.Groups.Conflicts',
         run: () => {
-            if (!game.modules.get('boss-loot-assets-free')?.active) return;
-            return applications.WorldMedkit._worldItems().filter(item => item.flags['boss-loot-assets-free'] && automationUtils.getCurrentAutomation(item)).map(item => ({
+            return applications.WorldMedkit._worldItems().filter(item => automationUtils.getCurrentAutomation(item)).flatMap(item => animationUtils.getModuleAnimations(item).map(module => ({
                 status: 'warn',
                 label: item.actor ? `${item.actor.name}: ${item.name}` : item.name,
-                detail: _loc('CAT.Troubleshooter.Report.BossLoot')
-            }));
+                detail: _loc('CAT.Troubleshooter.Report.ModuleAnimation', {module})
+            })));
         }
     },
     {
