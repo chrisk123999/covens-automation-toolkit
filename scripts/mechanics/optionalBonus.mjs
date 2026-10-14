@@ -112,8 +112,7 @@ class BonusSession {
         const pending = this.#pendingD20.splice(0).filter(bonus => bonus.roll.formula !== '0');
         if (!pending.length) return roll;
         for (const bonusRoll of await resolveBonusRolls(pending, actor, CONFIG.Dice.BasicRoll)) {
-            if (!bonusRoll._evaluated) await bonusRoll.evaluate();
-            const merged = MidiQOL.addRollTo(roll, bonusRoll);
+            const merged = await MidiQOL.addRollToAsync(roll, bonusRoll);
             merged.data = roll.data;
             roll = merged;
         }

@@ -3,7 +3,7 @@ import {constants} from '../../lib/_module.mjs';
 const {fields} = foundry.data;
 
 const SPECIAL_DURATION_GROUPS = {
-    Workflow: ['endOfWorkflow', 'forceSave', 'dealtDamage', 'damaged', 'damagedByAlly', 'damagedByEnemy', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource'],
+    Workflow: ['endOfWorkflow', 'forceSave', 'dealtDamage', 'damaged', 'damagedByAlly', 'damagedByEnemy', 'damagedBySourceOrAlly', 'damagedBySourceAlly', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource'],
     Turn: ['turnStart', 'turnEnd'],
     Movement: ['moveFinished', 'zeroSpeed'],
     HitPoints: ['tempHP', 'tempMaxHP']

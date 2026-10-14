@@ -1,8 +1,8 @@
 import * as events from './events/_module.mjs';
 import {activities, combat, conditionResistanceAndVulnerability, contextmenu, effects, quickConditions, troubleshooter} from './handlers/_module.mjs';
-import {dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
+import {animationModules, dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
 import {constants} from './lib/_module.mjs';
-import {queryUtils} from './utilities/_module.mjs';
+import {dialogUtils, queryUtils} from './utilities/_module.mjs';
 export function readyHooks() {
     // Handlers
     Hooks.on(constants.miscHookNames.itemUseActivitySelect, activities.hiddenActivities);
@@ -10,6 +10,8 @@ export function readyHooks() {
     // Integration
     Hooks.on(constants.miscHookNames.daeSetFieldData, dae.addFlags);
     Hooks.on(constants.miscHookNames.vaeCreateEffectButtons, vae.createEffectButton);
+    Hooks.on(constants.miscHookNames.aaWorkflowStart, animationModules.workflowStart);
+    Hooks.on(constants.miscHookNames.preUseActivity, animationModules.preUseActivity);
     // Sheet Rendering
     Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, contextmenu.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsActivitySheet, contextmenu.appendHeaderControl);
@@ -17,6 +19,8 @@ export function readyHooks() {
     Hooks.on(constants.sheetHookNames.getHeaderControlsActorSheetV2, contextmenu.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsCompendium, contextmenu.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsItemSheet5e, contextmenu.appendHeaderControl);
+    Hooks.on(constants.sheetHookNames.renderItemSheet5e, activities.markHiddenActivities);
+    Hooks.on(constants.sheetHookNames.renderBaseActorSheet, activities.markHiddenActivities);
     Hooks.on(constants.sheetHookNames.getHeaderControlsLevelConfig, contextmenu.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsRegionConfig, contextmenu.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsSceneConfig, contextmenu.appendHeaderControl);
@@ -66,6 +70,7 @@ export function readyHooks() {
     Hooks.on(constants.actorHookNames.preDeleteActor, events.actorEvents.preDeleteActor);
     // Combat Events
     Hooks.on(constants.combatHookNames.preUpdateCombatant, events.combatEvents.preUpdateCombatant);
+    Hooks.on(constants.combatHookNames.deleteCombat, combat => dialogUtils.clearRemembered(combat.id));
     // Item Events
     Hooks.on(constants.itemHookNames.preUpdateItem, events.itemEvents.preUpdateItem);
     if (queryUtils.isTheGM()) {
@@ -118,6 +123,10 @@ export function initHooks() {
     Hooks.on(constants.miscHookNames.daeModifySpecials, dae.modifySpecials);
     Hooks.once(constants.miscHookNames.tidyReady, tidy5e.headerControls);
     Hooks.on(constants.miscHookNames.renderTidy5eItemSheetQuadrone, tidy5e.renderTidySheet);
+    Hooks.on(constants.miscHookNames.renderTidy5eItemSheetQuadrone, activities.markHiddenActivities);
     Hooks.on(constants.miscHookNames.renderTidy5eCharacterSheetQuadrone, tidy5e.renderTidySheet);
+    Hooks.on(constants.miscHookNames.renderTidy5eCharacterSheetQuadrone, activities.markHiddenActivities);
+    Hooks.on(constants.miscHookNames.renderTidy5eNpcSheetQuadrone, activities.markHiddenActivities);
+    Hooks.on(constants.miscHookNames.tidyGetActivitiesForPlay, activities.tidyActivitiesForPlay);
     Hooks.once(constants.miscHookNames.macroautocomplete, macroautocomplete.registerCAT);
 }

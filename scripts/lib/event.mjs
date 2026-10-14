@@ -72,10 +72,10 @@ class CatEvent {
             level: this.level
         };
     }
-    getActorTriggers(actor, pass, data) {
+    getActorTriggers(actor, pass, data, {token} = {}) {
         const triggers = [];
         if (CatEvent.hasCatFlag(actor)) triggers.push(new this.trigger(actor, pass, data));
-        if (this.token && CatEvent.hasCatFlag(this.token)) triggers.push(new this.trigger(this.token, pass, data));
+        if (token && CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, data));
         actor.items.forEach(item => {
             if (CatEvent.hasCatFlag(item)) triggers.push(new this.trigger(item, pass, data));
             item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
@@ -127,33 +127,45 @@ class CatEvent {
         });
         return triggers;
     }
-    getSceneTriggers(scene, pass, data) {
-        const triggers = [];
-        if (CatEvent.hasCatFlag(scene)) triggers.push(new this.trigger(scene, pass, data));
-        scene.tokens.forEach(token => {
+    actorTokens(tokens) {
+        const linked = new Map();
+        const result = new Set();
+        tokens.forEach(token => {
             if (!token.actor) return;
+            if (!token.actorLink) return result.add(token);
+            const kept = linked.get(token.actor.id);
+            if (!kept || (this.distances[token.id] ?? Infinity) < (this.distances[kept.id] ?? Infinity)) linked.set(token.actor.id, token);
+        });
+        linked.forEach(token => result.add(token));
+        return result;
+    }
+    getTokenTriggers(tokens, pass, getData) {
+        const triggers = [];
+        const actorTokens = this.actorTokens(tokens);
+        tokens.forEach(token => {
+            if (!token.actor) return;
+            const data = getData(token);
             if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, data));
-            triggers.push(...this.getActorTriggers(token.actor, pass, data));
+            if (actorTokens.has(token)) triggers.push(...this.getActorTriggers(token.actor, pass, data));
         });
         return triggers;
     }
-    getNearbyTriggers(scene, pass, data) {
+    getSceneTriggers(scene, pass, data) {
         const triggers = [];
-        scene.tokens.forEach(token => {
-            if (!token.actor) return;
-            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
-            triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
-        });
+        if (CatEvent.hasCatFlag(scene)) triggers.push(new this.trigger(scene, pass, data));
+        triggers.push(...this.getTokenTriggers(scene.tokens, pass, () => data));
         return triggers;
+    }
+    nearbyData(data) {
+        return token => ({...data, targetToken: token, distances: this.distances, token: this.token});
+    }
+    getNearbyTriggers(scene, pass, data) {
+        return this.getTokenTriggers(scene.tokens, pass, this.nearbyData(data));
     }
     getLevelTriggers(level, pass, data) {
         const triggers = [];
         if (CatEvent.hasCatFlag(level)) triggers.push(new this.trigger(level, pass, data));
-        level.parent.tokens.filter(token => token.level === level.id).forEach(token => {
-            if (!token.actor) return;
-            if (CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
-            triggers.push(...this.getActorTriggers(token.actor, pass, {...data, targetToken: token, distances: this.distances, token: this.token}));
-        });
+        triggers.push(...this.getTokenTriggers(level.parent.tokens.filter(token => token.level === level.id), pass, this.nearbyData(data)));
         return triggers;
     }
     get sortedTriggers() {
@@ -162,13 +174,8 @@ class CatEvent {
         const unsortedTriggers = this.unsortedTriggers;
         let winningTriggers = new Set();
         if (!this.canOverlap) {
-            const names = new Set(unsortedTriggers.map(trigger => trigger.name));
-            const groupedTriggers = {};
-            names.forEach(name => {
-                groupedTriggers[name] = unsortedTriggers.filter(trigger => trigger.name === name);
-            });
-            names.forEach(name => {
-                const group = groupedTriggers[name];
+            const groupKey = trigger => (trigger.document.documentName === 'Activity' ? 'activity.' : '') + trigger.name;
+            Object.values(Object.groupBy(unsortedTriggers, groupKey)).forEach(group => {
                 if (group.length === 1) return winningTriggers.add(group[0]);
                 let maxLevel = Math.max(...group.map(trigger => trigger.castData.castLevel));
                 let maxDC = Math.max(...group.map(trigger => trigger.castData.saveDC));
@@ -221,7 +228,7 @@ class CatEvent {
     get unsortedTriggers() {
         let triggers = [];
         const passName = this.pass.capitalize();
-        if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + passName));
+        if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + passName, undefined, {token: this.token}));
         if (this.scene) {
             triggers.push(...this.getSceneTriggers(this.scene, 'scene' + passName));
             triggers.push(...this.getNearbyTriggers(this.scene, 'nearby' + passName));
@@ -355,7 +362,7 @@ class BaseWorkflowEvent extends CatEvent {
                 if (castActivity && CatEvent.hasCatFlag(castActivity)) triggers.push(new this.trigger(castActivity, 'castEnchantment' + passName, {sourceItem: this.item, castData: this.castData}));
             }
         }
-        if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + passName));
+        if (this.actor) triggers.push(...this.getActorTriggers(this.actor, 'actor' + passName, undefined, {token: this.token}));
         if (this.token && CatEvent.hasCatFlag(this.token)) triggers.push(new this.trigger(this.token, 'token' + passName, {castData: this.castData}));
         if (this.scene) {
             triggers.push(...this.getSceneTriggers(this.scene, 'scene' + passName));

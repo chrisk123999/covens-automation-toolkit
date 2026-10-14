@@ -137,18 +137,15 @@ export class SummonsManager {
             genericUtils.setProperty(itemData, 'system.uses.spent', 0);
             if (usesRecovery) genericUtils.setProperty(itemData, 'system.uses.recovery', [{period: usesRecovery, type: 'recoverAll', formula: usesRecovery === 'recharge' ? (usesRechargeFormula || '6') : ''}]);
         }
-        const sourceClass = itemUtils.getAdvancementSourceItem(summon.sourceDocument);
-        if (!sourceClass) {
+        const sourceDocument = summon.sourceDocument;
+        const sourceItem = sourceDocument?.documentName === 'Activity' ? sourceDocument.item : sourceDocument;
+        if ((!matchDC && !matchAttack) || !sourceItem?.actor) {
             updates.items.push(itemData);
             return;
         }
-        const spellcasting = sourceClass.system.spellcasting;
-        if (!spellcasting) {
-            updates.items.push(itemData);
-            return;
-        }
-        const save = spellcasting.save;
-        const attack = spellcasting.attack - (sourceClass.actor?.conditionRollReduction ?? 0);
+        const spellcasting = itemUtils.getAdvancementSourceItem(sourceItem)?.system.spellcasting;
+        const save = spellcasting ? spellcasting.save : itemUtils.getSaveDC(sourceItem);
+        const attack = spellcasting ? spellcasting.attack - (sourceItem.actor.conditionRollReduction ?? 0) : itemUtils.getSpellAttackBonus(sourceItem);
         Object.values(itemData.system.activities).forEach(activityData => {
             if (matchDC && activityData.type === 'save') genericUtils.setProperty(activityData, 'save.dc', {
                 calculation: '',
@@ -241,6 +238,12 @@ export class SummonsManager {
         if (!summon.actor) return;
         await summonEvents.preDelete(summon);
         const actorId = summon.actor.id;
+        const effects = [...summon.actor.effects, ...summon.actor.items.contents.flatMap(item => [...item.effects])];
+        const orphans = new Set([
+            ...effects.flatMap(effect => effect.getDependents()).filter(document => document instanceof foundry.abstract.Document && document.actor !== summon.actor),
+            ...game.scenes.contents.flatMap(scene => scene.regions.filter(region => region.flags.dnd5e?.dependentOn && fromUuidSync(region.flags.dnd5e.dependentOn, {strict: false})?.actor?.id === actorId))
+        ]);
+        await Promise.all([...orphans].map(document => documentUtils.deleteDocument(document)));
         await Promise.all(game.scenes.map(async scene => {
             const tokenIds = scene.tokens.filter(token => token.actorId === actorId).map(token => token.id);
             if (!tokenIds.length) return;

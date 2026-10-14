@@ -114,6 +114,16 @@ function getConcentrationEffect(actor, item) {
     return MidiQOL.getConcentrationEffect(actor, item);
 }
 /**
+ * End the concentration this actor holds for an item, if any.
+ * @param {foundry.documents.Actor} actor Actor holding the concentration.
+ * @param {foundry.documents.Item} item Item being concentrated on.
+ * @returns {Promise<void>}
+ */
+async function endConcentration(actor, item) {
+    const effect = getConcentrationEffect(actor, item);
+    if (effect) await documentUtils.deleteDocument(effect);
+}
+/**
  * Get the actor this effect sits on, whether it is applied to the actor or to one of its items.
  * @param {ActiveEffect} effect Effect to read from.
  * @returns {foundry.documents.Actor|undefined}
@@ -199,6 +209,7 @@ export default {
     getOriginActivity,
     getOriginActivitySync,
     getConcentrationEffect,
+    endConcentration,
     getActor,
     resetDuration,
     getImageConfig,

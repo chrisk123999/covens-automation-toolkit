@@ -85,9 +85,24 @@ const settings = {
         default: false,
         menu: 'interface'
     },
+    hideActivitiesOnActorSheet: {
+        type: Boolean,
+        default: false,
+        menu: 'interface'
+    },
     diceSoNice: {
         type: Boolean,
         default: true,
+        menu: 'integration'
+    },
+    animationPriority: {
+        type: String,
+        default: 'cat',
+        choices: {
+            cat: 'CAT.Settings.AnimationPriority.Cat',
+            module: 'CAT.Settings.AnimationPriority.Module',
+            both: 'CAT.Settings.AnimationPriority.Both'
+        },
         menu: 'integration'
     },
     effectDescriptions: {

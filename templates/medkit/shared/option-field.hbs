@@ -9,7 +9,8 @@
                     <option value=""></option>
                 {{/if}}
                 {{#each choices}}
-                    <option value="{{value}}" data-image="{{image}}" {{#if invert}} data-invert="true" {{/if}}>
+                    <option value="{{value}}" data-image="{{image}}" {{#if invert}} data-invert="true" {{/if}}
+                        data-tag="{{tag}}">
                         {{label}}
                     </option>
                 {{/each}}
@@ -83,6 +84,9 @@
         {{#if hint}}
             <p class="hint">{{hint}}</p>
         {{/if}}
+        {{#each moduleAnimations}}
+            <p class="notice notification warning">{{localize "CAT.Troubleshooter.Report.ModuleAnimation" module=this}}</p>
+        {{/each}}
     </div>
     {{#if (and animationLabel (or animationOptions.length animationCredits.length))}}
         <div class="suboptions" data-section="animation-suboptions">

@@ -150,6 +150,45 @@ function colorMatrix(animation, color) {
     };
     return matrix;
 }
+/**
+ * Whether Automated Animations would animate the item, from its own flags or its Automatic Recognition menus.
+ * @param {Item5e} item The item to check.
+ * @returns {boolean}
+ */
+function hasAutomatedAnimation(item) {
+    if (!game.modules.get('autoanimations')?.active) return false;
+    const flags = item.flags.autoanimations ?? {};
+    if (flags.killAnim || flags.isEnabled === false) return false;
+    if (flags.isCustomized) return true;
+    if (game.settings.get('autoanimations', 'disableAutoRec')) return false;
+    const rinse = name => name.replace(/\s+/g, '').toLowerCase();
+    const name = rinse(item.name);
+    return ['melee', 'range', 'ontoken', 'templatefx', 'aura', 'preset'].flatMap(menu => game.settings.get('autoanimations', 'aaAutorec-' + menu) ?? []).some(entry => {
+        if (!entry.label) return false;
+        if (entry.advanced?.exactMatch) return entry.label === item.name;
+        return name.includes(rinse(entry.label)) && !entry.advanced?.excludedTerms?.some(term => name.includes(rinse(term)));
+    });
+}
+/**
+ * Whether an active Boss Loot FX module has an animation macro assigned to the item.
+ * @param {Item5e} item The item to check.
+ * @returns {boolean}
+ */
+function hasBossLootAnimation(item) {
+    return ['boss-loot-assets-free', 'boss-loot-assets-premium'].some(id => game.modules.get(id)?.active && Object.values(item.flags[id] ?? {}).some(entry => entry?.command));
+}
+/**
+ * Names of the animation modules that play their own animation for the item, given the Animation Priority setting.
+ * @param {Item5e} item The item to check.
+ * @returns {string[]}
+ */
+function getModuleAnimations(item) {
+    const priority = game.settings.get('cat', 'animationPriority');
+    const modules = [];
+    if (priority !== 'cat' && hasAutomatedAnimation(item)) modules.push(game.modules.get('autoanimations').title);
+    if (hasBossLootAnimation(item)) modules.push('Boss Loot FX');
+    return modules;
+}
 export default {
     getAnimation,
     preloadAnimations,
@@ -160,5 +199,8 @@ export default {
     jb2aCheck,
     meetsRequirement,
     aseCheck,
-    colorMatrix
+    colorMatrix,
+    hasAutomatedAnimation,
+    hasBossLootAnimation,
+    getModuleAnimations
 };

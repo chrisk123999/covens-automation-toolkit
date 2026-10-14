@@ -50,8 +50,13 @@ async function turnStart(combat, combatant, context = {}) {
     if (!token) return;
     const {previousCombatant, previousRound, previousTurn} = getPrevious(combat);
     const combatData = getCombatData(combat, combatant, round, turn);
+    const linkedActors = new Set();
     for (const sceneToken of token.parent.tokens.filter(i => i.actor && ['npc', 'character'].includes(i.actor.type))) {
         await regions.processRegionActivities(sceneToken, Array.from(sceneToken.regions), constants.combatPasses.everyTurn, {combatData});
+        if (sceneToken.actorLink) {
+            if (linkedActors.has(sceneToken.actorId)) continue;
+            linkedActors.add(sceneToken.actorId);
+        }
         await new Events.CombatEvent(combat, constants.combatPasses.everyTurn, sceneToken, {context, combatant, round, turn, previousCombatant, previousRound, previousTurn}).run();
     }
     await regions.processRegionActivities(token, Array.from(token.regions), constants.combatPasses.turnStart, {combatData});

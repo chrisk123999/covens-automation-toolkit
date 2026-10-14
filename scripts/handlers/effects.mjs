@@ -116,6 +116,14 @@ const attackedBy = (source, hit) => async ({workflow, target, origin}) => {
     const actor = (await origin())?.item?.actor;
     return !!actor && (workflow.actor.id === actor.id) === source;
 };
+const damagedBySourceSide = includeSource => async ({workflow, ditem, origin}) => {
+    if (!(ditem?.totalDamage > 0)) return false;
+    const actor = (await origin())?.item?.actor;
+    if (!actor) return false;
+    if (workflow.actor.id === actor.id) return includeSource;
+    const sourceToken = actorUtils.getFirstToken(actor);
+    return !!sourceToken && workflow.token.document.disposition === sourceToken.disposition;
+};
 const specialDurationTriggers = {
     attackedByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, false)},
     attackedBySource: {stage: 'attack', side: 'target', test: attackedBy(true, false)},
@@ -125,6 +133,8 @@ const specialDurationTriggers = {
     damaged: {stage: 'damage', side: 'target', test: damagedBy()},
     damagedByAlly: {stage: 'damage', side: 'target', test: damagedBy('ally')},
     damagedByEnemy: {stage: 'damage', side: 'target', test: damagedBy('enemy')},
+    damagedBySourceOrAlly: {stage: 'damage', side: 'target', test: damagedBySourceSide(true)},
+    damagedBySourceAlly: {stage: 'damage', side: 'target', test: damagedBySourceSide(false)},
     dealtDamage: {stage: 'damage', side: 'actor', test: ({workflow, target, ditem}) => ditem?.totalDamage > 0 && target.uuid !== workflow.token.document.uuid},
     endOfWorkflow: {stage: 'finished', side: 'both', test: () => true}
 };

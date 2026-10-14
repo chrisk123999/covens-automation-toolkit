@@ -40,6 +40,7 @@ function descriptor({document}) {
         walls: config.walls,
         effect: config.effect,
         value: config.value ? {formula: config.value, stacking: config.stackHighest ? 'highest' : 'nearest'} : undefined,
+        enterOnCreate: config.enterOnCreate,
         triggers: Object.entries(triggerKeys).filter(([, key]) => config[key]).map(([event, key]) => ({event, activity: config[key], oncePerTurn: config.oncePerTurn})),
         filter: getFilter(config.filter)
     };
@@ -179,6 +180,13 @@ const aura = {
             category: 'behavior',
             label: 'CAT.Macros.Aura.TurnEndActivity',
             hint: 'CAT.Macros.Aura.TurnEndActivityHint'
+        },
+        enterOnCreate: {
+            default: true,
+            type: 'checkbox',
+            category: 'behavior',
+            label: 'CAT.Macros.Aura.EnterOnCreate',
+            hint: 'CAT.Macros.Aura.EnterOnCreateHint'
         },
         oncePerTurn: {
             default: false,
