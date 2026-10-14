@@ -16,6 +16,7 @@ function mergeRollOptions(config, options) {
     config.rolls = [genericUtils.mergeObject(firstRoll, {options}, {inplace: false}), ...otherRolls];
 }
 async function check(wrapped, config, dialog = {}, message = {}) {
+    if (!this.system.abilities) return wrapped(config, dialog, message);
     const options = {};
     if (config.ability === 'spellcasting') config = {...config, ability: this.spellcastingAbility};
     const event = config.event;
@@ -76,10 +77,11 @@ async function check(wrapped, config, dialog = {}, message = {}) {
     return [roll];
 }
 async function skill(wrapped, config, dialog = {}, message = {}) {
+    if (!this.system.abilities) return wrapped(config, dialog, message);
     const options = {};
     const event = config.event;
     const skillId = config.skill;
-    config.ability ??= this.system.skills[skillId]?.ability ?? CONFIG.DND5E.skills[skillId]?.ability;
+    config.ability ??= this.system.skills?.[skillId]?.ability ?? CONFIG.DND5E.skills[skillId]?.ability;
     const activity = await workflowUtils.getConfigActivity(config);
     if (activity) workflowUtils.setWorkflowProperty(config, 'activity', activity);
     await skillEvents.situational(this, {config, dialog, message, options, skillId});
@@ -135,6 +137,7 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     return [roll];
 }
 async function save(wrapped, config, dialog = {}, message = {}) {
+    if (!this.system.abilities) return wrapped(config, dialog, message);
     const options = {};
     if (config.ability === 'spellcasting') config = {...config, ability: this.spellcastingAbility};
     const event = config.event;
@@ -195,6 +198,7 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     return [roll];
 }
 async function tool(wrapped, config, dialog, message) {
+    if (!this.system.abilities) return wrapped(config, dialog, message);
     let options = {};
     let toolId = config.tool;
     const activity = await workflowUtils.getConfigActivity(config);
