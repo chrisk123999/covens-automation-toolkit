@@ -18,6 +18,7 @@ async function doRegionMove(region, locationData, {movementPromise} = {}) {
     await new Events.RegionEvent([region], constants.regionPasses.exited, {locationData, tokens: regionTokens.exited}).run();
     await new Events.RegionEvent([region], constants.regionPasses.stayed, {locationData, tokens: regionTokens.stayed}).run();
     await new Events.RegionEvent([region], constants.regionPasses.passedOver, {locationData, tokens: regionTokens.through}).run();
+    await new Events.RegionEvent([region], constants.regionPasses.moved, {locationData}).run();
 }
 async function updateRegion(region, updates, options, userId) {
     if (userId != game.user.id) return;

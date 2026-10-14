@@ -256,6 +256,8 @@ const regionPasses = {
     created: 'created',
     /** After the region is updated. */
     updated: 'updated',
+    /** After the region moves or reshapes, once per move, after the per-token passes. Includes attached regions following their token. */
+    moved: 'moved',
     /** After the region is deleted. */
     deleted: 'deleted',
     /** A moving token left the region. */
