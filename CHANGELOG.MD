@@ -27,6 +27,7 @@
 - Added `constants.damageTypeGroups` and `constants.getDamageTypeGroup`.
 - Added `effectUtils.endConcentration`.
 - Added `actorUtils.spendHitDice`.
+- New region pass: `moved`. It runs once each time a region moves or changes shape, including attached regions following their token.
 
 # 0.1.2 Release:
 ## Update Notes:
