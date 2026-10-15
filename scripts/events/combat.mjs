@@ -20,6 +20,7 @@ async function turnEnd(combat, combatant, context = {}) {
     await new Events.CombatEvent(combat, constants.combatPasses.turnEnd, token, {context, combatant, round, turn}).run();
     await Auras.turnEvent(token, constants.auraTriggers.turnEnd, {combat, round, combatantId: combatant.id});
     await effects.specialDurationTurn(token, constants.combatPasses.turnEnd, {round, turn});
+    await effects.refreshDisableConditions(token.actor, {token});
 }
 /**
  * Roll recharge for a non-NPC combatant's spent uses.
@@ -51,6 +52,7 @@ async function turnStart(combat, combatant, context = {}) {
     const {previousCombatant, previousRound, previousTurn} = getPrevious(combat);
     const combatData = getCombatData(combat, combatant, round, turn);
     const linkedActors = new Set();
+    await effects.refreshDisableConditions(token.actor, {token}); // enable before events
     for (const sceneToken of token.parent.tokens.filter(i => i.actor && ['npc', 'character'].includes(i.actor.type))) {
         await regions.processRegionActivities(sceneToken, Array.from(sceneToken.regions), constants.combatPasses.everyTurn, {combatData});
         if (sceneToken.actorLink) {

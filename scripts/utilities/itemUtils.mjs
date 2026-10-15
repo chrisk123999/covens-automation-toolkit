@@ -154,6 +154,7 @@ async function unhideActivities(item, identifiers, {ids = false, favorite = fals
                 }
             };
             genericUtils.setProperty(effectData, 'flags.cat.identifier', 'catHiddenActivities');
+            genericUtils.setProperty(effectData, 'flags.cat.noAnimation', true);
             effect = await enchantItem(item, effectData);
         }
         return effect;

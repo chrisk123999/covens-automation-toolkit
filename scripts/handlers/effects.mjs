@@ -1,5 +1,5 @@
 import {constants, Logging} from '../lib/_module.mjs';
-import {actorUtils, animationUtils, documentUtils, effectUtils, genericUtils, itemUtils, workflowUtils} from '../utilities/_module.mjs';
+import {actorUtils, animationUtils, combatUtils, documentUtils, effectUtils, genericUtils, itemUtils, workflowUtils} from '../utilities/_module.mjs';
 async function addConditions(effect) {
     const conditions = effect.flags.cat?.conditions;
     if (!conditions) return;
@@ -192,15 +192,32 @@ async function specialDurationEquipment(item, {removed} = {}) {
         if (specialDurations.includes(item.system.type?.value)) await documentUtils.deleteDocument(effect);
     }));
 }
-async function refreshDisableConditions(actor) {
+async function refreshDisableConditions(actor, {token} = {}) {
     if (!actor) return;
-    const equippedTypes = new Set(actor.items.filter(i => i.system.equipped && i.type === 'equipment').map(i => i.system.type?.value));
-    await Promise.all(actorUtils.getEffects(actor, {includeItemEffects: true}).map(async effect => {
+    const updates = [];
+    const equippedTypes = new Set(actor.itemTypes.equipment.filter(i => i.system.equipped).map(i => i.system.type?.value));
+    for (const effect of actorUtils.getEffects(actor, {includeItemEffects: true})) {
         const conditions = effect.flags.cat?.disableCondition;
-        if (!conditions?.length) return;
-        const shouldDisable = conditions.some(condition => actor.statuses.has(condition) || equippedTypes.has(condition));
-        if (!!effect.disabled !== shouldDisable) await documentUtils.update(effect, {disabled: shouldDisable});
-    }));
+        if (!conditions?.length) continue;
+        const shouldDisable = conditions.some(condition => 
+            actor.statuses.has(condition) || 
+            equippedTypes.has(condition) ||
+            (condition === 'combatTurn' && !isCombatTurn(actor, token))
+        );
+        if (!!effect.disabled !== shouldDisable) updates.push({
+            animate: false,
+            action: 'update',
+            parent: effect.parent,
+            documentName: 'ActiveEffect',
+            updates: [{_id: effect.id, disabled: shouldDisable}]
+        });
+    }
+    if (updates.length) await documentUtils.modifyBatch(updates);
+}
+function isCombatTurn(actor, token) {
+    token ??= actorUtils.getFirstToken(actor);
+    if (!token) return false;
+    return combatUtils.isOwnTurn(token);
 }
 async function specialDurationHitPoints(actor, updates) {
     const hp = updates.system?.attributes?.hp;

@@ -78,7 +78,7 @@ class CatEvent {
         if (token && CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, data));
         actor.items.forEach(item => {
             if (CatEvent.hasCatFlag(item)) triggers.push(new this.trigger(item, pass, data));
-            item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
+            item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && effect.active && CatEvent.hasCatFlag(effect)).forEach(effect => {
                 triggers.push(new this.trigger(effect, pass, data));
             });
             item.system.activities?.contents?.filter(activity => CatEvent.hasCatFlag(activity)).forEach(activity => {

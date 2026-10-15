@@ -77,6 +77,7 @@ export default class EffectMedkit extends MedkitApp {
         ];
         pickedDurations = new Set(flags.disableCondition ?? []);
         context.disableConditionGroups = [
+            {label: groupLabel('Turn'), options: sortChoices([{value: 'combatTurn', label: _loc('CAT.MEDKIT.Effect.DisableConditions.combatTurn')}])},
             prefixedGroup('ConditionAdded', statusChoices('')),
             prefixedGroup('Equipped', Object.entries(CONFIG.DND5E.armorTypes).map(([key, label]) => ({value: key, label})))
         ];

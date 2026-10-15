@@ -14,6 +14,7 @@
 - Placed areas can attach to the caster's token and follow it.
 - New area trigger: Moved, with an optional per-distance count.
 - Area activities can make their effects depend on the area. The effects end when the creature leaves or the area ends.
+- Added `combatTurn` disable condtion in the Effect CatKit. Enables the effect only during the actor's turn.
 ## Bug Fixes:
 - An activity's macros no longer replace its item's macros of the same pass.
 - A linked actor with several tokens on a scene runs its scene, nearby, level and every-turn macros once.

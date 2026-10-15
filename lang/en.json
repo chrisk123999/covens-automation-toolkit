@@ -604,6 +604,9 @@
                     "Label": "Disable Conditions",
                     "Hint": "Triggers that automatically disable this effect."
                 },
+                "DisableConditions": {
+                    "combatTurn": "Enable During Turn"
+                },
                 "SpecialDuration": {
                     "Label": "Special Durations",
                     "Hint": "Triggers that automatically remove this effect."

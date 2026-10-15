@@ -720,6 +720,7 @@ export default {
     get healingTypeOptions() { return Object.entries(CONFIG.DND5E.healingTypes).map(i => ({label: i[1].label, value: i[0], image: i[1].icon, invertColor: i[0] === 'vitality'})); },
     get itemProperties() { return Object.entries(CONFIG.DND5E.itemProperties).map(i => ({label: i[1].label, value: i[0]})); },
     get itemRarities() { return Object.entries(CONFIG.DND5E.itemRarity).map(([value, label]) => ({value, label})); },
+    get masteryOptions() { return Object.entries(CONFIG.DND5E.weaponMasteries).map(([value, data]) => ({value, label: data.label})); },
     get meleeWeaponOptions() { return meleeWeapons; },
     get physicalItemTypes() { return Object.entries(Item.implementation.compendiumBrowserTypes().physical.children).map(i => ({label: _loc(i[1].label), value: i[0], image: `systems/dnd5e/icons/svg/items/${i[0]}.svg`})); },
     get rangedWeaponOptions() { return rangedWeapons; },
