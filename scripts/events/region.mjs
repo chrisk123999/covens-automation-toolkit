@@ -3,7 +3,7 @@ import {regions} from '../handlers/_module.mjs';
 import {genericUtils, regionUtils} from '../utilities/_module.mjs';
 async function createRegion(region, options, userId) {
     if (userId != game.user.id) return;
-    if (region.flags.dnd5e?.activity) return;
+    if (region.flags.dnd5e?.activity && !options.cat?.pathRegion) return;
     await regions.regionEffects(region);
     await new Events.RegionEvent([region], constants.regionPasses.created, {options}).run();
 }
@@ -31,6 +31,7 @@ async function updateRegion(region, updates, options, userId) {
 }
 async function deleteRegion(region, options, userId) {
     if (userId != game.user.id) return;
+    await regionUtils.deletePathWalls(region);
     await regions.regionEffects(region, true);
     await new Events.RegionEvent([region], constants.regionPasses.deleted, {options}).run();
 }

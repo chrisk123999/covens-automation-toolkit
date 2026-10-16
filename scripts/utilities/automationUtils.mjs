@@ -263,7 +263,7 @@ function getAutomationSources({packsOnly = false} = {}) {
  */
 function getSourceName(id) {
     return constants.automations?.sourceNames?.[id]
-        ?? game.packs.get(id)?.metadata.label
+        ?? game.packs.get(id)?.title
         ?? game.modules.get(id)?.title
         ?? (game.system?.id === id ? game.system.title : null)
         ?? id;

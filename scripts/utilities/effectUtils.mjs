@@ -134,6 +134,17 @@ function getActor(effect) {
     if (effect.parent instanceof Item) return effect.parent.actor;
 }
 /**
+ * Get every effect with this identifier on the scene's token actors, optionally limited to effects originating from a document.
+ * @param {Scene} scene Scene to search.
+ * @param {string} identifier Effect identifier to match.
+ * @param {object} [options]
+ * @param {foundry.abstract.Document} [options.origin] Only effects whose origin is this document or one of its embedded documents.
+ * @returns {ActiveEffect[]}
+ */
+function getSceneEffects(scene, identifier, {origin} = {}) {
+    return scene.tokens.contents.flatMap(token => token.actor?.effects.filter(effect => documentUtils.getIdentifier(effect) === identifier && (!origin || effect.origin?.startsWith(origin.uuid))) ?? []);
+}
+/**
  * Set the effect start time to the current world time or combat turn.
  * @param {foundry.documents.ActiveEffect} effect Effect to read from.
  * @returns {Promise<foundry.documents.ActiveEffect>}
@@ -211,6 +222,7 @@ export default {
     getConcentrationEffect,
     endConcentration,
     getActor,
+    getSceneEffects,
     resetDuration,
     getImageConfig,
     pushImageChanges

@@ -9,6 +9,7 @@ export {default as EmbeddedMacros} from './embeddedMacros.mjs';
 export {default as Events} from './event.mjs';
 export {default as Logging} from './logging.mjs';
 export {default as Macros} from './macros.mjs';
+export {PathCrosshairs} from './pathCrosshairs.mjs';
 export {D20Bonus, DamageBonus} from './optionalBonus.mjs';
 export {default as queries} from './query.mjs';
 export {default as AttributeRestrictions} from './restriction.mjs';

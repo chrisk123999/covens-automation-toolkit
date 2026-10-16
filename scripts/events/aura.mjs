@@ -33,6 +33,9 @@ function updateToken(token, changes) {
     Auras.refreshTokens([token], {reindex});
     if ('actorId' in changes || 'actorLink' in changes) Auras.reconcile();
 }
+function moveToken(token, movement) {
+    if (Auras.isWorldScene(token.parent)) Auras.passThrough(token, movement);
+}
 function deleteToken(token) {
     Auras.removeToken(token);
 }
@@ -64,6 +67,7 @@ export default {
     updateCombat: whenReady(updateCombat),
     createToken: whenReady(createToken),
     updateToken: whenReady(updateToken),
+    moveToken: whenReady(moveToken),
     deleteToken: whenReady(deleteToken),
     itemChanged: whenReady(itemChanged),
     updateItem: whenReady(updateItem),

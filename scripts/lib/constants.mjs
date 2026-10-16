@@ -218,6 +218,7 @@ const auraHookNames = {
     deleteCombat: 'deleteCombat',
     createToken: 'createToken',
     updateToken: 'updateToken',
+    moveToken: 'moveToken',
     deleteToken: 'deleteToken',
     createItem: 'createItem',
     updateItem: 'updateItem',
@@ -260,6 +261,10 @@ const regionPasses = {
     moved: 'moved',
     /** After the region is deleted. */
     deleted: 'deleted',
+    /** A wall panel of the region was destroyed. `options.segment` holds an upright panel's two end points, `options.flat` a flat panel's `{x, y, size, elevation}`. */
+    panelBroken: 'panelBroken',
+    /** Damage passed through the region to reach a target. `options` holds `token`, `origin`, `target` and the damage `types`. */
+    damageThrough: 'damageThrough',
     /** A moving token left the region. */
     left: 'left',
     /** A moving token entered the region. */
@@ -450,6 +455,8 @@ const miscHookNames = {
     aaWorkflowStart: 'AutomatedAnimations-WorkflowStart',
     preUseActivity: 'dnd5e.preUseActivity'
 };
+const DISCORD_URL = 'https://discord.gg/egH9AFtPJk';
+const WIKI_URL = 'https://github.com/chrisk123999/covens-automation-toolkit/wiki';
 const MEDKIT_STATUSES = {
     UNKNOWN: 'unknown',
     OUTDATED: 'outdated',
@@ -667,6 +674,8 @@ export default {
     timePasses,
     actorHookNames,
     MEDKIT_STATUSES,
+    DISCORD_URL,
+    WIKI_URL,
     contextMenuHookNames,
     attacks,
     meleeAttacks,

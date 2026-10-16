@@ -66,6 +66,9 @@ Hooks.once('ready', async () => {
     patches.daePatching.patch(true);
     handlers.grapple.register();
     handlers.aura.register();
+    handlers.summon.register();
+    handlers.backups.startup();
+    await handlers.customMacros.load();
     await utils.genericUtils.sleep(1000); //To avoid eating console logs from other modules.
     await handlers.items.registerCompendiums({startup: true});
     catGate();

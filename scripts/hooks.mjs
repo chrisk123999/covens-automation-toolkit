@@ -1,5 +1,5 @@
 import * as events from './events/_module.mjs';
-import {activities, combat, conditionResistanceAndVulnerability, contextmenu, effects, quickConditions, troubleshooter} from './handlers/_module.mjs';
+import {activities, combat, conditionResistanceAndVulnerability, contextmenu, customMacros, effects, quickConditions, summon, troubleshooter} from './handlers/_module.mjs';
 import {animationModules, dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
 import {constants} from './lib/_module.mjs';
 import {dialogUtils, queryUtils} from './utilities/_module.mjs';
@@ -7,6 +7,15 @@ export function readyHooks() {
     // Handlers
     Hooks.on(constants.miscHookNames.itemUseActivitySelect, activities.hiddenActivities);
     Hooks.on('dnd5e.determineOccupiedGridSpaceDifficult', effects.difficultTerrain);
+    Hooks.on(constants.miscHookNames.preUseActivity, summon.preUseActivity);
+    Hooks.on('dnd5e.preSummon', summon.preSummon);
+    Hooks.on(constants.workflowHookNames.rollFinished, summon.rollFinished);
+    Hooks.on('deleteActiveEffect', summon.deleteActiveEffect);
+    Hooks.on('preCreateMacro', customMacros.preCreateMacro);
+    Hooks.on('createMacro', customMacros.changed);
+    Hooks.on('updateMacro', customMacros.changed);
+    Hooks.on('deleteMacro', customMacros.changed);
+    Hooks.on('renderMacroConfig', customMacros.renderMacroConfig);
     // Integration
     Hooks.on(constants.miscHookNames.daeSetFieldData, dae.addFlags);
     Hooks.on(constants.miscHookNames.vaeCreateEffectButtons, vae.createEffectButton);
@@ -88,6 +97,7 @@ export function readyHooks() {
         Hooks.on(constants.auraHookNames.deleteCombat, events.auraEvents.combatChanged);
         Hooks.on(constants.auraHookNames.createToken, events.auraEvents.createToken);
         Hooks.on(constants.auraHookNames.updateToken, events.auraEvents.updateToken);
+        Hooks.on(constants.auraHookNames.moveToken, events.auraEvents.moveToken);
         Hooks.on(constants.auraHookNames.deleteToken, events.auraEvents.deleteToken);
         Hooks.on(constants.auraHookNames.createItem, events.auraEvents.itemChanged);
         Hooks.on(constants.auraHookNames.updateItem, events.auraEvents.updateItem);

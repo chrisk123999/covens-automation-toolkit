@@ -563,6 +563,14 @@ function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flav
     return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, targets.map(t => t.object), damageRoll, {flavor, itemCardUuid, itemData});
 }
 /**
+ * Hit points and temporary hit points the workflow's damage actually removed, across every target.
+ * @param {MidiQOL.Workflow} workflow Workflow whose damage has been applied.
+ * @returns {number}
+ */
+function getDamageDealt(workflow) {
+    return (workflow.damageList ?? []).reduce((total, entry) => total + Math.max(0, (entry.oldHP ?? 0) - (entry.newHP ?? 0)) + Math.max(0, (entry.oldTempHP ?? 0) - (entry.newTempHP ?? 0)), 0);
+}
+/**
  * Apply damage directly to tokens, without a workflow.
  * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} tokens Tokens taking the damage.
  * @param {number} value Value to stash, or damage to apply.
@@ -695,6 +703,7 @@ export default {
     getConfigActivity,
     bonusDamage,
     getDamageTypes,
+    getDamageDealt,
     getCastLevel,
     setActivity,
     bonusAttack,

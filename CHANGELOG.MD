@@ -1,20 +1,35 @@
 # 0.1.3 Release:
 ## Update Notes:
-- Requires midi-qol 14.6.1 or later and DAE 14.6.1 or later.
+- Requires midi-qol 14.6.1 and DAE 14.6.1.
+- Added automatic character backups.
+  - An Actor CatKit's new Backups tab can manually back up or restore an actor.
+- Script macros in the Macros compendiums can now replace registered macros directly.
+- Compendium pickers show each compendium's source and sidebar folder path.
+- Hidden activities show the CatKit icon on item and actor sheets, including Tidy5e, for GMs.
+- Added setting: Hide Hidden Activities on Actor Sheets. Off by default. Item sheets always show them.
+- New special durations: Damaged by Source or Ally and Damaged by Source's Ally.
+- Added `combatTurn` disable condtion in the Effect CatKit. Enables the effect only during the actor's turn.
+- Damage type pickers group types into Physical, Elemental and Other.
+- Damage type prompts can offer "Don't ask again this combat" or "this cast".
+## Animations:
 - Added setting: Animation Priority. Choose what plays when an item has a CAT animation and Automated Animations or Boss Loot FX also animates it: CAT (default), the other module, or both.
   - CAT blocks Automated Animations and Boss Loot FX Premium's automatic animations for the item.
   - The other module skips the CAT animation when Automated Animations or a Boss Loot FX macro animates the item.
 - CatKit animation options and the troubleshooter warn when Automated Animations or Boss Loot FX also animates the item.
-- New special durations: Damaged by Source or Ally and Damaged by Source's Ally.
-- Auras have an Enter on Create option. Turn it off so creatures already in range when the aura appears do not count as entering.
-- Hidden activities show the CatKit icon on item and actor sheets, including Tidy5e, for GMs.
-- Added setting: Hide Hidden Activities on Actor Sheets. Off by default. Item sheets always show them.
-- Damage type pickers group types into Physical, Elemental and Other.
-- Damage type prompts can offer "Don't ask again this combat" or "this cast".
+## Summons:
+- New generic macro: `summon`. It creates, places, recalls and moves summons from an item or activity.
+  - Summons can be picked from the monster compendiums by creature type, subtype, name, CR or CR tier, or chosen against a budget.
+  - Each summon entry can override its count, disposition, size, items, actor data and follow-up activity.
+  - Summons can turn hostile when their spell ends, replace earlier summons and stay within a maximum distance of the summoner.
+## Areas and Regions:
+- New path drawing tool for wall spells: straight or free lines, closed shapes, rings and panels, with a side picker and a live preview of the creatures each part covers.
 - Placed areas can attach to the caster's token and follow it.
-- New area trigger: Moved, with an optional per-distance count.
 - Area activities can make their effects depend on the area. The effects end when the creature leaves or the area ends.
-- Added `combatTurn` disable condtion in the Effect CatKit. Enables the effect only during the actor's turn.
+- New area trigger: Moved, with an optional per-distance count.
+- Auras have an Enter on Create option. Turn it off so creatures already in range when the aura appears do not count as entering.
+- Regions can give ranged weapon attacks that pass through them disadvantage or make them miss.
+- Regions can reduce damage of chosen types that passes through them.
+- New region passes: `moved`, `panelBroken` and `damageThrough`. `moved` runs once each time a region moves or changes shape, including attached regions following their token.
 ## Bug Fixes:
 - An activity's macros no longer replace its item's macros of the same pass.
 - A linked actor with several tokens on a scene runs its scene, nearby, level and every-turn macros once.
@@ -28,7 +43,12 @@
 - Added `constants.damageTypeGroups` and `constants.getDamageTypeGroup`.
 - Added `effectUtils.endConcentration`.
 - Added `actorUtils.spendHitDice`.
-- New region pass: `moved`. It runs once each time a region moves or changes shape, including attached regions following their token.
+- Added `compendiumUtils.getPackOrigin` and `compendiumUtils.getPackLabel`.
+- Added `crosshairUtils.drawPath`.
+- Added `regionUtils.createPathRegions`, `reshapePathRegion`, `deletePathWalls`, `addWallPanels`, `breakWallPanel`, `tokensOnPath`, `pathBand`, `pathSegments`, `containsPoint`, `trimPath`, `subtractShapes`, `getPlacedRegions` and `addRegionTimer`. `spreadAroundCorners` accepts a circle to spread from.
+- Added `summonUtils.makeDependentOnParent`.
+- Added `tokenUtils.getGrappled`. `teleportToken` accepts followers, and `swapTokens` can play an animation.
+- Added `actorUtils.addExhaustion`, `effectUtils.getSceneEffects`, `rollUtils.maximizeRoll`, `workflowUtils.getDamageDealt` and `compendiumUtils.getFilteredActors`.
 
 # 0.1.2 Release:
 ## Update Notes:

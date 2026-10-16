@@ -1,7 +1,7 @@
 import MedkitApp from './base.mjs';
 import DialogApp from '../dialog.mjs';
 import {constants} from '../../lib/_module.mjs';
-import {dialogUtils} from '../../utilities/_module.mjs';
+import {compendiumUtils, dialogUtils} from '../../utilities/_module.mjs';
 
 export default class CompendiumMedkit extends MedkitApp {
     static DEFAULT_OPTIONS = {
@@ -54,7 +54,7 @@ export default class CompendiumMedkit extends MedkitApp {
      */
     async #copyLockedPack(pack) {
         const destinations = game.packs.filter(other => other.documentName === pack.documentName && !other.locked && other !== pack && !constants.automations.moduleRegistrations.has(other.metadata.packageName))
-            .map(other => ({label: other.metadata.label, value: other.collection}))
+            .map(other => ({label: compendiumUtils.getPackLabel(other), value: other.collection}))
             .sort((a, b) => a.label.localeCompare(b.label, game.i18n.lang));
         const toggleRows = ({input, getInputById}) => {
             getInputById('g1i0').hidden = input.value !== 'new';

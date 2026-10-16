@@ -61,12 +61,13 @@ async function resolveManualRolls(rolls, actor, label, {rollClass = CONFIG.Dice.
  * @param {foundry.abstract.Document} [options.document] Document supplying roll data.
  * @param {boolean} [options.message] Post the roll to chat.
  * @param {string} [options.flavor] Flavour text for the chat card.
+ * @param {object} [options.speaker] Chat speaker data for the card.
  * @param {'blind'|'gm'|'ic'|'public'|'self'} [options.mode] Roll visibility mode.
  * @param {boolean} [options.manual] Prompt for a manually entered result when manual rolls are enabled.
  * @param {EvaluateOptions} [options.options] Evaluation options.
  * @returns {Promise<foundry.dice.Roll>}
  */
-async function rollDice(formula, {document, message, flavor, mode = 'public', manual = false, options: {maximize = false, minimize = false} = {}} = {}) {
+async function rollDice(formula, {document, message, flavor, speaker, mode = 'public', manual = false, options: {maximize = false, minimize = false} = {}} = {}) {
     let roll = new Roll(formula, document?.getRollData());
     let resolved = false;
     if (manual) {
@@ -76,8 +77,16 @@ async function rollDice(formula, {document, message, flavor, mode = 'public', ma
         roll = manualRoll;
     }
     if (!resolved) await roll.evaluate({maximize, minimize});
-    if (message) return {message: await roll.toMessage({flavor}, {messageMode: mode}), roll};
+    if (message) return {message: await roll.toMessage({flavor, speaker}, {messageMode: mode}), roll};
     return roll;
+}
+/**
+ * Re-evaluate a roll with every die at its highest result.
+ * @param {foundry.dice.Roll} roll Roll to maximize.
+ * @returns {Promise<foundry.dice.Roll>} A new evaluated roll of the same class.
+ */
+async function maximizeRoll(roll) {
+    return await new roll.constructor(roll.formula, roll.data, roll.options).evaluate({maximize: true});
 }
 /**
  * Add up the totals of several rolls.
@@ -333,6 +342,7 @@ export default {
     rollDice,
     resolveManualRolls,
     getRollsTotal,
+    maximizeRoll,
     getCriticalFormula,
     addToRoll,
     damageRoll,

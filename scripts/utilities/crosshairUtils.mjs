@@ -1,4 +1,4 @@
-import {Crosshairs} from '../lib/_module.mjs';
+import {Crosshairs, PathCrosshairs} from '../lib/_module.mjs';
 import {genericUtils, uiUtils} from '../utilities/_module.mjs';
 const getSizeIndex = (token) => {
     const size = CONFIG.DND5E.actorSizes[token.actor?.system?.traits?.size]?.numerical;
@@ -77,9 +77,10 @@ function drawRange(center, radius) {
  * @param {Function[]} [options.validityFunctions] Receive the crosshair and `{x, y, elevation}`; a falsy return blocks the click.
  * @param {Function} [options.getElevation] Returns the destination elevation for the crosshair.
  * @param {number} [options.ringElevation] Elevation the range boundary is drawn at.
+ * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
  * @returns {Promise<object>} The crosshair result, plus `elevation` when `getElevation` is given.
  */
-async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, drawBoundries = true, checkOverlap = true, customCallbacks, trackDistance = true, fudgeDistance = 0, validityFunctions = [], getElevation, ringElevation} = {}) {
+async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, drawBoundries = true, checkOverlap = true, customCallbacks, trackDistance = true, fudgeDistance = 0, validityFunctions = [], getElevation, ringElevation, ignoreWalls = false} = {}) {
     const tokenImg = token?.texture?.src;
     crosshairsConfig = crosshairsConfig || {icon: tokenImg};
     const baseIcon = crosshairsConfig.icon ?? Crosshairs.defaultCrosshairsConfig().icon;
@@ -121,7 +122,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
             const distance = Math.max(0, canvas.grid.measurePath([origin, measured]).distance.toNearest(0.1) - widthAdjust - fudgeDistance);
             const blocked = (maxRange && distance > maxRange)
                 || (checkOverlap && isOverlapping(measured))
-                || (level && CONFIG.Canvas.polygonBackends.move.testCollision(token.getCenterPoint(), {x, y}, {type: 'move', mode: 'any', level}))
+                || (level && !ignoreWalls && CONFIG.Canvas.polygonBackends.move.testCollision(token.getCenterPoint(), {x, y}, {type: 'move', mode: 'any', level}))
                 || validityFunctions.some(i => !i(crosshairs, {x, y, elevation}));
             crosshairs.valid = !blocked;
             crosshairs.icon = blocked ? 'icons/svg/hazard.svg' : baseIcon;
@@ -154,7 +155,33 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         await restoreWindows();
     }
 }
+/**
+ * Draw a path, or place a ring, on the canvas and pick its active side. Open windows are minimized while drawing.
+ * Left-click adds a point, Shift skips grid snapping, right-click removes the last point (or cancels), clicking the first point closes the shape, double-click or Enter finishes an open path, Esc cancels. Rings follow the cursor and the mouse wheel changes their diameter.
+ * @param {object} config See {@link PathCrosshairs.show}.
+ * @param {foundry.documents.TokenDocument} [config.token] Origin of the range check.
+ * @param {number} [config.maxRange] Scene units every point must stay within, measured from the token. A border shows the range.
+ * @returns {Promise<object|null>} Points, closed state, side and ring data, or null when cancelled.
+ */
+async function drawPath({token, maxRange, ...config} = {}) {
+    let drawing;
+    if (token && maxRange) {
+        const origin = {...token.getCenterPoint(), elevation: token.elevation};
+        const halfToken = canvas.grid.distance * token.width / 2;
+        drawing = drawRange(origin, Math.max(horizontalReach(origin, maxRange, origin.elevation), 0) + (canvas.grid.type === CONST.GRID_TYPES.SQUARE ? halfToken : 0));
+        config.isValid = point => canvas.grid.measurePath([origin, {...point, elevation: origin.elevation}]).distance <= maxRange + halfToken;
+        config.onValidity = valid => drawing.tint = valid ? 0x32cd32 : 0xff0000;
+    }
+    const restoreWindows = await uiUtils.minimizeWindows();
+    try {
+        return await PathCrosshairs.show(config);
+    } finally {
+        drawing?.destroy();
+        await restoreWindows();
+    }
+}
 export default {
     aimCrosshair,
+    drawPath,
     horizontalReach
 };

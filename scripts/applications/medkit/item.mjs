@@ -46,16 +46,8 @@ export default class ItemMedkit extends MedkitApp {
         return !allowed?.length || allowed.includes(this.document.type);
     }
 
-    _prepareTabs(group) {
-        const tabs = super._prepareTabs(group);
-        if (group === 'sheet' && !this.#showDocProps) delete tabs.docprops;
-        return tabs;
-    }
-
-    _configureRenderParts(options) {
-        const parts = super._configureRenderParts(options);
-        if (!this.#showDocProps) delete parts.docprops;
-        return parts;
+    _isTabVisible(id) {
+        return id !== 'docprops' || this.#showDocProps;
     }
 
     async _prepareContext(options) {

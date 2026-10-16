@@ -1,5 +1,5 @@
 import {constants, Events} from '../lib/_module.mjs';
-import {optionalBonus, regionVisibility} from '../mechanics/_module.mjs';
+import {optionalBonus, regionAttacks, regionDamage, regionVisibility} from '../mechanics/_module.mjs';
 import {diceSoNice} from '../integration/_modules.mjs';
 import {effects, manualRolls, regions} from '../handlers/_module.mjs';
 import {workflowUtils} from '../utilities/_module.mjs';
@@ -27,6 +27,7 @@ async function preambleComplete(workflow) {
 }
 async function attackRollConfig(workflow) {
     await regionVisibility(workflow);
+    regionAttacks.config(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollConfig, workflow).run();
     await optionalBonus.attackPreRoll(workflow);
 }
@@ -43,6 +44,7 @@ async function postAttackRoll(workflow) {
     await optionalBonus.attack(workflow);
 }
 async function attackRollComplete(workflow) {
+    regionAttacks.complete(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollComplete, workflow).run();
     await effects.specialDuration(workflow, 'attack');
 }
@@ -65,6 +67,7 @@ async function utilityRollComplete(workflow) {
 }
 async function preTargetDamageApplication(token, {workflow, ditem}) {
     optionalBonus.applyDamage(workflow, token, ditem);
+    await regionDamage(token, workflow, ditem);
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damage, workflow, token, ditem).run();
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageBonuses, workflow, token, ditem).run();
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damageFlatReductions, workflow, token, ditem).run();

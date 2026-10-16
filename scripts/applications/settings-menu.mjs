@@ -1,3 +1,4 @@
+import {compendiumUtils} from '../utilities/_module.mjs';
 import {MenuApp} from './_module.mjs';
 export default class SettingsMenu extends MenuApp {
     #catSettings = [];
@@ -37,6 +38,12 @@ export default class SettingsMenu extends MenuApp {
             entry.packType = packTypes[setting.key];
             if (packFilters[setting.key]) entry.packFilter = packFilters[setting.key];
         } else if (setting.key === 'manualRollsUsers') entry.type = 'users';
+        else if (setting.packSelect) {
+            const {type, packageType} = setting.packSelect;
+            const packs = game.packs.filter(pack => pack.metadata.type === type && (!packageType || pack.metadata.packageType === packageType));
+            entry.type = 'selectOption';
+            entry.options = {'': 'None', ...Object.fromEntries(packs.map(pack => [pack.metadata.id, compendiumUtils.getPackLabel(pack)]))};
+        }
         else if (setting.choices) {
             entry.type = 'selectOption';
             entry.options = setting.choices;
