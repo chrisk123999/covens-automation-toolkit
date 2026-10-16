@@ -1,5 +1,5 @@
 import {CatCompendiumBrowser} from '../applications/_module.mjs';
-import {genericUtils, itemUtils} from './_module.mjs';
+import {automationUtils, genericUtils, itemUtils} from './_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 /**
  * Prompt the compendium browser for a selection of documents.
@@ -139,6 +139,26 @@ function getEnabledCompendiumIds(settingKey) {
         .map(s => s[0]);
 }
 /**
+ * Where a compendium comes from: the package that provides it and its sidebar folder path.
+ * @param {CompendiumCollection} pack Compendium to describe.
+ * @returns {{source: string, folders: string}} e.g. {source: "Player's Handbook", folders: "Sources / 2024"}.
+ */
+function getPackOrigin(pack) {
+    const {packageType, packageName} = pack.metadata;
+    const source = packageType === 'world' ? _loc('PACKAGE.Type.world') : automationUtils.getSourceName(packageName);
+    const folders = pack.folder ? [...pack.folder.ancestors].reverse().concat(pack.folder).map(folder => folder.name).join(' / ') : '';
+    return {source, folders};
+}
+/**
+ * Single-line picker label for a compendium: its title followed by its origin.
+ * @param {CompendiumCollection} pack Compendium to label.
+ * @returns {string} e.g. "Monsters (Player's Handbook • Sources / 2024)".
+ */
+function getPackLabel(pack) {
+    const {source, folders} = getPackOrigin(pack);
+    return `${pack.title} (${folders ? `${source} • ${folders}` : source})`;
+}
+/**
  * Open the compendium browser for a choice of spell from the provided classes.
  * @param {string[]} listKeys Class list keys in the form 'type:identifier'. Allowed types are defined in CONFIG.DND5E.spellListTypes.
  * @param {object} [options] Additional options.
@@ -220,6 +240,36 @@ async function selectActor({amount = 1, minCR, maxCR, creatureTypes, excludeMove
     return result;
 }
 /**
+ * Filter the monster compendiums by CR, creature type, subtype and name without opening the compendium browser.
+ * @param {object} [options] Additional options.
+ * @param {string[]} [options.packIds] Pack ids to use instead of the monster compendiums configured in settings.
+ * @param {number} [options.maxCR] Highest challenge rating kept.
+ * @param {string[]} [options.creatureTypes] Creature types kept.
+ * @param {string[]} [options.creatureSubtypes] Creature subtypes kept, matched case-insensitively against the subtype text.
+ * @param {string[]} [options.names] Actor names kept.
+ * @returns {Promise<object[]>} Index entries, one per actor name, sorted by CR then name.
+ */
+async function getFilteredActors({packIds, maxCR, creatureTypes, creatureSubtypes, names} = {}) {
+    if (!packIds?.length) packIds = getEnabledCompendiumIds('monsterCompendiums');
+    const subtypes = (creatureSubtypes ?? []).map(subtype => subtype.toLowerCase());
+    const lowerNames = (names ?? []).map(name => name.toLowerCase());
+    const found = new Map();
+    const packs = packIds.map(packId => game.packs.get(packId)).filter(pack => pack?.documentName === 'Actor');
+    const indexes = await Promise.all(packs.map(pack => pack.getIndex({fields: ['system.details.cr', 'system.details.type', 'type']})));
+    for (const index of indexes) {
+        index.forEach(entry => {
+            if (entry.type !== 'npc' || found.has(entry.name)) return;
+            const type = entry.system?.details?.type;
+            if (Number.isNumeric(maxCR) && (entry.system?.details?.cr ?? Infinity) > maxCR) return;
+            if (creatureTypes?.length && !creatureTypes.includes(type?.value)) return;
+            if (subtypes.length && !subtypes.some(subtype => (type?.subtype ?? '').toLowerCase().includes(subtype))) return;
+            if (lowerNames.length && !lowerNames.includes(entry.name.toLowerCase())) return;
+            found.set(entry.name, entry);
+        });
+    }
+    return Array.from(found.values()).sort((a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0) || a.name.localeCompare(b.name));
+}
+/**
  * Find the compendium uuid of a document by its identifier, without loading the document.
  * @param {string} packId Compendium to search.
  * @param {string} identifier Identifier to match.
@@ -274,6 +324,9 @@ export default {
     getDocumentsBySlug,
     selectSpellFromLists,
     selectActor,
+    getFilteredActors,
     getEnabledCompendiumIds,
+    getPackLabel,
+    getPackOrigin,
     getSpell
 };

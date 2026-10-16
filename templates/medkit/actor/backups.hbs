@@ -1,0 +1,30 @@
+<section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
+    data-tab="{{tab.id}}">
+    <fieldset data-section="backups">
+        <legend>{{localize "CAT.MEDKIT.Actor.Backups.Label"}}</legend>
+        {{#if backups.hasPack}}
+            <p class="hint">{{localize "CAT.MEDKIT.Actor.Backups.Hint"}}</p>
+            <button type="button" data-action="backupNow">
+                <i class="fa-solid fa-floppy-disk"></i>
+                {{localize "CAT.MEDKIT.Actor.Backups.Backup"}}
+            </button>
+            {{#if backups.rows.length}}
+                <ul class="embedded-list">
+                    {{#each backups.rows}}
+                        <li>
+                            <span class="name">{{label}}</span>
+                            <button type="button" data-action="restoreBackup" data-backup-id="{{id}}"
+                                data-label="{{label}}" data-tooltip="{{localize 'CAT.MEDKIT.Actor.Backups.Restore'}}">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </button>
+                        </li>
+                    {{/each}}
+                </ul>
+            {{else}}
+                <p class="hint">{{localize "CAT.MEDKIT.Actor.Backups.None"}}</p>
+            {{/if}}
+        {{else}}
+            <p class="hint">{{localize "CAT.MEDKIT.Actor.Backups.NoPack"}}</p>
+        {{/if}}
+    </fieldset>
+</section>

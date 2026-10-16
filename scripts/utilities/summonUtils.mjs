@@ -1,4 +1,5 @@
 import {constants} from '../lib/_module.mjs';
+import {documentUtils} from './_module.mjs';
 /**
  * Create a summon's sidebar actor, ready to be placed on the canvas.
  * @param {Actor5e} ownerActor Actor the summon belongs to.
@@ -20,10 +21,12 @@ import {constants} from '../lib/_module.mjs';
  * @param {'follows'|'separate'|'standard'} [options.initiative] How the summon takes its turn.
  * @param {boolean} [options.dismissAtZero] Prompt to dismiss the summon when it drops to zero hit points.
  * @param {string} [options.size] Creature size to resize the token to.
+ * @param {string} [options.identifier] Summon identifier. Defaults to the source actor's.
+ * @param {object} [options.workflowOptions] Workflow options of the use that summoned it, readable by summon passes as `summon.workflowOptions`.
  * @returns {Promise<Summon>} The summon, whose token is placed separately.
  */
-async function createSummon(ownerActor, sourceActor, {created = game.time.worldTime, duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative, dismissAtZero, size} = {}) {
-    return await constants.summons.createSummon(ownerActor, sourceActor, created, {duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative, dismissAtZero, size});
+async function createSummon(ownerActor, sourceActor, {created = game.time.worldTime, duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative, dismissAtZero, size, identifier, workflowOptions} = {}) {
+    return await constants.summons.createSummon(ownerActor, sourceActor, created, {duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative, dismissAtZero, size, identifier, workflowOptions});
 }
 /**
  * Place a summon on the canvas with a crosshair.
@@ -48,10 +51,11 @@ async function placeSummon(summon, range, {preAnimation, postAnimation, alpha, t
  * @param {Function} [options.preAnimation] Runs before the token appears.
  * @param {Function} [options.postAnimation] Runs after the token appears.
  * @param {number} [options.alpha] Opacity the token fades in from.
+ * @param {number} [options.elevation] Token elevation. Defaults to the owner's.
  * @returns {Promise<foundry.documents.TokenDocument|undefined>}
  */
-async function spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha} = {}) {
-    return await constants.summons.spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha});
+async function spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha, elevation} = {}) {
+    return await constants.summons.spawnSummon(summon, scene, location, {preAnimation, postAnimation, alpha, elevation});
 }
 /**
  * Remove a summon's tokens and delete its actor.
@@ -139,7 +143,18 @@ async function recallAllSourceSummons(document) {
 function getSummonsByIdentifier(identifier, {actor} = {}) {
     return constants.summons.getSummonsByIdentifier(identifier, {actor});
 }
+/**
+ * Tie documents to the parent of a summoned actor, such as its spell's concentration, so they end with it.
+ * @param {Actor5e} actor Summoned actor.
+ * @param {foundry.abstract.Document[]} documents Documents to tie.
+ * @returns {Promise<void>}
+ */
+async function makeDependentOnParent(actor, documents) {
+    const parent = getSummonData(actor)?.parent;
+    if (parent && documents.length) await documentUtils.makeDependent(parent, documents);
+}
 export default {
+    makeDependentOnParent,
     createSummon,
     placeSummon,
     spawnSummon,

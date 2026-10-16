@@ -1,6 +1,6 @@
 import {grapple as grappleHandler} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {crosshairUtils, dialogUtils, queryUtils} from './_module.mjs';
+import {actorUtils, crosshairUtils, dialogUtils, queryUtils} from './_module.mjs';
 /**
  * Movement action for drag ruler. 'catForce' does not consume movement.
  * @typedef {'blink'|'burrow'|'catForce'|'climb'|'crawl'|'displace'|'fly'|'jump'|'swim'|'walk'} MovementAction
@@ -220,9 +220,10 @@ function reachableSurfaces(token, range) {
  * @param {object} [options.centerpoint] Measure from here instead of the token's centre.
  * @param {object} [options.crosshairsConfig] Crosshair config.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
+ * @param {boolean} [options.ignoreWalls] Allow spaces that walls block from the token.
  * @returns {Promise<object|undefined>} Crosshair result with `level` and `elevation`; undefined if cancelled.
  */
-async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true} = {}) {
+async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true, ignoreWalls = false} = {}) {
     const startView = canvas.level?.id;
     const reachable = reachableSurfaces(token, range);
     let targetLevel = token.level;
@@ -251,6 +252,7 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
             crosshairsConfig,
             maxRange: range,
             validityFunctions: [standable],
+            ignoreWalls,
             getElevation: floorAt,
             ringElevation: onOwnLevel ? undefined : Math.min(...surfaces.map(surface => surface.elevation), ground ?? Infinity)
         });
@@ -272,19 +274,24 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
  * @param {number} [options.elevation] Destination elevation.
  * @param {string} [options.level] Destination Level id.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
+ * @param {foundry.documents.TokenDocument[]} [options.followers] Tokens teleported along with this one, keeping their position relative to it.
+ * @param {string} [options.userId] User who aims the destination crosshair. Defaults to the current user.
+ * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
  * @returns {Promise<undefined>}
  */
-async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true} = {}) {
+async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], userId, ignoreWalls = false} = {}) {
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
-        destination = await aimDestination(token, {range, centerpoint, requireSight});
+        if (userId && userId !== game.user.id) destination = await queryUtils.query('aimDestination', game.users.get(userId), {uuid: token.uuid, range, centerpoint, requireSight, ignoreWalls}, 300000);
+        else destination = await aimDestination(token, {range, centerpoint, requireSight, ignoreWalls});
     }
     if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
     if (result) return;
     const preAnimation = animation?.macros?.preAnimation;
     if (preAnimation) await preAnimation(token, {destination, ...options});
+    const origin = {x: token.x, y: token.y};
     await moveToken(token, [
         {
             x: destination.x,
@@ -296,6 +303,9 @@ async function teleportToken(token, {destination, centerpoint, animation, option
     const postAnimation = animation?.macros?.postAnimation;
     if (postAnimation) await postAnimation(token, {destination, ...options});
     await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run();
+    const dx = token.x - origin.x;
+    const dy = token.y - origin.y;
+    if (dx || dy) await Promise.all(followers.map(follower => teleportToken(follower, {animation, options, destination: {x: follower.x + dx, y: follower.y + dy, elevation: follower.elevation}})));
 }
 /**
  * Move a token to a chosen position.
@@ -335,20 +345,34 @@ async function displaceToken(token, {sourceToken, destination, centerpoint, anim
     if (postAnimation) await postAnimation(token, {sourceToken, destination, action});
 }
 /**
- * Swap the positions of two tokens. Always uses {@link MovementAction} displace.
+ * Swap the positions of two tokens, centring each where the other stood. Always uses {@link MovementAction} displace.
+ * With an animation, both tokens run the teleport events and the animation's pre and post macros.
  * @param {foundry.documents.TokenDocument} tokenA Token moved to {@link tokenB}'s position.
  * @param {foundry.documents.TokenDocument} tokenB Token moved to {@link tokenA}'s position.
  * @param {object} [options] Additional options.
  * @param {boolean} [options.animate] False moves both tokens without animating.
+ * @param {Animations['Animation']} [options.animation] Teleport animation data (see {@link Animations.Animation}).
+ * @param {object} [options.options] Options passed to the animation macros.
  * @returns {Promise<void>}
  */
-async function swapTokens(tokenA, tokenB, {animate = true} = {}) {
-    const positionA = {x: tokenA.x, y: tokenA.y, elevation: tokenA.elevation, level: tokenA.level};
-    const positionB = {x: tokenB.x, y: tokenB.y, elevation: tokenB.elevation, level: tokenB.level};
-    await Promise.all([
-        moveToken(tokenA, [{...positionB, action: 'displace'}], {animate}),
-        moveToken(tokenB, [{...positionA, action: 'displace'}], {animate})
-    ]);
+async function swapTokens(tokenA, tokenB, {animate = true, animation, options = {}} = {}) {
+    const spaceAt = (token, other) => {
+        const center = other.getCenterPoint();
+        const size = token.parent.grid.size;
+        return {x: center.x - token.width * size / 2, y: center.y - token.height * size / 2, elevation: other.elevation, level: other.level};
+    };
+    const moves = [[tokenA, spaceAt(tokenA, tokenB)], [tokenB, spaceAt(tokenB, tokenA)]];
+    if (!animation) {
+        await Promise.all(moves.map(([token, destination]) => moveToken(token, [{...destination, action: 'displace'}], {animate})));
+        return;
+    }
+    for (const [token, destination] of moves) {
+        if (await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, teleport: true}).run()) return;
+    }
+    await Promise.all(moves.map(([token, destination]) => animation.macros?.preAnimation?.(token, {destination, ...options})));
+    await Promise.all(moves.map(([token, destination]) => moveToken(token, [{...destination, action: 'displace'}], {animate})));
+    await Promise.all(moves.map(([token, destination]) => animation.macros?.postAnimation?.(token, {destination, ...options})));
+    await Promise.all(moves.map(([token, destination]) => new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run()));
 }
 /**
  * Push a token in a given direction.
@@ -437,6 +461,15 @@ async function grapple(sourceToken, targetToken, {activity, flatDC, rules, conte
     return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize});
 }
 /**
+ * Get the tokens this token is currently grappling.
+ * @param {foundry.documents.TokenDocument} token Grappling token.
+ * @returns {foundry.documents.TokenDocument[]}
+ */
+function getGrappled(token) {
+    if (!token.actor) return [];
+    return actorUtils.getEffectByIdentifier(token.actor, 'grappleSource', {multiple: true}).map(effect => token.parent.tokens.get(effect.flags.cat?.grapple?.tokenId)).filter(Boolean);
+}
+/**
  * Whether the target is small enough to be grappled or shoved by this token.
  * @param {foundry.documents.TokenDocument} sourceToken Token acting.
  * @param {foundry.documents.TokenDocument[]} targetToken Token being acted on.
@@ -496,6 +529,7 @@ export default {
     canSense,
     getNonSightModes,
     grapple,
+    getGrappled,
     grappleShoveSizeCheck,
     movementSpent
 };

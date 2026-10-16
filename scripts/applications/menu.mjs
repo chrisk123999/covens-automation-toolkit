@@ -1,6 +1,6 @@
 import {ddbi} from '../integration/_modules.mjs';
 import {constants} from '../lib/_module.mjs';
-import {automationUtils, genericUtils} from '../utilities/_module.mjs';
+import {automationUtils, compendiumUtils, genericUtils} from '../utilities/_module.mjs';
 import CatApp from './cat-app.mjs';
 const {StringField, BooleanField} = foundry.data.fields;
 
@@ -136,6 +136,18 @@ export default class MenuApp extends CatApp {
         };
     }
 
+    static #priorityRow(id, kindLabel, cfg = {}, pack = null) {
+        return {
+            id,
+            kind: pack ? 'pack' : 'source',
+            kindLabel,
+            name: automationUtils.getSourceName(id),
+            origin: pack ? compendiumUtils.getPackOrigin(pack) : null,
+            enabled: cfg.enabled ?? false,
+            priority: cfg.priority ?? 50
+        };
+    }
+
     #buildPackPriority(input) {
         const sources = input.value ?? {};
         const packTag = _loc('CAT.Settings.AutomationSources.PackTag');
@@ -144,15 +156,7 @@ export default class MenuApp extends CatApp {
             if (pack.metadata.type !== input.packType) continue;
             if (input.packFilter === 'spells' && !this.#spellPacks.has(pack.metadata.id)) continue;
             if (input.packFilter === 'items' && this.#spellPacks.has(pack.metadata.id)) continue;
-            const cfg = sources[pack.metadata.id] ?? {};
-            rows.push({
-                id: pack.metadata.id,
-                kind: 'pack',
-                kindLabel: packTag,
-                name: pack.metadata.label,
-                enabled: cfg.enabled ?? false,
-                priority: cfg.priority ?? 50
-            });
+            rows.push(MenuApp.#priorityRow(pack.metadata.id, packTag, sources[pack.metadata.id], pack));
         }
         rows.sort((a, b) => a.priority - b.priority);
         return {
@@ -175,32 +179,15 @@ export default class MenuApp extends CatApp {
         const rows = [];
         const sourceIds = new Set([...Object.keys(sources), ...registered]);
         for (const id of sourceIds) {
-            const cfg = sources[id] ?? {};
             const isPack = id.includes('.');
-            if (isPack) {
-                const pack = game.packs.get(id);
-                if (!pack || sourceIds.has(pack.metadata.packageName)) continue;
-            }
-            rows.push({
-                id,
-                kind: isPack ? 'pack' : 'source',
-                kindLabel: isPack ? packTag : sourceTag,
-                name: automationUtils.getSourceName(id),
-                enabled: cfg.enabled ?? false,
-                priority: cfg.priority ?? 50
-            });
+            const pack = isPack ? game.packs.get(id) : null;
+            if (isPack && (!pack || sourceIds.has(pack.metadata.packageName))) continue;
+            rows.push(MenuApp.#priorityRow(id, isPack ? packTag : sourceTag, sources[id], pack));
         }
         for (const pack of game.packs) {
             const id = pack.metadata.id;
             if (pack.metadata.type !== 'Item' || sourceIds.has(pack.metadata.packageName) || owned.has(id) || sourceIds.has(id)) continue;
-            rows.push({
-                id,
-                kind: 'pack',
-                kindLabel: packTag,
-                name: pack.metadata.label,
-                enabled: false,
-                priority: 50
-            });
+            rows.push(MenuApp.#priorityRow(id, packTag, undefined, pack));
         }
         rows.sort((a, b) => a.priority - b.priority);
         return {

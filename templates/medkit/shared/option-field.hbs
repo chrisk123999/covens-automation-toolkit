@@ -122,8 +122,9 @@
                 {{#each fields}}
                     {{> "modules/cat/templates/medkit/shared/option-field.hbs" this}}
                 {{/each}}
-                <div class="summon-items" data-flag-path="{{items.base}}">
-                    {{#each items.entries}}
+                {{#each subLists}}
+                <div class="summon-items" data-flag-path="{{base}}">
+                    {{#each entries}}
                         <fieldset data-section="summon-item">
                             <legend>
                                 <span>{{legend}}</span>
@@ -138,9 +139,10 @@
                         </fieldset>
                     {{/each}}
                     <button type="button" data-action="addSummonItem">
-                        <i class="fa-solid fa-plus"></i> {{localize "CAT.MEDKIT.Summons.AddItem"}}
+                        <i class="fa-solid fa-plus"></i> {{localize addLabel}}
                     </button>
                 </div>
+                {{/each}}
             </fieldset>
         {{/each}}
         {{#if canAdd}}

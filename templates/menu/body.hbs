@@ -40,7 +40,7 @@
                     {{#each enabledRows}}
                         <li class="row" draggable="true" data-source-id="{{id}}" data-kind="{{kind}}">
                             <span class="pill">{{kindLabel}}</span>
-                            <span class="name">{{name}}</span>
+                            <span class="name">{{name}}{{#if origin}}<span class="origin">{{origin.source}}{{#if origin.folders}} • <span class="folders">{{origin.folders}}</span>{{/if}}</span>{{/if}}</span>
                             <input type="number" class="rank" value="{{priority}}" draggable="false">
                             <button type="button" draggable="false" data-priority-action="disable"
                                 data-tooltip="{{localize 'CAT.Settings.AutomationSources.Disable'}}"
@@ -57,7 +57,7 @@
                         {{#each disabledRows}}
                             <li class="row" data-source-id="{{id}}" data-kind="{{kind}}">
                                 <span class="pill">{{kindLabel}}</span>
-                                <span class="name">{{name}}</span>
+                                <span class="name">{{name}}{{#if origin}}<span class="origin">{{origin.source}}{{#if origin.folders}} • <span class="folders">{{origin.folders}}</span>{{/if}}</span>{{/if}}</span>
                                 <input type="number" class="rank" value="{{priority}}" draggable="false" hidden>
                                 <button type="button" draggable="false" data-priority-action="enable"
                                     data-tooltip="{{localize 'CAT.Settings.AutomationSources.Enable'}}"

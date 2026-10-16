@@ -14,7 +14,8 @@
                 "Embedded": "Embedded Macros",
                 "Macros": "Registered Macros",
                 "DocProps": "Document Properties",
-                "PlacedRegion": "Placed Region"
+                "PlacedRegion": "Placed Region",
+                "Backups": "Backups"
             },
             "MassApply": {
                 "Counts": {
@@ -463,7 +464,49 @@
                 "RechargeValue": "Recharge Value",
                 "Description": "Description Override",
                 "ItemCompendiumPick": "Select item from compendium",
-                "AddItem": "Add item"
+                "AddItem": "Add item",
+                "Profile": "Summon Profile",
+                "ProfileHint": "Native summon profile this entry overrides.",
+                "Count": "Count",
+                "CountHint": "Formula for how many are created. Supports @castLevel.",
+                "Disposition": "Disposition",
+                "DispositionOwner": "Same as Summoner",
+                "Size": "Size",
+                "DismissAtZero": "Dismiss at 0 HP",
+                "FollowUp": "Follow-Up Activity",
+                "FollowUpHint": "Rolled by this summon instead of the behavior Follow-Up Activity.",
+                "Identifier": "Summon Identifier",
+                "IdentifierHint": "Defaults to the source actor's identifier.",
+                "AddUpdate": "Add actor update",
+                "Update": "Actor Update",
+                "UpdatePath": "Data Path",
+                "UpdateValue": "Value",
+                "UpdateMode": "Value Type",
+                "UpdateModeFormula": "Formula",
+                "UpdateModeLiteral": "Literal",
+                "ItemName": "Name Override",
+                "ItemNameHint": "Supports {attacks} for the attack count.",
+                "ItemIdentifier": "Identifier Override",
+                "ItemIdentifierHint": "Replaces the summon's own item with this identifier.",
+                "Attacks": "Attack Count",
+                "AttacksHint": "Formula for the Multiattack count, written into the name.",
+                "DamageNumber": "Damage Dice Count",
+                "DamageBonus": "Damage Bonus",
+                "DamageTypes": "Damage Types",
+                "HealingNumber": "Healing Dice Count",
+                "HealingBonus": "Healing Bonus",
+                "UsesMaxFormula": "Max Uses Formula",
+                "CompendiumTypes": "Compendium Creature Types",
+                "CompendiumHint": "When any compendium field is set, the creatures are chosen from the monster compendiums instead of the summon actor.",
+                "CompendiumSubtypes": "Compendium Subtypes",
+                "CompendiumNames": "Compendium Names",
+                "CompendiumMaxCR": "Compendium Maximum CR",
+                "CompendiumTiers": "Compendium CR Tiers",
+                "CompendiumRandomTier": "Roll for the Tier",
+                "CompendiumTiersHint": "Choices offered before picking, written as CR|count separated by semicolons. Counts accept formulas.",
+                "Weight": "Budget Weight",
+                "WeightHint": "How much of the budget one of these costs. Defaults to 1.",
+                "DamageDenomination": "Damage Die Size"
             },
             "PackFolder": {
                 "Folder": "Folder",
@@ -533,6 +576,15 @@
                 "Name": {
                     "Label": "Match Name",
                     "Hint": "Match this actor against automations under a different name."
+                },
+                "Backups": {
+                    "Label": "Backups",
+                    "Hint": "Restoring replaces this actor with the backup. The current state is backed up first.",
+                    "Backup": "Back Up",
+                    "Restore": "Restore",
+                    "RestoreConfirm": "Replace {name} with the backup from {date}?",
+                    "None": "No backups of this actor yet.",
+                    "NoPack": "Choose a backup compendium in the Backups settings."
                 }
             },
             "Activity": {
@@ -854,8 +906,6 @@
             "AutomationSources": {
                 "Name": "Automation Sources",
                 "Hint": "Sources and compendiums used for automation. Lowest value is priority.",
-                "Priority": "Priority",
-                "Enabled": "Enabled",
                 "Disabled": "Inactive",
                 "Disable": "Disable",
                 "Enable": "Enable",
@@ -886,7 +936,7 @@
             },
             "MacroCompendiums": {
                 "Name": "Macros",
-                "Hint": "Overwrites registered macros with the macros from the selected compendiums. Lowest value is priority."
+                "Hint": "Each script macro in these compendiums returns macro data that replaces the registered macro with the same source, identifier and rules. New macros start from a template. Lowest value is priority."
             },
             "Devtools": {
                 "Name": "Development Tools",
@@ -1000,6 +1050,22 @@
                 "Name": "Summons",
                 "Label": "Configure Summons",
                 "Hint": "Settings for summons use and management."
+            },
+            "AutomaticBackups": {
+                "Name": "Automatic Character Backups",
+                "Hint": "Back up player-owned characters to the backup compendium when the world loads."
+            },
+            "BackupCompendium": {
+                "Name": "Backup Compendium",
+                "Hint": "World Actor compendium that holds backups."
+            },
+            "BackupFrequency": {
+                "Name": "Backup Frequency",
+                "Hint": "Time between automatic backups."
+            },
+            "BackupRetention": {
+                "Name": "Backup Retention",
+                "Hint": "How long automatic and manual backups are kept."
             }
         },
         "DAE": {
@@ -1093,7 +1159,55 @@
             "Current": "{name} (Current)"
         },
         "Crosshairs": {
-            "Invalid": "That space cannot be chosen."
+            "Invalid": "That space cannot be chosen.",
+            "PathMustClose": "Close the shape by clicking its first point.",
+            "PathTooLong": "Closing the shape would make it longer than allowed.",
+            "Help": {
+                "AddPanel": "Add a panel at the nearest end",
+                "AddPoint": "Add a point",
+                "Back": "Go back and keep drawing",
+                "Cancel": "Cancel",
+                "ChooseSide": "Point at the side to make active",
+                "Close": "Close the shape",
+                "Confirm": "Confirm the side",
+                "Finish": "Finish the line",
+                "FinishPanels": "Finish with fewer panels",
+                "FreeAngle": "Any angle, off the grid",
+                "Free": "Place off the grid",
+                "Keys": {
+                    "Click": "Click",
+                    "Enter": "Enter",
+                    "Esc": "Esc",
+                    "FirstPoint": "Click first point",
+                    "LastPoint": "Enter / click last point",
+                    "Move": "Move",
+                    "RightClick": "Right-click",
+                    "Scroll": "Scroll",
+                    "Shift": "Shift",
+                    "F": "F"
+                },
+                "LengthUsed": "All the length is used. Click anywhere or press Enter to finish.",
+                "PanelsStart": "Click where the first panel starts. Each panel joins the end of another.",
+                "PlaceEnd": "Place the end of the line",
+                "PlaceRing": "Place the ring",
+                "Resize": "Change the size",
+                "Start": "Click where the line starts.",
+                "StartPanels": "Start the first panel",
+                "StartStraight": "Click where the line starts, then where it ends.",
+                "Undo": "Remove the last point",
+                "UndoPanel": "Remove the last panel",
+                "AddFlat": "Add a flat panel",
+                "FlatHeight": "Raise or lower the flat panel",
+                "ToggleFlat": "Switch between upright and flat panels"
+            },
+            "Sides": {
+                "Inside": "Inside",
+                "Left": "Left",
+                "Outside": "Outside",
+                "Right": "Right"
+            },
+            "PanelNotConnected": "Each panel must touch another panel.",
+            "FlatAt": "flat, {elevation} {units} up"
         },
         "Movement": {
             "Forced": "Forced Movement"
@@ -1315,6 +1429,109 @@
                 "ValueHint": "Formula evaluated against the source's roll data and inserted as @auraValue.",
                 "Walls": "Blocked by Walls",
                 "WallsHint": "Walls between the source and a token block the aura."
+            },
+            "Summon": {
+                "Activity": "Summon Activity",
+                "ActivityHint": "Activity that creates the summons. When empty, every summon activity on the item does.",
+                "Summons": "Summons",
+                "SummonsHint": "Creatures the activity creates. On a summon activity, link an entry to a profile to override that profile; profiles without an entry use the profile's actor and count.",
+                "Range": "Placement Range",
+                "RangeHint": "Feet from the summoner the summons can be placed. 0 uses the activity's range.",
+                "CommandActivities": "Command Activities",
+                "CommandActivitiesHint": "Activities revealed while this item's summons exist.",
+                "HostileOnParentEnd": "Hostile When Concentration Ends",
+                "HostileOnParentEndHint": "The summons stay when concentration ends and turn hostile instead of being dismissed.",
+                "ReplaceExisting": "Replace Existing",
+                "ReplaceExistingHint": "Dismiss this item's existing summons before creating new ones.",
+                "MaxDistance": "Maximum Distance",
+                "MaxDistanceHint": "Summons farther than this many feet from the summoner are dismissed when either moves. 0 disables it.",
+                "PlaceActivity": "Place Activity",
+                "PlaceActivityHint": "Activity that places this item's summons that are not on the canvas.",
+                "RecallActivity": "Recall Activity",
+                "RecallActivityHint": "Activity that takes this item's summons off the canvas.",
+                "MoveActivity": "Move Activity",
+                "MoveActivityHint": "Activity that moves this item's placed summons up to its range.",
+                "Favorite": "Favorite Activities",
+                "FavoriteHint": "Favorite the command activities while the summons exist.",
+                "FollowUpActivity": "Follow-Up Activity",
+                "FollowUpActivityHint": "Activity rolled on a creature picked near each summon, without spending uses or slots.",
+                "FollowUpTiming": "Follow-Up Timing",
+                "FollowUpTimingHint": "Roll the follow-up after summoning, after moving, or both.",
+                "FollowUpTimingOptions": {
+                    "both": "Both",
+                    "create": "After Summoning",
+                    "move": "After Moving"
+                },
+                "FollowUpRange": "Follow-Up Range",
+                "FollowUpRangeHint": "Feet from the summon a follow-up target can be picked.",
+                "FollowUpTarget": "Choose a target for the follow-up.",
+                "FollowUpTargets": "Follow-Up Targets",
+                "FollowUpTargetsHint": "Pick one creature near each summon, or roll against every creature in range. All Creatures follows the activity's target type: allies include the summoner, anything else leaves the summoner out.",
+                "FollowUpTargetsOptions": {
+                    "one": "One Creature",
+                    "all": "All Creatures"
+                },
+                "MissingActor": "The summon actor could not be found.",
+                "NoSummons": "No summon creatures are configured.",
+                "AcBonus": "AC Bonus",
+                "HpBonus": "Hit Point Bonus",
+                "HdBonus": "Hit Dice Bonus",
+                "TempHP": "Temporary Hit Points",
+                "AttackDamageBonus": "Attack Damage Bonus",
+                "SaveDamageBonus": "Save Damage Bonus",
+                "HealingBonus": "Healing Bonus",
+                "NativeHint": "Formula. Overrides the summon activity's value when set. Supports @item.level and @summon.",
+                "MatchAttacks": "Match Attacks",
+                "MatchAttacksHint": "The summon's own attacks use the summoner's attack bonus.",
+                "MatchSaves": "Match Saves",
+                "MatchSavesHint": "The summon's own save DCs use the summoner's save DC.",
+                "MatchProficiency": "Match Proficiency",
+                "MatchProficiencyHint": "The summon uses the summoner's proficiency bonus.",
+                "Tier": "{count} × CR {cr} or lower",
+                "TierPrompt": "Choose how many creatures appear.",
+                "Pick": "Choose up to {count} creatures.",
+                "NoMatching": "No creatures in the monster compendiums match this summon.",
+                "PickMode": "Creature Choice",
+                "PickModeHint": "All creates every entry. Budget lets the user split a budget across the entries, each costing its weight.",
+                "PickOptions": {
+                    "all": "All",
+                    "budget": "Budget"
+                },
+                "Budget": "Budget",
+                "BudgetHint": "Formula for the total weight the user can pick when Creature Choice is Budget."
+            }
+        },
+        "Backups": {
+            "Title": "Backups",
+            "MissingPack": "The backup compendium is missing. Choose one in the Backups settings.",
+            "Started": "Backing up characters.",
+            "Progress": "Backing up {done}/{total} — {name}",
+            "Done": "Backed up {total} characters.",
+            "BackedUp": "Backed up {name}.",
+            "Created": "Backup created:",
+            "Deleted": "Expired backups deleted:",
+            "Restored": "Restored {name} from the backup of {date}.",
+            "Daily": "Daily",
+            "Weekly": "Weekly",
+            "Monthly": "Monthly",
+            "Forever": "Forever",
+            "OneWeek": "One Week",
+            "TwoWeeks": "Two Weeks",
+            "OneMonth": "One Month",
+            "ThreeMonths": "Three Months",
+            "SixMonths": "Six Months",
+            "OneYear": "One Year"
+        },
+        "CustomMacros": {
+            "NoReturn": "Custom macro {name} returned no macro data.",
+            "ScriptOnly": "Only script macros can go in a custom macro compendium.",
+            "Hint": {
+                "Title": "CAT Macro Instructions",
+                "Intro": "CAT runs this macro when the world loads. It returns a list with one entry per macro, so one custom macro can change several. This example replaces Hunter's Mark for both rule sets:",
+                "Override": "To change an existing macro, you must return its source, identifier and rules. Your entry replaces every pass of that macro.",
+                "New": "To add a new macro, return your own source and identifier. Then pick it in the Registered Macros tab of a document's CatKit.",
+                "Scope": "CAT utilities are available by name. Run<code>console.log(cat.utils)</code>in the console to list them.",
+                "Links": "See the <a href=\"{wiki}\" target=\"_blank\" rel=\"noopener\">wiki</a> or ask for help on <a href=\"{discord}\" target=\"_blank\" rel=\"noopener\">our Discord</a>."
             }
         }
     }

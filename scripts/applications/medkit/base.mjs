@@ -1,6 +1,6 @@
 import contextmenu from '../../handlers/contextmenu.mjs';
 import {constants, Logging} from '../../lib/_module.mjs';
-import {animationUtils, automationUtils, dialogUtils, documentUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
+import {animationUtils, automationUtils, compendiumUtils, dialogUtils, documentUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
 import uiUtils from '../../utilities/uiUtils.mjs';
 import CatApp from '../cat-app.mjs';
 import DialogApp from '../dialog.mjs';
@@ -188,10 +188,21 @@ export default class MedkitApp extends CatApp {
     _getSelectedSource() { return this.#selectedSource; }
     _setSelectedSource(value) { this.#selectedSource = value; }
     _getRulesValue() { return this.#rulesValue; }
+    _isTabVisible(id) { return true; }
+
+    _prepareTabs(group) {
+        const tabs = super._prepareTabs(group);
+        for (const id of Object.keys(tabs)) if (!this._isTabVisible(id)) delete tabs[id];
+        return tabs;
+    }
 
     _configureRenderParts(options) {
         const parts = super._configureRenderParts(options);
         for (const [id, part] of Object.entries(parts)) {
+            if (!this._isTabVisible(id)) {
+                delete parts[id];
+                continue;
+            }
             if (id === 'header' || id === 'nav' || id === 'footer') continue;
             if (!part.scrollable) part.scrollable = [''];
         }
@@ -475,9 +486,10 @@ export default class MedkitApp extends CatApp {
                 option.isSummonSelect = true;
                 option.max = Number.isFinite(max) ? max : '';
                 option.canAdd = entries.length < max;
+                const profiles = this.#profileChoices();
                 option.summonEntries = entries.map((entry, i) => ({
                     index: i,
-                    legend: entry.sourceActorName ?? (entry.sourceActorUuid ? fromUuidSync(entry.sourceActorUuid)?.name : null) ?? (max > 1 ? `${option.label} ${i + 1}` : option.label),
+                    legend: entry.sourceActorName ?? (entry.sourceActorUuid ? fromUuidSync(entry.sourceActorUuid)?.name : null) ?? profiles.find(choice => choice.value === entry.profile)?.label ?? (max > 1 ? `${option.label} ${i + 1}` : option.label),
                     fields: [
                         {key: `summon-uuid-${i}`, name: `${base}.${i}.sourceActorUuid`, label: _loc('CAT.MEDKIT.Summons.Actor'), value: entry.sourceActorUuid ?? '', isCombobox: true, allowBlank: true, choices: this.#actorChoices(entry), compendiumPicker: true, compendiumMax: Number.isFinite(max) ? max : ''},
                         this.#buildOption({key: `summon-initiative-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Initiative', options: [
@@ -491,9 +503,13 @@ export default class MedkitApp extends CatApp {
                         {key: `summon-anim-${i}`, name: `${base}.${i}.animation`, label: _loc('CAT.MEDKIT.Summons.Animation'), value: entry.animation?.source ? `${entry.animation.source}|${entry.animation.identifier}` : '', isAnimationSelect: true, choices: this.#animationChoices(['summon', 'location', 'token']), animationCredits: this.#animationCredits(entry.animation), animationLabel: this.#animationLabel(entry.animation)},
                         this.#buildOption({key: `summon-sound-place-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundPlaced'}, {name: `${base}.${i}.sounds.place`, value: entry.sounds?.place}),
                         this.#buildOption({key: `summon-sound-removed-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundRemoved'}, {name: `${base}.${i}.sounds.removed`, value: entry.sounds?.removed}),
-                        this.#buildOption({key: `summon-sound-death-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundDeath'}, {name: `${base}.${i}.sounds.death`, value: entry.sounds?.death})
+                        this.#buildOption({key: `summon-sound-death-${i}`, type: 'file', fileType: 'audio', label: 'CAT.MEDKIT.Summons.SoundDeath'}, {name: `${base}.${i}.sounds.death`, value: entry.sounds?.death}),
+                        ...this.#summonEntryFields(entry, `${base}.${i}`, i, profiles)
                     ],
-                    items: this.#summonItems(entry, `${base}.${i}.items`, `${option.configPath}.${i}.items`)
+                    subLists: [
+                        this.#summonItems(entry, `${base}.${i}.items`, `${option.configPath}.${i}.items`),
+                        this.#summonUpdates(entry, `${base}.${i}.updates`, `${option.configPath}.${i}.updates`)
+                    ]
                 }));
                 break;
             }
@@ -595,10 +611,62 @@ export default class MedkitApp extends CatApp {
         return [...effects].map(e => ({value: e.id, label: e.name ?? e.id, image: e.img}));
     }
 
+    #profileChoices() {
+        const activities = this.#document.documentName === 'Activity' ? [this.#document] : [...(this.#document.system?.activities ?? [])];
+        return activities.filter(activity => activity.type === 'summon').flatMap(activity => activity.profiles.map(profile => ({
+            value: profile._id,
+            label: `${activity.name}: ${profile.name || fromUuidSync(profile.uuid)?.name || profile._id}`
+        })));
+    }
+
+    #summonEntryFields(entry, base, i, profiles) {
+        const fieldList = [
+            this.#buildOption({key: `summon-count-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Count', hint: 'CAT.MEDKIT.Summons.CountHint'}, {name: `${base}.count`, value: entry.count ?? ''}),
+            this.#buildOption({key: `summon-disposition-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Disposition', options: [
+                {value: '', label: 'CAT.MEDKIT.Summons.DispositionOwner'},
+                ...Object.entries(CONST.TOKEN_DISPOSITIONS).map(([label, value]) => ({value: String(value), label: 'TOKEN.DISPOSITION.' + label}))
+            ]}, {name: `${base}.disposition`, value: entry.disposition ?? ''}),
+            this.#buildOption({key: `summon-size-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Size', options: [{value: '', label: 'CAT.Config.None'}, ...constants.sizeOptions]}, {name: `${base}.size`, value: entry.size ?? ''}),
+            this.#buildOption({key: `summon-weight-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Weight', hint: 'CAT.MEDKIT.Summons.WeightHint'}, {name: `${base}.weight`, value: entry.weight ?? ''}),
+            this.#buildOption({key: `summon-dismiss-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.DismissAtZero'}, {name: `${base}.dismissAtZero`, value: entry.dismissAtZero ?? false}),
+            this.#buildOption({key: `summon-identifier-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Identifier', hint: 'CAT.MEDKIT.Summons.IdentifierHint'}, {name: `${base}.identifier`, value: entry.identifier ?? ''}),
+            this.#buildOption({key: `summon-follow-up-${i}`, type: 'selectActivity', label: 'CAT.MEDKIT.Summons.FollowUp', hint: 'CAT.MEDKIT.Summons.FollowUpHint'}, {name: `${base}.followUpActivityId`, value: entry.followUpActivityId ?? ''}),
+            this.#buildOption({key: `summon-compendium-types-${i}`, type: 'select-many', label: 'CAT.MEDKIT.Summons.CompendiumTypes', hint: 'CAT.MEDKIT.Summons.CompendiumHint', options: constants.creatureTypeOptions}, {name: `${base}.compendium.types`, value: entry.compendium?.types ?? []}),
+            this.#buildOption({key: `summon-compendium-subtypes-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumSubtypes'}, {name: `${base}.compendium.subtypes`, value: entry.compendium?.subtypes ?? ''}),
+            this.#buildOption({key: `summon-compendium-names-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumNames'}, {name: `${base}.compendium.names`, value: entry.compendium?.names ?? ''}),
+            this.#buildOption({key: `summon-compendium-cr-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumMaxCR'}, {name: `${base}.compendium.maxCR`, value: entry.compendium?.maxCR ?? ''}),
+            this.#buildOption({key: `summon-compendium-tiers-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumTiers', hint: 'CAT.MEDKIT.Summons.CompendiumTiersHint'}, {name: `${base}.compendium.tiers`, value: entry.compendium?.tiers ?? ''}),
+            this.#buildOption({key: `summon-compendium-random-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.CompendiumRandomTier'}, {name: `${base}.compendium.randomTier`, value: entry.compendium?.randomTier ?? false})
+        ];
+        if (profiles.length) fieldList.unshift(this.#buildOption({key: `summon-profile-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Profile', hint: 'CAT.MEDKIT.Summons.ProfileHint', options: [{value: '', label: 'CAT.Config.None'}, ...profiles]}, {name: `${base}.profile`, value: entry.profile ?? ''}));
+        return fieldList;
+    }
+
+    #summonUpdates(entry, base, configPath) {
+        const updates = Array.isArray(entry.updates) ? entry.updates : [];
+        return {
+            base: configPath,
+            addLabel: 'CAT.MEDKIT.Summons.AddUpdate',
+            entries: updates.map((update, j) => ({
+                index: j,
+                legend: update.path || `${_loc('CAT.MEDKIT.Summons.Update')} ${j + 1}`,
+                fields: [
+                    this.#buildOption({key: `${base}-path-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.UpdatePath'}, {name: `${base}.${j}.path`, value: update.path ?? ''}),
+                    this.#buildOption({key: `${base}-value-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.UpdateValue'}, {name: `${base}.${j}.value`, value: update.value ?? ''}),
+                    this.#buildOption({key: `${base}-mode-${j}`, type: 'select', label: 'CAT.MEDKIT.Summons.UpdateMode', options: [
+                        {value: 'formula', label: 'CAT.MEDKIT.Summons.UpdateModeFormula'},
+                        {value: 'literal', label: 'CAT.MEDKIT.Summons.UpdateModeLiteral'}
+                    ]}, {name: `${base}.${j}.mode`, value: update.mode ?? 'formula'})
+                ]
+            }))
+        };
+    }
+
     #summonItems(entry, base, configPath) {
         const items = Array.isArray(entry.items) ? entry.items : [];
         return {
             base: configPath,
+            addLabel: 'CAT.MEDKIT.Summons.AddItem',
             entries: items.map((item, j) => {
                 const doc = item.uuid ? fromUuidSync(item.uuid) : null;
                 const itemType = item.itemType ?? doc?.type;
@@ -626,7 +694,19 @@ export default class MedkitApp extends CatApp {
                     {key: `${base}-recovery-${j}`, name: `${base}.${j}.usesRecovery`, label: _loc('CAT.MEDKIT.Summons.UsesRecovery'), value: item.usesRecovery ?? '', isCombobox: true, allowBlank: true, choices: this.#usesRecoveryChoices()}
                 );
                 if (item.usesRecovery === 'recharge') fields.push(this.#buildOption({key: `${base}-recharge-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.RechargeValue'}, {name: `${base}.${j}.usesRechargeFormula`, value: item.usesRechargeFormula ?? '6'}));
-                fields.push(this.#buildOption({key: `${base}-desc-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.Description'}, {name: `${base}.${j}.description`, value: item.description ?? ''}));
+                fields.push(
+                    this.#buildOption({key: `${base}-desc-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.Description'}, {name: `${base}.${j}.description`, value: item.description ?? ''}),
+                    this.#buildOption({key: `${base}-name-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.ItemName', hint: 'CAT.MEDKIT.Summons.ItemNameHint'}, {name: `${base}.${j}.name`, value: item.name ?? ''}),
+                    this.#buildOption({key: `${base}-identifier-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.ItemIdentifier', hint: 'CAT.MEDKIT.Summons.ItemIdentifierHint'}, {name: `${base}.${j}.identifier`, value: item.identifier ?? ''}),
+                    this.#buildOption({key: `${base}-attacks-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.Attacks', hint: 'CAT.MEDKIT.Summons.AttacksHint'}, {name: `${base}.${j}.scaling.attacks`, value: item.scaling?.attacks ?? ''}),
+                    this.#buildOption({key: `${base}-damage-number-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.DamageNumber'}, {name: `${base}.${j}.scaling.damageNumber`, value: item.scaling?.damageNumber ?? ''}),
+                    this.#buildOption({key: `${base}-damage-faces-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.DamageDenomination'}, {name: `${base}.${j}.scaling.damageDenomination`, value: item.scaling?.damageDenomination ?? ''}),
+                    this.#buildOption({key: `${base}-damage-bonus-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.DamageBonus'}, {name: `${base}.${j}.scaling.damageBonus`, value: item.scaling?.damageBonus ?? ''}),
+                    this.#buildOption({key: `${base}-damage-types-${j}`, type: 'select-many', label: 'CAT.MEDKIT.Summons.DamageTypes', options: constants.damageTypeOptions}, {name: `${base}.${j}.scaling.damageTypes`, value: item.scaling?.damageTypes ?? []}),
+                    this.#buildOption({key: `${base}-healing-number-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.HealingNumber'}, {name: `${base}.${j}.scaling.healingNumber`, value: item.scaling?.healingNumber ?? ''}),
+                    this.#buildOption({key: `${base}-healing-bonus-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.HealingBonus'}, {name: `${base}.${j}.scaling.healingBonus`, value: item.scaling?.healingBonus ?? ''}),
+                    this.#buildOption({key: `${base}-uses-scaling-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.UsesMaxFormula'}, {name: `${base}.${j}.scaling.usesMax`, value: item.scaling?.usesMax ?? ''})
+                );
                 return {
                     index: j,
                     legend: item.itemName ?? doc?.name ?? `${_loc('CAT.MEDKIT.Summons.Item')} ${j + 1}`,
@@ -686,7 +766,7 @@ export default class MedkitApp extends CatApp {
         if (mode !== 'folder') {
             choices.push(...game.packs
                 .filter(p => p.metadata.type === documentType)
-                .map(p => ({value: `pack:${p.metadata.id}`, label: p.metadata.label, tag: _loc('CAT.MEDKIT.PackFolder.Pack')})));
+                .map(p => ({value: `pack:${p.metadata.id}`, label: compendiumUtils.getPackLabel(p), tag: _loc('CAT.MEDKIT.PackFolder.Pack')})));
         }
         return choices.sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
     }

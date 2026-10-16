@@ -409,6 +409,18 @@ async function setReactionUsed(actor) {
 }
 
 /**
+ * Raise an actor's exhaustion, capped at the system's highest level.
+ * @param {Actor5e} actor Actor to act on.
+ * @param {number} [amount] Levels to add.
+ * @returns {Promise<Actor5e|undefined>}
+ */
+async function addExhaustion(actor, amount = 1) {
+    const current = actor.system.attributes.exhaustion ?? 0;
+    const exhaustion = Math.min(current + amount, CONFIG.DND5E.conditionTypes.exhaustion?.levels ?? 6);
+    if (exhaustion !== current) return await documentUtils.update(actor, {'system.attributes.exhaustion': exhaustion});
+}
+
+/**
  * Return whether this actor has used their bonus action.
  * @param {Actor5e} actor Actor to act on.
  * @returns {boolean}
@@ -562,6 +574,7 @@ export default {
     getCastableSpells,
     hasUsedReaction,
     setReactionUsed,
+    addExhaustion,
     typeOrRace,
     getEquippedWeapons,
     createActor,

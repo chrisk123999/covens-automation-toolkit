@@ -1,4 +1,5 @@
-import {genericUtils} from '../../utilities/_module.mjs';
+import backups from '../../handlers/backups.mjs';
+import {dialogUtils, genericUtils} from '../../utilities/_module.mjs';
 import MedkitApp from './base.mjs';
 const {fields} = foundry.data;
 
@@ -14,7 +15,9 @@ export default class ActorMedkit extends MedkitApp {
             toggleFI: ActorMedkit.#toggleFI,
             toggleFF: ActorMedkit.#toggleFF,
             removeCondition: ActorMedkit.#removeCondition,
-            addFeatureRollMode: ActorMedkit.#addFeatureRollMode
+            addFeatureRollMode: ActorMedkit.#addFeatureRollMode,
+            backupNow: ActorMedkit.#backupNow,
+            restoreBackup: ActorMedkit.#restoreBackup
         }
     };
 
@@ -24,7 +27,8 @@ export default class ActorMedkit extends MedkitApp {
         ...MedkitApp.GENERIC_PART,
         embedded: {template: 'modules/cat/templates/medkit/shared/embedded-tab.hbs'},
         macros: {template: 'modules/cat/templates/medkit/shared/registered-macros.hbs'},
-        docprops: {template: 'modules/cat/templates/medkit/actor/docprops.hbs'}
+        docprops: {template: 'modules/cat/templates/medkit/actor/docprops.hbs'},
+        backups: {template: 'modules/cat/templates/medkit/actor/backups.hbs'}
     };
 
     static TABS = {
@@ -34,11 +38,28 @@ export default class ActorMedkit extends MedkitApp {
                 MedkitApp.GENERIC_TAB,
                 {id: 'embedded', icon: 'fa-solid fa-feather-pointed', label: 'CAT.MEDKIT.TABS.Embedded'},
                 {id: 'macros', icon: 'fa-solid fa-wand-magic-sparkles', label: 'CAT.MEDKIT.TABS.Macros'},
-                {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'}
+                {id: 'docprops', icon: 'fa-solid fa-sliders', label: 'CAT.MEDKIT.TABS.DocProps'},
+                {id: 'backups', icon: 'fa-solid fa-floppy-disk', label: 'CAT.MEDKIT.TABS.Backups'}
             ],
             initial: 'automations'
         }
     };
+
+    get #showBackups() {
+        return game.user.isGM && this.document.collection === game.actors && game.settings.get('cat', 'automaticBackups');
+    }
+
+    _isTabVisible(id) {
+        return id !== 'backups' || this.#showBackups;
+    }
+
+    async _preparePartContext(partId, context) {
+        const partContext = await super._preparePartContext(partId, context);
+        if (partId !== 'backups') return partContext;
+        const list = await backups.getBackups(this.document);
+        partContext.backups = {hasPack: !!list, rows: (list ?? []).map(backup => ({id: backup.id, label: new Date(backup.time).toLocaleString()}))};
+        return partContext;
+    }
 
     _getMassApplyItems() {
         return Array.from(this.document.items ?? []);
@@ -191,5 +212,18 @@ export default class ActorMedkit extends MedkitApp {
         }
         identifiers[id] = true;
         this.render();
+    }
+
+    /** @this {ActorMedkit} */
+    static async #backupNow() {
+        if (await backups.backupActor(this.document)) this.render();
+    }
+
+    /** @this {ActorMedkit} */
+    static async #restoreBackup(_event, target) {
+        const confirmed = await dialogUtils.confirm('CAT.MEDKIT.Actor.Backups.Restore', _loc('CAT.MEDKIT.Actor.Backups.RestoreConfirm', {name: this.document.name, date: target.dataset.label}));
+        if (!confirmed) return;
+        await backups.restore(this.document, target.dataset.backupId);
+        this.close();
     }
 }

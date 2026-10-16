@@ -5,7 +5,6 @@ import CatApp from './cat-app.mjs';
 import WorldMedkit from './medkit/world.mjs';
 
 const SECTION_PART = {template: 'modules/cat/templates/troubleshooter/section.hbs', scrollable: ['']};
-const DISCORD_URL = 'https://discord.gg/egH9AFtPJk';
 const STATUS = {
     pass: {medkitStatus: constants.MEDKIT_STATUSES.UP_TO_DATE, icon: 'fa-solid fa-circle-check'},
     warn: {medkitStatus: constants.MEDKIT_STATUSES.AVAILABLE, icon: 'fa-solid fa-triangle-exclamation'},
@@ -209,7 +208,7 @@ export default class TroubleshooterApp extends CatApp {
     static async #openDiscord() {
         await game.clipboard.copyPlainText(this.#reportText);
         genericUtils.notify('CAT.Troubleshooter.Copied');
-        this.element.ownerDocument.defaultView.open(DISCORD_URL, '_blank');
+        this.element.ownerDocument.defaultView.open(constants.DISCORD_URL, '_blank');
     }
 
     /** @this {TroubleshooterApp} */

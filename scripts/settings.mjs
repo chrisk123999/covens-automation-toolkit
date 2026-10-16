@@ -1,4 +1,5 @@
 import {SettingsMenuBase, TroubleshooterApp} from './applications/_module.mjs';
+import customMacros from './handlers/customMacros.mjs';
 import items from './handlers/items.mjs';
 import {dicePatching} from './patches/_module.mjs';
 import {genericUtils} from './utilities/_module.mjs';
@@ -17,6 +18,7 @@ import {genericUtils} from './utilities/_module.mjs';
  *  {
  *    onChange,
  *    choices,
+ *    packSelect,
  *    reloadRequired,
  *    select
  *  }
@@ -201,6 +203,45 @@ const settings = {
         scope: 'client',
         menu: 'manualRolls'
     },
+    automaticBackups: {
+        type: Boolean,
+        default: false,
+        menu: 'backups'
+    },
+    backupCompendium: {
+        type: String,
+        default: '',
+        packSelect: {type: 'Actor', packageType: 'world'},
+        menu: 'backups'
+    },
+    backupFrequency: {
+        type: Number,
+        default: 79200000,
+        choices: {
+            79200000: 'CAT.Backups.Daily',
+            597600000: 'CAT.Backups.Weekly',
+            2622546000: 'CAT.Backups.Monthly'
+        },
+        menu: 'backups'
+    },
+    backupRetention: {
+        type: Number,
+        default: 0,
+        choices: {
+            0: 'CAT.Backups.Forever',
+            604800000: 'CAT.Backups.OneWeek',
+            1209600000: 'CAT.Backups.TwoWeeks',
+            2629746000: 'CAT.Backups.OneMonth',
+            7889238000: 'CAT.Backups.ThreeMonths',
+            15778476000: 'CAT.Backups.SixMonths',
+            31556952000: 'CAT.Backups.OneYear'
+        },
+        menu: 'backups'
+    },
+    backupTime: {
+        type: Number,
+        default: 0
+    },
     monsterCompendiums: {
         type: Object,
         default: {
@@ -280,7 +321,8 @@ const settings = {
         type: Object,
         default: {},
         scope: 'world',
-        menu: 'compendiums'
+        menu: 'compendiums',
+        onChange: () => customMacros.load()
     },
     permissionsAutomation: {
         type: Number,

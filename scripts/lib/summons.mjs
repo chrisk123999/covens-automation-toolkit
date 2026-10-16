@@ -1,9 +1,10 @@
 import {summonEvents} from '../events/_module.mjs';
-import {actorUtils, animationUtils, dialogUtils, documentUtils, folderUtils, genericUtils, itemUtils, queryUtils, tokenUtils} from '../utilities/_module.mjs';
+import {actorUtils, animationUtils, automationUtils, dialogUtils, documentUtils, folderUtils, genericUtils, itemUtils, queryUtils, tokenUtils} from '../utilities/_module.mjs';
 import {constants} from './_module.mjs';
 export class SummonsManager {
     #summons = new Map();
     #deletingFolders = new Map();
+    #deletingActors = new Set();
     #creatingRootFolder = null;
     #creatingOwnerFolders = new Map();
     static #manager;
@@ -87,18 +88,17 @@ export class SummonsManager {
         disposition ??= summon.ownerToken?.disposition ?? summon.owner.prototypeToken.disposition;
         genericUtils.setProperty(actorData, 'prototypeToken.disposition', disposition);
         if (items.length) {
-            updates.items ??= actorData.items;
-            await Promise.all(items.map(async itemInfo => this.#processItem(summon, updates, itemInfo)));
+            const injected = (await Promise.all(items.map(async itemInfo => this.#processItem(summon, itemInfo)))).filter(Boolean);
+            const identifiers = new Set(injected.map(itemData => itemData.system?.identifier).filter(Boolean));
+            updates.items = [...(updates.items ?? actorData.items).filter(itemData => !identifiers.has(itemData.system?.identifier)), ...injected];
         }
         if (size) {
             genericUtils.setProperty(actorData, 'system.traits.size', size);
-            if (!dnd5e.settings.tokenSizeSync) {
-                const sizeConfig = CONFIG.DND5E.actorSizes[size];
-                genericUtils.setProperty(actorData, 'prototypeToken.width', sizeConfig.token ?? 1);
-                genericUtils.setProperty(actorData, 'prototypeToken.height', sizeConfig.token ?? 1);
-                genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleX', sizeConfig.dynamicTokenScale ?? 1);
-                genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleY', sizeConfig.dynamicTokenScale ?? 1);
-            }
+            const sizeConfig = CONFIG.DND5E.actorSizes[size];
+            genericUtils.setProperty(actorData, 'prototypeToken.width', sizeConfig.token ?? 1);
+            genericUtils.setProperty(actorData, 'prototypeToken.height', sizeConfig.token ?? 1);
+            genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleX', sizeConfig.dynamicTokenScale ?? 1);
+            genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleY', sizeConfig.dynamicTokenScale ?? 1);
         }
         await summonEvents.preCreate(summon, updates);
         genericUtils.mergeObject(actorData, updates);
@@ -120,11 +120,31 @@ export class SummonsManager {
         });
         return await actorUtils.createActor(actorData);
     }
-    async #processItem(summon, updates, itemInfo) {
-        const {uuid, matchDC, matchAttack, description, equipped, attuned, method, prepared, usesMax, usesRecovery, usesRechargeFormula} = itemInfo;
+    #scaleItem(itemData, {damageNumber, damageDenomination, damageBonus, damageTypes, healingNumber, healingBonus, usesMax} = {}) {
+        Object.values(itemData.system.activities ?? {}).forEach(activityData => {
+            activityData.damage?.parts?.slice(0, 1).forEach(part => {
+                if (damageNumber !== undefined) part.number = damageNumber;
+                if (damageDenomination !== undefined) part.denomination = damageDenomination;
+                if (damageBonus !== undefined) part.bonus = damageBonus;
+                if (damageTypes) part.types = damageTypes;
+            });
+            if (activityData.healing) {
+                if (healingNumber !== undefined) activityData.healing.number = healingNumber;
+                if (healingBonus !== undefined) activityData.healing.bonus = healingBonus;
+            }
+        });
+        if (usesMax === undefined) return;
+        genericUtils.setProperty(itemData, 'system.uses.max', String(usesMax));
+        genericUtils.setProperty(itemData, 'system.uses.spent', 0);
+    }
+    async #processItem(summon, itemInfo) {
+        const {uuid, matchDC, matchAttack, description, equipped, attuned, method, prepared, usesMax, usesRecovery, usesRechargeFormula, name, scaling, identifier} = itemInfo;
         const itemData = uuid ? (await fromUuid(uuid))?.toObject() : genericUtils.duplicate(itemInfo);
         if (!itemData) return;
         delete itemData._id;
+        if (name) itemData.name = name;
+        if (identifier) genericUtils.setProperty(itemData, 'system.identifier', identifier);
+        if (scaling) this.#scaleItem(itemData, scaling);
         if (description) itemData.system.description.value = description;
         if (Object.hasOwn(itemData.system, 'equipped') && equipped !== false) genericUtils.setProperty(itemData, 'system.equipped', true);
         if (attuned && itemData.system.attunement) genericUtils.setProperty(itemData, 'system.attuned', true);
@@ -139,10 +159,9 @@ export class SummonsManager {
         }
         const sourceDocument = summon.sourceDocument;
         const sourceItem = sourceDocument?.documentName === 'Activity' ? sourceDocument.item : sourceDocument;
-        if ((!matchDC && !matchAttack) || !sourceItem?.actor) {
-            updates.items.push(itemData);
-            return;
-        }
+        const inherited = itemData.flags?.cat?.inheritConfig;
+        if (inherited?.length && sourceItem) genericUtils.setProperty(itemData, 'flags.cat.config', {...itemData.flags.cat.config, ...automationUtils.getConfigValues(sourceItem, inherited)});
+        if ((!matchDC && !matchAttack) || !sourceItem?.actor) return itemData;
         const spellcasting = itemUtils.getAdvancementSourceItem(sourceItem)?.system.spellcasting;
         const save = spellcasting ? spellcasting.save : itemUtils.getSaveDC(sourceItem);
         const attack = spellcasting ? spellcasting.attack - (sourceItem.actor.conditionRollReduction ?? 0) : itemUtils.getSpellAttackBonus(sourceItem);
@@ -157,7 +176,7 @@ export class SummonsManager {
                 genericUtils.setProperty(activityData, 'attack.bonus', String(attack));
             }
         });
-        updates.items.push(itemData);
+        return itemData;
     }
     async ownerInitiative(actor) {
         const summons = this.getSummons(actor).filter(summon => ['follows', 'standard'].includes(summon.initiative) && summon.token);
@@ -235,9 +254,17 @@ export class SummonsManager {
         return summon;
     }
     async deleteSummon(summon) {
-        if (!summon.actor) return;
-        await summonEvents.preDelete(summon);
+        if (!summon.actor || this.#deletingActors.has(summon.actor.id)) return;
         const actorId = summon.actor.id;
+        this.#deletingActors.add(actorId);
+        try {
+            await this.#deleteSummon(summon, actorId);
+        } finally {
+            this.#deletingActors.delete(actorId);
+        }
+    }
+    async #deleteSummon(summon, actorId) {
+        await summonEvents.preDelete(summon);
         const effects = [...summon.actor.effects, ...summon.actor.items.contents.flatMap(item => [...item.effects])];
         const orphans = new Set([
             ...effects.flatMap(effect => effect.getDependents()).filter(document => document instanceof foundry.abstract.Document && document.actor !== summon.actor),
@@ -360,7 +387,7 @@ export class SummonsManager {
     }
 }
 export class Summon {
-    constructor(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero, identifier} = {}) {
+    constructor(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero, identifier, workflowOptions} = {}) {
         this.sourceActorUuid = sourceActor.uuid;
         this.ownerUuid = owner.uuid;
         this.actor = actor;
@@ -374,6 +401,7 @@ export class Summon {
         this.initiative = initiative;
         this.dismissAtZero = dismissAtZero ?? false;
         this.identifier = identifier ?? documentUtils.getIdentifier(sourceActor);
+        this.workflowOptions = workflowOptions ?? {};
     }
     get token() {
         return actorUtils.getFirstToken(this.actor);

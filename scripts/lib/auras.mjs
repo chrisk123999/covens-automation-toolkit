@@ -121,12 +121,19 @@ function indexToken(index, token) {
     return previousKeys;
 }
 const cellPointCache = new WeakMap();
-function getCellPoints(token) {
+function getCellPoints(token, position) {
+    if (position) return computeCellPoints(token, {...token._source, ...position});
     const grid = token.parent.grid;
     const {x: tokenX, y: tokenY, elevation, width, height} = token._source;
     const cacheKey = tokenX + '|' + tokenY + '|' + elevation + '|' + width + '|' + height + '|' + grid.type + '|' + grid.size;
     const cached = cellPointCache.get(token);
     if (cached?.key === cacheKey) return cached.points;
+    const points = computeCellPoints(token, token._source);
+    cellPointCache.set(token, {key: cacheKey, points});
+    return points;
+}
+function computeCellPoints(token, {x: tokenX, y: tokenY, elevation, width, height}) {
+    const grid = token.parent.grid;
     const points = [];
     const startX = width >= 1 ? 0.5 : width / 2;
     const startY = height >= 1 ? 0.5 : height / 2;
@@ -136,15 +143,14 @@ function getCellPoints(token) {
             points.push({x: point.x, y: point.y, elevation});
         }
     }
-    cellPointCache.set(token, {key: cacheKey, points});
     return points;
 }
-function measure(token, target) {
+function measure(token, target, {tokenPosition, targetPosition} = {}) {
     if (token === target) return 0;
     const grid = token.parent.grid;
-    const targetPoints = getCellPoints(target);
+    const targetPoints = getCellPoints(target, targetPosition);
     let distance = Infinity;
-    for (const origin of getCellPoints(token)) {
+    for (const origin of getCellPoints(token, tokenPosition)) {
         for (const destination of targetPoints) {
             distance = Math.min(distance, grid.measurePath([origin, destination]).distance);
         }
@@ -190,14 +196,14 @@ function passesFilter(entry, target, distance) {
         return false;
     }
 }
-function testPair(entry, target) {
+function testPair(entry, target, positions) {
     if (!target.actor) return;
     if (entry.token === target && !entry.descriptor.includeSelf) return;
     if (!entry.dispositions.includes('all')) {
         const isEnemy = tokenUtils.isEnemy(entry.token, target);
         if (!(entry.dispositions.includes('enemy') && isEnemy) && !(entry.dispositions.includes('ally') && !isEnemy)) return;
     }
-    const distance = measure(entry.token, target);
+    const distance = measure(entry.token, target, positions);
     if (distance > entry.radius) return;
     const {creatureTypes, sourceStatuses} = entry.descriptor;
     if (creatureTypes?.length && entry.token !== target && !creatureTypes.includes(actorUtils.typeOrRace(target.actor))) return;
@@ -214,7 +220,7 @@ function addDirty(actor) {
     state.dirty.set(actor.uuid, actor);
     scheduleFlush();
 }
-function markDirty(token, beforeKeys, members, {silent = false, force = false} = {}) {
+function markDirty(token, beforeKeys, members, {silent = false, force = false, enter = true} = {}) {
     const changed = beforeKeys.size !== members.size || [...members.keys()].some(key => !beforeKeys.has(key));
     if (!changed && !force) return;
     addDirty(token.actor);
@@ -223,7 +229,7 @@ function markDirty(token, beforeKeys, members, {silent = false, force = false} =
     members.forEach((distance, key) => {
         if (beforeKeys.has(key)) return;
         if (diff.exited.has(key)) diff.exited.delete(key);
-        else diff.entered.add(key);
+        else if (enter) diff.entered.add(key);
     });
     beforeKeys.forEach(key => {
         if (members.has(key)) return;
@@ -232,7 +238,7 @@ function markDirty(token, beforeKeys, members, {silent = false, force = false} =
     });
     state.diffs.set(token.uuid, diff);
 }
-function computeTarget(index, token, {silent = false} = {}) {
+function computeTarget(index, token, {silent = false, enter = true} = {}) {
     const before = index.membership.get(token.id) ?? new Map();
     const members = new Map();
     index.sources.forEach(entries => entries.forEach(entry => {
@@ -241,7 +247,7 @@ function computeTarget(index, token, {silent = false} = {}) {
     }));
     if (members.size) index.membership.set(token.id, members);
     else index.membership.delete(token.id);
-    markDirty(token, new Set(before.keys()), members, {silent, force: true});
+    markDirty(token, new Set(before.keys()), members, {silent, force: true, enter});
 }
 function computeSource(index, token, previousKeys = [], {reindex = false} = {}) {
     const entries = index.sources.get(token.id) ?? [];
@@ -295,13 +301,13 @@ function getTokens(actor, {linked = false} = {}) {
 function isSourceActor(tokens) {
     return tokens.some(token => state.scenes.get(token.parent.id)?.sources.has(token.id));
 }
-function refreshTokens(tokens, {reindex = false} = {}) {
+function refreshTokens(tokens, {reindex = false, enter = true} = {}) {
     tokens.forEach(token => {
         const index = ensureIndex(token.parent);
         if (!index) return;
         if (reindex) computeSource(index, token, indexToken(index, token), {reindex: true});
         else if (index.sources.has(token.id)) computeSource(index, token);
-        computeTarget(index, token);
+        computeTarget(index, token, {enter});
     });
 }
 function isEnabled(entry, actor) {
@@ -488,7 +494,17 @@ function refreshEffect(effect) {
     }
     if (!tokens.length) return;
     const isHost = !isOutput && (hasAuras(effect) || (effect.parent?.documentName === 'Item' && hasAuras(effect.parent)));
-    refreshTokens(tokens, {reindex: isHost || isSourceActor(tokens)});
+    refreshTokens(tokens, {reindex: isHost || isSourceActor(tokens), enter: false});
+    refreshFiltered(tokens);
+}
+function refreshFiltered(tokens) {
+    new Set(tokens.map(token => token.parent)).forEach(scene => {
+        const index = state.scenes.get(scene.id);
+        if (!index || ![...index.entries.values()].some(entry => entry.descriptor.filter)) return;
+        scene.tokens.forEach(token => {
+            if (!tokens.includes(token)) computeTarget(index, token, {enter: false});
+        });
+    });
 }
 function refreshActor(actor) {
     const tokens = getTokens(actor);
@@ -573,6 +589,62 @@ async function turnEvent(token, event, {combat, round, combatantId} = {}) {
     const turnKey = getTurnKey(combat, round, combatantId);
     await enqueue(() => runTriggers(token, entries, event, turnKey));
 }
+function samplePath(origin, waypoints, step) {
+    const points = [];
+    let previous = origin;
+    for (const waypoint of waypoints) {
+        const length = Math.hypot(waypoint.x - previous.x, waypoint.y - previous.y);
+        const count = Math.max(1, Math.ceil(length / step));
+        for (let i = 1; i <= count; i++) {
+            const t = i / count;
+            points.push({x: previous.x + (waypoint.x - previous.x) * t, y: previous.y + (waypoint.y - previous.y) * t, elevation: (previous.elevation ?? 0) + ((waypoint.elevation ?? previous.elevation ?? 0) - (previous.elevation ?? 0)) * t});
+        }
+        previous = waypoint;
+    }
+    points.pop();
+    return points;
+}
+function passedEntries(pairs, path, origin, side) {
+    return pairs.filter(({entry, target}) => {
+        if (testPair(entry, target) !== undefined) return false;
+        const at = position => side === 'target' ? {targetPosition: position} : {tokenPosition: position};
+        if (testPair(entry, target, at(origin)) !== undefined) return false;
+        return path.some(position => testPair(entry, target, at(position)) !== undefined);
+    });
+}
+/**
+ * Fire enter triggers for auras a token crossed without starting or ending inside them.
+ * @param {TokenDocument} token Token that moved.
+ * @param {object} movement Movement data from the moveToken hook.
+ */
+function passThrough(token, movement) {
+    if (!queryUtils.isTheGM() || !state.ready || !isCountedScene(token.parent) || !movement?.origin || !movement.passed?.waypoints?.length) return;
+    const index = state.scenes.get(token.parent.id);
+    if (!index) return;
+    const enterEntries = [...index.entries.values()].filter(entry => entry.descriptor.triggers?.some(trigger => trigger.event === constants.auraTriggers.enter));
+    if (!enterEntries.length) return;
+    const origin = {x: movement.origin.x, y: movement.origin.y, elevation: movement.origin.elevation};
+    const path = samplePath(origin, movement.passed.waypoints, token.parent.grid.size / 2);
+    if (!path.length) return;
+    const turnKey = getTurnKey(getTokenCombat(token));
+    const asTarget = passedEntries(enterEntries.filter(entry => entry.token !== token).map(entry => ({entry, target: token})), path, origin, 'target');
+    const triggered = new Map(asTarget.length ? [[token, asTarget.map(({entry}) => entry)]] : []);
+    const ownEntries = enterEntries.filter(entry => entry.token === token);
+    if (ownEntries.length) {
+        const grid = token.parent.grid;
+        const reach = Math.max(...ownEntries.map(entry => entry.radius)) * token.parent.dimensions.distancePixels + grid.size * Math.max(token._source.width, token._source.height);
+        const xs = [origin.x, ...path.map(point => point.x)];
+        const ys = [origin.y, ...path.map(point => point.y)];
+        const box = {left: Math.min(...xs) - reach, right: Math.max(...xs) + reach, top: Math.min(...ys) - reach, bottom: Math.max(...ys) + reach};
+        const nearby = token.parent.tokens.filter(target => target !== token && target.actor && target._source.x + grid.size * target._source.width >= box.left && target._source.x <= box.right && target._source.y + grid.size * target._source.height >= box.top && target._source.y <= box.bottom);
+        const pairs = nearby.flatMap(target => ownEntries.map(entry => ({entry, target})));
+        passedEntries(pairs, path, origin, 'source').forEach(({entry, target}) => triggered.set(target, [...(triggered.get(target) ?? []), entry]));
+    }
+    triggered.forEach((entries, target) => {
+        const picked = pickTriggered(target, entries.map(entry => ({entry, distance: 0})), constants.auraTriggers.enter);
+        if (picked.length) enqueue(() => runTriggers(target, picked, constants.auraTriggers.enter, turnKey));
+    });
+}
 function isReady() {
     return state.ready;
 }
@@ -591,5 +663,6 @@ export default {
     refreshEffect,
     refreshActor,
     removeActor,
-    turnEvent
+    turnEvent,
+    passThrough
 };

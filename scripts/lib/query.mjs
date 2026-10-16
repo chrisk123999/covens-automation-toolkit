@@ -1,4 +1,4 @@
-import {documentUtils, effectUtils, itemUtils, workflowUtils} from '../utilities/_module.mjs';
+import {documentUtils, effectUtils, itemUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import Logging from './logging.mjs';
 async function dialog({title, content, inputs, buttons, config}) {
@@ -133,8 +133,16 @@ async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, c
     const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, consumeUsage, spellSlot});
     return workflow?.getSafeMacroData();
 }
+async function aimDestination({uuid, range, centerpoint, requireSight, ignoreWalls}) {
+    const token = await fromUuid(uuid);
+    if (!token) return;
+    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, requireSight, ignoreWalls});
+    if (!destination) return;
+    return {x: destination.x, y: destination.y, elevation: destination.elevation, level: destination.level, cancelled: destination.cancelled};
+}
 function registerQueries() {
     const handlers = {
+        aimDestination,
         createEffects,
         deleteEmbeddedDocuments,
         deleteDocument,
