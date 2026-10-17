@@ -14,18 +14,11 @@ const TROUBLESHOOTER = {
     errorStores: ['macroErrors', 'embeddedMacroErrors', 'registrationErrors', 'attributeErrors'],
     permissions: ['ACTOR_CREATE', 'ITEM_CREATE', 'TOKEN_CREATE', 'TOKEN_DELETE', 'FILES_BROWSE', 'MESSAGE_WHISPER', 'MACRO_SCRIPT'],
     collections: ['actors', 'items', 'scenes', 'tables', 'macros'],
+    midiSettings: ['autoCEEffects', 'attackPerTarget', 'allowActorUseMacro', 'allowUseMacro', 'autoRollAttack', 'autoFastForward', 'gmAutoAttack', 'gmAutoFastForward', 'autoRollDamage', 'gmAutoDamage', 'autoCheckHit', 'autoCheckSaves', 'confirmAttackDamage', 'waitForDamageApplication', 'autoCompleteWorkflow'],
     requiredSettings: {
-        'core': {
-            'permissions.QUERY_USER': {expected: roles => roles?.includes(CONST.USER_ROLES.PLAYER), fix: Object.values(CONST.USER_ROLES).filter(Boolean), label: CONST.USER_PERMISSIONS.QUERY_USER.label},
-            'permissions.REGION_CREATE': {expected: roles => roles?.includes(CONST.USER_ROLES.PLAYER), fix: Object.values(CONST.USER_ROLES).filter(Boolean), label: CONST.USER_PERMISSIONS.REGION_CREATE.label}
-        },
         'dnd5e': {
             allowPolymorphing: {fix: true},
             rulesVersion: {}
-        },
-        'cat': {
-            displayDebugLogs: {fix: false},
-            displayDebugEventData: {fix: false}
         },
         'dae': {
             DependentConditions: {fix: true},
@@ -47,6 +40,10 @@ const TROUBLESHOOTER = {
             'ConfigSettings.removeButtons': {fix: 'all'},
             'ConfigSettings.autoApplyDamage': {fix: 'yesCard'},
             'ConfigSettings.addChatDamageButtons': {fix: 'none'}
+        },
+        'core': {
+            'permissions.QUERY_USER': {expected: roles => roles?.includes(CONST.USER_ROLES.PLAYER), fix: Object.values(CONST.USER_ROLES).filter(Boolean), label: CONST.USER_PERMISSIONS.QUERY_USER.label},
+            'permissions.REGION_CREATE': {expected: roles => roles?.includes(CONST.USER_ROLES.PLAYER), fix: Object.values(CONST.USER_ROLES).filter(Boolean), label: CONST.USER_PERMISSIONS.REGION_CREATE.label}
         }
     }
 };
@@ -54,14 +51,12 @@ function report(key, detail) {
     return {status: 'info', label: `CAT.Troubleshooter.Report.${key}`, detail: String(detail)};
 }
 function formatValue(value) {
+    if (Array.isArray(value) && value.length && value.every(id => game.users.has(id))) return _loc('CAT.Troubleshooter.Report.UserCount', {count: value.length});
     return value instanceof Object ? JSON.stringify(value) : String(value);
 }
-function permissionUsers(permission) {
-    return game.users.map(user => ({name: user.name, allowed: user.hasPermission(permission)}));
-}
-function usersDetail(users) {
-    const names = allowed => users.filter(user => user.allowed === allowed).map(user => user.name).join(', ') || '-';
-    return _loc('CAT.Troubleshooter.Report.Permissions.Users', {allowed: names(true), denied: names(false)});
+function usersDetail(permission) {
+    const allowed = game.users.filter(user => user.hasPermission(permission)).length;
+    return _loc('CAT.Troubleshooter.Report.Permissions.Users', {allowed, denied: game.users.size - allowed});
 }
 function moduleName(id) {
     if (id === 'core') return _loc('CAT.Troubleshooter.Sections.foundry');
@@ -115,8 +110,7 @@ function settingCheck({module, key, fix, expected = value => value === fix, labe
         run: () => {
             const value = read();
             const status = fix === undefined ? 'info' : expected(value) ? 'pass' : 'fail';
-            const users = module === 'core' ? permissionUsers(path) : undefined;
-            if (users) return {status, label: name(), detail: usersDetail(users), users};
+            if (module === 'core') return {status, label: name(), detail: usersDetail(path)};
             const detail = status === 'fail' ? _loc('CAT.Troubleshooter.Required.Expected', {value: String(value), fix: String(fix)}) : String(value);
             const scope = setting().scope === 'client' ? ' ' + _loc('CAT.Troubleshooter.Required.ClientScope') : '';
             return {status, label: name(), detail: detail + scope};
@@ -221,10 +215,7 @@ const REPORT_CHECKS = [
     {
         id: 'permissions.relevant',
         section: 'permissions',
-        run: () => TROUBLESHOOTER.permissions.map(key => {
-            const users = permissionUsers(key);
-            return {status: 'info', label: _loc(CONST.USER_PERMISSIONS[key].label), detail: usersDetail(users), users};
-        })
+        run: () => TROUBLESHOOTER.permissions.map(key => ({status: 'info', label: _loc(CONST.USER_PERMISSIONS[key].label), detail: usersDetail(key)}))
     },
     settingsDump('dnd5e'),
     settingsDump('cat'),
@@ -236,10 +227,16 @@ const REPORT_CHECKS = [
         get group() {
             return moduleName('midi-qol');
         },
-        run: () => [
-            ...['EnableWorkflow', 'ReplaceDefaultActivities'].map(key => ({status: 'info', label: _loc(game.settings.settings.get(`midi-qol.${key}`).name), detail: formatValue(game.settings.get('midi-qol', key))})),
-            ...Object.entries(game.settings.get('midi-qol', 'ConfigSettings')).map(([key, value]) => ({status: 'info', label: `ConfigSettings.${key}`, detail: formatValue(value)}))
-        ]
+        run: () => {
+            const config = game.settings.get('midi-qol', 'ConfigSettings');
+            return [
+                ...['EnableWorkflow', 'ReplaceDefaultActivities'].map(key => ({status: 'info', label: _loc(game.settings.settings.get(`midi-qol.${key}`).name), detail: formatValue(game.settings.get('midi-qol', key))})),
+                ...TROUBLESHOOTER.midiSettings.map(key => {
+                    const label = `midi-qol.${key.capitalize()}.Name`;
+                    return {status: 'info', label: game.i18n.has(label) ? _loc(label) : `ConfigSettings.${key}`, detail: formatValue(config[key])};
+                })
+            ];
+        }
     },
     {
         id: 'foundry.scene',

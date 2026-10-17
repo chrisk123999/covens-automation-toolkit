@@ -23,16 +23,7 @@
                             <span class="name" {{#if labelStatus}} data-medkit-status="{{labelStatus}}"
                                 {{/if}}>{{label}}{{#each tags}} <span class="cat-combobox-tag" {{#if status}}
                                         data-medkit-status="{{status}}" {{/if}}>{{label}}</span>{{/each}}</span>
-                            {{#if users}}
-                                <span class="meta users">
-                                    {{#each users}}
-                                        <span
-                                            data-medkit-status="{{#if allowed}}up-to-date{{else}}outdated{{/if}}">{{name}}</span>
-                                    {{/each}}
-                                </span>
-                            {{else}}
-                                <span class="meta">{{detail}}</span>
-                            {{/if}}
+                            <span class="meta">{{detail}}</span>
                             {{#if button}}
                                 <button type="button" data-action="{{button.action}}" data-check-id="{{id}}"
                                     data-tooltip="{{localize button.label}}" aria-label="{{localize button.label}}">

@@ -80,11 +80,11 @@ export default class TroubleshooterApp extends CatApp {
 
     get footerButtons() {
         return [
-            {type: 'button', action: 'fixAll', label: 'CAT.Troubleshooter.Footer.FixAll', icon: 'fa-solid fa-wrench', disabled: !this.#rows.some(row => row.fixable)},
+            this.#rows.some(row => row.fixable) && {type: 'button', action: 'fixAll', label: 'CAT.Troubleshooter.Footer.FixAll', icon: 'fa-solid fa-wrench'},
             {type: 'button', action: 'saveReport', label: 'CAT.Troubleshooter.Footer.Save', icon: 'fa-solid fa-floppy-disk'},
             {type: 'button', action: 'exportSettings', label: 'CAT.Troubleshooter.Export.Settings', icon: 'fa-solid fa-file-export'},
             {type: 'button', action: 'importSettings', label: 'CAT.Troubleshooter.Export.ImportSettings', icon: 'fa-solid fa-file-import'}
-        ];
+        ].filter(Boolean);
     }
 
     async _prepareContext(options) {

@@ -1334,6 +1334,7 @@
                 "Invalid": "Invalid {type}",
                 "Token": "Controlled Token",
                 "Actor": "Actor",
+                "UserCount": "{count} users",
                 "Importer": {
                     "Label": "Detected Importer",
                     "None": "None",

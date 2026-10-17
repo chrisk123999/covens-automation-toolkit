@@ -153,10 +153,6 @@ function getGenericConfigValue(item, source, identifier, key, {rules} = {}) {
  * @returns {Promise<foundry.abstract.Document>}
  */
 async function setConfigValue(item, key, value) {
-    if (item.documentName === 'Activity') {
-        const updateKey = 'flags.cat.config.' + key;
-        return await documentUtils.update(item, {[updateKey]: value});
-    }
     return await documentUtils.setFlag(item, 'cat', 'config.' + key, value);
 }
 /**

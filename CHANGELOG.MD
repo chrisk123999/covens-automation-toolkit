@@ -48,6 +48,8 @@
 - Added `regionUtils.createPathRegions`, `reshapePathRegion`, `deletePathWalls`, `addWallPanels`, `breakWallPanel`, `tokensOnPath`, `pathBand`, `pathSegments`, `containsPoint`, `trimPath`, `subtractShapes`, `getPlacedRegions` and `addRegionTimer`. `spreadAroundCorners` accepts a circle to spread from.
 - Added `summonUtils.makeDependentOnParent`.
 - Added `tokenUtils.getGrappled`. `teleportToken` accepts followers, and `swapTokens` can play an animation.
+- `workflowUtils.syntheticItemRoll`, `syntheticItemDataRoll`, `syntheticActivityRoll` and `syntheticActivityDataRoll` accept `fast`. With `fast: false`, a roll sent to another client waits for that player instead of timing out.
+- `documentUtils.setFlag` and `automationUtils.setGenericConfigValue` work on activities.
 - Added `actorUtils.addExhaustion`, `effectUtils.getSceneEffects`, `rollUtils.maximizeRoll`, `workflowUtils.getDamageDealt` and `compendiumUtils.getFilteredActors`.
 
 # 0.1.2 Release:

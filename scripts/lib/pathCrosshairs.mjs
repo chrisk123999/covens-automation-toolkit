@@ -42,7 +42,6 @@ export class PathCrosshairs {
      * @param {boolean} [config.sides] Ask which side is active once the shape is done.
      * @param {number} [config.sideDepth] Depth of the side preview in scene units.
      * @param {number} [config.color] Preview colour.
-     * @param {string} [config.title] Heading of the floating help panel, usually the item name.
      * @param {{path: number, side: number}} [config.highlightTokens] Outline colours for visible tokens the path crosses and tokens inside the side band. Omit for no outlines.
      * @param {Function} [config.summary] Receives the preview state `{mode, points, closed, side, sideShapes, crossed, inSide}` (points include the segment following the cursor) and returns a line of text for the help panel.
      * @param {Function} [config.isValid] Receives a point in canvas pixels; a falsy return blocks placing it.
@@ -74,7 +73,7 @@ export class PathCrosshairs {
             canvas.app.view.addEventListener('wheel', this.handlers.wheel, {passive: false});
             window.addEventListener('keydown', this.handlers.key, {capture: true});
             this.help = document.createElement('aside');
-            this.help.classList.add('cat-path-help');
+            this.help.classList.add('cat', 'cat-dialog', 'cat-path-help');
             document.body.append(this.help);
             this.cursor = canvas.app.renderer.events.pointer.getLocalPosition(canvas.controls);
             this.refresh();
@@ -125,8 +124,30 @@ export class PathCrosshairs {
         const anchor = this.panelEnds().reduce((best, point) => Math.hypot(point.x - this.cursor.x, point.y - this.cursor.y) < Math.hypot(best.x - this.cursor.x, best.y - this.cursor.y) ? point : best);
         let angle = Math.atan2(this.cursor.y - anchor.y, this.cursor.x - anchor.x);
         if (!this.free) angle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+        const diagonal = this.gridMeasured() && Math.abs(Math.cos(angle)) > 0.1 && Math.abs(Math.sin(angle)) > 0.1;
+        if (diagonal) return [anchor, this.diagonalEnd(anchor, Math.sign(Math.cos(angle)), Math.sign(Math.sin(angle)))];
         const length = this.config.panels.size * this.pixels;
         return [anchor, {x: anchor.x + Math.cos(angle) * length, y: anchor.y + Math.sin(angle) * length}];
+    }
+    /**
+     * Whether lengths follow the scene's diagonal rule instead of straight-line distance.
+     * @returns {boolean}
+     */
+    gridMeasured() {
+        return !this.free && canvas.grid.isSquare && canvas.grid.diagonals !== CONST.GRID_DIAGONALS.EXACT;
+    }
+    /**
+     * End of a diagonal panel measured with the scene's diagonal rule, in whole grid cells.
+     * @param {{x: number, y: number}} anchor Panel start.
+     * @param {number} dx Horizontal direction, -1 or 1.
+     * @param {number} dy Vertical direction, -1 or 1.
+     * @returns {{x: number, y: number}}
+     */
+    diagonalEnd(anchor, dx, dy) {
+        const step = cells => ({x: anchor.x + dx * cells * canvas.grid.size, y: anchor.y + dy * cells * canvas.grid.size});
+        let cells = 1;
+        while (canvas.grid.measurePath([anchor, step(cells + 1)]).distance <= this.config.panels.size) cells++;
+        return step(cells);
     }
     addPanel() {
         if (this.flat) {
@@ -150,6 +171,7 @@ export class PathCrosshairs {
         this.refresh();
     }
     usedLength(points = this.points) {
+        if (this.gridMeasured()) return points.length > 1 ? canvas.grid.measurePath(points).distance : 0;
         let total = 0;
         for (let index = 1; index < points.length; index++) total += Math.hypot(points[index].x - points[index - 1].x, points[index].y - points[index - 1].y);
         return total / this.pixels;
@@ -157,6 +179,18 @@ export class PathCrosshairs {
     clampNext(point) {
         const last = this.points.at(-1);
         if (!last || !this.config.maxLength) return point;
+        if (this.gridMeasured()) {
+            if (this.usedLength([...this.points, point]) <= this.config.maxLength) return point;
+            const along = fraction => ({x: last.x + (point.x - last.x) * fraction, y: last.y + (point.y - last.y) * fraction});
+            let low = 0;
+            let high = 1;
+            for (let step = 0; step < 20; step++) {
+                const middle = (low + high) / 2;
+                if (this.usedLength([...this.points, along(middle)]) <= this.config.maxLength) low = middle;
+                else high = middle;
+            }
+            return along(low);
+        }
         const remaining = (this.config.maxLength - this.usedLength()) * this.pixels;
         const length = Math.hypot(point.x - last.x, point.y - last.y);
         if (length <= remaining) return point;
@@ -196,12 +230,12 @@ export class PathCrosshairs {
         this.trackCursor(event);
         this.refresh();
     }
-    pendingValid(ringPoints) {
+    pendingValid(ringPoints, next) {
         if (!this.config.isValid || this.mode === 'side') return true;
         if (this.mode === 'panels') return !!this.config.isValid(this.pendingPanel()?.[1] ?? this.cursor);
         if (this.mode === 'ring') return (ringPoints ?? this.ringPoints()).every(point => this.config.isValid(point));
         if (this.nearFirst(this.cursor)) return true;
-        return !!this.config.isValid(this.points.length ? this.clampNext(this.cursor) : this.cursor);
+        return !!this.config.isValid(next ?? (this.points.length ? this.clampNext(this.cursor) : this.cursor));
     }
     onDown(event) {
         if (event.data?.button !== 0) return;
@@ -308,8 +342,8 @@ export class PathCrosshairs {
         const cross = (best.b.x - best.a.x) * (point.y - best.a.y) - (best.b.y - best.a.y) * (point.x - best.a.x);
         return cross < 0 ? 'left' : 'right';
     }
-    startRefresh(points) {
-        const valid = this.pendingValid(points);
+    startRefresh(points, next) {
+        const valid = this.pendingValid(points, next);
         this.config.onValidity?.(valid);
         return {graphics: this.graphics.clear(), color: valid ? this.config.color : 0xff0000, width: Math.max(canvas.grid.size / 12, 3)};
     }
@@ -317,7 +351,7 @@ export class PathCrosshairs {
         this.text.text = label;
         this.text.position.set(this.cursor.x, this.cursor.y);
         this.drawHighlights(state);
-        this.renderHelp(label, this.config.summary?.(state));
+        this.renderHelp(this.config.summary?.(state));
     }
     refreshPanels() {
         const {graphics, color, width} = this.startRefresh();
@@ -343,8 +377,8 @@ export class PathCrosshairs {
     refresh() {
         if (this.mode === 'panels') return this.refreshPanels();
         const points = this.mode === 'ring' ? this.ringPoints() : this.points;
-        const {graphics, color, width} = this.startRefresh(points);
         const next = this.mode === 'path' && this.points.length ? this.clampNext(this.cursor) : this.cursor;
+        const {graphics, color, width} = this.startRefresh(points, next);
         let sideShapes;
         if (this.mode === 'side') {
             const shapes = sideShapes = this.sideShapes[this.side] ??= regionShapes.sideBand(this.points, this.closed, this.side, this.config.sideDepth * this.pixels);
@@ -407,22 +441,23 @@ export class PathCrosshairs {
             });
         }
     }
-    renderHelp(status, summary) {
+    renderHelp(summary) {
         const key = 'CAT.Crosshairs.Help.';
+        const usedUp = this.mode === 'path' && this.lengthUsedUp();
         const lines = {
-            path: [['Click', this.config.straight && this.points.length ? 'PlaceEnd' : 'AddPoint'], ['Shift', 'Free'], ['RightClick', 'Undo'], ...(this.canClose() ? [['FirstPoint', 'Close']] : []), ...(this.points.length > 1 ? [['LastPoint', 'Finish']] : []), ['Esc', 'Cancel']],
+            path: [['Click', usedUp ? 'Finish' : (this.config.straight && this.points.length ? 'PlaceEnd' : 'AddPoint')], ...(usedUp ? [] : [['Shift', 'Free']]), ['RightClick', 'Undo'], ...(this.canClose() ? [['FirstPoint', 'Close']] : []), ...(!usedUp && this.points.length > 1 ? [['LastPoint', 'Finish']] : []), ['Esc', 'Cancel']],
             ring: [['Scroll', 'Resize'], ['Click', 'PlaceRing'], ['Esc', 'Cancel']],
             panels: [['Click', this.flat ? 'AddFlat' : (this.panelStart || this.flats.length ? 'AddPanel' : 'StartPanels')], ...(this.flat ? [['Scroll', 'FlatHeight']] : [['Shift', 'FreeAngle']]), ...(this.config.panels?.flat ? [['F', 'ToggleFlat']] : []), ['RightClick', 'UndoPanel'], ...(this.panelCount() ? [['Enter', 'FinishPanels']] : []), ['Esc', 'Cancel']],
             side: [['Move', 'ChooseSide'], ['Click', 'Confirm'], ['RightClick', 'Back'], ['Esc', 'Cancel']]
         }[this.mode];
         let notice = '';
-        if (this.mode === 'path' && this.lengthUsedUp()) notice = _loc(key + 'LengthUsed');
+        if (usedUp) notice = _loc(key + 'LengthUsed');
         else if (this.mode === 'path' && !this.points.length) notice = _loc(key + (this.config.straight ? 'StartStraight' : 'Start'));
         else if (this.mode === 'panels' && !this.panelStart && !this.panelCount()) notice = _loc(key + 'PanelsStart');
-        const html = `<header>${this.config.title ?? ''}<span>${status}</span></header>`
-            + (notice ? `<p class="notice">${notice}</p>` : '')
-            + (summary ? `<p class="summary">${summary}</p>` : '')
-            + '<ul>' + lines.map(([input, action]) => `<li><kbd>${_loc(key + 'Keys.' + input)}</kbd>${_loc(key + action)}</li>`).join('') + '</ul>';
+        const html = '<div class="body">'
+            + (notice ? `<p>${notice}</p>` : '')
+            + (summary ? `<p>${summary}</p>` : '')
+            + '<dl>' + lines.map(([input, action]) => `<dt>${_loc(key + 'Keys.' + input)}</dt><dd>${_loc(key + action)}</dd>`).join('') + '</dl></div>';
         if (html !== this.helpHtml) this.help.innerHTML = this.helpHtml = html;
     }
 }

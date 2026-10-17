@@ -161,6 +161,7 @@ async function updateEmbeddedDocuments(document, type, updates, options) {
  * @returns {Promise<foundry.abstract.Document>}
  */
 async function setFlag(document, scope, key, value) {
+    if (document.documentName === 'Activity') return await update(document, {['flags.' + scope + '.' + key]: value});
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     if (hasPermission) {
         return await document.setFlag(scope, key, value);
