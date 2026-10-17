@@ -113,10 +113,11 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
  * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
+ * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticActivityRoll(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
-    return await completeActivityUse(activity, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot, fast: true, autoDamage: true});
+async function syntheticActivityRoll(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = true} = {}) {
+    return await completeActivityUse(activity, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot, fast, autoDamage: true});
 }
 /**
  * {@link syntheticActivityRoll} for activity data that is not on the item, such as a modified copy.
@@ -133,9 +134,10 @@ async function syntheticActivityRoll(activity, targets = [], {config = {}, optio
  * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
+ * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
+async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(item.actor);
     if (user && user.id !== game.user.id) {
         return MidiQOL.restoreWorkflowTokenSets(await queryUtils.query('syntheticActivityDataRoll', user, {
@@ -149,11 +151,12 @@ async function syntheticActivityDataRoll(activityData, item, targets, {config = 
             atLevel,
             consumeUsage,
             consumeResources,
-            spellSlot
-        }, MidiQOL.configSettings().reactionTimeout * 1000));
+            spellSlot,
+            fast
+        }, fast ? MidiQOL.configSettings().reactionTimeout * 1000 : null));
     }
     const activity = activityUtils.syntheticActivity(activityData, item);
-    return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot});
+    return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot, fast});
 }
 /**
  * Spend an activity's consumption at a scaled amount without triggering its parent.
@@ -240,10 +243,11 @@ async function completeItemUse(item, targets = [], {config = {}, options = {}, d
  * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
+ * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticItemRoll(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
-    return await completeItemUse(item, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot, fast: true, autoDamage: true});
+async function syntheticItemRoll(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = true} = {}) {
+    return await completeItemUse(item, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot, fast, autoDamage: true});
 }
 /**
  * {@link syntheticItemRoll} for item data that is not on the actor, such as a compendium copy.
@@ -260,9 +264,10 @@ async function syntheticItemRoll(item, targets = [], {config = {}, options = {},
  * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
+ * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true} = {}) {
+async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(actor);
     if (user && user.id !== game.user.id) {
         return MidiQOL.restoreWorkflowTokenSets(await queryUtils.query('syntheticItemDataRoll', user, {
@@ -276,11 +281,12 @@ async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}
             atLevel,
             consumeUsage,
             consumeResources,
-            spellSlot
-        }, MidiQOL.configSettings().reactionTimeout * 1000));
+            spellSlot,
+            fast
+        }, fast ? MidiQOL.configSettings().reactionTimeout * 1000 : null));
     }
     const newItem = itemUtils.syntheticItem(itemData, actor);
-    return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot});
+    return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot, fast});
 }
 /**
  * {@link syntheticItemRoll} with the item's activation types overridden to special for the use, through a temporary enchantment.

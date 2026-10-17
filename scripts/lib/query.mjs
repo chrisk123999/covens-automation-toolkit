@@ -121,16 +121,16 @@ async function removeFavorites({actorUuid, entityUuids}) {
         }
     }
 }
-async function syntheticItemDataRoll({itemData, actorUuid, targetUuids, config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot}) {
+async function syntheticItemDataRoll({itemData, actorUuid, targetUuids, config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot, fast}) {
     const actor = await fromUuid(actorUuid);
     const targets = targetUuids.map(t => fromUuidSync(t));
-    const workflow = await workflowUtils.syntheticItemDataRoll(itemData, actor, targets, {config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot});
+    const workflow = await workflowUtils.syntheticItemDataRoll(itemData, actor, targets, {config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot, fast});
     return workflow?.getSafeMacroData();
 }
-async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot}) {
+async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot, fast}) {
     const item = await fromUuid(itemUuid);
     const targets = targetUuids.map(t => fromUuidSync(t));
-    const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, consumeUsage, spellSlot});
+    const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, consumeUsage, spellSlot, fast});
     return workflow?.getSafeMacroData();
 }
 async function aimDestination({uuid, range, centerpoint, requireSight, ignoreWalls}) {
