@@ -12,7 +12,7 @@ import {automationUtils, genericUtils, queryUtils, tokenUtils, uiUtils} from './
  * @param {number} [options.counter.value] Next number to use.
  * @returns
  */
-function getTokenName(token, {hide, counter} = {}) {
+function getTokenName(token, {hide = game.settings.get('cat', 'hideNames'), counter} = {}) {
     if (!hide || token.disposition > 0) return token.name;
     const name = _loc('CAT.Dialog.UnknownTarget');
     return Number.isNumeric(counter?.value) ? name + '(' + counter.value++ + ')' : name;
@@ -187,6 +187,16 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
         let {label, tag} = buildEntry(doc);
         return tag ? `${label} [${tag}]` : label;
     };
+    let description = async doc => {
+        let text = '';
+        switch (doc.documentName) {
+            case 'Item': text = doc.system?.description.value; break;
+            case 'Activity': text = doc.description.value || doc.item.system?.description.value; break;
+            case 'ActiveEffect': 
+            default: text = doc.description; break;
+        }
+        return await uiUtils.enrichHTML(text, doc.getRollData ? doc.getRollData() : doc.actor?.getRollData() ?? {});
+    };
     let hasTag = showCR || showSpellLevel || showUses || Object.keys(tags).length > 0;
     let widthCfg = hasTag ? {width: 440} : undefined;
     let inputs, result;
@@ -202,15 +212,15 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
             if (!result?.buttons || !result.document || result.document === 'none') return false;
             return await resolveDoc(result.document);
         }
-        let inputFields = documents.map(d => ({
+        let inputFields = await Promise.all(documents.map(async d => ({
             label: buildLabel(d),
             name: docKey(d),
             options: {
                 image: d.img,
-                tooltip: displayTooltips ? d.system?.description?.value?.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
+                tooltip: displayTooltips ? await description(d) : undefined,
                 reference: (displayReference && d.reference) ? d.reference : undefined
             }
-        }));
+        })));
         if (addNoneDocument) inputFields.push({label: _loc('DND5E.None'), name: 'none', options: {image: 'icons/svg/cancel.svg'}});
         inputs = [['button', inputFields, {displayAsRows: true}]];
         result = await runDialog(userId, title, content, inputs, undefined);
@@ -242,7 +252,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
         }));
     }
     let idOf = i => keys ? keys[i] : multiKey(documents[i]);
-    let inputFields = documents.map((d, i) => {
+    let inputFields = await Promise.all(documents.map(async (d, i) => {
         let id = idOf(i);
         let {label, tag} = buildEntry(d, id);
         let isLocked = locked.has(id);
@@ -251,7 +261,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
             name: id,
             options: {
                 image: d.img,
-                tooltip: displayTooltips ? d.system?.description?.value?.replace(/<[^>]*>?|@UUID\[.*?\]{(.*?)}/gm, '$1') : undefined,
+                tooltip: displayTooltips ? await description(d) : undefined,
                 hint: checkbox ? tag : undefined,
                 select: checkbox ? selects?.[id] : undefined,
                 locked: isLocked,
@@ -261,7 +271,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
                 weight: weights?.[id] ?? 1
             }
         };
-    });
+    }));
     let keyToDoc = new Map(documents.map((d, i) => [idOf(i), d]));
     inputs = [[checkbox ? 'checkbox' : 'selectAmount', inputFields, {displayAsRows: true, totalMax: max}]];
     result = await runDialog(userId, title, content, inputs, 'okCancel', {height: 'auto', validate});
@@ -911,6 +921,7 @@ export default {
     buildBonusInputs,
     selectSpellSlots,
     getSpellSlotOptions,
+    getTokenName,
     selectLanguage,
     selectDamageType,
     clearRemembered,

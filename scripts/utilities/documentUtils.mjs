@@ -129,7 +129,7 @@ async function createEmbeddedDocuments(document, type, updates, options) {
 async function update(document, updates, options) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     if (hasPermission) {
-        await document.update(updates, options);
+        return await document.update(updates, options);
     } else {
         const uuid = await queryUtils.query('update', queryUtils.gmUser(), {uuid: document.uuid, updates, options});
         return await fromUuid(uuid);

@@ -4,10 +4,10 @@ import {effects} from '../handlers/_module.mjs';
 async function doCreateActiveEffect(data, options) {
     let parent = options.parent;
     if (!parent) return;
-    return await new Events.EffectEvent(data, constants.effectPasses.doCreated, {options, parent}).run();
+    return await new Events.EffectEvent(data, constants.effectPasses.doCreated, {options, parent}).run({canOverlap: true});
 }
 async function doDeleteActiveEffect(effect, options) {
-    return await new Events.EffectEvent(effect, constants.effectPasses.doDeleted, {options}).run();
+    return await new Events.EffectEvent(effect, constants.effectPasses.doDeleted, {options}).run({canOverlap: true});
 }
 function immediateEffectAnimations(effect, active) {
     if (active) {
@@ -31,13 +31,11 @@ async function createActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     if (effect.parent instanceof Actor) await effects.addConditions(effect);
-    if (effect.statuses.size) {
-        await effects.specialDurationConditions(effect);
-        await effects.refreshDisableConditions(effectUtils.getActor(effect));
-    }
+    if (effect.statuses.size) await effects.specialDurationConditions(effect);
+    if (effect.statuses.size || effect.flags.cat?.disableCondition?.length) await effects.refreshDisableConditions(effectUtils.getActor(effect));
     if (effect.parent instanceof Actor && effect.system.changes.some(change => change.key.includes('system.attributes.movement.'))) await effects.specialDurationZeroSpeed(effect.parent);
     effectAnimations(effect, true);
-    await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run();
+    await new Events.EffectEvent(effect, constants.effectPasses.created, {options}).run({canOverlap: true});
 }
 async function deleteActiveEffect(effect, options, userId) {
     if (!queryUtils.isTheGM()) return;
@@ -48,7 +46,7 @@ async function deleteActiveEffect(effect, options, userId) {
         await effects.refreshDisableConditions(effectUtils.getActor(effect));
     }
     effectAnimations(effect, false);
-    await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
+    await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run({canOverlap: true});
 }
 async function updateActiveEffect(effect, updates, options, userId) {
     if (!queryUtils.isTheGM()) return;
@@ -58,7 +56,7 @@ async function updateActiveEffect(effect, updates, options, userId) {
         effectAnimations(effect, effect.active);
         if (effect.statuses.size) await effects.refreshDisableConditions(effectUtils.getActor(effect));
     }
-    await new Events.EffectEvent(effect, constants.effectPasses.updated, {options, updates}).run();
+    await new Events.EffectEvent(effect, constants.effectPasses.updated, {options, updates}).run({canOverlap: true});
 }
 async function suppressionChanged(effect, suppressed) {
     if (!queryUtils.isTheGM() || !effectUtils.getActor(effect)) return;
@@ -70,18 +68,18 @@ function preCreateActiveEffect(effect, updates, options, userId) {
     effects.effectDescription(effect, updates);
     effects.activityDC(effect);
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
-    new Events.EffectEvent(effect, constants.effectPasses.preCreated, {options, updates}).runSync();
+    new Events.EffectEvent(effect, constants.effectPasses.preCreated, {options, updates}).runSync({canOverlap: true});
 }
 function preDeleteActiveEffect(effect, options, userId) {
     effects.noAnimation(effect, options);
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
-    new Events.EffectEvent(effect, constants.effectPasses.preDeleted, {options}).runSync();
+    new Events.EffectEvent(effect, constants.effectPasses.preDeleted, {options}).runSync({canOverlap: true});
 }
 function preUpdateActiveEffect(effect, updates, options, userId) {
     effects.noAnimation(effect, options);
     if (!(effect.parent instanceof Actor || (effect.parent instanceof Item && effect.parent.actor))) return;
     genericUtils.setProperty(options, 'cat.previous.active', effect.active);
-    new Events.EffectEvent(effect, constants.effectPasses.preUpdated, {options, updates}).runSync();
+    new Events.EffectEvent(effect, constants.effectPasses.preUpdated, {options, updates}).runSync({canOverlap: true});
 }
 export default {
     createActiveEffect,
