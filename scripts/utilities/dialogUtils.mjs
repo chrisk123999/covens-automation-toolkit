@@ -832,7 +832,7 @@ const targetInputTypes = {
  * @param {object} [options.tags] Per-target label tags, keyed by token id.
  * @returns {Promise<{result: foundry.documents.TokenDocument|foundry.documents.TokenDocument[]|{document: foundry.documents.TokenDocument, value: number}[], skip: boolean}|null>}
  */
-async function selectTargetDialog(title, content, targets, {type = 'one', selectOptions = [], skipDeadAndUnconscious = true, coverToken = undefined, reverseCover = false, displayDistance = true, maxAmount = 1, minAmount = 0, requireTotal = false, userId = game.user.id, buttons = 'okCancel', maxes = {}, tags = {}} = {}) {
+async function selectTargetDialog(title, content, targets, {type = 'one', selectOptions = [], skipDeadAndUnconscious = true, coverToken = undefined, reverseCover = false, displayDistance = true, maxAmount = 1, minAmount = 0, requireTotal = false, userId = game.user.id, buttons = 'okCancel', maxes = {}, tags = {}, preselected = {}} = {}) {
     const inputType = targetInputTypes[type] ?? targetInputTypes.one;
     const inputs = [[inputType]];
     const targetInputs = [];
@@ -847,7 +847,7 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
             label,
             name: i.id,
             options: {
-                isChecked: type !== 'multiple' && targetInputs.length === 0,
+                isChecked: preselected[i.id] ?? (type !== 'multiple' && targetInputs.length === 0),
                 maxAmount: maxes[i.id] ?? maxAmount,
                 options: selectOptions,
                 image: i.texture.src,

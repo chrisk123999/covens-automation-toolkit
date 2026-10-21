@@ -273,12 +273,14 @@ async function rollPreRoll(type, actor, data, session) {
 }
 
 async function rollResult(type, actor, data, session) {
+    const target = data.roll.options.target ?? 0;
     const fumble = type === 'save' && data.roll.isFumble && MidiQOL.checkRule('criticalSaves');
-    let roll = await rollPhase(actor, data.roll, session, constants.bonusPhases.preResult, {prompt: !fumble, rollLabel: getRollLabel(data)});
+    const predetermined = data.roll.options.minimum >= target || data.roll.options.maximum < target;
+    let roll = await rollPhase(actor, data.roll, session, constants.bonusPhases.preResult, {prompt: !fumble && !predetermined, rollLabel: getRollLabel(data)});
     session.outcome = {isCritical: roll.isCritical, isFumble: roll.isFumble};
     if (!roll.isSuccess && !roll.isFailure) session.outcome.noDC = true;
     else session.outcome.success = roll.isSuccess;
-    roll = await rollPhase(actor, roll, session, constants.bonusPhases.postResult, {prompt: !fumble && !session.outcome.success, rollLabel: getRollLabel(data)});
+    roll = await rollPhase(actor, roll, session, constants.bonusPhases.postResult, {prompt: !fumble && !predetermined && !session.outcome.success, rollLabel: getRollLabel(data)});
     await session.close();
     return roll;
 }

@@ -301,18 +301,19 @@ async function getSpellUuid(identifier, {packIds} = {}) {
  * @param {object} [options] Additional options.
  * @param {string[]} [options.packIds] Pack ids to search instead of the spell compendiums configured in settings.
  * @param {boolean} [options.object] Return an object rather than a document.
+ * @param {foundry.documents.Actor} [options.actor] An actor parent for the spell. Used only when {@link object} is false.
  * @param {string} [options.description] Set the description.
  * @param {string} [options.translate] A localization key for the spell and effect names.
  * @param {number} [options.flatAttack] Set a flat attack bonus.
  * @param {number} [options.flatDC] Set a flat save DC.
  */
-async function getSpell(identifier, {packIds, object = false, description, translate, flatAttack, flatDC} = {}) {
+async function getSpell(identifier, {packIds, object = false, actor, description, translate, flatAttack, flatDC} = {}) {
     if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
     if (!packIds.length) return genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
     for (const id of packIds) {
         const spell = await getDocumentByIdentifier(id, identifier, {object: true, description, translate, flatAttack, flatDC});
         if (!spell) continue;
-        return object ? spell : itemUtils.syntheticItem(spell);
+        return object ? spell : itemUtils.syntheticItem(spell, actor);
     }
 }
 export default {
