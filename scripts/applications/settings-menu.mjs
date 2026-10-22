@@ -52,7 +52,10 @@ export default class SettingsMenu extends MenuApp {
     }
     async _prepareContext(options) {
         this.inputs = this.#menuSettings.map(s => this.#formatSetting(s)).filter(Boolean);
-        return await super._prepareContext(options);
+        const context = await super._prepareContext(options);
+        if (!context.tabbed) return context;
+        context.tab = options?.tab ?? this.inputs[0]?.name;
+        return context;
     }
     submit(target) {
         if (target === 'true') this.#save = true;

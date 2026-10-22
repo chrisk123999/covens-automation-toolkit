@@ -128,6 +128,7 @@ export function initHooks() {
     Hooks.on(constants.contextMenuHookNames.getSheetActivityContextOptions, contextmenu.appendActivityOption);
     // Handlers
     Hooks.on(constants.miscHookNames.applyActiveEffect, effects.applyActiveEffect);
+    Hooks.on(constants.miscHookNames.renderChatMessageHTML, customMacros.renderWarningCard);
     Hooks.on(constants.miscHookNames.renderChatMessageHTML, troubleshooter.onRenderChatMessage);
     // Integration
     Hooks.on(constants.miscHookNames.daeModifySpecials, dae.modifySpecials);

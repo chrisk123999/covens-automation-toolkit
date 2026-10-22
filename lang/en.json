@@ -855,7 +855,7 @@
             "Automation": {
                 "Name": "Automation Sources",
                 "Label": "Configure Automation Sources",
-                "Hint": "Enable automation sources, set their priority, and pick extra compendiums to use."
+                "Hint": "Enable automation sources and sort them by priority."
             },
             "ManualRolls": {
                 "Name": "Manual Rolls",
@@ -905,7 +905,7 @@
             },
             "AutomationSources": {
                 "Name": "Automation Sources",
-                "Hint": "Sources and compendiums used for automation. Lowest value is priority.",
+                "Hint": "The CatKit and mass apply tool offer automations from these sources. Options come from the top of this list first.",
                 "Disabled": "Inactive",
                 "Disable": "Disable",
                 "Enable": "Enable",
@@ -920,23 +920,23 @@
             "Compendiums": {
                 "Name": "Compendiums",
                 "Label": "Configure Compendiums",
-                "Hint": "Configure compendiums from which automations will retrieve documents."
+                "Hint": "Specify where your fully prepared documents are stored."
             },
             "MonsterCompendiums": {
                 "Name": "Monsters",
-                "Hint": "Compendiums search for monster automations. Lowest value is priority."
+                "Hint": "Monsters that are ready to use. These should have descriptions and automations. Monsters are fetched from the top of this list first."
             },
             "ItemCompendiums": {
                 "Name": "Items",
-                "Hint": "Compendiums search for item automations. Lowest value is priority."
+                "Hint": "Items that are ready to use. These should have descriptions and automations. Items are fetched from the top of this list first."
             },
             "SpellCompendiums": {
                 "Name": "Spells",
-                "Hint": "Compendiums search for spell automations. Lowest value is priority."
+                "Hint": "Spells that are ready to use. These should have descriptions and automations. Spells are fetched from the top of this list first."
             },
             "MacroCompendiums": {
                 "Name": "Macros",
-                "Hint": "Each script macro in these compendiums returns macro data that replaces the registered macro with the same source, identifier and rules. New macros start from a template. Lowest value is priority."
+                "Hint": "These macros can be added to the lists offered in the CatKit, or override existing macros. They are run when the world loads and must return specifically formatted data to be registered correctly. More details are available in the macro editor within a CAT macro compendium."
             },
             "Devtools": {
                 "Name": "Development Tools",
@@ -1524,8 +1524,12 @@
             "OneYear": "One Year"
         },
         "CustomMacros": {
+            "MacroWarning": "These macros have errors or incorrect return data. See notes in the macro editor for the expected format.",
             "NoReturn": "Custom macro {name} returned no macro data.",
+            "NotFound": "Macro not found! (uuid) {uuid}",
+            "PackWarning": "These packs contain many invalid custom macros. Registry was skipped for the remainder of each pack to avoid unintended side effects from running the macros.",
             "ScriptOnly": "Only script macros can go in a custom macro compendium.",
+            "WarningMessage": "CAT Custom Macros",
             "Hint": {
                 "Title": "CAT Macro Instructions",
                 "Intro": "CAT runs this macro when the world loads. It returns a list with one entry per macro, so one custom macro can change several. This example replaces Hunter's Mark for both rule sets:",

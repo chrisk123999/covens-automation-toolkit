@@ -2,13 +2,13 @@
     {{#if tabbed}}
         <nav>
             {{#each inputs}}
-                <a class="tab-link{{#if @first}} active{{/if}}" data-tab="{{name}}">{{label}}</a>
+                <a class="tab-link{{#if (eq name ../tab)}} active{{/if}}" data-tab="{{name}}">{{label}}</a>
             {{/each}}
         </nav>
     {{/if}}
     {{#each inputs}}
         {{#if ../tabbed}}
-            <section class="tab-panel{{#if @first}} active{{/if}}" data-tab-panel="{{name}}">
+            <section class="tab-panel{{#if (eq name ../tab)}} active{{/if}}" data-tab-panel="{{name}}">
         {{/if}}
         {{#if useHelper}}
             {{#each options}}
@@ -40,7 +40,10 @@
                     {{#each enabledRows}}
                         <li class="row" draggable="true" data-source-id="{{id}}" data-kind="{{kind}}">
                             <span class="pill">{{kindLabel}}</span>
-                            <span class="name">{{name}}{{#if origin}}<span class="origin">{{origin.source}}{{#if origin.folders}} • <span class="folders">{{origin.folders}}</span>{{/if}}</span>{{/if}}</span>
+                            <span class="name">{{name}}
+                                {{#if origin}}<span class="origin">{{origin.source}}
+                                {{#if origin.folders}} • <span class="folders"><i class="fas fa-folder fa-fw"></i> {{origin.folders}}</span>{{/if}}</span>{{/if}}
+                            </span>
                             <input type="number" class="rank" value="{{priority}}" draggable="false">
                             <button type="button" draggable="false" data-priority-action="disable"
                                 data-tooltip="{{localize 'CAT.Settings.AutomationSources.Disable'}}"
@@ -57,8 +60,11 @@
                         {{#each disabledRows}}
                             <li class="row" data-source-id="{{id}}" data-kind="{{kind}}">
                                 <span class="pill">{{kindLabel}}</span>
-                                <span class="name">{{name}}{{#if origin}}<span class="origin">{{origin.source}}{{#if origin.folders}} • <span class="folders">{{origin.folders}}</span>{{/if}}</span>{{/if}}</span>
-                                <input type="number" class="rank" value="{{priority}}" draggable="false" hidden>
+                            <span class="name">{{name}}
+                                {{#if origin}}<span class="origin">{{origin.source}}
+                                {{#if origin.folders}} • <span class="folders"><i class="fas fa-folder fa-fw"></i> {{origin.folders}}</span>{{/if}}</span>{{/if}}
+                            </span>
+                            <input type="number" class="rank" value="{{priority}}" draggable="false" hidden>
                                 <button type="button" draggable="false" data-priority-action="enable"
                                     data-tooltip="{{localize 'CAT.Settings.AutomationSources.Enable'}}"
                                     aria-label="{{localize 'CAT.Settings.AutomationSources.Enable'}}">

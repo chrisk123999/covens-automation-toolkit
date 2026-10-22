@@ -1,0 +1,27 @@
+<div class="cat-troubleshooter-card">
+    {{#if hasPacks}}
+        <p>{{localize 'CAT.CustomMacros.PackWarning'}}</p>
+        <table>{{#each packs}}
+            <tr><td style="text-align: center;"><i style="margin-right: var(--cat-space-sm)" class="fas fa-atlas"></i><b>{{this}}</b></td></tr>
+        {{/each}}</table>
+        <div class="flexrow" style="margin-top: var(--cat-space-sm)">
+            <button type="button" style="width: 100%" data-action="open-settings">{{localize 'CAT.Settings.General.Label'}}</button>
+        </div>
+    {{/if}}
+    {{#if hasMacros}}
+        <p>{{localize 'CAT.CustomMacros.MacroWarning'}}</p>
+        <table>{{#each macros}}
+            <tr>
+                <td style="width: 2rem; text-align: left; padding-right: var(--cat-space-xs); white-space: nowrap;">
+                    <button type="button" data-action="edit-macro" data-macro-uuid="{{uuid}}" title="{{localize 'MACRO.Edit'}}" style="margin-left: var(--cat-space-xs); aspect-ratio: 1 / 1;">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </td>
+                <td>
+                    <div><b>{{name}}</b></div>
+                    <small>{{pack}}</small>
+                </td>
+            </tr>
+        {{/each}}</table>
+    {{/if}}
+</div>

@@ -154,6 +154,7 @@ export default class MenuApp extends CatApp {
         const rows = [];
         for (const pack of game.packs) {
             if (pack.metadata.type !== input.packType) continue;
+            if (constants.automations.sources.has(pack.metadata.packageName)) continue;
             if (input.packFilter === 'spells' && !this.#spellPacks.has(pack.metadata.id)) continue;
             if (input.packFilter === 'items' && this.#spellPacks.has(pack.metadata.id)) continue;
             rows.push(MenuApp.#priorityRow(pack.metadata.id, packTag, sources[pack.metadata.id], pack));

@@ -76,7 +76,7 @@ async function registerCompendiums({startup = false} = {}) {
             if (isEnabled(id) && !sources.has(id)) await constants.automations.registerAutomationModule(id, options);
         }
     }
-    const sourceList = [integration.dnd5e, integration.midiQol, integration.phb, integration.dmg, integration.ddbi];
+    const sourceList = [integration.dnd5e, integration.phb, integration.dmg, integration.ddbi];
     for (const source of sourceList) {
         const c = source.CONFIG;
         if (startup && c.skipStartup) continue;

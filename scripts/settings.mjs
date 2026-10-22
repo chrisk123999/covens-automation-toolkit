@@ -78,6 +78,11 @@ const settings = {
                 enabled: true,
                 priority: 20,
                 pack: false
+            },
+            'chris-premades': {
+                enabled: true,
+                priority: 10,
+                pack: false
             }
         },
         onChange: async () => items.registerCompendiums()
