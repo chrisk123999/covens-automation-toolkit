@@ -1,5 +1,5 @@
 import {constants} from './lib/_module.mjs';
-export function buildApi() {
+export function buildApi(handlers) {
     const registeredMacros = constants.macros;
     const automations = constants.automations;
     const registeredScales = constants.scales;
@@ -18,6 +18,7 @@ export function buildApi() {
         registerAnimation: registeredAnimations.registerAnimation.bind(registeredAnimations),
         registerAnimations: registeredAnimations.registerAnimations.bind(registeredAnimations),
         registerTroubleshooterCheck: troubleshooter.registerTroubleshooterCheck.bind(troubleshooter),
-        registerTroubleshooterChecks: troubleshooter.registerTroubleshooterChecks.bind(troubleshooter)
+        registerTroubleshooterChecks: troubleshooter.registerTroubleshooterChecks.bind(troubleshooter),
+        postWelcome: handlers.welcome.postWelcome
     };
 };

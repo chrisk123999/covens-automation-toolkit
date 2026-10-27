@@ -188,6 +188,24 @@ function canSeePoint(token, point, {level, source} = {}) {
     }
 }
 /**
+ * The level with the lowest bottom elevation in a scene.
+ * @param {foundry.documents.Scene} scene Scene to search.
+ * @returns {Level|undefined}
+ */
+function lowestLevel(scene) {
+    return scene.levels.contents.reduce((low, level) => !low || (level.elevation.bottom ?? -Infinity) < (low.elevation.bottom ?? -Infinity) ? level : low, undefined);
+}
+/**
+ * Elevation of the highest surface containing a point.
+ * @param {object[]} surfaces Region surfaces to test.
+ * @param {{x: number, y: number}} point Point to test.
+ * @returns {number|undefined} Undefined if no surface contains the point.
+ */
+function highestSurfaceAt(surfaces, point) {
+    const under = surfaces.filter(surface => surface.region.polygonTree.testPoint(point));
+    return under.length ? Math.max(...under.map(surface => surface.elevation)) : undefined;
+}
+/**
  * Floors on other levels within a token's range.
  * @param {foundry.documents.TokenDocument} token Token moving.
  * @param {number} range Range in scene units.
@@ -198,7 +216,7 @@ function reachableSurfaces(token, range) {
     const pixels = canvas.grid.size / canvas.grid.distance;
     const halfToken = token.width * canvas.grid.size / 2;
     const reachable = new Map();
-    const lowest = token.parent.levels.contents.reduce((low, level) => (level.elevation.bottom ?? -Infinity) < (low.elevation.bottom ?? -Infinity) ? level : low);
+    const lowest = lowestLevel(token.parent);
     for (const level of token.parent.levels) {
         if (level.id === token.level) continue;
         const ground = level === lowest ? level.elevation.bottom ?? 0 : undefined;
@@ -211,6 +229,26 @@ function reachableSurfaces(token, range) {
         }
     }
     return reachable;
+}
+/**
+ * The floor a token would land on if it fell straight down from its center.
+ * @param {foundry.documents.TokenDocument} token Token falling.
+ * @returns {{elevation: number, level: string}}
+ */
+function floorBelow(token) {
+    const scene = token.parent;
+    const center = token.getCenterPoint();
+    const lowest = lowestLevel(scene);
+    const ground = lowest?.elevation.bottom ?? 0;
+    const origin = {x: center.x, y: center.y, elevation: token.elevation};
+    const destination = {x: center.x, y: center.y, elevation: Math.min(ground, token.elevation) - 1};
+    let floor;
+    for (const level of scene.levels) {
+        if (level.id !== token.level && (level.elevation.bottom ?? -Infinity) > token.elevation) continue;
+        const hit = scene.testSurfaceCollision(origin, destination, {mode: 'closest', level});
+        if (hit && (!floor || hit.elevation > floor.elevation)) floor = {elevation: hit.elevation, level: level.id};
+    }
+    return floor ?? {elevation: ground, level: lowest?.id ?? token.level};
 }
 /**
  * Aim a destination, offering other levels with a floor in range.
@@ -238,8 +276,7 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
     const {surfaces = [], ground} = reachable.get(targetLevel) ?? {};
     const floorAt = crosshairs => {
         if (onOwnLevel) return token.elevation;
-        const under = surfaces.filter(surface => surface.region.polygonTree.testPoint(crosshairs.position));
-        return under.length ? Math.max(...under.map(surface => surface.elevation)) : ground;
+        return highestSurfaceAt(surfaces, crosshairs.position) ?? ground;
     };
     const vision = requireSight ? getVisionSource(token) : undefined;
     const standable = (_crosshairs, {x, y, elevation}) => elevation !== undefined
@@ -274,12 +311,13 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
  * @param {number} [options.elevation] Destination elevation.
  * @param {string} [options.level] Destination Level id.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
- * @param {foundry.documents.TokenDocument[]} [options.followers] Tokens teleported along with this one, keeping their position relative to it.
+ * @param {foundry.documents.TokenDocument[]} [options.followers] Tokens teleported along with this one.
+ * @param {number} [options.followerRange] Crosshair range for a follower that can't keep its position.
  * @param {string} [options.userId] User who aims the destination crosshair. Defaults to the current user.
  * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
  * @returns {Promise<undefined>}
  */
-async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], userId, ignoreWalls = false} = {}) {
+async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], followerRange = 10, userId, ignoreWalls = false} = {}) {
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
@@ -305,7 +343,23 @@ async function teleportToken(token, {destination, centerpoint, animation, option
     await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run();
     const dx = token.x - origin.x;
     const dy = token.y - origin.y;
-    if (dx || dy) await Promise.all(followers.map(follower => teleportToken(follower, {animation, options, destination: {x: follower.x + dx, y: follower.y + dy, elevation: follower.elevation}})));
+    if (!dx && !dy) return;
+    const leaderCenter = token.getCenterPoint();
+    const tokenLevel = token.parent.levels.get(token.level);
+    const vision = requireSight ? getVisionSource(token) : undefined;
+    const placed = [];
+    const blocked = [];
+    for (const follower of followers) {
+        const followerDestination = {x: follower.x + dx, y: follower.y + dy, elevation: follower.elevation};
+        const center = {...follower.getCenterPoint(followerDestination), elevation: follower.elevation};
+        const wallBlocked = !ignoreWalls && CONFIG.Canvas.polygonBackends.move.testCollision(leaderCenter, center, {type: 'move', mode: 'any', level: tokenLevel});
+        const unseen = vision?.source && !canSeePoint(token, {...center, elevation: center.elevation + 0.01}, {level: token.level, source: vision.source});
+        if (wallBlocked || unseen) blocked.push(follower);
+        else placed.push([follower, followerDestination]);
+    }
+    vision?.release();
+    await Promise.all(placed.map(([follower, destination]) => teleportToken(follower, {animation, options, destination})));
+    for (const follower of blocked) await teleportToken(follower, {animation, options, centerpoint: leaderCenter, range: followerRange, requireSight, ignoreWalls, userId});
 }
 /**
  * Move a token to a chosen position.
@@ -456,9 +510,10 @@ function canSense(sourceToken, targetToken, senseModes = ['all']) {
  * @param {'2024'|'2014'} [options.rules] 2014 for skill checks or 2024 for saving throws. If undefined, uses the rules from {@link activity} or defaults to 2014.
  * @param {boolean} [options.contest] Roll dice before applying effects.
  * @param {boolean} [options.checkSize] Enforce size limits.
+ * @param {string[]} [options.conditions] Extra conditions applied with the grapple.
  */
-async function grapple(sourceToken, targetToken, {activity, flatDC, rules, contest = true, checkSize = true} = {}) {
-    return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize});
+async function grapple(sourceToken, targetToken, {activity, flatDC, rules, contest = true, checkSize = true, conditions = []} = {}) {
+    return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize, conditions});
 }
 /**
  * Get the tokens this token is currently grappling.
@@ -525,6 +580,7 @@ export default {
     canSee,
     canSeePoint,
     reachableSurfaces,
+    floorBelow,
     aimDestination,
     canSense,
     getNonSightModes,

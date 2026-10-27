@@ -12,6 +12,7 @@ const fields = foundry.data.fields;
  * @property {AutomationConfig[]} [config]
  * @property {string} [notes] 
  * @property {string} [sourceType] The key for an advancement source that would grant this document, e.g. 'class:cleric'.
+ * @property {string[]} [aliases] Other identifiers this automation also matches, e.g. the SRD's identifier for the same feature.
  * @property {object} [scales] Provide advancement scale data.
  * @property {string} [type] Override the document type.
   */
@@ -28,7 +29,7 @@ const fields = foundry.data.fields;
  */
 
 class Automation {
-    constructor(source, rules, identifier, uuid, version, {config = {}, notes, monsterIdentifier, scales, type, sourceType} = {}) {
+    constructor(source, rules, identifier, uuid, version, {config = {}, notes, monsterIdentifier, scales, type, sourceType, aliases} = {}) {
         this.source = source;
         this.rules = rules;
         this.identifier = identifier;
@@ -40,6 +41,7 @@ class Automation {
         this.scales = scales;
         this.type = type;
         this.sourceType = sourceType;
+        this.aliases = aliases;
     }
 
     /**
@@ -96,6 +98,11 @@ class Automation {
      * @type {string}
      */
     sourceType;
+
+    /**
+     * @type {string[]}
+     */
+    aliases;
     
     async getDocument() {
         return await fromUuid(this.uuid);
@@ -117,7 +124,8 @@ export class RegisteredAutomations {
         monsterIdentifier: new fields.StringField({required: false, nullable: false}),
         scales: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
         type: new fields.StringField({required: false, nullable: false}),
-        sourceType: new fields.StringField({required: false, nullable: false})
+        sourceType: new fields.StringField({required: false, nullable: false}),
+        aliases: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: false})
     });
     #multiAutomationsSchema = new fields.ArrayField(this.#automationsSchema);
 
@@ -157,7 +165,7 @@ export class RegisteredAutomations {
      */
     getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type, sourceType, excludeSources = []} = {}) {
         const predicate = automation => {
-            if (automation.identifier !== identifier) return false;
+            if (automation.identifier !== identifier && !automation.aliases?.includes(identifier)) return false;
             if (rules !== 'all' && automation.rules !== 'all' && automation.rules !== rules) return false;
             if (source !== 'all' && automation.source !== source) return false;
             if (excludeSources.includes(automation.source)) return false;
@@ -194,7 +202,8 @@ export class RegisteredAutomations {
             monsterIdentifier: data.monsterIdentifier,
             scales: data.scales,
             type: data.type,
-            sourceType: data.sourceType
+            sourceType: data.sourceType,
+            aliases: data.aliases
         });
         this.automations.set(data.uuid, automation);
         this.sources.add(data.source);
@@ -256,6 +265,7 @@ export class RegisteredAutomations {
             const defaults = {
                 rules: documentUtils.getRules(document, {documentType}),
                 sourceType: itemUtils.getAdvancementSourceKey(document),
+                aliases: document.flags?.cat?.automation?.aliases,
                 version: documentUtils.getVersion(document) || '0',
                 uuid: document.uuid,
                 type: document.type,

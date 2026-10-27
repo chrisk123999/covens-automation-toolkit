@@ -77,7 +77,9 @@ async function preTargetDamageApplication(token, {workflow, ditem}) {
 }
 async function rollFinished(workflow) {
     await optionalBonus.cleanup(workflow);
-    await regions.stampCastTargets(workflow);
+    const placedRegions = regions.getPlacedRegions(workflow);
+    await regions.finishPlacedRegions(placedRegions);
+    await regions.stampCastTargets(workflow, placedRegions);
     await new Events.WorkflowEvent(constants.workflowPasses.rollFinished, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
     await effects.specialDuration(workflow, 'finished');

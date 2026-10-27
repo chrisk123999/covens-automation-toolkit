@@ -1,6 +1,6 @@
 import {effects, regions} from '../handlers/_module.mjs';
 import {Auras, constants, Events} from '../lib/_module.mjs';
-import {genericUtils, queryUtils, summonUtils} from '../utilities/_module.mjs';
+import {actorUtils, genericUtils, queryUtils, summonUtils} from '../utilities/_module.mjs';
 function getCombatData(combat, combatant, round, turn) {
     return {inCombat: true, currentRound: round, currentTurn: turn, currentCombatantId: combatant.id, combatId: combat.id};
 }
@@ -74,6 +74,28 @@ async function combatStart(combat, context = {}) {
         await new Events.CombatEvent(combat, constants.combatPasses.combatStart, combatant.token, {context, combatant, round, turn}).run();
     }
 }
+const preInitiativePasses = ['actor', 'nearby', 'scene', 'region', 'level', 'group', 'vehicle', 'encounter'].map(prefix => prefix + 'PreInitiative');
+function bindsPreInitiative(document) {
+    const flags = document?.flags?.cat;
+    if (!flags) return false;
+    if (flags.embeddedMacros) return true;
+    return (flags.macros?.combat ?? []).some(entry => preInitiativePasses.some(pass => constants.macros.getFnMacros(entry.source, entry.rules, entry.identifier, 'combat', pass)));
+}
+function hasPreInitiative(combat) {
+    const scene = combat.scene ?? canvas.scene;
+    if (!scene) return false;
+    if ([scene, ...scene.regions, ...scene.levels].some(bindsPreInitiative)) return true;
+    return scene.tokens.some(token => {
+        const actor = token.actor;
+        if (bindsPreInitiative(token)) return true;
+        if (!actor) return false;
+        if ([actor, ...actorUtils.getGroups(actor), ...actorUtils.getEffects(actor, {includeItemEffects: true})].some(bindsPreInitiative)) return true;
+        return actor.items.some(item => bindsPreInitiative(item) || item.system.activities?.some(bindsPreInitiative));
+    });
+}
+async function preInitiative(combat, combatant, token) {
+    await new Events.CombatEvent(combat, constants.combatPasses.preInitiative, token, {combatant}).run();
+}
 async function deleteCombat(combat, updates, context) {
     const currentTurn = combat.current.turn;
     const currentRound = combat.current.round;
@@ -113,6 +135,8 @@ export default {
     turnEnd,
     turnStart,
     combatStart,
+    preInitiative,
+    hasPreInitiative,
     preUpdateCombat,
     deleteCombat,
     preUpdateCombatant,

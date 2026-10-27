@@ -213,6 +213,7 @@ async function damage(workflow) {
             continue;
         }
         if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
+        bonus.roll.options.type ||= defaultDamageType;
         fullRoll.push(bonus.roll);
     }
     if (fullRoll.length) {

@@ -475,6 +475,16 @@ function getSaveSource(config) {
     return {activity, item, actor};
 }
 /**
+ * The tokens an activity is about to target, read in a pre-targeting pass: midi-qol's requested targets, else the user's targets.
+ * @param {object} config Activity use config.
+ * @returns {TokenDocument[]}
+ */
+function getPreTargetingTargets(config) {
+    const targetUuids = config?.midiOptions?.targetUuids;
+    if (targetUuids?.length) return targetUuids.map(uuid => fromUuidSync(uuid, {strict: false})).filter(Boolean);
+    return Array.from(game.user.targets, token => token.document);
+}
+/**
  * The activity a roll was requested by, from CAT's workflow data or midi-qol's save request.
  * @param {object} config Roll configuration.
  * @returns {Promise<Activity|undefined>}
@@ -707,6 +717,7 @@ export default {
     getMacroConditions,
     getSaveSource,
     getConfigActivity,
+    getPreTargetingTargets,
     bonusDamage,
     getDamageTypes,
     getDamageDealt,

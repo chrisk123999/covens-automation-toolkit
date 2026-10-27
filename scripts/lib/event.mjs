@@ -626,6 +626,7 @@ class CombatEvent extends CatEvent {
     appendData(data) {
         return {
             ...super.appendData(data),
+            combat: this.combat,
             context: this.context,
             combatant: this.combatant,
             previousCombatant: this.previousCombatant,

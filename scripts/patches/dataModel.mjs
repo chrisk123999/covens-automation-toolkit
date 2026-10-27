@@ -63,36 +63,35 @@ function rollData({activity, document, item}) {
     if (ability) data.mod = data.abilities[ability]?.mod ?? 0;
     return data;
 }
-function formula(wrapped) {
-    const parent = this.parent;
-    if (!parent) return wrapped();
-    let context;
+function damageContext(damage) {
+    const parent = damage.parent;
+    if (!parent) return;
     if (parent.documentName === 'Activity') {
-        const actor = parent.actor;
-        if (!actor) return wrapped();
-        context = {
-            actor,
-            damage: this,
+        if (!parent.actor) return;
+        return {
+            actor: parent.actor,
+            damage,
             activity: parent,
             document: parent,
             item: parent.item,
-            partIndex: this._index ?? 0,
+            partIndex: damage._index ?? 0,
             activityIdentifier: parent.identifier,
             identifier: parent.item.system.identifier
         };
-    } else {
-        const grandParent = parent.parent;
-        if (grandParent?.documentName !== 'Item') return wrapped();
-        const actor = grandParent.actor;
-        if (!actor) return wrapped();
-        context = {
-            actor,
-            damage: this,
-            item: grandParent,
-            document: grandParent,
-            identifier: grandParent.system.identifier
-        };
     }
+    const grandParent = parent.parent;
+    if (grandParent?.documentName !== 'Item' || !grandParent.actor) return;
+    return {
+        actor: grandParent.actor,
+        damage,
+        item: grandParent,
+        document: grandParent,
+        identifier: grandParent.system.identifier
+    };
+}
+function formula(wrapped) {
+    const context = damageContext(this);
+    if (!context) return wrapped();
     const originalFormula = wrapped();
     const alternateFormulas = new Set();
     const rollModifiers = new Set();
@@ -106,16 +105,19 @@ function formula(wrapped) {
     }
     let originalParsed;
     const data = rollData(context);
+    const appendsMod = !context.activity && context.item.type === 'weapon';
+    const compareTotal = (candidate, roll) => roll.total + (appendsMod && !candidate.includes('@mod') && !roll.isDeterministic ? (data?.mod ?? 0) : 0);
     if (originalFormula?.length) originalParsed = new Roll(originalFormula, data).evaluateSync({maximize: true});
     let maxRoll = originalParsed;
     if (alternateFormulas.size) {
-        let max = maxRoll?.total ?? -Infinity;
+        let max = maxRoll ? compareTotal(originalFormula, maxRoll) : -Infinity;
         for (const formula of alternateFormulas) {
             if (!formula.length) continue;
             const parsed = new Roll(formula, data).evaluateSync({maximize: true});
-            if (parsed.total > max) {
+            const total = compareTotal(formula, parsed);
+            if (total > max) {
                 maxRoll = parsed;
-                max = parsed.total;
+                max = total;
             }
         }
     }

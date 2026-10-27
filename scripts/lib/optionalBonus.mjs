@@ -144,7 +144,7 @@ class RollBonus {
                     !a.midiProperties?.automationOnly &&
                     !a.flags.cat?.hidden
                 );
-                if (activities.length === 1) this.#activity = activities[0];
+                if (activities?.length === 1) this.#activity = activities[0];
                 return;
             }
             case 'ActiveEffect':

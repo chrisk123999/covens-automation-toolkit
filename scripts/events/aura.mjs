@@ -18,10 +18,10 @@ function updateScene(scene, changes) {
     if ('active' in changes) Auras.resyncScenes([scene]);
 }
 function combatChanged(combat) {
-    Auras.resyncScenes([combat.scene]);
+    Auras.resyncScenes(Auras.getCombatScenes(combat));
 }
 function updateCombat(combat, changes) {
-    if ('scene' in changes || [0, 1].includes(changes.round)) Auras.resyncScenes([combat.scene]);
+    if ('scene' in changes || [0, 1].includes(changes.round)) Auras.resyncScenes(Auras.getCombatScenes(combat));
 }
 function createToken(token) {
     Auras.refreshTokens([token], {reindex: true});

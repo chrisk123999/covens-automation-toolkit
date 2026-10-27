@@ -164,37 +164,32 @@ function isWallBlocked(token, target) {
     if (token.object.checkCollision(destination, {origin, type: 'move', mode: 'any'})) return true;
     return !!token.parent.testSurfaceCollision(origin, destination, {level: token._source.level});
 }
-function passesFilter(entry, target, distance) {
-    const filter = entry.descriptor.filter;
-    if (!filter) return true;
-    const scope = {
-        source: entry.token.actor,
-        target: target.actor,
-        sourceToken: entry.token,
-        targetToken: target,
-        descriptor: entry.descriptor,
-        distance
-    };
-    const errorKey = entry.document.uuid + '.' + entry.auraId + '.filter';
+function runFilter(filter, document, scope, cache, label) {
     try {
         if (typeof filter === 'string') {
-            const embedded = (entry.document.flags.cat?.embeddedMacros ?? []).find(macro => macro.name === filter && macro.event === 'aura' && macro.pass === 'filter');
+            const embedded = (document.flags.cat?.embeddedMacros ?? []).find(macro => macro.name === filter && macro.event === 'aura' && macro.pass === 'filter');
             const script = embedded?.macros?.[0]?.macro;
             if (!script) return false;
-            if (entry.filterCache?.script !== script) {
+            if (cache.script !== script) {
                 const {fn, argValues} = Events.CalledEvent.prototype.buildSyncScriptFunction(script, scope);
-                entry.filterCache = {script, fn, defaults: argValues.slice(0, argValues.length - Object.keys(scope).length)};
+                Object.assign(cache, {script, fn, defaults: argValues.slice(0, argValues.length - Object.keys(scope).length)});
             }
-            return !!entry.filterCache.fn(...entry.filterCache.defaults, ...Object.values(scope));
+            return !!cache.fn(...cache.defaults, ...Object.values(scope));
         }
-        const rules = filter.rules ?? documentUtils.getRules(entry.document) ?? 'all';
+        const rules = filter.rules ?? documentUtils.getRules(document) ?? 'all';
         const macro = constants.macros.getFnMacros(filter.source, rules, filter.identifier, 'aura', 'filter')?.macros?.[0]?.macro;
         if (!macro) return false;
         return !!macro(scope);
     } catch (error) {
-        logOnce(errorKey, 'Aura filter for ' + entry.auraId + ' on ' + entry.document.uuid + ' threw: ' + error.message);
+        logOnce(document.uuid + '.' + label + '.filter', label + ' filter on ' + document.uuid + ' threw: ' + error.message);
         return false;
     }
+}
+function passesFilter(entry, target, distance) {
+    const filter = entry.descriptor.filter;
+    if (!filter) return true;
+    entry.filterCache ??= {};
+    return runFilter(filter, entry.document, {source: entry.token.actor, target: target.actor, sourceToken: entry.token, targetToken: target, descriptor: entry.descriptor, distance}, entry.filterCache, 'Aura ' + entry.auraId);
 }
 function testPair(entry, target, positions) {
     if (!target.actor) return;
@@ -284,8 +279,15 @@ function buildIndex(scene) {
 function isWorldScene(scene) {
     return !!scene && !scene.inCompendium && game.scenes.get(scene.id) === scene;
 }
+function getCombatScenes(combat) {
+    if (combat.scene) return [combat.scene];
+    return Array.from(new Set(combat.combatants.map(combatant => combatant.token?.parent).filter(Boolean)));
+}
 function isCountedScene(scene) {
-    return !!scene && (scene.active || scene === state.canvasScene || game.combats.some(combat => combat.started && combat.scene?.id === scene.id));
+    if (!scene) return false;
+    const inCombat = game.combats.some(combat => combat.started && getCombatScenes(combat).includes(scene));
+    if (game.settings.get('cat', 'auraCombatOnly')) return inCombat;
+    return scene.active || scene === state.canvasScene || inCombat;
 }
 function ensureIndex(scene) {
     if (!isWorldScene(scene)) return;
@@ -365,8 +367,8 @@ function isWritable(actor) {
     if (actor.isToken) return !!actor.token && isPlaced(actor.token) && isWorldScene(actor.token.parent);
     return game.actors.get(actor.id) === actor;
 }
-async function syncActor(actor, {legacy = false} = {}) {
-    if (!isWritable(actor)) return;
+function getSyncOperations(actor, {legacy = false} = {}) {
+    if (!isWritable(actor)) return [];
     const desired = new Map(Array.from(getWinners(actor).entries()).map(([auraId, {entry}]) => [auraId, buildEffectData(entry)]));
     const kept = new Set();
     const deletes = [];
@@ -387,9 +389,11 @@ async function syncActor(actor, {legacy = false} = {}) {
         if (!isSameEffect(effect, effectData)) updates.push({...effectData, _id: effect.id});
     });
     const creates = Array.from(desired.entries()).filter(([auraId]) => !kept.has(auraId)).map(([, effectData]) => effectData);
-    if (deletes.length) await actor.deleteEmbeddedDocuments('ActiveEffect', deletes);
-    if (updates.length) await actor.updateEmbeddedDocuments('ActiveEffect', updates);
-    if (creates.length) await actor.createEmbeddedDocuments('ActiveEffect', creates);
+    const operations = [];
+    if (deletes.length) operations.push({action: 'delete', documentName: 'ActiveEffect', ids: deletes, parent: actor});
+    if (updates.length) operations.push({action: 'update', documentName: 'ActiveEffect', updates, parent: actor});
+    if (creates.length) operations.push({action: 'create', documentName: 'ActiveEffect', data: creates, parent: actor});
+    return operations;
 }
 function getReconcileActors() {
     const hasOutput = effects => effects?.some(effect => isAuraEffect(effect) || effect.flags.cat?.auraEffect);
@@ -420,7 +424,25 @@ async function flush() {
     if (legacy) getReconcileActors().forEach(actor => addDirty(actor));
     const dirty = Array.from(state.dirty.values());
     state.dirty.clear();
-    await Promise.all(dirty.map(actor => syncActor(actor, {legacy})));
+    const operations = dirty.flatMap(actor => getSyncOperations(actor, {legacy}));
+    if (!operations.length) return;
+    const failure = await writeBatch(operations);
+    if (!failure) return;
+    Logging.addEntry('WARNING', 'Batched aura effect sync failed, retrying per actor: ' + failure);
+    await Promise.all(dirty.map(async actor => {
+        const actorOperations = getSyncOperations(actor, {legacy});
+        if (!actorOperations.length) return;
+        const actorFailure = await writeBatch(actorOperations);
+        if (actorFailure) Logging.addEntry('ERROR', 'Aura effect sync failed for ' + actor.name + ': ' + actorFailure, {force: true});
+    }));
+}
+async function writeBatch(operations) {
+    try {
+        const results = await foundry.documents.modifyBatch(operations);
+        if (results.length !== operations.length) return 'batch cancelled';
+    } catch (error) {
+        return error.message;
+    }
 }
 function enqueueWrite(callback) {
     state.writes = state.writes.then(callback).catch(error => Logging.addEntry('ERROR', 'Aura effect sync failed: ' + error.message, {force: true}));
@@ -612,11 +634,6 @@ function passedEntries(pairs, path, origin, side) {
         return path.some(position => testPair(entry, target, at(position)) !== undefined);
     });
 }
-/**
- * Fire enter triggers for auras a token crossed without starting or ending inside them.
- * @param {TokenDocument} token Token that moved.
- * @param {object} movement Movement data from the moveToken hook.
- */
 function passThrough(token, movement) {
     if (!queryUtils.isTheGM() || !state.ready || !isCountedScene(token.parent) || !movement?.origin || !movement.passed?.waypoints?.length) return;
     const index = state.scenes.get(token.parent.id);
@@ -649,6 +666,8 @@ function isReady() {
     return state.ready;
 }
 export default {
+    getCombatScenes,
+    runFilter,
     rebuild,
     reconcile,
     isReady,

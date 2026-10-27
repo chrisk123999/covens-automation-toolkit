@@ -235,7 +235,7 @@ async function followUp(host, config, timing) {
             const selection = await dialogUtils.selectTargetDialog(activity.name, 'CAT.Macros.Summon.FollowUpTarget', nearby, {skipDeadAndUnconscious: false, userId});
             if (selection?.result) targets = [selection.result];
         }
-        if (targets.length) await workflowUtils.completeActivityUse(activity, targets, {config: {scaling}, consumeUsage: false, consumeResources: false, spellSlot: false, userId});
+        if (targets.length) await workflowUtils.completeActivityUse(activity, targets, {config: {scaling}, consumeUsage: config.followUpConsume, consumeResources: config.followUpConsume, spellSlot: false, userId});
     }
 }
 async function command(host, activity) {
@@ -510,6 +510,13 @@ const summon = {
             category: 'behavior',
             label: 'CAT.Macros.Summon.FollowUpRange',
             hint: 'CAT.Macros.Summon.FollowUpRangeHint'
+        },
+        followUpConsume: {
+            default: false,
+            type: 'checkbox',
+            category: 'behavior',
+            label: 'CAT.Macros.Summon.FollowUpConsume',
+            hint: 'CAT.Macros.Summon.FollowUpConsumeHint'
         }
     }
 };

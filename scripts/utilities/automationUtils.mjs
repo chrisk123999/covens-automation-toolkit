@@ -383,9 +383,8 @@ async function getAutomationTree(document) {
     return branches;
 }
 /**
- * Repoint every cast activity at the same spell in the user's preferred spell compendium,
- * so a cast grants the automated copy rather than whichever compendium the automation shipped against.
- * @param {object} documentData Mutated in place.
+ * Repoint every cast activity at the same spell in the preferred spell compendium.
+ * @param {object} documentData Item data, mutated in place.
  */
 async function relinkCastActivities(documentData) {
     for (const activity of Object.values(documentData.system?.activities ?? {})) {
@@ -397,9 +396,19 @@ async function relinkCastActivities(documentData) {
     }
 }
 /**
- * Apply an automation to an item, replacing it with the source document while keeping the paths in
- * {@link constants.getItemKeepPaths}, the item's artwork, and any enchantment applied to it. Also relinks
- * cast activities, injects registered scales, and fires the medkit event.
+ * Whether dnd5e already removed or replaced the item.
+ * @param {Item5e} item Item to check.
+ * @returns {boolean}
+ */
+function isReplaced(item) {
+    const actor = item.parent;
+    if (!(actor instanceof Actor)) return false;
+    if (!actor.items.has(item.id)) return true;
+    if (!item.flags.dnd5e?.cachedFor) return false;
+    return item.system.linkedActivity?.spell?.uuid !== item._stats.compendiumSource;
+}
+/**
+ * Apply an automation to an item, replacing it with the source document.
  * @param {Item5e} item Item to act on.
  * @param {object} [options] Additional options.
  * @param {string} [options.source] Force a source rather than using the preferred one.
@@ -408,6 +417,7 @@ async function relinkCastActivities(documentData) {
  * @param {boolean} [options.openSheet] Render the item sheet afterwards.
  */
 async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet} = {}) {
+    if (isReplaced(item)) return;
     let automation;
     const identifier = documentUtils.getIdentifier(item);
     const rules = documentUtils.getRules(item);
@@ -436,7 +446,8 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
     }
     genericUtils.setProperty(documentData, 'flags.cat.automation.source', automation.source);
     genericUtils.setProperty(documentData, 'flags.cat.automation.version', automation.version);
-    if (documentData.flags.cat.automation.sourceType) delete documentData.flags.cat.automation.sourceType;
+    delete documentData.flags.cat.automation.sourceType;
+    delete documentData.flags.cat.automation.aliases;
     const defaultImages = Object.values(CONFIG.DND5E.defaultArtwork.Item);
     if (!defaultImages.includes(oldDocumentData.img)) {
         documentData.effects.filter(effect => effect.img === documentData.img).forEach(effect => effect.img = oldDocumentData.img);

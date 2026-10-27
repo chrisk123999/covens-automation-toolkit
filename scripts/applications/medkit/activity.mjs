@@ -1,8 +1,9 @@
 import MedkitApp from './base.mjs';
+import aura from '../../handlers/aura.mjs';
 const {fields} = foundry.data;
 
 // Region-activity trigger types an activity-placed region can fire on (see handlers/region.mjs).
-const REGION_TRIGGERS = ['enter', 'left', 'stay', 'passedThrough', 'entered', 'exited', 'stayed', 'passedOver', 'turnStart', 'turnEnd', 'everyTurn', 'moved'];
+const REGION_TRIGGERS = ['created', 'enter', 'left', 'stay', 'passedThrough', 'entered', 'exited', 'stayed', 'passedOver', 'turnStart', 'turnEnd', 'everyTurn', 'moved'];
 const DISPOSITIONS = ['all', 'ally', 'enemy'];
 
 export default class ActivityMedkit extends MedkitApp {
@@ -58,6 +59,8 @@ export default class ActivityMedkit extends MedkitApp {
             magicalDarkness: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.MagicalDarkness.Label')}),
             obscured: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.Obscured.Label')}),
             attachToCaster: new fields.BooleanField({label: _loc('CAT.MEDKIT.Activity.AttachToCaster.Label')}),
+            effectDisposition: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.Effects.Disposition'), required: true, blank: false, initial: 'all', choices: Object.fromEntries(DISPOSITIONS.map(key => [key, _loc(`CAT.MEDKIT.Activity.Disposition.${key}`)]))}),
+            filter: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.Filter.Label'), choices: Object.fromEntries(aura.filterOptions(null, flags.placed?.region).map(({value, label}) => [value, label]))}),
             spellIdentifier: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.SpellIdentifier.Label')})
         };
         context.hidden = flags.hidden ?? false;
@@ -67,6 +70,8 @@ export default class ActivityMedkit extends MedkitApp {
         context.magicalDarkness = placed.visibility?.magicalDarkness ?? false;
         context.obscured = placed.visibility?.obscured ?? false;
         context.attachToCaster = placed.attachToCaster ?? false;
+        context.effectDisposition = placed.effectDisposition ?? 'all';
+        context.filter = placed.filter ?? '';
         context.regionMacroChoices = this._prepareRegisteredMacros('placed.region.macros').choices;
         // Region effects are item-relative ActiveEffect ids (resolved against the origin item), not UUIDs.
         const pickedEffects = new Set(Array.isArray(placed.effects) ? placed.effects : []);

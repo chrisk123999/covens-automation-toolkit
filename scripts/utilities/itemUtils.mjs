@@ -1,7 +1,7 @@
 /** @import Item5e from "../../dnd5e/module/documents/item.mjs" */
 
 import {Logging} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils} from './_module.mjs';
+import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils, queryUtils} from './_module.mjs';
 const activityVisibilityLocks = new Map();
 
 /**
@@ -102,6 +102,36 @@ async function createItems(actor, itemDatas, {favorite = false, parentEntity} = 
     if (parentEntity) await documentUtils.makeDependent(parentEntity, items);
     if (favorite) await actorUtils.addFavorites(actor, items);
     return items;
+}
+/**
+ * Every item stored in the world whose flag matches a value: sidebar items, actor items and items on unlinked token deltas.
+ * @param {string} scope Flag scope, such as a module id.
+ * @param {string} key Dot-separated flag path inside the scope.
+ * @param {*} value Value the flag must equal.
+ * @returns {Item5e[]}
+ */
+function getWorldItemsByFlag(scope, key, value) {
+    const matches = flags => genericUtils.getProperty(flags ?? {}, scope + '.' + key) === value;
+    const unlinkedTokens = game.scenes.contents.flatMap(scene => scene.tokens.filter(token => !token.actorLink && token._source.delta?.items?.some(item => matches(item.flags))));
+    const tokenItems = unlinkedTokens.flatMap(token => token.actor?.items.filter(item => token.delta.items.manages(item.id)) ?? []);
+    const items = [...game.items.contents, ...game.actors.contents.flatMap(actor => actor.items.contents), ...tokenItems];
+    return items.filter(item => matches(item.flags));
+}
+/**
+ * Delete every item in the world whose flag matches a value, delegating to a GM when the user is not one.
+ * @param {string} scope Flag scope, such as a module id.
+ * @param {string} key Dot-separated flag path inside the scope.
+ * @param {*} value Value the flag must equal.
+ * @returns {Promise<string[]>} Uuids of the deleted items.
+ */
+async function deleteWorldItemsByFlag(scope, key, value) {
+    if (!game.user.isGM) return await queryUtils.query('deleteItemsByFlag', queryUtils.gmUser(), {scope, key, value}, 30000) ?? [];
+    const items = getWorldItemsByFlag(scope, key, value);
+    await Promise.all(Array.from(Map.groupBy(items, item => item.parent), ([parent, group]) => {
+        const ids = group.map(item => item.id);
+        return parent ? parent.deleteEmbeddedDocuments('Item', ids) : Item.implementation.deleteDocuments(ids);
+    }));
+    return items.map(item => item.uuid);
 }
 /**
  * Reveal activities hidden by `flags.cat.hidden`, through a `catHiddenActivities` enchantment on the item.
@@ -412,6 +442,8 @@ export default {
     syntheticItem,
     enchantItem,
     createItems,
+    getWorldItemsByFlag,
+    deleteWorldItemsByFlag,
     unhideActivities,
     rehideActivities,
     getAdvancementSourceKey,

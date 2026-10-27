@@ -15,5 +15,7 @@ export {default as quickConditions} from './quickConditions.mjs';
 export {default as regions} from './region.mjs';
 export {default as summon} from './summon.mjs';
 export {default as tokens} from './tokens.mjs';
+export {default as tours} from './tours.mjs';
 export {default as troubleshooter} from './troubleshooter.mjs';
+export {default as welcome} from './welcome.mjs';
 export {default as weapon} from './weapon.mjs';

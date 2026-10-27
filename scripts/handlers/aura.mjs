@@ -210,5 +210,7 @@ function register() {
     constants.macros.registerFnMacro(aura);
 }
 export default {
-    register
+    register,
+    getFilter,
+    filterOptions
 };

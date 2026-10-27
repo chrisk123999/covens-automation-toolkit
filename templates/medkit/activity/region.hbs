@@ -6,6 +6,7 @@
         {{formGroup fields.magicalDarkness name="flags.cat.placed.region.visibility.magicalDarkness" value=magicalDarkness hint=(localize "CAT.MEDKIT.Region.MagicalDarkness.Hint") rootId=@root.rootId}}
         {{formGroup fields.obscured name="flags.cat.placed.region.visibility.obscured" value=obscured hint=(localize "CAT.MEDKIT.Region.Obscured.Hint") rootId=@root.rootId}}
         {{formGroup fields.attachToCaster name="flags.cat.placed.region.attachToCaster" value=attachToCaster hint=(localize "CAT.MEDKIT.Activity.AttachToCaster.Hint") rootId=@root.rootId}}
+        {{formGroup fields.filter name="flags.cat.placed.region.filter" value=filter localize=true hint=(localize "CAT.MEDKIT.Activity.Filter.Hint") rootId=@root.rootId}}
     </fieldset>
 
     <fieldset data-section="region-effects">
@@ -22,6 +23,7 @@
                 </div>
                 <p class="hint">{{localize "CAT.MEDKIT.Activity.Effects.Hint"}}</p>
             </div>
+            {{formGroup fields.effectDisposition name="flags.cat.placed.region.effectDisposition" value=effectDisposition hint=(localize "CAT.MEDKIT.Activity.Effects.DispositionHint") rootId=@root.rootId}}
         {{else}}
             <p class="hint">{{localize "CAT.MEDKIT.Activity.Effects.None"}}</p>
         {{/if}}

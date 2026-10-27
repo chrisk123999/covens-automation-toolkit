@@ -31,7 +31,7 @@ Hooks.once('init', () => {
     handlers.troubleshooter.registerChecks();
     CONFIG.DND5E.senses.devilsSight = {label: 'CAT.Senses.DevilsSight', grantsSight: true};
     globalThis.cat = {
-        api: buildApi(),
+        api: buildApi(handlers),
         applications,
         lib,
         utils
@@ -53,6 +53,7 @@ const ddbInitGate = new Promise(resolve => {
     ddbGate = resolve;
 });
 Hooks.once('ready', async () => {
+    handlers.tours.registerTours();
     lib.constants.summons = lib.SummonsManager.create();
     await getPackConstants();
     readyHooks();
@@ -68,6 +69,7 @@ Hooks.once('ready', async () => {
     handlers.aura.register();
     handlers.summon.register();
     handlers.backups.startup();
+    handlers.welcome.startup();
     await handlers.customMacros.load();
     await utils.genericUtils.sleep(1000); //To avoid eating console logs from other modules.
     await handlers.items.registerCompendiums({startup: true});

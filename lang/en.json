@@ -2,7 +2,7 @@
     "CAT": {
         "MEDKIT": {
             "Title": "Coven's Automation Toolkit Configuration: {name}",
-            "HeaderLabel": "CAT Medkit",
+            "HeaderLabel": "CatKit",
             "LockedPack": "{pack} is locked. Changes made here will not be saved until the compendium is unlocked.",
             "NoPermission": "You do not have permission to modify this tab.",
             "ReloadWarning": "The registered automation will not reflect your changes until the world is reloaded!",
@@ -510,7 +510,7 @@
             },
             "PackFolder": {
                 "Folder": "Folder",
-                "Pack": "Pack"
+                "Pack": "Compendium"
             },
             "Sequencer": {
                 "Browse": "Browse Sequencer Database"
@@ -604,7 +604,13 @@
                     "Label": "Region Effects",
                     "Field": "Apply effects",
                     "Hint": "Effects from this item applied to tokens inside a region this activity creates.",
-                    "None": "This item has no effects to apply."
+                    "None": "This item has no effects to apply.",
+                    "Disposition": "Effect targets",
+                    "DispositionHint": "Which tokens inside the region receive these effects."
+                },
+                "Filter": {
+                    "Label": "Target Filter",
+                    "Hint": "An aura filter macro that decides which tokens the region affects."
                 },
                 "RegionMacros": {
                     "Label": "Region Registered Macros",
@@ -624,6 +630,7 @@
                     "PerDistanceHint": "With the Token moves inside trigger, fire once for every this many scene units moved inside the region. Leave empty to fire once per move."
                 },
                 "Triggers": {
+                    "created": "Region created",
                     "enter": "Token enters",
                     "left": "Token leaves",
                     "stay": "Token stays",
@@ -682,6 +689,7 @@
                     "zeroSpeed": "Speed reduced to zero",
                     "tempHP": "Temporary HP lost",
                     "tempMaxHP": "Temporary max HP lost",
+                    "toolCheck": "Any tool",
                     "Groups": {
                         "Workflow": "Workflow",
                         "Turn": "Turn",
@@ -910,7 +918,7 @@
                 "Disable": "Disable",
                 "Enable": "Enable",
                 "SourceTag": "Source",
-                "PackTag": "Pack"
+                "PackTag": "Compendium"
             },
             "Backups": {
                 "Name": "Backups",
@@ -997,6 +1005,10 @@
             "AutoRecharge": {
                 "Name": "Recharge Player Abilities",
                 "Hint": "Roll to recharge abilities automatically at the start of a non-NPC's turn."
+            },
+            "AuraCombatOnly": {
+                "Name": "Auras Only in Combat",
+                "Hint": "Auras apply their effects and triggers only on scenes with a started combat."
             },
             "PlacedRegionVisibility": {
                 "Name": "Placed Area Visibility",
@@ -1234,6 +1246,7 @@
             "Title": "CAT Troubleshooter",
             "Open": "Open Troubleshooter",
             "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version.",
+            "OneWayDoors": "Monk's Wall Enhancement has one-way doors enabled. If you are experiencing lag with auras, disable this setting.",
             "World": "World",
             "Empty": "Nothing to report.",
             "Copied": "Troubleshooter report copied to the clipboard.",
@@ -1457,7 +1470,9 @@
                 "Favorite": "Favorite Activities",
                 "FavoriteHint": "Favorite the command activities while the summons exist.",
                 "FollowUpActivity": "Follow-Up Activity",
-                "FollowUpActivityHint": "Activity rolled on a creature picked near each summon, without spending uses or slots.",
+                "FollowUpActivityHint": "Activity rolled on a creature picked near each summon, without spending spell slots.",
+                "FollowUpConsume": "Follow-Up Spends Uses",
+                "FollowUpConsumeHint": "The follow-up spends its activity's uses and resources.",
                 "FollowUpTiming": "Follow-Up Timing",
                 "FollowUpTimingHint": "Roll the follow-up after summoning, after moving, or both.",
                 "FollowUpTimingOptions": {
@@ -1529,7 +1544,7 @@
             "MacroWarning": "These macros have errors or incorrect return data. See notes in the macro editor for the expected format.",
             "NoReturn": "Custom macro {name} returned no macro data.",
             "NotFound": "Macro not found! (uuid) {uuid}",
-            "PackWarning": "These packs contain many invalid custom macros. Registry was skipped for the remainder of each pack to avoid unintended side effects from running the macros.",
+            "PackWarning": "These compendiums contain many invalid custom macros. Registry was skipped for the remainder of each compendium to avoid unintended side effects from running the macros.",
             "ScriptOnly": "Only script macros can go in a custom macro compendium.",
             "WarningMessage": "CAT Custom Macros",
             "Hint": {
@@ -1539,6 +1554,176 @@
                 "New": "To add a new macro, return your own source and identifier. Then pick it in the Registered Macros tab of a document's CatKit.",
                 "Scope": "CAT utilities are available by name. Run<code>console.log(cat.utils)</code>in the console to list them.",
                 "Links": "See the <a href=\"{wiki}\" target=\"_blank\" rel=\"noopener\">wiki</a> or ask for help on <a href=\"{discord}\" target=\"_blank\" rel=\"noopener\">our Discord</a>."
+            }
+        },
+        "Welcome": {
+            "Title": "Coven's Automation Toolkit",
+            "Content": "<p>Coven's Automation Toolkit applies and configures automations from modules such as Cauldron of Plentiful Resources.</p><p>For help, check the FAQ channel in the Coven's Discord, then ask in #support with the Troubleshooter export.</p><a class=\"cat-welcome-discord\" href=\"https://discord.gg/BumxBcQDrT\" target=\"_blank\" rel=\"noopener\"><i class=\"fa-brands fa-discord\"></i> Join the Coven's Discord</a><p class=\"cat-welcome-label\">Guided tours</p><div class=\"cat-welcome-tours\"><button type=\"button\" data-cat-tour=\"cat.sources\"><i class=\"fa-solid fa-layer-group\"></i> Automation Sources</button><button type=\"button\" data-cat-tour=\"cat.CatKit\"><i class=\"fa-solid fa-shield-cat\"></i> Applying Automations</button><button type=\"button\" data-cat-tour=\"cat.settings\"><i class=\"fa-solid fa-gears\"></i> CAT Settings</button></div>"
+        },
+        "Tours": {
+            "medkit": {
+                "Title": "Applying Automations",
+                "Description": "Apply and configure automations with the CatKit.",
+                "intro": {
+                    "Title": "The CatKit",
+                    "Content": "Every automation is applied and configured from the CatKit."
+                },
+                "sheetControl": {
+                    "Title": "Opening the CatKit",
+                    "Content": "The CatKit opens from the shield icon in a sheet's controls menu."
+                },
+                "status": {
+                    "Title": "Automation Status",
+                    "Content": "The shield's color shows the automation status. Yellow: available. Red: update available. Green: up to date. Blue: up to date, with options. Pink: the chosen source has no automation for this item."
+                },
+                "apply": {
+                    "Title": "Apply an Automation",
+                    "Content": "Pick a source and click the check mark to replace the item with the automated version."
+                },
+                "rules": {
+                    "Title": "Rules Version",
+                    "Content": "Set the rules version that matches the item before applying."
+                },
+                "identifier": {
+                    "Title": "Identifier",
+                    "Content": "Automations are matched by identifier. If the CatKit finds nothing, check that the identifier matches the item's name."
+                },
+                "source": {
+                    "Title": "Automation Source",
+                    "Content": "Pick a module here to override the Automation Sources order for this item."
+                },
+                "ignore": {
+                    "Title": "Ignore Item",
+                    "Content": "Mass updates skip ignored items."
+                },
+                "tabs": {
+                    "Title": "Other Tabs",
+                    "Content": "Configuration holds the automation's options. The other tabs are for building your own."
+                },
+                "troubleshooter": {
+                    "Title": "Troubleshooter",
+                    "Content": "The stethoscope opens the Troubleshooter. Attach its export when asking for help."
+                },
+                "actor": {
+                    "Title": "Whole Actors",
+                    "Content": "Mass Apply / Update automates every item on the actor at once."
+                },
+                "compendium": {
+                    "Title": "Whole Compendiums",
+                    "Content": "A compendium's CatKit automates every item in it. Locked compendiums are copied first."
+                },
+                "outro": {
+                    "Title": "Done",
+                    "Content": "Next, set up your automation sources."
+                }
+            },
+            "sources": {
+                "Title": "Automation Sources",
+                "Description": "Choose which modules supply automations.",
+                "intro": {
+                    "Title": "Automation Sources",
+                    "Content": "Automation sources decide which modules the CatKit uses, and which one takes priority."
+                },
+                "open": {
+                    "Title": "Opening the List",
+                    "Content": "The list opens from Configure Automation Sources."
+                },
+                "order": {
+                    "Title": "Priority Order",
+                    "Content": "Put Cauldron of Plentiful Resources first, then Gambit's Premades and Midi Item Showcase if you use them, and Midi-QOL's sample items last."
+                },
+                "content": {
+                    "Title": "Automations, Not Content",
+                    "Content": "Leave D&D Beyond Importer, the system and sourcebook modules disabled here."
+                },
+                "kinds": {
+                    "Title": "Sources and Compendiums",
+                    "Content": "Blue Source rows are modules. Gold Compendium rows are single compendiums, for automations you made yourself."
+                },
+                "rank": {
+                    "Title": "Reordering",
+                    "Content": "Drag a row or type a rank. Lower ranks come first."
+                },
+                "disable": {
+                    "Title": "Disabling a Source",
+                    "Content": "The X disables a source."
+                },
+                "inactive": {
+                    "Title": "Inactive Sources",
+                    "Content": "Disabled sources wait here. The + button adds one back."
+                },
+                "confirm": {
+                    "Title": "Saving",
+                    "Content": "Confirm saves the list. Applied items keep their automation until you update them."
+                },
+                "compendiums": {
+                    "Title": "Compendiums",
+                    "Content": "Compendiums is a separate list of where to find complete documents, such as spells a feature adds."
+                },
+                "compendiumLists": {
+                    "Title": "Compendium Lists",
+                    "Content": "List compendiums with full content, top first. For the system or a sourcebook, automate a copy with its CatKit and list the copy."
+                },
+                "reapply": {
+                    "Title": "Fixing Applied Items",
+                    "Content": "Items applied from the wrong source keep it. Pick the right source in the item's CatKit and apply it again."
+                }
+            },
+            "settings": {
+                "Title": "CAT Settings",
+                "Description": "A tour of CAT's settings menus.",
+                "intro": {
+                    "Title": "CAT Settings",
+                    "Content": "Cauldron of Plentiful Resources has no settings of its own. Its options live here."
+                },
+                "help": {
+                    "Title": "Troubleshooter",
+                    "Content": "The Troubleshooter finds and fixes setting conflicts. Attach its export when asking for help."
+                },
+                "general": {
+                    "Title": "General",
+                    "Content": "General holds module-wide options."
+                },
+                "automation": {
+                    "Title": "Automation Sources",
+                    "Content": "Automation Sources has its own tour."
+                },
+                "backups": {
+                    "Title": "Backups",
+                    "Content": "Backups saves player characters to a compendium on a schedule."
+                },
+                "compendiums": {
+                    "Title": "Compendiums",
+                    "Content": "Compendiums lists where your complete documents are stored."
+                },
+                "integration": {
+                    "Title": "Integration",
+                    "Content": "Integration covers Dice So Nice and animation modules."
+                },
+                "interface": {
+                    "Title": "Interface",
+                    "Content": "Interface changes what CAT displays."
+                },
+                "manualRolls": {
+                    "Title": "Manual Rolls",
+                    "Content": "Manual Rolls sets up the roll resolver for physical dice."
+                },
+                "mechanics": {
+                    "Title": "Mechanics",
+                    "Content": "Mechanics holds rules automation, such as recharge rolls."
+                },
+                "permissions": {
+                    "Title": "Permissions",
+                    "Content": "Permissions sets which users can open each CatKit tab."
+                },
+                "devtools": {
+                    "Title": "Development Tools",
+                    "Content": "Development Tools are for macro writers. Keep them off during play."
+                },
+                "outro": {
+                    "Title": "Done",
+                    "Content": "That covers the settings menus."
+                }
             }
         }
     }
