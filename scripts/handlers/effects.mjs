@@ -236,7 +236,7 @@ async function specialDurationToolCheck(actor, roll, toolId) {
     await Promise.all(actorUtils.getEffects(actor, {includeItemEffects: true}).map(async effect => {
         const specialDurations = effect.flags.cat?.specialDuration;
         if (!specialDurations) return;
-        let remove = specialDurations.includes(toolId);
+        let remove = specialDurations.includes(toolId) || specialDurations.includes('toolCheck');
         const target = roll.options.target;
         if (!remove && target) {
             if (target > roll.total && specialDurations.includes(toolId + 'Fail')) remove = true;

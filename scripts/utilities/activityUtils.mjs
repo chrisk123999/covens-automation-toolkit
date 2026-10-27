@@ -1,4 +1,5 @@
-import {documentUtils, effectUtils, itemUtils} from './_module.mjs';
+import {documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
+const nextUseOverrides = new Map();
 
 /**
  * Get the save DC of the activity, if a save, otherwise infer a save DC from the activity's ability, default 10.
@@ -287,6 +288,21 @@ async function correctSpellLink(activity, spell) {
 function checkCosts(activity, scaling) {
     return !activity.consumption.targets.some(c => c.getConsumptionLabels({scaling}, {consume: true}).warn);
 }
+/**
+ * Set properties on the copy of an activity that dnd5e makes for its next use.
+ * @param {Activity} activity Activity about to be used.
+ * @param {object|null} changes Property paths and values, or null to clear.
+ */
+function overrideNextUse(activity, changes) {
+    if (changes) nextUseOverrides.set(activity.uuid, changes);
+    else nextUseOverrides.delete(activity.uuid);
+}
+function applyNextUseOverride(activity) {
+    const changes = nextUseOverrides.get(activity.uuid);
+    if (!changes) return;
+    nextUseOverrides.delete(activity.uuid);
+    Object.entries(changes).forEach(([path, value]) => genericUtils.setProperty(activity, path, value));
+}
 
 export default {
     getSaveDC,
@@ -305,5 +321,7 @@ export default {
     hasDefaultName,
     getDefaultDamageRolls,
     correctSpellLink,
-    checkCosts
+    checkCosts,
+    overrideNextUse,
+    applyNextUseOverride
 };

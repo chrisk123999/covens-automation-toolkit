@@ -105,7 +105,7 @@ const workflowHookNames = {
 const grapplePasses = {
     /** Before the size check. Return a number to add to the grappler's size category. Receives `data.identifier` and `data.size`. */
     sizeCheck: 'grappleShoveSizeCheck',
-    /** Before the grapple or shove applies. */
+    /** Before the grapple or shove applies. Set `data.advantage` to roll the grappler's contested Athletics check with Advantage. */
     preGrapple: 'preGrapple',
     /** After the grapple or shove applies. */
     postGrapple: 'postGrapple',
@@ -177,10 +177,12 @@ const effectPasses = {
  * Combat passes. Descriptor key: `combat`.
  *
  * Prefixes: `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle`.
- * Macros also receive `context`, `combatant`, `previousCombatant`, `round`, `turn`, `previousRound` and `previousTurn`.
+ * Macros also receive `combat`, `context`, `combatant`, `previousCombatant`, `round`, `turn`, `previousRound` and `previousTurn`.
  * @enum {string}
  */
 const combatPasses = {
+    /** For the actor about to roll initiative, before its roll is built. `combatant` is undefined when the roll will create it. */
+    preInitiative: 'preInitiative',
     /** For the combatant whose turn ended. */
     turnEnd: 'turnEnd',
     /** For every token in the scene, at the start of each turn. */

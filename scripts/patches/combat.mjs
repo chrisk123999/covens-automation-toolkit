@@ -23,7 +23,20 @@ async function rollInitiative(wrapped, ids, options) {
         }
     }
     if (!allowedIds.length) return this;
+    if (combatEvents.hasPreInitiative(this)) {
+        for (const id of allowedIds) {
+            const combatant = this.combatants.get(id);
+            if (combatant?.token && combatant.actor && !combatant.actor._cachedInitiativeRoll) await combatEvents.preInitiative(this, combatant, combatant.token);
+        }
+    }
     return wrapped(allowedIds, options);
+}
+async function rollInitiativeDialog(wrapped, rollOptions, dialog) {
+    const combat = game.combat;
+    const combatants = combat?.getCombatantsByActor(this) ?? [];
+    const token = combatants[0]?.token ?? this.getActiveTokens(false, true)[0];
+    if (combat && token && (!combatants.length || combatants.some(combatant => combatant.initiative === null))) await combatEvents.preInitiative(combat, combatants[0], token);
+    return wrapped(rollOptions, dialog);
 }
 async function onEndTurn(wrapped, combatant, context) {
     await wrapped(combatant, context);
@@ -38,6 +51,7 @@ async function onStartRound(wrapped, context) {
     if (context.round === 1 && !this.previous?.round) await combatEvents.combatStart(this, context);
 }
 const patches = [
+    {path: 'CONFIG.Actor.documentClass.prototype.rollInitiativeDialog', fn: rollInitiativeDialog, wrapType: 'WRAPPER'},
     {path: 'CONFIG.Combat.documentClass.prototype.rollInitiative', fn: rollInitiative, wrapType: 'MIXED'},
     {path: 'CONFIG.Combat.documentClass.prototype._onEndTurn', fn: onEndTurn, wrapType: 'WRAPPER'},
     {path: 'CONFIG.Combat.documentClass.prototype._onStartTurn', fn: onStartTurn, wrapType: 'WRAPPER'},

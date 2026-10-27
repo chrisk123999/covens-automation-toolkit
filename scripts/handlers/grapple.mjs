@@ -4,8 +4,8 @@ function abilities(rules) {
     if (rules === '2014') return ['acr', 'ath'];
     if (rules === '2024') return ['str', 'dex'];
 }
-async function legacyGrappleDC(grapplerActor) {
-    return (await rollUtils.requestRoll(grapplerActor, 'skill', 'ath'))?.total;
+async function legacyGrappleDC(grapplerActor, advantage) {
+    return (await rollUtils.requestRoll(grapplerActor, 'skill', 'ath', {advantage}))?.total;
 }
 function itemData(sourceEffect, targetEffect, dc, rules, {name, img} = {}) {
     const data = {
@@ -125,7 +125,7 @@ async function sizeCheck(sourceToken, targetToken, identifier, warning = true) {
     if (actorUtils.getSize(targetToken.actor) <= (size + 1)) return true;
     if (warning) genericUtils.notify(`CAT.GrappleShove.${identifier === 'grapple' ? 'Grapple' : 'Shove'}Size`, {type: 'warn'});
 }
-async function grapple(sourceToken, targetToken, {activity, rules, flatDC = activity?.save?.dc.value, contest = true, checkSize = true} = {}) {
+async function grapple(sourceToken, targetToken, {activity, rules, flatDC = activity?.save?.dc.value, contest = true, checkSize = true, conditions = []} = {}) {
     if (!sourceToken.actor || !targetToken.actor) return;
     if (checkSize) { 
         if (!await sizeCheck(sourceToken, targetToken, 'grapple')) return; 
@@ -137,16 +137,18 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
     const data = {
         rules,
         dc: flatDC,
+        advantage: false,
         reach: activity ? (MidiQOL.checkActivityRange(activity, sourceToken, [targetToken], false)?.range || 5) : 5,
         sourceEffectData: sourceEffectData(_loc('CAT.GrappleShove.Grappling', {name: targetToken.name}), rules, activity?.item.img),
         targetEffectData: targetEffectData(_loc('CAT.GrappleShove.GrappledBy', {name: sourceToken.name}), rules, activity?.item.img)
     };
+    if (conditions.length) data.targetEffectData.flags.cat.conditions.push(...conditions);
     await new Events.GrappleEvent(sourceToken, targetToken, constants.grapplePasses.preGrapple, {data}).run();
     genericUtils.setProperty(data.sourceEffectData, 'flags.cat.grapple', {dc: data.dc, reach: data.reach, tokenId: targetToken.id});
     genericUtils.setProperty(data.targetEffectData, 'flags.cat.grapple', {dc : data.dc, reach: data.reach,  tokenId: sourceToken.id});
     let sourceEffect, targetEffect;
     if (contest) {
-        data.dc ??= await legacyGrappleDC(sourceToken.actor);
+        data.dc ??= await legacyGrappleDC(sourceToken.actor, data.advantage);
         const options = {};
         if (data.dc === undefined) noDCAutoSucceed(options, targetToken);
         if (targetToken.actor.statuses.has('incapacitated'))

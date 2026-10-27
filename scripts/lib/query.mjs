@@ -28,6 +28,9 @@ async function deleteDocument({uuid, options}) {
     await document.delete(options);
     return uuid;
 }
+async function deleteItemsByFlag({scope, key, value}) {
+    return itemUtils.deleteWorldItemsByFlag(scope, key, value);
+}
 async function createEmbeddedDocuments({uuid, type, updates, options}) {
     const document = await fromUuid(uuid);
     if (!document) return;
@@ -146,6 +149,7 @@ function registerQueries() {
         createEffects,
         deleteEmbeddedDocuments,
         deleteDocument,
+        deleteItemsByFlag,
         createEmbeddedDocuments,
         dialog,
         queuedDialog,
@@ -172,6 +176,7 @@ export default {
     createEffects,
     deleteEmbeddedDocuments,
     deleteDocument,
+    deleteItemsByFlag,
     registerQueries,
     createEmbeddedDocuments,
     dialog,

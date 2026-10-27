@@ -71,7 +71,7 @@ export default class EffectMedkit extends MedkitApp {
             prefixedGroup('ConditionRemoved', statusChoices('Removed')),
             prefixedGroup('Equipped', Object.entries(CONFIG.DND5E.armorTypes).map(([key, label]) => ({value: key, label}))),
             prefixedGroup('Unequipped', Object.entries(CONFIG.DND5E.armorTypes).map(([key, label]) => ({value: key + 'Removed', label}))),
-            prefixedGroup('ToolRolled', toolChoices('')),
+            prefixedGroup('ToolRolled', [{value: 'toolCheck', label: _loc('CAT.MEDKIT.Effect.SpecialDurations.toolCheck')}, ...toolChoices('')]),
             prefixedGroup('ToolFailed', toolChoices('Fail')),
             prefixedGroup('ToolSucceeded', toolChoices('Succeed'))
         ];

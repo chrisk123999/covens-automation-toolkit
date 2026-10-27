@@ -1,13 +1,14 @@
 import * as events from './events/_module.mjs';
-import {activities, combat, conditionResistanceAndVulnerability, contextmenu, customMacros, effects, quickConditions, summon, troubleshooter} from './handlers/_module.mjs';
+import {activities, combat, conditionResistanceAndVulnerability, contextmenu, customMacros, effects, quickConditions, summon, troubleshooter, welcome} from './handlers/_module.mjs';
 import {animationModules, dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
 import {constants} from './lib/_module.mjs';
-import {dialogUtils, queryUtils} from './utilities/_module.mjs';
+import {activityUtils, dialogUtils, queryUtils} from './utilities/_module.mjs';
 export function readyHooks() {
     // Handlers
     Hooks.on(constants.miscHookNames.itemUseActivitySelect, activities.hiddenActivities);
     Hooks.on('dnd5e.determineOccupiedGridSpaceDifficult', effects.difficultTerrain);
     Hooks.on(constants.miscHookNames.preUseActivity, summon.preUseActivity);
+    Hooks.on(constants.miscHookNames.preUseActivity, activityUtils.applyNextUseOverride);
     Hooks.on('dnd5e.preSummon', summon.preSummon);
     Hooks.on(constants.workflowHookNames.rollFinished, summon.rollFinished);
     Hooks.on('deleteActiveEffect', summon.deleteActiveEffect);
@@ -130,6 +131,7 @@ export function initHooks() {
     Hooks.on(constants.miscHookNames.applyActiveEffect, effects.applyActiveEffect);
     Hooks.on(constants.miscHookNames.renderChatMessageHTML, customMacros.renderWarningCard);
     Hooks.on(constants.miscHookNames.renderChatMessageHTML, troubleshooter.onRenderChatMessage);
+    Hooks.on(constants.miscHookNames.renderChatMessageHTML, welcome.onRenderChatMessage);
     // Integration
     Hooks.on(constants.miscHookNames.daeModifySpecials, dae.modifySpecials);
     Hooks.once(constants.miscHookNames.tidyReady, tidy5e.headerControls);

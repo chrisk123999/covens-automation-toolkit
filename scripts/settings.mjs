@@ -1,6 +1,7 @@
 import {SettingsMenuBase, TroubleshooterApp} from './applications/_module.mjs';
 import customMacros from './handlers/customMacros.mjs';
 import items from './handlers/items.mjs';
+import {Auras} from './lib/_module.mjs';
 import {dicePatching} from './patches/_module.mjs';
 import {genericUtils} from './utilities/_module.mjs';
 
@@ -34,6 +35,10 @@ const settings = {
         type: Object,
         default: {},
         scope: 'client'
+    },
+    welcomes: {
+        type: Object,
+        default: {}
     },
     displayDebugLogs: {
         type: Boolean,
@@ -131,6 +136,12 @@ const settings = {
             yes: 'SETTINGS.DND5E.NPCS.AutoRecharge.Yes'
         },
         menu: 'mechanics'
+    },
+    auraCombatOnly: {
+        type: Boolean,
+        default: false,
+        menu: 'mechanics',
+        onChange: () => Auras.resyncScenes(game.scenes.contents)
     },
     placedRegionVisibility: {
         type: String,

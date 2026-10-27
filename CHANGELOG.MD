@@ -1,3 +1,34 @@
+# 0.1.4 Release:
+## Update Notes:
+- CAT posts a welcome card to the GM once per world, with a link to the Coven's Discord and the guided tours. Modules can post their own with `cat.api.postWelcome`.
+- Added guided tours: Applying Automations, Automation Sources and CAT Settings. They are also listed in Tour Management.
+- Placed region activities have a Target Filter, an Effect Targets disposition and a Region Created trigger.
+- Creatures moved into a region by the same movement roll its activity together.
+- New setting: Auras Only in Combat. Auras apply their effects and triggers only on scenes with a started combat.
+- Aura effects for every affected actor are written in one batch.
+- The troubleshooter warns the GM at startup when Monk's Wall Enhancement has one-way doors enabled, and can turn them off.
+- Teleported followers whose spot is behind a wall or out of sight pick their own spot. The rest move together.
+- Automations can list other identifiers they also match.
+- New special duration: Tool Rolled: Any tool. It removes the effect after any tool check.
+- Summons have a Follow-Up Consume option.
+- User-facing text says "compendiums" instead of "packs".
+## Bug Fixes:
+- Condition resistance and vulnerability use the ability of a check activity or tool instead of the skill or tool default.
+- The CatKit no longer updates an item that was removed from its actor, or a cached spell whose source spell changed.
+- Optional roll bonuses no longer fail on items with no activities.
+- Optional damage bonuses use the damage type of the first damage roll.
+- Aura effects update when a combat with no linked scene starts or ends.
+## API Update Notes:
+- Added `tokenUtils.floorBelow`. It returns the `{elevation, level}` a token lands on when it drops straight down.
+- Added the called event `heroicInspirationSpent`. It runs when an actor's Heroic Inspiration goes from on to off.
+- Added the combat pass `preInitiative`. It runs for an actor before its initiative roll is built. Combat macros also receive `combat`.
+- The `preGrapple` grapple pass data has `advantage`. Setting it rolls the grappler's contested Athletics check with Advantage.
+- `tokenUtils.grapple` takes `conditions`, extra conditions applied with the grapple.
+- `tokenUtils.teleportToken` takes `followerRange`.
+- Added `itemUtils.getWorldItemsByFlag` and `itemUtils.deleteWorldItemsByFlag`.
+- Registered automations take `aliases`, read from `flags.cat.automation.aliases` in automation compendiums.
+- Placed region data takes `filter`, an aura filter macro, and `effectDisposition`.
+
 # 0.1.3 Release:
 ## Update Notes:
 - Requires midi-qol 14.6.1 and DAE 14.6.1.

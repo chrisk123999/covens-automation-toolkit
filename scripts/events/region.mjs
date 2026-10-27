@@ -36,9 +36,8 @@ async function deleteRegion(region, options, userId) {
     await new Events.RegionEvent([region], constants.regionPasses.deleted, {options}).run();
 }
 async function createWorkflowRegion(workflow) {
-    const placedRegions = (workflow.templateUuids ?? []).map(uuid => fromUuidSync(uuid, {strict: false})).filter(Boolean);
+    const placedRegions = regions.getPlacedRegions(workflow);
     if (!placedRegions.length) return;
-    for (const region of placedRegions) await regions.regionEffects(region);
     await new Events.RegionEvent(placedRegions, constants.regionPasses.created, {workflow}).run();
 }
 function preCreateRegion(region, updates, options, userId) {

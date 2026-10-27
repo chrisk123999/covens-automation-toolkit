@@ -201,6 +201,15 @@ const REPORT_CHECKS = [
         }
     },
     {
+        id: 'modules.oneWayDoors',
+        section: 'modules',
+        group: 'CAT.Troubleshooter.Groups.Conflicts',
+        run: () => {
+            if (game.modules.get('monks-wall-enhancement')?.active && game.settings.get('monks-wall-enhancement', 'allow-one-way-doors')) return {status: 'warn', label: 'CAT.Troubleshooter.OneWayDoors'};
+        },
+        fix: () => game.settings.set('monks-wall-enhancement', 'allow-one-way-doors', false)
+    },
+    {
         id: 'modules.animationModules',
         section: 'modules',
         group: 'CAT.Troubleshooter.Groups.Conflicts',
@@ -326,7 +335,7 @@ const CARDS = {
     },
     modules: {
         sections: ['modules'],
-        filter: check => check.id.startsWith('modules.defunct.') || check.id.startsWith('modules.incompatible.') || check.id === 'modules.bothJB2A'
+        filter: check => check.id.startsWith('modules.defunct.') || check.id.startsWith('modules.incompatible.') || ['modules.bothJB2A', 'modules.oneWayDoors'].includes(check.id)
     }
 };
 const CARD_ACTIONS = {
