@@ -936,7 +936,7 @@
             },
             "MacroCompendiums": {
                 "Name": "Macros",
-                "Hint": "These macros can be added to the lists offered in the CatKit, or override existing macros. They are run when the world loads and must return specifically formatted data to be registered correctly. More details are available in the macro editor within a CAT macro compendium."
+                "Hint": "<b>WARNING</b>: These macros are run when the world loads as part of the registry process. Do not enable compendiums containing macros that are not meant for CAT.<br><br>These macros can override and replace registered macros offered in the CatKit. They are run when the world loads and must return specifically formatted data to be registered correctly. More details are available in the macro editor within a CAT macro compendium."
             },
             "Devtools": {
                 "Name": "Development Tools",
