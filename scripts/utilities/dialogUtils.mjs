@@ -358,7 +358,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             }).filter(Boolean);
             if (targets.length) return targets.join(', ');
         }
-        return CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;;
+        return CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;
     };
     const updateFormula = (ctx, bonus) => {
         const group = groupOf(bonus);

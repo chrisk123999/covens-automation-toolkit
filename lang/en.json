@@ -1558,10 +1558,10 @@
         },
         "Welcome": {
             "Title": "Coven's Automation Toolkit",
-            "Content": "<p>Coven's Automation Toolkit applies and configures automations from modules such as Cauldron of Plentiful Resources.</p><p>For help, check the FAQ channel in the Coven's Discord, then ask in #support with the Troubleshooter export.</p><a class=\"cat-welcome-discord\" href=\"https://discord.gg/BumxBcQDrT\" target=\"_blank\" rel=\"noopener\"><i class=\"fa-brands fa-discord\"></i> Join the Coven's Discord</a><p class=\"cat-welcome-label\">Guided tours</p><div class=\"cat-welcome-tours\"><button type=\"button\" data-cat-tour=\"cat.sources\"><i class=\"fa-solid fa-layer-group\"></i> Automation Sources</button><button type=\"button\" data-cat-tour=\"cat.CatKit\"><i class=\"fa-solid fa-shield-cat\"></i> Applying Automations</button><button type=\"button\" data-cat-tour=\"cat.settings\"><i class=\"fa-solid fa-gears\"></i> CAT Settings</button></div>"
+            "Content": "<p>Coven's Automation Toolkit applies and configures automations from modules such as Cauldron of Plentiful Resources.</p><p>For help, check the FAQ channel in the Coven's Discord, then ask in #support with the Troubleshooter export.</p><a class=\"cat-welcome-discord\" href=\"https://discord.gg/BumxBcQDrT\" target=\"_blank\" rel=\"noopener\"><i class=\"fa-brands fa-discord\"></i> Join the Coven's Discord</a><p class=\"cat-welcome-label\">Guided tours</p><div class=\"cat-welcome-tours\"><button type=\"button\" data-cat-tour=\"cat.sources\"><i class=\"fa-solid fa-layer-group\"></i> Automation Sources</button><button type=\"button\" data-cat-tour=\"cat.catkit\"><i class=\"fa-solid fa-shield-cat\"></i> Applying Automations</button><button type=\"button\" data-cat-tour=\"cat.settings\"><i class=\"fa-solid fa-gears\"></i> CAT Settings</button></div>"
         },
         "Tours": {
-            "medkit": {
+            "catkit": {
                 "Title": "Applying Automations",
                 "Description": "Apply and configure automations with the CatKit.",
                 "intro": {

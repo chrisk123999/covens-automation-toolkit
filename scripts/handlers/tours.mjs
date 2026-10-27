@@ -171,7 +171,7 @@ function register(id, steps, suggestedNextTours) {
 function registerTours() {
     if (!game.user.isGM) return;
     const actorStep = !!ownedCharacter();
-    register('medkit', medkitSteps.filter(step => step.id !== 'actor' || actorStep), ['cat.sources', 'cat.settings']);
+    register('catkit', medkitSteps.filter(step => step.id !== 'actor' || actorStep), ['cat.sources', 'cat.settings']);
     register('sources', sourcesSteps, ['cat.medkit', 'cat.settings']);
     register('settings', settingsSteps, ['cat.sources', 'cat.medkit']);
 }
