@@ -108,7 +108,8 @@ async function regionEffects(region, isDelete = false) {
     const identifier = documentUtils.getIdentifier(region);
     const dependentUuids = new Set(getDependentActivityUuids(region));
     const inside = new Set(isDelete ? [] : region.parent.tokens.filter(token => token.testInsideRegion(region)));
-    const affectedTokens = region.parent.tokens.filter(token => token.actor && (inside.has(token) || region.tokens.has(token) || actorUtils.getEffects(token.actor).some(effect => effect.flags.cat?.regionIdentifier === identifier || dependentUuids.has(effect.flags.cat?.regionDependent))));
+    const isWard = regionUtils.isSpellWard(region);
+    const affectedTokens = region.parent.tokens.filter(token => token.actor && ((isWard && Array.from(token.regions).some(r => r.flags.cat?.effects?.length)) || inside.has(token) || region.tokens.has(token) || actorUtils.getEffects(token.actor).some(effect => effect.flags.cat?.regionIdentifier === identifier || dependentUuids.has(effect.flags.cat?.regionDependent))));
     await Promise.all(affectedTokens.map(async token => {
         const currentRegions = Array.from(token.regions).filter(r => r.id !== region.id);
         if (inside.has(token)) currentRegions.push(region);
@@ -198,12 +199,15 @@ function isValidDispositionTarget(sourceActivity, token, targetDisposition) {
 }
 const filterCaches = new WeakMap();
 function regionTargetTest(region, sourceActivity, disposition) {
-    const filter = aura.getFilter(region.flags.cat?.filter);
-    if (!filter) return token => isValidDispositionTarget(sourceActivity, token, disposition);
     const source = sourceActivity?.actor;
+    const sourceToken = source ? actorUtils.getFirstToken(source) : undefined;
+    const castLevel = regionUtils.getCastData(region)?.castLevel;
+    const allowed = token => isValidDispositionTarget(sourceActivity, token, disposition) && !regionUtils.isSpellWarded(token, sourceActivity?.item, castLevel, sourceToken);
+    const filter = aura.getFilter(region.flags.cat?.filter);
+    if (!filter) return allowed;
     if (!filterCaches.has(region)) filterCaches.set(region, {});
-    const scope = {source, sourceToken: source ? actorUtils.getFirstToken(source) : undefined, region, descriptor: {id: documentUtils.getIdentifier(sourceActivity?.item ?? region)}};
-    return token => !!source && !!token.actor && isValidDispositionTarget(sourceActivity, token, disposition)
+    const scope = {source, sourceToken, region, descriptor: {id: documentUtils.getIdentifier(sourceActivity?.item ?? region)}};
+    return token => !!source && !!token.actor && allowed(token)
         && Auras.runFilter(filter, region, {...scope, target: token.actor, targetToken: token}, filterCaches.get(region), 'Region ' + region.name);
 }
 async function processRegionActivities(token, currentRegions, triggerType, {combatData, waypoints} = {}) {

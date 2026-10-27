@@ -1247,6 +1247,7 @@
             "Open": "Open Troubleshooter",
             "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version.",
             "OneWayDoors": "Monk's Wall Enhancement has one-way doors enabled. If you are experiencing lag with auras, disable this setting.",
+            "ArgonTargetPicker": "Argon - Combat HUD has Target Picker enabled. It requires one unique target per count, which breaks automations that split attacks between targets. Disable this setting.",
             "World": "World",
             "Empty": "Nothing to report.",
             "Copied": "Troubleshooter report copied to the clipboard.",

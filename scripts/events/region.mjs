@@ -1,7 +1,11 @@
-import {constants, Events} from '../lib/_module.mjs';
+import {Auras, constants, Events} from '../lib/_module.mjs';
 import {regions} from '../handlers/_module.mjs';
-import {genericUtils, regionUtils} from '../utilities/_module.mjs';
+import {genericUtils, queryUtils, regionUtils} from '../utilities/_module.mjs';
+function refreshWardAuras(region) {
+    if (queryUtils.isTheGM() && Auras.isReady() && Auras.isWorldScene(region.parent)) Auras.refreshTokens(region.parent.tokens.contents, {enter: false});
+}
 async function createRegion(region, options, userId) {
+    if (regionUtils.isSpellWard(region)) refreshWardAuras(region);
     if (userId != game.user.id) return;
     if (region.flags.dnd5e?.activity && !options.cat?.pathRegion) return;
     await regions.regionEffects(region);
@@ -21,15 +25,18 @@ async function doRegionMove(region, locationData, {movementPromise} = {}) {
     await new Events.RegionEvent([region], constants.regionPasses.moved, {locationData}).run();
 }
 async function updateRegion(region, updates, options, userId) {
-    if (userId != game.user.id) return;
     const spatialKeys = ['shapes', 'elevation', 'levels', 'restriction'];
     const movedOrReshaped = spatialKeys.some(key => key in updates);
-    if (movedOrReshaped) await regions.regionEffects(region);
+    const wardChanged = foundry.utils.hasProperty(updates, 'flags.cat.spellWard') || foundry.utils.hasProperty(updates, 'flags.cat.-=spellWard') || (movedOrReshaped && regionUtils.isSpellWard(region));
+    if (wardChanged) refreshWardAuras(region);
+    if (userId != game.user.id) return;
+    if (movedOrReshaped || wardChanged) await regions.regionEffects(region);
     const locationData = options.cat?.oldLocation;
     if (locationData) await doRegionMove(region, locationData);
     await new Events.RegionEvent([region], constants.regionPasses.updated, {options, updates}).run();
 }
 async function deleteRegion(region, options, userId) {
+    if (regionUtils.isSpellWard(region)) refreshWardAuras(region);
     if (userId != game.user.id) return;
     await regionUtils.deletePathWalls(region);
     await regions.regionEffects(region, true);
