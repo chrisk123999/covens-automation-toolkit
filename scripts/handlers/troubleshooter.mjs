@@ -210,6 +210,15 @@ const REPORT_CHECKS = [
         fix: () => game.settings.set('monks-wall-enhancement', 'allow-one-way-doors', false)
     },
     {
+        id: 'modules.argonTargetPicker',
+        section: 'modules',
+        group: 'CAT.Troubleshooter.Groups.Conflicts',
+        run: () => {
+            if (game.modules.get('enhancedcombathud')?.active && game.settings.get('enhancedcombathud', 'rangepicker')) return {status: 'warn', label: 'CAT.Troubleshooter.ArgonTargetPicker'};
+        },
+        fix: () => game.settings.set('enhancedcombathud', 'rangepicker', false)
+    },
+    {
         id: 'modules.animationModules',
         section: 'modules',
         group: 'CAT.Troubleshooter.Groups.Conflicts',
@@ -335,7 +344,7 @@ const CARDS = {
     },
     modules: {
         sections: ['modules'],
-        filter: check => check.id.startsWith('modules.defunct.') || check.id.startsWith('modules.incompatible.') || ['modules.bothJB2A', 'modules.oneWayDoors'].includes(check.id)
+        filter: check => check.id.startsWith('modules.defunct.') || check.id.startsWith('modules.incompatible.') || ['modules.bothJB2A', 'modules.oneWayDoors', 'modules.argonTargetPicker'].includes(check.id)
     }
 };
 const CARD_ACTIONS = {

@@ -444,8 +444,31 @@ async function addRegionTimer(activity, region, rounds = Number(activity.duratio
     if (effect) await documentUtils.makeDependent(effect, [region]);
     return effect;
 }
+/**
+ * Whether this region is a spell ward.
+ * @param {foundry.documents.RegionDocument} region Region to check.
+ * @returns {boolean}
+ */
+function isSpellWard(region) {
+    return region.flags.cat?.spellWard !== undefined;
+}
+/**
+ * Whether a ward region the token stands in blocks a spell cast from outside it.
+ * @param {TokenDocument} token Token the spell would affect.
+ * @param {Item5e} [item] Item behind the effect.
+ * @param {number} [castLevel] Level the spell was cast at.
+ * @param {TokenDocument} [sourceToken] The caster's token.
+ * @returns {boolean}
+ */
+function isSpellWarded(token, item, castLevel, sourceToken) {
+    if (item?.type !== 'spell' || !token?.parent) return false;
+    const level = castLevel >= 0 ? castLevel : item.system.level;
+    return token.parent.regions.some(region => region.flags.cat?.spellWard >= level && token.testInsideRegion(region) && !sourceToken?.testInsideRegion(region));
+}
 export default {
     getActivity,
+    isSpellWard,
+    isSpellWarded,
     getPlacedRegions,
     getCastData,
     rayIntersectsRegion,

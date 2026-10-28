@@ -6,7 +6,7 @@
 - Creatures moved into a region by the same movement roll its activity together.
 - New setting: Auras Only in Combat. Auras apply their effects and triggers only on scenes with a started combat.
 - Aura effects for every affected actor are written in one batch.
-- The troubleshooter warns the GM at startup when Monk's Wall Enhancement has one-way doors enabled, and can turn them off.
+- The troubleshooter warns the GM at startup when Monk's Wall Enhancement has one-way doors enabled or Argon - Combat HUD has Target Picker enabled. It can turn either setting off.
 - Teleported followers whose spot is behind a wall or out of sight pick their own spot. The rest move together.
 - Automations can list other identifiers they also match.
 - New special duration: Tool Rolled: Any tool. It removes the effect after any tool check.
@@ -15,6 +15,7 @@
 ## Bug Fixes:
 - Condition resistance and vulnerability use the ability of a check activity or tool instead of the skill or tool default.
 - The CatKit no longer updates an item that was removed from its actor, or a cached spell whose source spell changed.
+- Applying an automation to a class keeps its level and spent Hit Dice instead of resetting them.
 - Optional roll bonuses no longer fail on items with no activities.
 - Optional damage bonuses use the damage type of the first damage roll.
 - Aura effects update when a combat with no linked scene starts or ends.
@@ -28,6 +29,7 @@
 - Added `itemUtils.getWorldItemsByFlag` and `itemUtils.deleteWorldItemsByFlag`.
 - Registered automations take `aliases`, read from `flags.cat.automation.aliases` in automation compendiums.
 - Placed region data takes `filter`, an aura filter macro, and `effectDisposition`.
+- Regions with `flags.cat.spellWard` set to a spell level are spell wards. Region and aura effects from spells of that level or lower, cast from outside the ward, skip creatures inside it. Check them with `regionUtils.isSpellWard` and `regionUtils.isSpellWarded`.
 
 # 0.1.3 Release:
 ## Update Notes:

@@ -147,15 +147,16 @@ function heightAndLevel(token, {elevation, level} = {}) {
 /**
  * A token's vision source, built temporarily if core has none.
  * @param {foundry.documents.TokenDocument} token Token looking.
+ * @param {{x: number, y: number}} [origin] Point to build the source at.
  * @returns {{source?: PointVisionSource, release: Function}} Call `release` when done.
  */
-function getVisionSource(token) {
+function getVisionSource(token, origin) {
     const placeable = token.object;
-    if (placeable?.vision?.active) return {source: placeable.vision, release: () => {}};
+    if (!origin && placeable?.vision?.active) return {source: placeable.vision, release: () => {}};
     if (!placeable?.hasSight) return {release: () => {}};
     const source = new CONFIG.Canvas.visionSourceClass({sourceId: placeable.sourceId + '.cat', object: placeable});
     Object.assign(source.blinded, placeable._getVisionBlindedStates());
-    source.initialize(placeable._getVisionSourceData());
+    source.initialize({...placeable._getVisionSourceData(), ...origin});
     return {source, release: () => source.destroy()};
 }
 /**
@@ -168,6 +169,7 @@ function getVisionSource(token) {
  * @returns {boolean}
  */
 function canSeePoint(token, point, {level, source} = {}) {
+    if (!token.parent?.tokenVision) return true;
     const vision = source ? undefined : getVisionSource(token);
     source ??= vision.source;
     if (!source) return true;
@@ -327,38 +329,40 @@ async function teleportToken(token, {destination, centerpoint, animation, option
     if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
     if (result) return;
-    const preAnimation = animation?.macros?.preAnimation;
-    if (preAnimation) await preAnimation(token, {destination, ...options});
-    const origin = {x: token.x, y: token.y};
-    await moveToken(token, [
-        {
-            x: destination.x,
-            y: destination.y,
-            ...heightAndLevel(token, {elevation: elevation ?? destination.elevation, level: level ?? destination.level}),
-            action: 'displace'
-        }
-    ]);
-    const postAnimation = animation?.macros?.postAnimation;
-    if (postAnimation) await postAnimation(token, {destination, ...options});
-    await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run();
-    const dx = token.x - origin.x;
-    const dy = token.y - origin.y;
-    if (!dx && !dy) return;
-    const leaderCenter = token.getCenterPoint();
-    const tokenLevel = token.parent.levels.get(token.level);
-    const vision = requireSight ? getVisionSource(token) : undefined;
+    const dx = destination.x - token.x;
+    const dy = destination.y - token.y;
+    const leaderCenter = token.getCenterPoint({x: destination.x, y: destination.y});
+    const destinationLevel = level ?? destination.level ?? token.level;
     const placed = [];
     const blocked = [];
-    for (const follower of followers) {
-        const followerDestination = {x: follower.x + dx, y: follower.y + dy, elevation: follower.elevation};
-        const center = {...follower.getCenterPoint(followerDestination), elevation: follower.elevation};
-        const wallBlocked = !ignoreWalls && CONFIG.Canvas.polygonBackends.move.testCollision(leaderCenter, center, {type: 'move', mode: 'any', level: tokenLevel});
-        const unseen = vision?.source && !canSeePoint(token, {...center, elevation: center.elevation + 0.01}, {level: token.level, source: vision.source});
-        if (wallBlocked || unseen) blocked.push(follower);
-        else placed.push([follower, followerDestination]);
+    if (dx || dy) {
+        const vision = requireSight && token.parent.tokenVision ? getVisionSource(token, leaderCenter) : undefined;
+        for (const follower of followers) {
+            const followerDestination = {x: follower.x + dx, y: follower.y + dy, elevation: follower.elevation};
+            const center = {...follower.getCenterPoint(followerDestination), elevation: follower.elevation};
+            const wallBlocked = !ignoreWalls && CONFIG.Canvas.polygonBackends.move.testCollision(leaderCenter, center, {type: 'move', mode: 'any', level: token.parent.levels.get(destinationLevel)});
+            const unseen = vision?.source && !canSeePoint(token, {...center, elevation: center.elevation + 0.01}, {level: destinationLevel, source: vision.source});
+            if (wallBlocked || unseen) blocked.push(follower);
+            else placed.push([follower, followerDestination]);
+        }
+        vision?.release();
     }
-    vision?.release();
-    await Promise.all(placed.map(([follower, destination]) => teleportToken(follower, {animation, options, destination})));
+    const teleportLeader = async () => {
+        const preAnimation = animation?.macros?.preAnimation;
+        if (preAnimation) await preAnimation(token, {destination, ...options});
+        await moveToken(token, [
+            {
+                x: destination.x,
+                y: destination.y,
+                ...heightAndLevel(token, {elevation: elevation ?? destination.elevation, level: destinationLevel}),
+                action: 'displace'
+            }
+        ]);
+        const postAnimation = animation?.macros?.postAnimation;
+        if (postAnimation) await postAnimation(token, {destination, ...options});
+        await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run();
+    };
+    await Promise.all([teleportLeader(), ...placed.map(([follower, destination]) => teleportToken(follower, {animation, options, destination}))]);
     for (const follower of blocked) await teleportToken(follower, {animation, options, centerpoint: leaderCenter, range: followerRange, requireSight, ignoreWalls, userId});
 }
 /**

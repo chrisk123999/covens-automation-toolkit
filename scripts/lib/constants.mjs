@@ -531,6 +531,8 @@ function getItemKeepPaths({spell = false} = {}) {
         'system.description.chat',
         'system.description.value',
         'system.equipped',
+        'system.hd',
+        'system.levels',
         'system.materials',
         'system.quantity',
         'system.source',

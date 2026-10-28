@@ -1,4 +1,4 @@
-import {actorUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, rollUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
+import {actorUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, rollUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 import {constants, Events, Logging} from './_module.mjs';
 const state = {
     ready: false,
@@ -83,6 +83,7 @@ function getTemplate(document, descriptor) {
 }
 function createEntry(token, document, descriptor) {
     const rollDocument = getRollDocument(document);
+    const hostItem = getHostItem(document);
     const key = token.id + '.' + document.uuid + '.' + descriptor.id;
     try {
         const radius = rollUtils.rollDiceSync(String(descriptor.radius ?? 0), {document: rollDocument, options: {maximize: true}}).total;
@@ -99,7 +100,9 @@ function createEntry(token, document, descriptor) {
             dispositions: descriptor.dispositions?.length ? descriptor.dispositions : ['all'],
             sourceDisable: descriptor.sourceDisable ?? [],
             targetDisable: descriptor.targetDisable ?? [],
-            quietCreate: descriptor.enterOnCreate === false
+            quietCreate: descriptor.enterOnCreate === false,
+            spell: hostItem?.type === 'spell' ? hostItem : undefined,
+            castLevel: documentUtils.getSavedCastData(document)?.castLevel
         };
     } catch (error) {
         logOnce(document.uuid + '.' + descriptor.id + '.descriptor', 'Invalid aura descriptor ' + descriptor.id + ' on ' + document.uuid + ': ' + error.message);
@@ -207,6 +210,7 @@ function testPair(entry, target, positions) {
         if (!active.length || !actorUtils.hasStatusFromActor(target.actor, active, entry.token.actor)) return;
     }
     if (entry.descriptor.walls && isWallBlocked(entry.token, target)) return;
+    if (entry.spell && entry.token !== target && regionUtils.isSpellWarded(target, entry.spell, entry.castLevel, entry.token)) return;
     if (!passesFilter(entry, target, distance)) return;
     return distance;
 }
