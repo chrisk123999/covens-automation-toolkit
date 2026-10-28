@@ -143,6 +143,7 @@ const VARS = {
             summon.owner = propertyClassInstance(api, CONFIG.Actor.documentClass, 'The summoner actor.');
             summon.ownerToken = propertyClassInstance(api, CONFIG.Token.documentClass, 'The summoner token.');
             summon.sourceDocument = propertyClassInstance(api, foundry.abstract.Document, 'The document used to create the summon.');
+            summon.sourceItem = propertyClassInstance(api, CONFIG.Item.documentClass, 'The item used to create the summon, or the item of the activity that did.');
             summon.parent = propertyClassInstance(api, foundry.abstract.Document, 'The parent document of the summon, often a concentration effect.');
             summon.created = property('number', 'The world time when the summon was created.');
             summon.duration = property('number', 'The duration in world time this summon will last.');

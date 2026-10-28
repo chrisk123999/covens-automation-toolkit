@@ -977,11 +977,12 @@
                 "Hint": "When enabled, Dice So Nice damage roll animations will be delayed until after all damage roll macros are complete."
             },
             "AnimationPriority": {
-                "Name": "Animation Priority",
-                "Hint": "Which animation plays when an item has a CAT animation and Automated Animations or Boss Loot FX also animates it.",
-                "Cat": "CAT (block Automated Animations and Boss Loot FX automatic animations)",
-                "Module": "Automated Animations and Boss Loot FX (skip the CAT animation)",
-                "Both": "Play both"
+                "Name": "CAT Animations",
+                "Hint": "Animations that CPR and other CAT modules put on their items. Override plays the CAT animation and stops Automated Animations and BLFX auto-recognition on that item. Add plays the CAT animation alongside them. Defer skips the CAT animation when either of them animates the item. Off never stops Automated Animations or BLFX. Midi-QOL macros always run.",
+                "Cat": "On & Override",
+                "Both": "On & Add",
+                "Module": "On & Defer",
+                "Off": "Off"
             },
             "General": {
                 "Name": "General",
@@ -1339,6 +1340,7 @@
                 "Incompatible": "Incompatible module",
                 "ASEFork": "Chris's Fork",
                 "ModuleAnimation": "{module} also animates this item",
+                "BLFXOverride": "BLFX animations set on this item still play alongside CAT's. Remove them in BLFX's Animation Editor, or set CAT Animations to On & Defer.",
                 "Language": "Language",
                 "GridType": "Grid Type",
                 "GridUnits": "Grid Units",

@@ -340,6 +340,7 @@ export default class MedkitApp extends CatApp {
             grouped.get(category).options.push(option);
         }
         const categories = Array.from(grouped.values());
+        this.#keepFirstNotice(categories.flatMap(category => category.options));
         for (const category of categories) category.groups = this.#groupRepeatedOptions(category.options);
         return categories;
     }
@@ -469,7 +470,7 @@ export default class MedkitApp extends CatApp {
                 option.animationOptions = this.#animationSubOptions(source, identifier, sel);
                 option.animationCredits = this.#animationCredits(sel);
                 option.animationLabel = this.#animationLabel(sel);
-                option.moduleAnimations = animationUtils.getModuleAnimations(this.#document.item ?? this.#document);
+                option.moduleAnimations = animationUtils.getModuleAnimationNotices(this.#document.item ?? this.#document);
                 break;
             }
             case 'selectIdentifiers':
@@ -573,9 +574,15 @@ export default class MedkitApp extends CatApp {
                     identifier
                 });
             });
+            this.#keepFirstNotice(options);
             return {id: composite, label: macro?.label ?? identifier, options, groups: this.#groupRepeatedOptions(options)};
         });
         return {choices, selected, features};
+    }
+
+    #keepFirstNotice(options) {
+        const [first, ...rest] = options.filter(option => option.moduleAnimations?.length);
+        if (first) for (const option of rest) delete option.moduleAnimations;
     }
 
     _prepareIdentifierField(context) {

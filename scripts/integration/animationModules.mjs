@@ -17,9 +17,11 @@ function hasAnimation(item) {
     const generics = constants.macros.getAllMacros({genericOnly: true});
     return documents.some(document => hasGenericAnimation(document, generics));
 }
+function overridesAABLFX(item) {
+    return game.settings.get('cat', 'animationPriority') === 'cat' && !!item?.system && hasAnimation(item);
+}
 function workflowStart(data) {
-    if (game.settings.get('cat', 'animationPriority') !== 'cat' || !data.item?.system) return;
-    if (hasAnimation(data.item)) data.stopWorkflow = true;
+    if (overridesAABLFX(data.item)) data.stopWorkflow = true;
 }
 /**
  * Turn off Boss Loot FX auto-recognition, in memory, for the activities of an item that plays a CAT animation.
@@ -27,8 +29,7 @@ function workflowStart(data) {
  */
 function preUseActivity(activity) {
     const item = activity.item;
-    if (game.settings.get('cat', 'animationPriority') !== 'cat' || !item?.system) return;
-    if (!game.modules.get('boss-loot-assets-premium')?.active || !hasAnimation(item)) return;
+    if (!game.modules.get('boss-loot-assets-premium')?.active || !overridesAABLFX(item)) return;
     const bossLootFlags = item.flags['boss-loot-assets-premium'] ??= {};
     for (const {id} of item.system.activities) bossLootFlags[id] ??= {autoRec: {enabled: false}};
 }

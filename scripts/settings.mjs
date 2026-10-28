@@ -112,8 +112,9 @@ const settings = {
         default: 'cat',
         choices: {
             cat: 'CAT.Settings.AnimationPriority.Cat',
+            both: 'CAT.Settings.AnimationPriority.Both',
             module: 'CAT.Settings.AnimationPriority.Module',
-            both: 'CAT.Settings.AnimationPriority.Both'
+            off: 'CAT.Settings.AnimationPriority.Off'
         },
         menu: 'integration'
     },

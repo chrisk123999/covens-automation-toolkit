@@ -85,7 +85,7 @@
             <p class="hint">{{hint}}</p>
         {{/if}}
         {{#each moduleAnimations}}
-            <p class="notice notification warning">{{localize "CAT.Troubleshooter.Report.ModuleAnimation" module=this}}</p>
+            <p class="notice notification warning">{{this}}</p>
         {{/each}}
     </div>
     {{#if (and animationLabel (or animationOptions.length animationCredits.length))}}

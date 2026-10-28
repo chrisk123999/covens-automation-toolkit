@@ -1,6 +1,6 @@
 /** @import Item5e from "../../dnd5e/module/documents/item.mjs" */
 
-import {Logging} from '../lib/_module.mjs';
+import {constants, Logging} from '../lib/_module.mjs';
 import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils, queryUtils} from './_module.mjs';
 const activityVisibilityLocks = new Map();
 
@@ -435,7 +435,16 @@ function addDamageBonus(itemData, bonus) {
         part.bonus = part.bonus ? part.bonus + ' + ' + bonus : String(bonus);
     });
 }
+/**
+ * Label of a system base weapon.
+ * @param {string} key Base weapon key, such as 'longsword'.
+ * @returns {string|undefined}
+ */
+function getBaseWeaponLabel(key) {
+    return constants.weaponOptions.find(weapon => weapon.value === key)?.label;
+}
 export default {
+    getBaseWeaponLabel,
     getSaveDC,
     getSavedCastData,
     getActivityByIdentifier,

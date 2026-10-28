@@ -157,8 +157,7 @@ export class SummonsManager {
             genericUtils.setProperty(itemData, 'system.uses.spent', 0);
             if (usesRecovery) genericUtils.setProperty(itemData, 'system.uses.recovery', [{period: usesRecovery, type: 'recoverAll', formula: usesRecovery === 'recharge' ? (usesRechargeFormula || '6') : ''}]);
         }
-        const sourceDocument = summon.sourceDocument;
-        const sourceItem = sourceDocument?.documentName === 'Activity' ? sourceDocument.item : sourceDocument;
+        const sourceItem = summon.sourceItem;
         const inherited = itemData.flags?.cat?.inheritConfig;
         if (inherited?.length && sourceItem) genericUtils.setProperty(itemData, 'flags.cat.config', {...itemData.flags.cat.config, ...automationUtils.getConfigValues(sourceItem, inherited)});
         if ((!matchDC && !matchAttack) || !sourceItem?.actor) return itemData;
@@ -339,7 +338,7 @@ export class SummonsManager {
             elevation: elevation ?? summon.ownerToken?.elevation,
             level: level ?? summon.ownerToken?.level
         }, {parent: scene});
-        const animation = summon.animation ? animationUtils.getAnimation({source: summon.animation.source, identifier: summon.animation.identifier}) : undefined;
+        const animation = summon.animation ? animationUtils.getAnimation(summon.animation, {item: summon.sourceItem}) : undefined;
         if (animation?.macros?.prePlace) await animation.macros.prePlace(summon, location, preToken);
         const token = (await documentUtils.createEmbeddedDocuments(scene, 'Token', [preToken.toObject()], {cat: {summonCreate: true}}))?.[0];
         await this.#summonInitiative(summon, token);
@@ -350,7 +349,7 @@ export class SummonsManager {
         token ??= summon.token;
         if (!token) return;
         await summonEvents.remove(summon);
-        const animation = summon.animation ? animationUtils.getAnimation({source: summon.animation.source, identifier: summon.animation.identifier}) : undefined;
+        const animation = summon.animation ? animationUtils.getAnimation(summon.animation, {item: summon.sourceItem}) : undefined;
         if (animation?.macros?.preRemove) await animation.macros.preRemove(summon, token);
         const location = {x: token.x, y: token.y, elevation: token.elevation};
         await documentUtils.deleteDocument(token, {options: {cat: {summonRemove: true}}});
@@ -411,6 +410,10 @@ export class Summon {
     }
     get sourceDocument() {
         return fromUuidSync(this.sourceDocumentUuid);
+    }
+    get sourceItem() {
+        const sourceDocument = this.sourceDocument;
+        return sourceDocument?.documentName === 'Activity' ? sourceDocument.item : sourceDocument;
     }
     get owner() {
         return fromUuidSync(this.ownerUuid);

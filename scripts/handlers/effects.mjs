@@ -85,29 +85,19 @@ function animationSource(effect) {
     const actor = activity?.actor ?? fromUuidSync(effect.origin, {strict: false})?.parent?.actor;
     return {activity, sourceToken: actor ? actorUtils.getFirstToken(actor) : undefined};
 }
-async function createAnimations(effect) {
+async function playAnimation(effect, phase) {
+    if (effect.flags.cat?.noAnimation) return;
     const actor = effectUtils.getActor(effect);
     if (!actor) return;
     const token = actorUtils.getFirstToken(actor);
     if (!token) return;
-    const animationData = effect.flags.cat?.animation?.create;
+    const animationData = effect.flags.cat?.animation?.[phase];
     if (!animationData) return;
-    const animation = animationUtils.getAnimation(animationData);
+    const item = effectUtils.getOriginActivitySync(effect)?.item ?? (effect.parent instanceof Item ? effect.parent : undefined);
+    const animation = animationUtils.getAnimation(animationData, {item});
     if (!animation) return;
-    const config = constants.animations.getEffectAnimationConfigs(effect, 'create');
-    await animation.macros.create?.(effect, token, config, animationSource(effect));
-}
-async function deleteAnimations(effect) {
-    const actor = effectUtils.getActor(effect);
-    if (!actor) return;
-    const token = actorUtils.getFirstToken(actor);
-    if (!token) return;
-    const animationData = effect.flags.cat?.animation?.delete;
-    if (!animationData) return;
-    const animation = animationUtils.getAnimation(animationData);
-    if (!animation) return;
-    const config = constants.animations.getEffectAnimationConfigs(effect, 'delete');
-    await animation.macros.delete?.(effect, token, config, animationSource(effect));
+    const config = constants.animations.getEffectAnimationConfigs(effect, phase);
+    await animation.macros[phase]?.(effect, token, config, animationSource(effect));
 }
 const damagedBy = (relation) => ({workflow, target, ditem}) => ditem?.totalDamage > 0 && (!relation || (workflow.token.document.disposition === target.disposition) === (relation === 'ally'));
 const attackedBy = (source, hit) => async ({workflow, target, origin}) => {
@@ -298,8 +288,7 @@ export default {
     specialDurationTurn,
     specialDurationMove,
     specialDurationZeroSpeed,
-    createAnimations,
-    deleteAnimations,
+    playAnimation,
     unhideActivities,
     rehideActivities,
     difficultTerrain

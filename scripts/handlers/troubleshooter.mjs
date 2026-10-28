@@ -223,10 +223,10 @@ const REPORT_CHECKS = [
         section: 'modules',
         group: 'CAT.Troubleshooter.Groups.Conflicts',
         run: () => {
-            return applications.WorldMedkit._worldItems().filter(item => automationUtils.getCurrentAutomation(item)).flatMap(item => animationUtils.getModuleAnimations(item).map(module => ({
+            return applications.WorldMedkit._worldItems().filter(item => automationUtils.getCurrentAutomation(item)).flatMap(item => animationUtils.getModuleAnimationNotices(item).map(detail => ({
                 status: 'warn',
                 label: item.actor ? `${item.actor.name}: ${item.name}` : item.name,
-                detail: _loc('CAT.Troubleshooter.Report.ModuleAnimation', {module})
+                detail
             })));
         }
     },

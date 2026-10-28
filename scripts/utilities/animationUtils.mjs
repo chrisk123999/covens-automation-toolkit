@@ -1,6 +1,7 @@
 import {ColorMatrix, constants} from '../lib/_module.mjs';
 import {genericUtils} from './_module.mjs';
 const minSequencerVersion = '3.6.0';
+const blfxModuleIds = ['boss-loot-assets-free', 'boss-loot-assets-premium'];
 let shownSequencerWarning = false;
 const requirementMap = {
     'animated-spell-effects-cartoon': aseCheck,
@@ -13,11 +14,13 @@ const requirementMap = {
  * @param {object} reference Animation selection.
  * @param {string} reference.source Module that registered the animation.
  * @param {string} reference.identifier Animation identifier.
+ * @param {object} [options]
+ * @param {Item5e} [options.item] Item the animation belongs to, skipped when CAT Animations defers to AA/BLFX for it.
  * @returns {object|undefined}
  */
-function getAnimation({source, identifier}) {
+function getAnimation({source, identifier}, {item} = {}) {
     if (!source || !identifier || source === 'none' || identifier === 'none') return;
-    if (!sequencerCheck()) return;
+    if (!sequencerCheck() || deferredToAABLFX(item)) return;
     const result = constants.animations.getAnimation(source, identifier);
     const missing = result?.requirements?.find(requirement => !meetsRequirement(requirement));
     if (missing) {
@@ -102,10 +105,11 @@ function getCredits(author) {
     return authors[author] ?? {name: 'The Coven'};
 }
 /**
- * Whether Sequencer is active and new enough, warning once per session if not.
+ * Whether animations can play, warning once per session when Sequencer is missing or outdated.
  * @returns {boolean}
  */
 function sequencerCheck() {
+    if (game.settings.get('cat', 'animationPriority') === 'off') return false;
     const sequencer = game.modules.get('sequencer');
     const missing = !sequencer?.active;
     if (!missing && !genericUtils.isNewerVersion(minSequencerVersion, sequencer.version)) return true;
@@ -175,19 +179,29 @@ function hasAutomatedAnimation(item) {
  * @returns {boolean}
  */
 function hasBossLootAnimation(item) {
-    return ['boss-loot-assets-free', 'boss-loot-assets-premium'].some(id => game.modules.get(id)?.active && Object.values(item.flags[id] ?? {}).some(entry => entry?.command));
+    return blfxModuleIds.some(id => game.modules.get(id)?.active && Object.values(item.flags[id] ?? {}).some(entry => entry?.command));
 }
 /**
- * Names of the animation modules that play their own animation for the item, given the Animation Priority setting.
+ * Whether CAT Animations defers to AA/BLFX for this item.
+ * @param {Item5e} [item] The item to check.
+ * @returns {boolean}
+ */
+function deferredToAABLFX(item) {
+    if (!item?.system || game.settings.get('cat', 'animationPriority') !== 'module') return false;
+    return hasAutomatedAnimation(item) || hasBossLootAnimation(item);
+}
+/**
+ * Notices for AA/BLFX animations that still play alongside the item's CAT animation.
  * @param {Item5e} item The item to check.
  * @returns {string[]}
  */
-function getModuleAnimations(item) {
+function getModuleAnimationNotices(item) {
     const priority = game.settings.get('cat', 'animationPriority');
-    const modules = [];
-    if (priority !== 'cat' && hasAutomatedAnimation(item)) modules.push(game.modules.get('autoanimations').title);
-    if (hasBossLootAnimation(item)) modules.push('Boss Loot FX');
-    return modules;
+    if (['module', 'off'].includes(priority)) return [];
+    const notices = [];
+    if (priority === 'both' && hasAutomatedAnimation(item)) notices.push(game.i18n.format('CAT.Troubleshooter.Report.ModuleAnimation', {module: game.modules.get('autoanimations').title}));
+    if (hasBossLootAnimation(item)) notices.push(priority === 'cat' ? game.i18n.localize('CAT.Troubleshooter.Report.BLFXOverride') : game.i18n.format('CAT.Troubleshooter.Report.ModuleAnimation', {module: 'BLFX'}));
+    return notices;
 }
 export default {
     getAnimation,
@@ -202,5 +216,6 @@ export default {
     colorMatrix,
     hasAutomatedAnimation,
     hasBossLootAnimation,
-    getModuleAnimations
+    getModuleAnimationNotices,
+    deferredToAABLFX
 };
