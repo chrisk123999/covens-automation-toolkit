@@ -241,7 +241,8 @@ const INFO = {
         check: 'Dice roll configuration.',
         save: 'Dice roll configuration.',
         skill: 'Dice roll configuration.',
-        tool: 'Dice roll configuration.'
+        tool: 'Dice roll configuration.',
+        hitDie: 'Dice roll configuration.'
     },
     dialog: {
         none: 'Dialog configuration.',
@@ -249,7 +250,8 @@ const INFO = {
         check: 'Dice roll dialog configuration.',
         save: 'Dice roll dialog configuration.',
         skill: 'Dice roll dialog configuration.',
-        tool: 'Dice roll dialog configuration.'
+        tool: 'Dice roll dialog configuration.',
+        hitDie: 'Dice roll dialog configuration.'
     },
     message: {
         none: 'Message configuration.',
@@ -257,7 +259,8 @@ const INFO = {
         check: 'Dice message configuration.',
         save: 'Dice message configuration.',
         skill: 'Dice message configuration.',
-        tool: 'Dice message configuration.'
+        tool: 'Dice message configuration.',
+        hitDie: 'Dice message configuration.'
     }
 };
 
@@ -333,6 +336,7 @@ function dataForMacroEvent(event, pass) {
         case 'skill': eventData = get(Events.SkillEvent); break;
         case 'save': eventData = get(Events.SaveEvent); break;
         case 'tool': eventData = get(Events.ToolEvent); break;
+        case 'hitDie': eventData = get(Events.HitDieEvent); break;
         case 'time': eventData = get(Events.TimeEvent); break;
         case 'summon': eventData = get(Events.SummonEvent); break;
         case 'called': eventData = get(Events.CalledEvent); break;

@@ -1,4 +1,4 @@
-import {automationUtils, dataUtils, documentUtils, queryUtils} from './_module.mjs';
+import {automationUtils, dataUtils, documentUtils, genericUtils, queryUtils} from './_module.mjs';
 /**
  * Get the cast data stashed on this effect by CAT or midi.
  * @param {ActiveEffect} effect Effect to read from.
@@ -41,6 +41,22 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
         effects = (await Promise.all(uuids.map(async uuid => fromUuid(uuid)))).filter(i => i);
     }
     return effects;
+}
+/**
+ * Create one of an item's effects on an actor, storing config values on the effect so they survive the item being consumed.
+ * @param {Actor} actor Actor the effect is created on.
+ * @param {Item} item Item that owns the effect.
+ * @param {string} effectId Id of the effect on the item.
+ * @param {object} [options] Additional options.
+ * @param {object} [options.config] Config values, read back with {@link automationUtils.getOriginConfigValue}.
+ * @param {object} [options.changeValues] New values for the effect's changes, keyed by change key.
+ * @returns {Promise<ActiveEffect[]|undefined>}
+ */
+async function createItemEffect(actor, item, effectId, {config, changeValues = {}} = {}) {
+    const effectData = documentUtils.getEffectData(item, effectId);
+    effectData.system.changes = effectData.system.changes.map(change => change.key in changeValues ? {...change, value: changeValues[change.key]} : change);
+    if (config) genericUtils.setProperty(effectData, 'flags.cat.config', config);
+    return await createEffects(actor, [effectData]);
 }
 /**
  * Collect the status condition keys this effect applies through `macro.CE`, `macro.CUB` or `StatusEffect` changes.
@@ -216,6 +232,7 @@ export default {
     durationToSeconds,
     getCastData,
     createEffects,
+    createItemEffect,
     getConditions,
     getOriginActivity,
     getOriginActivitySync,

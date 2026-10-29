@@ -51,6 +51,7 @@ function getEventStructure() {
         skill: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
         save: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
         tool: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.rollPasses), [], true)},
+        hitDie: {scopes: CREATURE_SCOPES, passes: mk([c.rollPasses.situational, c.rollPasses.bonus, c.rollPasses.post], [], true)},
         summon: {scopes: CREATURE_SCOPES, passes: mk(Object.values(c.summonPasses), ['item', 'activity', 'actor', 'activeeffect'], true)},
         called: {scopes: CREATURE_SCOPES, passes: mk(c.calledPasses ? Object.values(c.calledPasses) : ['called'], ['item', 'activity', 'actor', 'activeeffect'], true)}
     };
@@ -165,7 +166,7 @@ export default class EmbeddedMacroEditorApp extends CatApp {
         const context = await super._prepareContext(options);
         context.title = this.title;
         const map = getAllDocumentPasses(this.#documentType);
-        const eventChoices = Object.keys(map).sort((a, b) => a.localeCompare(b)).reduce((acc, key) => { acc[key] = key.titleCase(); return acc; }, {});
+        const eventChoices = Object.keys(map).sort((a, b) => a.localeCompare(b)).reduce((acc, key) => { acc[key] = key.replace(/([A-Z])/g, ' $1').titleCase(); return acc; }, {});
         const inputs = {
             name: {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Name')}), value: this.#macro.name},
             event: {field: new fields.StringField({label: _loc('CAT.MEDKIT.EmbeddedMacros.Fields.Event'), choices: eventChoices, blank: true}), value: this.#macro.event}

@@ -775,6 +775,20 @@ class ToolEvent extends BaseRollEvent {
         };
     }
 }
+class HitDieEvent extends BaseRollEvent {
+    constructor(actor, pass, data) {
+        super(actor, pass, data);
+        this.name = 'HitDie';
+        this.trigger = Triggers.HitDieTrigger;
+        this.denomination = data.config.denomination;
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            denomination: this.denomination
+        };
+    }
+}
 class TimeEvent extends CatEvent {
     constructor(actor, pass, {worldTime, diff, options} = {}) {
         super(pass);
@@ -850,6 +864,7 @@ export default {
     SkillEvent,
     SaveEvent,
     ToolEvent,
+    HitDieEvent,
     TimeEvent,
     SummonEvent,
     CalledEvent
