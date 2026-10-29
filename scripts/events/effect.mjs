@@ -11,10 +11,10 @@ async function doDeleteActiveEffect(effect, options) {
 }
 function immediateEffectAnimations(effect, active) {
     if (active) {
-        effects.createAnimations(effect);
+        effects.playAnimation(effect, 'create');
         effects.unhideActivities(effect);
     } else {
-        effects.deleteAnimations(effect);
+        effects.playAnimation(effect, 'delete');
         effects.rehideActivities(effect);
     }
     pendingAnimations.delete(effect.uuid);
