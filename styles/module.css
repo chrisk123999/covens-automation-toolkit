@@ -600,7 +600,8 @@ cat-multi-combobox {
 
     & > footer button,
     &.cat-medkit > :is(footer, .tab) button,
-    .outcomes > button {
+    .outcomes > button,
+    .priority > .recommended {
         gap: var(--cat-space-xs);
         display: inline-flex;
         justify-content: center;
@@ -618,7 +619,8 @@ cat-multi-combobox {
 
     & > footer button:hover,
     &.cat-medkit > :is(footer, .tab) button:hover,
-    .outcomes > button:hover {
+    .outcomes > button:hover,
+    .priority > .recommended:hover {
         border-color: var(--cat-border-focus);
         background: var(--cat-bg-hover);
     }
@@ -1065,6 +1067,26 @@ cat-multi-combobox {
                 opacity: 0.6;
             }
 
+            > .recommended {
+                width: 100%;
+                margin-bottom: var(--cat-space-sm);
+            }
+
+            ul[data-list="enabled"] > .row.content-mass-apply {
+                border-color: var(--cat-status-yellow);
+                background: color-mix(in srgb, var(--cat-status-yellow) 12%, transparent);
+            }
+
+            .row .mass-apply-warning {
+                display: none;
+                color: var(--cat-status-yellow);
+                font-size: 0.75em;
+            }
+
+            ul[data-list="enabled"] > .row.content-mass-apply .mass-apply-warning {
+                display: block;
+            }
+
             ul[data-list="enabled"]:not(:has(.row)) + details {
                 margin-top: 0;
                 padding-top: 0;
@@ -1113,6 +1135,51 @@ cat-multi-combobox {
                 width: 3.5rem;
                 text-align: center;
                 cursor: text;
+            }
+
+            .row > .mass-apply-label {
+                display: flex;
+                flex: 0 0 auto;
+                justify-content: center;
+                width: 5rem;
+            }
+
+            > .priority-header {
+                gap: var(--cat-space-sm);
+                display: flex;
+                align-items: center;
+                padding: 0 0.35rem 0.2rem;
+                border: 1px solid transparent;
+                color: var(--cat-text-muted);
+                font-weight: 600;
+                font-size: 0.75em;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+
+                > .spacer {
+                    flex: 1;
+                }
+
+                > .mass-apply-label {
+                    flex: 0 0 auto;
+                    width: 5rem;
+                    text-align: center;
+                }
+
+                > .rank {
+                    flex: 0 0 auto;
+                    width: 3.5rem;
+                    text-align: center;
+                }
+
+                > .action {
+                    flex: 0 0 auto;
+                    width: 1.5rem;
+                }
+            }
+
+            &:not(:has(ul[data-list="enabled"] > .row)) > .priority-header {
+                display: none;
             }
 
             .row > button {

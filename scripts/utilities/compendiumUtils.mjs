@@ -139,6 +139,14 @@ function getEnabledCompendiumIds(settingKey) {
         .map(s => s[0]);
 }
 /**
+ * Whether an Item compendium holds any spells.
+ * @param {CompendiumCollection} pack Item compendium to check.
+ * @returns {boolean}
+ */
+function isSpellPack(pack) {
+    return pack.index.some(entry => entry.type === 'spell');
+}
+/**
  * Where a compendium comes from: the package that provides it and its sidebar folder path.
  * @param {CompendiumCollection} pack Compendium to describe.
  * @returns {{source: string, folders: string}} e.g. {source: "Player's Handbook", folders: "Sources / 2024"}.
@@ -327,6 +335,7 @@ export default {
     selectActor,
     getFilteredActors,
     getEnabledCompendiumIds,
+    isSpellPack,
     getPackLabel,
     getPackOrigin,
     getSpell

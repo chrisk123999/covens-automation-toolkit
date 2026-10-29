@@ -6,7 +6,6 @@ const {StringField, BooleanField} = foundry.data.fields;
 
 export default class MenuApp extends CatApp {
     #context;
-    #spellPacks = new Set();
     constructor(options) {
         let title, inputs, buttons, config;
         if (options?.length) [title, inputs, buttons, config] = options;
@@ -77,17 +76,19 @@ export default class MenuApp extends CatApp {
         form.querySelectorAll('.priority').forEach(widget => {
             const sourceSetting = widget.dataset.sourceSetting;
             if (!sourceSetting) return;
-            const sources = {};
+            const sources = {...game.settings.get('cat', sourceSetting)};
             widget.querySelectorAll('ul[data-list]').forEach(list => {
                 const enabled = list.dataset.list === 'enabled';
                 list.querySelectorAll('.row').forEach(row => {
                     const priority = Number(row.querySelector('.rank').value);
                     const id = row.dataset.sourceId;
+                    const massApply = row.querySelector('.mass-apply');
                     sources[id] = {
                         enabled: enabled,
                         priority: priority,
                         pack: id.includes('.')
                     };
+                    if (massApply) sources[id].massApply = massApply.checked;
                 });
             });
             data[sourceSetting] = sources;
@@ -144,7 +145,9 @@ export default class MenuApp extends CatApp {
             name: automationUtils.getSourceName(id),
             origin: pack ? compendiumUtils.getPackOrigin(pack) : null,
             enabled: cfg.enabled ?? false,
-            priority: cfg.priority ?? 50
+            priority: cfg.priority ?? 50,
+            massApply: automationUtils.isMassApplySource(id, cfg),
+            content: automationUtils.isContentSource(id)
         };
     }
 
@@ -154,9 +157,9 @@ export default class MenuApp extends CatApp {
         const rows = [];
         for (const pack of game.packs) {
             if (pack.metadata.type !== input.packType) continue;
-            if (constants.automations.sources.has(pack.metadata.packageName)) continue;
-            if (input.packFilter === 'spells' && !this.#spellPacks.has(pack.metadata.id)) continue;
-            if (input.packFilter === 'items' && this.#spellPacks.has(pack.metadata.id)) continue;
+            const packageName = pack.metadata.packageName;
+            if (constants.automations.isAutomationModule(packageName) && !automationUtils.isContentSource(packageName)) continue;
+            if (input.packFilter && (input.packFilter === 'spells') !== compendiumUtils.isSpellPack(pack)) continue;
             rows.push(MenuApp.#priorityRow(pack.metadata.id, packTag, sources[pack.metadata.id], pack));
         }
         rows.sort((a, b) => a.priority - b.priority);
@@ -193,6 +196,7 @@ export default class MenuApp extends CatApp {
         rows.sort((a, b) => a.priority - b.priority);
         return {
             isPriority: true,
+            sources: true,
             name: input.name,
             hint: _loc(input.hint),
             enabledRows: rows.filter(r => r.enabled),
@@ -228,21 +232,14 @@ export default class MenuApp extends CatApp {
 
     async _prepareContext(options) {
         if (!this.#context) {
-            if (this.inputs?.some(input => input.packFilter)) await this.#loadSpellPacks();
             this.#formatInputs();
+            if (!constants.automations.ready) Hooks.once('catReady', () => {
+                this.#context = null;
+                if (this.rendered) this.render();
+            });
         }
         const context = await super._prepareContext(options);
         return {...this.#context, ...context};
-    }
-
-    async #loadSpellPacks() {
-        this.#spellPacks = new Set();
-        for (const pack of game.packs) {
-            if (pack.metadata.type !== 'Item') continue;
-            const index = await pack.getIndex({fields: ['type']});
-            const spells = index.contents.filter(entry => entry.type === 'spell').length;
-            if (spells * 2 > index.size) this.#spellPacks.add(pack.metadata.id);
-        }
     }
 
     #wireTabs() {
@@ -317,11 +314,13 @@ export default class MenuApp extends CatApp {
         });
         enabledList.addEventListener('change', event => {
             if (event.target.classList.contains('rank')) MenuApp.#sortByRank(enabledList);
+            if (event.target.classList.contains('mass-apply')) MenuApp.#markContentMassApply(event.target.closest('.row'));
         });
         widget.addEventListener('click', event => {
             const button = event.target.closest('[data-priority-action]');
             if (!button) return;
-            MenuApp.#toggleRow(widget, button.closest('.row'), button.dataset.priorityAction === 'enable', enabledList, disabledList);
+            if (button.dataset.priorityAction === 'recommend') MenuApp.#applyRecommended(widget, enabledList, disabledList);
+            else MenuApp.#toggleRow(widget, button.closest('.row'), button.dataset.priorityAction === 'enable', enabledList, disabledList);
             this.setPosition({height: 'auto'});
         });
         widget.querySelector('details')?.addEventListener('toggle', () => {
@@ -329,8 +328,41 @@ export default class MenuApp extends CatApp {
         });
     }
 
+    static #recommendedModules = ['chris-premades', 'gambits-premades', 'midi-item-showcase-community', 'midi-qol'];
+
+    /**
+     * Reorder the source rows to the recommended setup: automation modules first, content sources last without mass apply, single compendiums off.
+     * @param {HTMLElement} widget Priority widget.
+     * @param {HTMLElement} enabledList Enabled rows list.
+     * @param {HTMLElement} disabledList Disabled rows list.
+     */
+    static #applyRecommended(widget, enabledList, disabledList) {
+        const rows = [...widget.querySelectorAll('.row')];
+        const rowFor = id => rows.find(row => row.dataset.sourceId === id);
+        const isActive = id => id === game.system.id || !!game.modules.get(id)?.active;
+        const others = rows.map(row => row.dataset.sourceId).filter(id => isActive(id) && !automationUtils.isContentSource(id) && !MenuApp.#recommendedModules.includes(id));
+        const ordered = [...MenuApp.#recommendedModules, ...others, ...constants.contentSources].filter(isActive).map(rowFor).filter(Boolean);
+        for (const row of rows) {
+            const enable = ordered.includes(row);
+            if (enable !== (row.parentElement === enabledList)) MenuApp.#toggleRow(widget, row, enable, enabledList, disabledList);
+        }
+        ordered.forEach((row, index) => {
+            row.querySelector('.rank').value = String((index + 1) * 10);
+            const massApply = row.querySelector('.mass-apply');
+            if (massApply) massApply.checked = row.dataset.content !== 'true';
+            MenuApp.#markContentMassApply(row);
+            enabledList.appendChild(row);
+        });
+    }
+
+    static #markContentMassApply(row) {
+        row.classList.toggle('content-mass-apply', row.dataset.content === 'true' && !!row.querySelector('.mass-apply')?.checked);
+    }
+
     static #toggleRow(widget, row, enable, enabledList, disabledList) {
         const rank = row.querySelector('.rank');
+        const massApply = row.querySelector('.mass-apply-label');
+        if (massApply) massApply.hidden = !enable;
         const button = row.querySelector('[data-priority-action]');
         const icon = button.querySelector('i');
         if (enable) {

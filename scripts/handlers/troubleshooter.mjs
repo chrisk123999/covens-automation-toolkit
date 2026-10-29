@@ -219,6 +219,17 @@ const REPORT_CHECKS = [
         fix: () => game.settings.set('enhancedcombathud', 'rangepicker', false)
     },
     {
+        id: 'modules.contentMassApply',
+        section: 'modules',
+        run: () => [...constants.automations.sources].filter(source => automationUtils.isContentSource(source) && automationUtils.isMassApplySource(source))
+            .map(source => ({status: 'warn', label: 'CAT.Troubleshooter.ContentMassApply', detail: automationUtils.getSourceName(source)})),
+        fix: () => {
+            const sources = foundry.utils.deepClone(game.settings.get('cat', 'automationSources'));
+            for (const [source, data] of Object.entries(sources)) if (automationUtils.isContentSource(source)) data.massApply = false;
+            return game.settings.set('cat', 'automationSources', sources);
+        }
+    },
+    {
         id: 'modules.animationModules',
         section: 'modules',
         group: 'CAT.Troubleshooter.Groups.Conflicts',
@@ -344,7 +355,7 @@ const CARDS = {
     },
     modules: {
         sections: ['modules'],
-        filter: check => check.id.startsWith('modules.defunct.') || check.id.startsWith('modules.incompatible.') || ['modules.bothJB2A', 'modules.oneWayDoors', 'modules.argonTargetPicker'].includes(check.id)
+        filter: check => check.id.startsWith('modules.defunct.') || check.id.startsWith('modules.incompatible.') || ['modules.bothJB2A', 'modules.oneWayDoors', 'modules.argonTargetPicker', 'modules.contentMassApply'].includes(check.id)
     }
 };
 const CARD_ACTIONS = {

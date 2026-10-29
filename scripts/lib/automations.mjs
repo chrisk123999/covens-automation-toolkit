@@ -151,6 +151,21 @@ export class RegisteredAutomations {
     moduleRegistrations = new Map();
 
     /**
+     * Whether catReady has run, so every module has had its chance to register.
+     * @type {boolean}
+     */
+    ready = false;
+
+    /**
+     * Whether a package registered with CAT as an automation module, enabled or not.
+     * @param {string} packageName Module id.
+     * @returns {boolean}
+     */
+    isAutomationModule(packageName) {
+        return this.moduleRegistrations.has(packageName) || packageName in this.sourceNames || this.sources.has(packageName);
+    }
+
+    /**
      * Get the registered Automation (or Automations), if any, by identifier & other criteria
      * @param {string} identifier                           The identifier of the automation
      * @param {object} [options={}]                         Additional options

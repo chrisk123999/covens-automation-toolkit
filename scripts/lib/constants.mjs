@@ -552,10 +552,11 @@ function getItemKeepPaths({spell = false} = {}) {
     }
     return paths;
 }
-const massApplyExcludeSources = [
+const contentSources = [
+    'ddb-importer',
+    'dnd-players-handbook',
     'dnd-dungeon-masters-guide',
-    'dnd5e',
-    'dnd-players-handbook'
+    'dnd5e'
 ];
 const damageIcons = {
     acid: 'icons/magic/acid/projectile-faceted-glob.webp',
@@ -700,7 +701,7 @@ export default {
     getItemKeepPaths,
     summonPasses,
     tokenHookNames,
-    massApplyExcludeSources,
+    contentSources,
     damageIcons,
     damageTypeGroups,
     getDamageTypeGroup,

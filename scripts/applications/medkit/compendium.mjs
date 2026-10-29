@@ -28,6 +28,19 @@ export default class CompendiumMedkit extends MedkitApp {
         return this.document.getDocuments();
     }
 
+    async _afterMassApply() {
+        const pack = this.document;
+        if (!['Actor', 'Item'].includes(pack.documentName)) return;
+        const settingKey = pack.documentName === 'Actor' ? 'monsterCompendiums' : compendiumUtils.isSpellPack(pack) ? 'spellCompendiums' : 'itemCompendiums';
+        const enabledIds = compendiumUtils.getEnabledCompendiumIds(settingKey);
+        if (enabledIds.includes(pack.collection)) return;
+        const compendiums = game.settings.get('cat', settingKey);
+        const settingName = _loc(`CAT.Settings.${settingKey.capitalize()}.Name`);
+        if (!await dialogUtils.confirm('CAT.MEDKIT.MassApply.AddCompendiumTitle', _loc('CAT.MEDKIT.MassApply.AddCompendium', {pack: pack.metadata.label, setting: settingName}))) return;
+        const priority = (compendiums[enabledIds[0]]?.priority ?? 20) - 10;
+        await game.settings.set('cat', settingKey, {...compendiums, [pack.collection]: {enabled: true, priority, pack: true}});
+    }
+
     async _canMassApply() {
         const pack = this.document;
         if (pack.locked) {
