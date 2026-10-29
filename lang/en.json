@@ -42,6 +42,8 @@
                 "PackLockedTitle": "Compendium locked",
                 "PackTitle": "Apply to a package compendium?",
                 "PackWarning": "{pack} belongs to {package}, not to this world. Updating {package} will overwrite anything applied here.",
+                "AddCompendiumTitle": "Use This Compendium?",
+                "AddCompendium": "Search {pack} first for {setting}?",
                 "CycleWarning": "Circular dependency detected among items. Some updates may occur out of sequence!",
                 "NoUpdates": "There are no items in need of updates!",
                 "ChooseSource": "Choose Source",
@@ -913,12 +915,19 @@
             },
             "AutomationSources": {
                 "Name": "Automation Sources",
-                "Hint": "The CatKit and mass apply tool offer automations from these sources. Options come from the top of this list first.",
+                "Hint": "Where the CatKit and mass apply get automations. When several sources match, the first one listed wins.",
                 "Disabled": "Inactive",
                 "Disable": "Disable",
                 "Enable": "Enable",
                 "SourceTag": "Source",
-                "PackTag": "Compendium"
+                "PackTag": "Compendium",
+                "Rank": "Order",
+                "RankHint": "Lower numbers come first.",
+                "Recommended": "Use Recommended",
+                "RecommendedHint": "Automation modules first, content last, single compendiums off.",
+                "MassApply": "Mass Apply",
+                "MassApplyHint": "Use this source when mass applying.",
+                "ContentMassApplyWarning": "Plain content. Mass Apply not recommended."
             },
             "Backups": {
                 "Name": "Backups",
@@ -932,15 +941,15 @@
             },
             "MonsterCompendiums": {
                 "Name": "Monsters",
-                "Hint": "Monsters that are ready to use. These should have descriptions and automations. Monsters are fetched from the top of this list first."
+                "Hint": "Ready-to-use monsters with descriptions and automations, searched in order."
             },
             "ItemCompendiums": {
                 "Name": "Items",
-                "Hint": "Items that are ready to use. These should have descriptions and automations. Items are fetched from the top of this list first."
+                "Hint": "Ready-to-use items with descriptions and automations, searched in order."
             },
             "SpellCompendiums": {
                 "Name": "Spells",
-                "Hint": "Spells that are ready to use. These should have descriptions and automations. Spells are fetched from the top of this list first."
+                "Hint": "Ready-to-use spells with descriptions and automations, searched in order."
             },
             "MacroCompendiums": {
                 "Name": "Macros",
@@ -1248,6 +1257,7 @@
             "Open": "Open Troubleshooter",
             "BothJB2A": "JB2A Premium and JB2A Free detected. Please remove or disable the free version.",
             "OneWayDoors": "Monk's Wall Enhancement has one-way doors enabled. If you are experiencing lag with auras, disable this setting.",
+            "ContentMassApply": "Mass apply is on for a content source and will undo your automations.",
             "ArgonTargetPicker": "Argon - Combat HUD has Target Picker enabled. It requires one unique target per count, which breaks automations that split attacks between targets. Disable this setting.",
             "World": "World",
             "Empty": "Nothing to report.",

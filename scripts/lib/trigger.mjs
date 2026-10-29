@@ -103,6 +103,9 @@ class SaveTrigger extends Trigger {
 class ToolTrigger extends Trigger {
     static get type() { return 'tool'; }
 }
+class HitDieTrigger extends Trigger {
+    static get type() { return 'hitDie'; }
+}
 class TimeTrigger extends Trigger {
     static get type() { return 'time'; }
 }
@@ -127,6 +130,7 @@ export default {
     SkillTrigger,
     SaveTrigger,
     ToolTrigger,
+    HitDieTrigger,
     TimeTrigger,
     SummonTrigger,
     CalledTrigger

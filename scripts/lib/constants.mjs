@@ -362,11 +362,14 @@ const restPasses = {
     long: 'long'
 };
 /**
- * Check, save, skill and tool roll passes. Descriptor keys: `check`, `save`, `skill` and `tool`.
+ * Actor roll passes. Descriptor keys: `check`, `save`, `skill`, `tool` and `hitDie`.
  *
  * Prefixes: `actor`, `scene`, `nearby`, `region`, `level`, `group`, `encounter` or `vehicle`.
  * Macros also receive `config`, `dialog`, `message`, `options`, `D20Bonus` and the roll's id as `checkId`, `saveId`,
  * `skillId` or `toolId`. Passes after the roll also receive `roll`.
+ * Hit die rolls run only `situational`, `bonus` and `post`, and also receive `denomination`. In `situational`, set
+ * `options.maximize` to roll the die at its maximum, `options.minimum` to replace the rules' minimum, `options.parts`
+ * to add formula parts and `options.multiplier` to multiply the total.
  * @enum {string}
  */
 const rollPasses = {
@@ -549,10 +552,11 @@ function getItemKeepPaths({spell = false} = {}) {
     }
     return paths;
 }
-const massApplyExcludeSources = [
+const contentSources = [
+    'ddb-importer',
+    'dnd-players-handbook',
     'dnd-dungeon-masters-guide',
-    'dnd5e',
-    'dnd-players-handbook'
+    'dnd5e'
 ];
 const damageIcons = {
     acid: 'icons/magic/acid/projectile-faceted-glob.webp',
@@ -697,7 +701,7 @@ export default {
     getItemKeepPaths,
     summonPasses,
     tokenHookNames,
-    massApplyExcludeSources,
+    contentSources,
     damageIcons,
     damageTypeGroups,
     getDamageTypeGroup,

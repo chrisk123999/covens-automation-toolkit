@@ -197,7 +197,7 @@ async function save(wrapped, config, dialog = {}, message = {}) {
     await saveEvents.post(this, {config, dialog, message, options, saveId, roll});
     return [roll];
 }
-async function tool(wrapped, config, dialog, message) {
+async function tool(wrapped, config, dialog = {}, message = {}) {
     if (!this.system.abilities) return wrapped(config, dialog, message);
     let options = {};
     let toolId = config.tool;
@@ -208,6 +208,22 @@ async function tool(wrapped, config, dialog, message) {
     await toolEvents.context(this, {config, options, dialog, message, toolId});
     const bonusSession = optionalBonus.rollSession();
     await optionalBonus.rollPreRoll('tool', this, {config, dialog, message, options, toolId}, bonusSession);
+    let messageData;
+    let rollMode;
+    const messageDataFunc = (config, dialog, message) => {
+        if (config.subject?.uuid !== this.uuid || config.tool !== toolId) {
+            Hooks.once('dnd5e.preRollTool', messageDataFunc);
+            return;
+        }
+        messageData = message.data;
+        rollMode = message.rollMode ?? game.settings.get('core', 'messageMode');
+    };
+    Hooks.once('dnd5e.preRollTool', messageDataFunc);
+    mergeRollOptions(config, options);
+    config = {
+        ...config,
+        ...options
+    };
     if (options.auto) dialog.configure = false;
     let roll = await wrapped(config, dialog, {...message, create: false});
     roll = roll?.[0];
@@ -223,18 +239,69 @@ async function tool(wrapped, config, dialog, message) {
     const bonusRoll = await toolEvents.bonus(this, {config, options, dialog, message, roll, toolId});
     if (bonusRoll instanceof Roll) roll = bonusRoll;
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
+    if (message.create !== false) {
+        messageData ??= {};
+        genericUtils.mergeObject(messageData, {flags: options.flags ?? {}});
+        await roll.constructor.buildPost([roll], {event: config.event}, {data: messageData, rollMode: roll.options?.rollMode ?? rollMode});
+    }
     await toolEvents.post(this, {config, options, dialog, message, roll, toolId});
     return [roll];
 }
-async function rollHitDie(wrapped, config, dialog, message) {
-
-
-
-
-    await hitDieEvents.situational(this, {config, dialog, message});
-    await hitDieEvents.context(this, {config, dialog, message});
-    let hookId;
-
+function getHitDieClass(actor, denomination) {
+    if (denomination) return actor.system.attributes.hd.classes.find(cls => cls.system.hd.denomination === denomination && cls.system.hd.value);
+    return actor.system.attributes.hd.classes.find(cls => cls.system.hd.value);
+}
+async function rollHitDie(wrapped, config = {}, dialog = {}, message = {}) {
+    const hd = this.system.attributes?.hd;
+    if (!hd) return wrapped(config, dialog, message);
+    const cls = this.system.isNPC ? null : getHitDieClass(this, config.denomination);
+    if (this.system.isNPC ? !hd.value : !cls) return wrapped(config, dialog, message);
+    config.denomination = this.system.isNPC ? 'd' + hd.denomination : cls.system.hd.denomination;
+    const options = {};
+    await hitDieEvents.situational(this, {config, dialog, message, options});
+    const minimum = options.minimum ?? (game.settings.get('dnd5e', 'rulesVersion') === 'modern' ? 1 : 0);
+    const die = options.maximize ? config.denomination.slice(1) : '1' + config.denomination;
+    let formula = 'max(' + minimum + ', ' + [die, '@abilities.con.mod', ...(options.parts ?? [])].join(' + ') + ')';
+    if (options.multiplier) formula = '(' + formula + ') * ' + options.multiplier;
+    const rollConfig = genericUtils.deepClone(config);
+    rollConfig.hookNames = [...(config.hookNames ?? []), 'hitDie'];
+    rollConfig.rolls = [{parts: [formula], data: this.getRollData()}].concat(config.rolls ?? []);
+    rollConfig.subject = this;
+    const dialogConfig = genericUtils.mergeObject({configure: false}, dialog);
+    const flavor = _loc('DND5E.HitDiceRoll');
+    const messageConfig = genericUtils.mergeObject({
+        rollMode: CONFIG.Dice.BasicRoll.getMessageMode(),
+        data: {
+            speaker: ChatMessage.implementation.getSpeaker({actor: this}),
+            flavor,
+            title: flavor + ': ' + this.name,
+            type: 'hitDie'
+        }
+    }, message);
+    const rolls = await CONFIG.Dice.BasicRoll.buildConfigure(rollConfig, dialogConfig, messageConfig);
+    if (!rolls.length) return null;
+    await CONFIG.Dice.BasicRoll.buildEvaluate(rolls, rollConfig, messageConfig);
+    const bonusRoll = await hitDieEvents.bonus(this, {config, dialog, message, options, roll: rolls[0]});
+    if (bonusRoll instanceof Roll) rolls[0] = bonusRoll;
+    await CONFIG.Dice.BasicRoll.buildPost(rolls, rollConfig, messageConfig);
+    const updates = {actor: {}, class: {}};
+    if (rollConfig.modifyHitDice !== false) {
+        if (cls) updates.class['system.hd.spent'] = cls.system.hd.spent + 1;
+        else updates.actor['system.attributes.hd.spent'] = hd.spent + 1;
+    }
+    if (rollConfig.modifyHitPoints !== false) {
+        const hp = this.system.attributes.hp;
+        const total = rolls.reduce((sum, roll) => sum + roll.total, 0);
+        const calculated = this.calculateDamage([{type: 'healing', value: total}], {invertHealing: false});
+        updates.actor['system.attributes.hp.value'] = hp.value + Math.min(Math.max(0, hp.effectiveMax) - hp.value, calculated ? calculated.amount : total);
+    }
+    if (Hooks.call('dnd5e.rollHitDie', rolls, {subject: this, updates}) === false) return rolls;
+    if (Hooks.call('dnd5e.rollHitDieV2', rolls, {subject: this, updates}) === false) return rolls;
+    if (!foundry.utils.isEmpty(updates.actor)) await this.update(updates.actor);
+    if (!foundry.utils.isEmpty(updates.class)) await cls.update(updates.class);
+    Hooks.callAll('dnd5e.postRollHitDie', rolls, {subject: this});
+    await hitDieEvents.post(this, {config, dialog, message, options, roll: rolls[0]});
+    return rolls;
 }
 
 function patch(enabled) {
@@ -247,6 +314,8 @@ function patch(enabled) {
         libWrapper.register('cat', 'CONFIG.Actor.documentClass.prototype.rollSavingThrow', save, 'MIXED');
         Logging.addEntry('DEBUG', 'Patching: CONFIG.Actor.documentClass.prototype.rollToolCheck');
         libWrapper.register('cat', 'CONFIG.Actor.documentClass.prototype.rollToolCheck', tool, 'MIXED');
+        Logging.addEntry('DEBUG', 'Patching: CONFIG.Actor.documentClass.prototype.rollHitDie');
+        libWrapper.register('cat', 'CONFIG.Actor.documentClass.prototype.rollHitDie', rollHitDie, 'MIXED');
     } else {
         Logging.addEntry('DEBUG', 'Unpatching: CONFIG.Actor.documentClass.prototype.rollAbilityCheck');
         libWrapper.unregister('cat', 'CONFIG.Actor.documentClass.prototype.rollAbilityCheck');
@@ -256,6 +325,8 @@ function patch(enabled) {
         libWrapper.unregister('cat', 'CONFIG.Actor.documentClass.prototype.rollSavingThrow');
         Logging.addEntry('DEBUG', 'Unpatching: CONFIG.Actor.documentClass.prototype.rollToolCheck');
         libWrapper.unregister('cat', 'CONFIG.Actor.documentClass.prototype.rollToolCheck');
+        Logging.addEntry('DEBUG', 'Unpatching: CONFIG.Actor.documentClass.prototype.rollHitDie');
+        libWrapper.unregister('cat', 'CONFIG.Actor.documentClass.prototype.rollHitDie');
     }
 }
 export default {

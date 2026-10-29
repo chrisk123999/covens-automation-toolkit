@@ -76,7 +76,7 @@ function getItemAutomationStatus(item) {
         if (automation?.config) return constants.automationStatus.CONFIGURABLE;
         return constants.automationStatus.UP_TO_DATE;
     }
-    if (getAvailableAutomations(item).length) return constants.automationStatus.AVAILABLE;
+    if (getMassApplyAutomations(item).length) return constants.automationStatus.AVAILABLE;
     if (item.flags.cat?.genericConfig) return constants.automationStatus.GENERIC;
     return constants.automationStatus.UNAVAILABLE;
 }
@@ -251,6 +251,42 @@ function getAutomationSources({packsOnly = false} = {}) {
     const settings = game.settings.get('cat', 'automationSources');
     const entries = Object.entries(settings).filter(([key, value]) => value.enabled && (!packsOnly || value.pack)).map(([key, value]) => [key, value.priority]);
     return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
+}
+/**
+ * Whether a source supplies plain content rather than automations: the system, official books, DDBI or a single compendium.
+ * @param {string} source Source id.
+ * @returns {boolean}
+ */
+function isContentSource(source) {
+    return constants.contentSources.includes(source) || source.includes('.');
+}
+/**
+ * Whether a source takes part in mass apply, defaulting to off for content sources.
+ * @param {string} source Source id.
+ * @param {object} [entry] The source's automationSources setting entry.
+ * @returns {boolean}
+ */
+function isMassApplySource(source, entry = game.settings.get('cat', 'automationSources')[source]) {
+    return entry?.massApply ?? !isContentSource(source);
+}
+/**
+ * Whether mass apply must never put this source's automation on this item: content sources reset class advancement.
+ * @param {Item5e} item Item to act on.
+ * @param {string} source Source id.
+ * @returns {boolean}
+ */
+function isMassApplyBlocked(item, source) {
+    return ['class', 'subclass'].includes(item.type) && isContentSource(source);
+}
+/**
+ * Automations mass apply may put on this item.
+ * @param {Item5e} item Item to act on.
+ * @returns {Automation[]}
+ */
+function getMassApplyAutomations(item) {
+    const sources = game.settings.get('cat', 'automationSources');
+    const excludeSources = [...constants.automations.sources].filter(source => !isMassApplySource(source, sources[source]));
+    return getAvailableAutomations(item, {excludeSources}).filter(automation => !isMassApplyBlocked(item, automation.source));
 }
 /**
  * Display name for an automation source, resolving registered names, compendiums, modules and the system.
@@ -717,6 +753,10 @@ export default {
     setConfigValues,
     setGenericConfigValues,
     getAutomationSources,
+    isContentSource,
+    isMassApplySource,
+    isMassApplyBlocked,
+    getMassApplyAutomations,
     getAppliedOrPreferredAutomation,
     sortByPriority,
     updateItem,

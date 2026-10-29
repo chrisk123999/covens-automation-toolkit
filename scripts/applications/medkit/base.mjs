@@ -211,10 +211,12 @@ export default class MedkitApp extends CatApp {
 
     _getMassApplyItems() { return []; }
 
+    async _afterMassApply() {}
+
     _massApplyBucket(item) {
         const applied = automationUtils.getCurrentAutomation(item);
-        const available = (automationUtils.getAvailableAutomations(item, {excludeSources: constants.massApplyExcludeSources}) ?? [])
-            .filter(automation => automation.uuid !== item.uuid);
+        if (applied && automationUtils.isMassApplyBlocked(item, applied.source)) return null;
+        const available = automationUtils.getMassApplyAutomations(item).filter(automation => automation.uuid !== item.uuid);
         if (!automationUtils.isSelfAutomation(item, {automation: applied}) && (applied || automationUtils.getStoredHash(item))) {
             return automationUtils.isUpToDate(item, {automation: applied}) ? {reason: 'current', applied, available} : {reason: 'outdated', applied, available};
         }
@@ -1273,6 +1275,7 @@ export default class MedkitApp extends CatApp {
         }
         progress.update({pct: 1, message: _loc('CAT.MEDKIT.MassApply.Done')});
         this.render();
+        await this._afterMassApply();
     }
 
     #massApplyID(item) { return item.actor ? `${item.actor.id}|${item.id}` : item.id; }

@@ -81,6 +81,7 @@ Hooks.once('ready', async () => {
         ]);
     }
     Hooks.callAll('catReady');
+    lib.constants.automations.ready = true;
 });
 Hooks.once('ddb-importer.compendiumCreationComplete', async () => {
     await catInitGate;

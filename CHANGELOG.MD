@@ -2,10 +2,19 @@
 ## Update Notes:
 - Animation Priority is renamed CAT Animations and has a new Off choice.
 - An effect's Disable Animation checkbox also stops its CAT apply and remove animations.
+- Automation Sources has a Use Recommended button and a Mass Apply checkbox per source, off by default for content sources such as the PHB and DDB Importer.
+- Mass apply never replaces class items from a content source.
+- After mass applying a compendium, CAT offers to search it first.
+## Bug Fixes:
+- Configure Compendiums hides automation module compendiums even when opened during startup, and saving keeps entries it does not show.
+- Tool checks post their chat message and apply roll options set by automations, such as advantage.
 ## API Update Notes:
 - Added `itemUtils.getBaseWeaponLabel`. It returns the system's label for a base weapon key.
 - `animationUtils.getModuleAnimations` is replaced by `animationUtils.getModuleAnimationNotices`, which returns the notice text.
+- `constants.massApplyExcludeSources` is replaced by `constants.contentSources`.
+- Added `effectUtils.createItemEffect`. It creates an item's effect on an actor with config values stored on the effect, readable after the item is consumed.
 - Summons have a `sourceItem` getter: the item that created the summon, or the item of the activity that did.
+- Added hit die roll passes, descriptor key `hitDie`: `situational`, `bonus` and `post`. `situational` can set `options.maximize`, `minimum`, `parts` and `multiplier`.
 # 0.1.4 Release:
 ## Update Notes:
 - CAT posts a welcome card to the GM once per world, with a link to the Coven's Discord and the guided tours. Modules can post their own with `cat.api.postWelcome`.
