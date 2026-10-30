@@ -38,7 +38,7 @@ async function removeConditions(effect) {
     if (ids.length) return await documentUtils.deleteEmbeddedDocuments(parent, 'ActiveEffect', ids);
 }
 function applyActiveEffect(actor, change, current, delta, changes) {
-    if (change.key.startsWith('flags.cat.CR.') || change.key.startsWith('flags.cat.CV.') || change.key.startsWith('flags.cat.FR.') || change.key.startsWith('flags.cat.FV.')) {
+    if (['flags.cat.CR.', 'flags.cat.CV.', 'flags.cat.FR.', 'flags.cat.FV.', 'flags.cat.FF.', 'flags.cat.FI.'].some(key => change.key.startsWith(key))) {
         const existing = genericUtils.getProperty(actor, change.key);
         const newValue = existing ? String(existing) + ', ' + String(change.value) : String(change.value);
         genericUtils.setProperty(actor, change.key, newValue);

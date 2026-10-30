@@ -1,5 +1,5 @@
-import {actorUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, rollUtils, tokenUtils, uiUtils, workflowUtils} from '../utilities/_module.mjs';
-import {constants, Events} from '../lib/_module.mjs';
+import {actorUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, rollUtils, tokenUtils, uiUtils, workflowUtils} from '../utilities/_module.mjs';
+import {constants, Events, Logging} from '../lib/_module.mjs';
 function abilities(rules) {
     if (rules === '2014') return ['acr', 'ath'];
     if (rules === '2024') return ['str', 'dex'];
@@ -35,6 +35,11 @@ function itemData(sourceEffect, targetEffect, dc, rules, {name, img} = {}) {
         }
     };
     if (rules === '2024') {
+        const macro = {source: 'cat', rules, identifier: 'grappled'};
+        if (targetEffect.flags.cat?.macros?.roll)
+            targetEffect.flags.cat.macros.roll.push(macro);
+        else
+            genericUtils.setProperty(targetEffect, 'flags.cat.macros.roll', [macro]);
         data.system.activities.catSyntheticGrap.type = 'save';
         data.system.activities.catSyntheticGrap.save = {
             ability: abilities(rules),
@@ -74,11 +79,11 @@ function targetEffectData(name, rules, img = constants.grappleIcon) {
     return {
         _id: foundry.utils.randomID(),
         name, img, transfer: false, showIcon: 2,
+        statuses: ['grappled'],
         flags: {
             cat: {
                 automation: {rules},
                 identifier: 'grappleTarget',
-                conditions: ['grappled'],
                 macros: {
                     effect: [{identifier: 'grapple', rules: 'all', source: 'cat'}],
                     move: [{identifier: 'grapple', rules: 'all', source: 'cat'}]
@@ -115,10 +120,14 @@ function noDCAutoSucceed(options, target) {
     workflowUtils.grantRollModifier(options, 'succeed', target.id, 'no-grapple-dc', _loc('CAT.GrappleShove.Surrendered'));
 }
 async function sizeCheck(sourceToken, targetToken, identifier, warning = true) {
-    if (identifier === 'grapple' && actorUtils.checkTrait(targetToken.actor, 'ci', 'grappled'))
-        return warning ? genericUtils.notify('CAT.GrappleShove.GrappleImmune', {type: 'warn'}) : false;
-    if (identifier === 'shove-prone' && actorUtils.checkTrait(targetToken.actor, 'ci', 'prone'))
-        return warning ? genericUtils.notify('CAT.GrappleShove.ShoveProneImmune', {type: 'warn'}) : false;
+    if (identifier === 'grapple' && actorUtils.checkTrait(targetToken.actor, 'ci', 'grappled')) {
+        if (warning) genericUtils.notify('CAT.GrappleShove.GrappleImmune', {type: 'warn'});
+        return false;
+    }
+    if (identifier === 'shove-prone' && actorUtils.checkTrait(targetToken.actor, 'ci', 'prone')) {
+        if (warning) genericUtils.notify('CAT.GrappleShove.ShoveProneImmune', {type: 'warn'}); 
+        return false;
+    }
     let size = actorUtils.getSize(sourceToken.actor);
     const sizeBonuses = await new Events.GrappleEvent(sourceToken, targetToken, constants.grapplePasses.sizeCheck, {identifier, size}).run({canOverlap: true, multiResult: true});
     if (sizeBonuses?.length) size = sizeBonuses.reduce((sum, bonus) => typeof bonus === 'number' ? sum + bonus : sum, size);
@@ -131,7 +140,8 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
         if (!await sizeCheck(sourceToken, targetToken, 'grapple')) return; 
     }
     else if (actorUtils.checkTrait(targetToken.actor, 'ci', 'grappled')) {
-        return genericUtils.notify('CAT.GrappleShove.GrappleImmune', {type: 'warn'});
+        genericUtils.notify('CAT.GrappleShove.GrappleImmune', {type: 'warn'});
+        return;
     }
     rules ??= activity?.item ? documentUtils.getRules(activity?.item) : '2014';
     const data = {
@@ -142,6 +152,8 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
         sourceEffectData: sourceEffectData(_loc('CAT.GrappleShove.Grappling', {name: targetToken.name}), rules, activity?.item.img),
         targetEffectData: targetEffectData(_loc('CAT.GrappleShove.GrappledBy', {name: sourceToken.name}), rules, activity?.item.img)
     };
+    dataUtils.setOrigin(data.sourceEffectData, activity);
+    dataUtils.setOrigin(data.targetEffectData, activity);
     if (conditions.length) data.targetEffectData.flags.cat.conditions.push(...conditions);
     await new Events.GrappleEvent(sourceToken, targetToken, constants.grapplePasses.preGrapple, {data}).run();
     genericUtils.setProperty(data.sourceEffectData, 'flags.cat.grapple', {dc: data.dc, reach: data.reach, tokenId: targetToken.id});
@@ -232,8 +244,13 @@ async function deleteGrappleEscape({actor, identifier}) {
     const item = actorUtils.getItemByIdentifier(actor, 'grapple-escape', {type: 'feat'});
     if (item) await documentUtils.deleteDocument(item);
 }
+async function grappleAttackDisadvantage({macroClass: {identifier}, workflow}) {
+    const grapples = actorUtils.getEffectByIdentifier(workflow.actor, 'grappleTarget', {multiple: true});
+    if (grapples.some(e => workflow.targets.some(t => t.id === e.flags.cat?.grapple?.tokenId))) return;
+    for (const grapple of grapples) workflow.tracker.disadvantage.add(grapple.flags.cat?.grapple?.tokenId ?? identifier, grapple.name);
+}
 function register() {
-    constants.macros.registerFnMacro({
+    constants.macros.registerFnMacros([{
         source: 'cat',
         identifier: 'grapple',
         rules: 'all',
@@ -263,7 +280,18 @@ function register() {
                 priority: 100
             }
         ]
-    });
+    }, {
+        source: 'cat',
+        identifier: 'grappled',
+        rules: '2024',
+        roll: [
+            {
+                pass: 'actorAttackRollConfig',
+                macro: grappleAttackDisadvantage,
+                priority: 200
+            }
+        ]
+    }]);
 }
 export default {
     sizeCheck,
