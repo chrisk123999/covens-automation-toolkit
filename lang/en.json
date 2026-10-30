@@ -1088,6 +1088,18 @@
             "BackupRetention": {
                 "Name": "Backup Retention",
                 "Hint": "How long automatic and manual backups are kept."
+            },
+            "WeaponMastery": {
+                "Name": "Weapon Mastery",
+                "Hint": "Which actors get automated weapon masteries.",
+                "None": "Nobody",
+                "Pc": "Player Characters",
+                "Npc": "Non-Player Characters",
+                "Both": "Everyone"
+            },
+            "AdvancedWeaponProficiency": {
+                "Name": "Advanced Weapon Proficiency",
+                "Hint": "Characters need an Advanced Weapon Proficiency feat to use the mastery properties of Grim Hollow Advanced weapons."
             }
         },
         "DAE": {
@@ -1125,6 +1137,7 @@
             "Other": "CAT Other"
         },
         "Generic": {
+            "Rerolled": "Rerolling {dice}",
             "Disabled": "Disabled",
             "Chat": "Chat",
             "Ok": "Ok",
@@ -1259,6 +1272,7 @@
             "OneWayDoors": "Monk's Wall Enhancement has one-way doors enabled. If you are experiencing lag with auras, disable this setting.",
             "ContentMassApply": "Mass apply is on for a content source and will undo your automations.",
             "ArgonTargetPicker": "Argon - Combat HUD has Target Picker enabled. It requires one unique target per count, which breaks automations that split attacks between targets. Disable this setting.",
+            "OutdatedDependency": "{module} needs {dependency} {minimum} or newer, but {version} is installed. Update {dependency}.",
             "World": "World",
             "Empty": "Nothing to report.",
             "Copied": "Troubleshooter report copied to the clipboard.",
@@ -1291,7 +1305,8 @@
                 "Automations": "Automations",
                 "Scene": "Scene",
                 "Game": "Game",
-                "Errors": "Errors"
+                "Errors": "Errors",
+                "Versions": "Module Versions"
             },
             "Status": {
                 "pass": "Pass",
@@ -1323,11 +1338,13 @@
                 "Disable": "Disable Module"
             },
             "Required": {
-                "Expected": "{value} → {fix}",
+                "Expected": "{value}: {fix}",
                 "ClientScope": "(client setting)",
-                "GmAutoDamage": "GM Auto Roll Damage"
+                "GmAutoDamage": "GM Auto Roll Damage",
+                "Outdated": "{version}: {minimum} or newer"
             },
             "Card": {
+                "versions": "Some modules need a newer version of a module they depend on. Update them:",
                 "settings": "Some settings CAT relies on are not set as expected:",
                 "modules": "Some active modules are defunct or conflict with CAT:",
                 "fix": "Fix",
@@ -1738,6 +1755,11 @@
                     "Content": "That covers the settings menus."
                 }
             }
+        },
+        "WeaponMastery": {
+            "NoPush": "Don't push",
+            "PushPrompt": "How far to push {target}?",
+            "CleavePrompt": "Make a Cleave attack against a second creature?"
         }
     }
 }

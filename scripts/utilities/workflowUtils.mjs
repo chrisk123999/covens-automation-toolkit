@@ -1,12 +1,12 @@
 import {constants} from '../lib/_module.mjs';
 import {activityUtils, actorUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 /**
- * Midi workflow options that skip or keep the attack and damage prompts.
+ * Midi workflow options that skip the attack and damage prompts.
  * @param {boolean} fast Skip the prompts.
  * @returns {object}
  */
 function fastWorkflowOptions(fast) {
-    return {fastForwardDamage: fast, autoFastAttack: fast, autoRollAttack: fast};
+    return fast ? {fastForwardDamage: true, autoFastAttack: true, autoRollAttack: true} : {};
 }
 /**
  * The activity's action type for the attack mode in play, such as mwak or rsak.
@@ -556,6 +556,82 @@ function addAttackRollPart(workflow, formula) {
     setWorkflowProperty(workflow, 'attackRollParts', parts);
 }
 /**
+ * Reroll the chosen damage dice of a workflow in place and post the new results.
+ * @param {MidiQOL.Workflow} workflow Workflow whose damage rolls change.
+ * @param {string[]} selection Die keys from dialogUtils.selectDie.
+ * @param {Item5e} document Item that supplies roll data and names the reroll.
+ */
+async function rerollDamageDice(workflow, selection, document) {
+    const rollData = document.getRollData();
+    const rerolls = [];
+    const changed = new Set();
+    for (const key of selection) {
+        const [rollIndex, termIndex, resultIndex] = key.split('-').map(Number);
+        const term = workflow.damageRolls[rollIndex]?.terms[termIndex];
+        const result = term?.results[resultIndex];
+        if (!result) continue;
+        rerolls.push({result, faces: term.faces, original: result.result});
+        changed.add(workflow.damageRolls[rollIndex]);
+    }
+    if (!rerolls.length) return;
+    const groups = rerolls.reduce((accumulator, reroll) => {
+        const group = accumulator.get(reroll.faces) ?? [];
+        group.push(reroll);
+        return accumulator.set(reroll.faces, group);
+    }, new Map());
+    const rolls = Array.from(groups, ([faces, group]) => new Roll(group.length + 'd' + faces, rollData));
+    const resolved = await rollUtils.resolveManualRolls(rolls, workflow.actor, document.name, {rollClass: Roll});
+    if (resolved === rolls) await Promise.all(rolls.map(async roll => await roll.evaluate()));
+    Array.from(groups.values()).forEach((group, groupIndex) => {
+        const results = resolved[groupIndex].terms[0].results;
+        group.forEach((reroll, index) => reroll.result.result = results[index].result);
+    });
+    const messageData = {
+        speaker: ChatMessage.implementation.getSpeaker({actor: workflow.actor}),
+        flavor: _loc('CAT.Generic.Rerolled', {dice: rerolls.map(reroll => 'd' + reroll.faces + ' (' + reroll.original + ')').join(', ')}),
+        rolls: resolved
+    };
+    ChatMessage.implementation.applyMode(messageData, CONFIG.Dice.BasicRoll.getMessageMode());
+    await ChatMessage.implementation.create(messageData);
+    changed.forEach(roll => roll._total = roll._evaluateTotal());
+    await workflow.setDamageRolls(workflow.damageRolls);
+}
+/**
+ * Remove one source of disadvantage midi added to the workflow's attack roll, such as 'range' or 'nearbyFoe'.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @param {string} source Midi's source key.
+ */
+function removeAttackDisadvantage(workflow, source) {
+    const tracker = workflow.tracker;
+    if (!tracker.attribution.DIS?.[source]) return;
+    delete tracker.attribution.DIS[source];
+    tracker.legacyAttribution.delete('DIS:' + source);
+    const disadvantage = tracker.disadvantage;
+    disadvantage.restore({...disadvantage.get, count: disadvantage.count - 1});
+}
+/**
+ * Raise a target's AC against the workflow's attack roll only. Use before midi checks hits.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @param {Actor5e} actor Targeted actor.
+ * @param {number} amount AC to add.
+ */
+function addTargetAC(workflow, actor, amount) {
+    const descriptors = workflow.chatCard?.toObject().system.targets;
+    const descriptor = descriptors?.find(target => target.actor === actor.uuid);
+    if (descriptor?.ac == null) return;
+    descriptor.ac += amount;
+    workflow.chatCard.updateSource({'system.targets': descriptors});
+    workflow.targetDescriptors = descriptors;
+}
+/**
+ * Lower the critical threshold of the workflow's attack roll before it is rolled.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @param {number} [amount=1] How far to lower the threshold.
+ */
+function expandAttackCriticalRange(workflow, amount = 1) {
+    setWorkflowProperty(workflow, 'attackCriticalRange', (getWorkflowProperty(workflow, 'attackCriticalRange') ?? 0) + amount);
+}
+/**
  * Apply an already-evaluated roll as damage from a source token, with its own chat card.
  * @param {foundry.documents.TokenDocument} sourceToken Token dealing the damage.
  * @param {foundry.dice.Roll} damageRoll Evaluated roll to apply.
@@ -579,12 +655,14 @@ function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flav
     return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, targets.map(t => t.object), damageRoll, {flavor, itemCardUuid, itemData});
 }
 /**
- * Hit points and temporary hit points the workflow's damage actually removed, across every target.
+ * Hit points and temporary hit points the workflow's damage actually removed.
  * @param {MidiQOL.Workflow} workflow Workflow whose damage has been applied.
+ * @param {Token} [token] Only count damage to this token's actor.
  * @returns {number}
  */
-function getDamageDealt(workflow) {
-    return (workflow.damageList ?? []).reduce((total, entry) => total + Math.max(0, (entry.oldHP ?? 0) - (entry.newHP ?? 0)) + Math.max(0, (entry.oldTempHP ?? 0) - (entry.newTempHP ?? 0)), 0);
+function getDamageDealt(workflow, token) {
+    const entries = (workflow.damageList ?? []).filter(entry => !token || entry.actorUuid === token.actor?.uuid);
+    return entries.reduce((total, entry) => total + Math.max(0, entry.hpDamage ?? 0) + Math.max(0, entry.tempDamage ?? 0), 0);
 }
 /**
  * Apply damage directly to tokens, without a workflow.
@@ -725,6 +803,10 @@ export default {
     setActivity,
     bonusAttack,
     addAttackRollPart,
+    expandAttackCriticalRange,
+    addTargetAC,
+    removeAttackDisadvantage,
+    rerollDamageDice,
     applyDamage,
     applyWorkflowDamage,
     updateTargets,

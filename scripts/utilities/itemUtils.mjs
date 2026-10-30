@@ -443,8 +443,29 @@ function addDamageBonus(itemData, bonus) {
 function getBaseWeaponLabel(key) {
     return constants.weaponOptions.find(weapon => weapon.value === key)?.label;
 }
+/**
+ * Localized label of a weapon mastery.
+ * @param {string} mastery Mastery key.
+ * @returns {string}
+ */
+function getMasteryLabel(mastery) {
+    return _loc(CONFIG.DND5E.weaponMasteries[mastery]?.label ?? mastery);
+}
+/**
+ * Whether a weapon's wielder can use a mastery with it. Characters need it among the weapon's mastery options.
+ * @param {Item5e} item Weapon to check.
+ * @param {string} [mastery] Mastery key. Defaults to the weapon's mastery.
+ * @returns {boolean}
+ */
+function canUseMastery(item, mastery = item?.system.mastery) {
+    if (item?.type !== 'weapon' || !item.actor || !mastery || !actorUtils.isMasteryEnabled(item.actor)) return false;
+    if (item.actor.type !== 'character') return item.system.mastery === mastery;
+    return !!item.system.masteryOptions?.some(option => option.value === mastery);
+}
 export default {
     getBaseWeaponLabel,
+    canUseMastery,
+    getMasteryLabel,
     getSaveDC,
     getSavedCastData,
     getActivityByIdentifier,

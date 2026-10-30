@@ -77,7 +77,7 @@ class CatEvent {
         if (CatEvent.hasCatFlag(actor)) triggers.push(new this.trigger(actor, pass, data));
         if (token && CatEvent.hasCatFlag(token)) triggers.push(new this.trigger(token, pass, data));
         actor.items.forEach(item => {
-            if (CatEvent.hasCatFlag(item)) triggers.push(new this.trigger(item, pass, data));
+            if (CatEvent.hasCatFlag(item, this.trigger.type)) triggers.push(new this.trigger(item, pass, data));
             item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && effect.active && CatEvent.hasCatFlag(effect)).forEach(effect => {
                 triggers.push(new this.trigger(effect, pass, data));
             });
@@ -245,8 +245,8 @@ class CatEvent {
         triggers = triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
         return triggers;
     }
-    static hasCatFlag(document) {
-        return !!(document.flags?.cat?.macros || document.flags?.cat?.embeddedMacros);
+    static hasCatFlag(document, type) {
+        return !!(document.flags?.cat?.macros || document.flags?.cat?.embeddedMacros || constants.macros.getMasteryMacroData(document, type));
     }
     async run({canOverlap = false, multiResult = false} = {}) {
         if (!this.actor) return;
@@ -352,7 +352,7 @@ class BaseWorkflowEvent extends CatEvent {
         const passName = this.pass.capitalize();
         if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new this.trigger(this.activity, 'activity' + passName, {castData: this.castData}));
         if (this.item) {
-            if (CatEvent.hasCatFlag(this.item)) triggers.push(new this.trigger(this.item, 'item' + passName, {castData: this.castData}));
+            if (CatEvent.hasCatFlag(this.item, this.trigger.type)) triggers.push(new this.trigger(this.item, 'item' + passName, {castData: this.castData}));
             this.item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
                 triggers.push(new this.trigger(effect, 'enchantment' + passName, {castData: this.castData}));
             });
@@ -461,9 +461,10 @@ class TokenDamageWorkflowEvent extends WorkflowEvent {
     }
 }
 class MovementEvent extends CatEvent {
-    constructor(token, pass, {options, destination, animation, range, sourceToken, action, teleport} = {}) {
+    constructor(token, pass, {options, origin, destination, animation, range, sourceToken, action, teleport} = {}) {
         super(pass);
         this.name = 'Movement';
+        this.origin = origin;
         this.trigger = Triggers.MoveTrigger;
         this.options = options;
         this.destination = destination;
@@ -478,6 +479,7 @@ class MovementEvent extends CatEvent {
         return {
             ...super.appendData(data),
             options: this.options,
+            origin: this.origin,
             destination: this.destination,
             animation: this.animation,
             range: this.range,
@@ -649,7 +651,7 @@ class ItemEvent extends CatEvent {
     }
     get unsortedTriggers() {
         let triggers = [];
-        if (CatEvent.hasCatFlag(this.item)) triggers.push(new Triggers.ItemTrigger(this.item, this.pass));
+        if (CatEvent.hasCatFlag(this.item, Triggers.ItemTrigger.type)) triggers.push(new Triggers.ItemTrigger(this.item, this.pass));
         triggers.push(...super.unsortedTriggers);
         return triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
     }
@@ -672,7 +674,7 @@ class ItemsEvent extends CatEvent {
     get unsortedTriggers() {
         let triggers = [];
         this.items.forEach(item => {
-            if (CatEvent.hasCatFlag(item)) triggers.push(new Triggers.ItemTrigger(item, this.pass));
+            if (CatEvent.hasCatFlag(item, Triggers.ItemTrigger.type)) triggers.push(new Triggers.ItemTrigger(item, this.pass));
         });
         return triggers.filter(trigger => trigger.fnMacros.length || trigger.embeddedMacros.length);
     }

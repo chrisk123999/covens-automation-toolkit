@@ -601,7 +601,8 @@ cat-multi-combobox {
     & > footer button,
     &.cat-medkit > :is(footer, .tab) button,
     .outcomes > button,
-    .priority > .recommended {
+    .priority > .recommended,
+    .form-fields > .sub-menu {
         gap: var(--cat-space-xs);
         display: inline-flex;
         justify-content: center;
@@ -620,7 +621,8 @@ cat-multi-combobox {
     & > footer button:hover,
     &.cat-medkit > :is(footer, .tab) button:hover,
     .outcomes > button:hover,
-    .priority > .recommended:hover {
+    .priority > .recommended:hover,
+    .form-fields > .sub-menu:hover {
         border-color: var(--cat-border-focus);
         background: var(--cat-bg-hover);
     }
@@ -730,10 +732,10 @@ cat-multi-combobox {
         }
     }
 
-    &.cat-menu.cat-dialog .form-group > .form-fields:has(> select) {
+    &.cat-menu.cat-dialog .form-group > .form-fields:has(> :is(select, .sub-menu)) {
         flex: 2;
 
-        > select {
+        > :is(select, .sub-menu) {
             flex: 1;
             width: 100%;
         }
@@ -2643,9 +2645,9 @@ cat-multi-combobox {
     table {
         width: 100%;
         margin: 0.25rem 0 0.5rem;
+        border: none;
         font-size: var(--font-size-12);
         background: none;
-        border: none;
     }
 
     tr {
@@ -2681,21 +2683,21 @@ cat-multi-combobox {
     text-align: left;
 
     .cat-welcome-discord {
-        display: flex;
-        align-items: center;
-        justify-content: center;
         gap: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin: 0.25rem 0 0.5rem;
         padding: 0.375rem;
         border-radius: 4px;
-        background: #5865f2;
-        color: #fff;
+        color: rgb(255 255 255);
         font-weight: bold;
         text-decoration: none;
+        background: rgb(88 101 242);
 
         &:hover {
-            background: #4752c4;
             text-shadow: none;
+            background: rgb(71 82 196);
         }
     }
 
@@ -2705,9 +2707,9 @@ cat-multi-combobox {
     }
 
     .cat-welcome-tours {
+        gap: 0.25rem;
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
 
         button {
             justify-content: flex-start;
@@ -2784,17 +2786,17 @@ cat-multi-combobox {
 .cat.cat-path-help {
     top: 4.5rem;
     left: 50%;
-    transform: translateX(-50%);
     pointer-events: none;
+    transform: translateX(-50%);
 
     p {
         margin: 0 0 var(--cat-space-sm);
     }
 
     dl {
-        display: grid;
-        grid-template-columns: auto 1fr;
         gap: var(--cat-space-xs) var(--cat-space-md);
+        grid-template-columns: auto 1fr;
+        display: grid;
         margin: 0;
     }
 

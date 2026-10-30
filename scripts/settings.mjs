@@ -1,6 +1,5 @@
 import {SettingsMenuBase, TroubleshooterApp} from './applications/_module.mjs';
-import customMacros from './handlers/customMacros.mjs';
-import items from './handlers/items.mjs';
+import {customMacros, items} from './handlers/_module.mjs';
 import {Auras} from './lib/_module.mjs';
 import {dicePatching} from './patches/_module.mjs';
 import {genericUtils} from './utilities/_module.mjs';
@@ -106,6 +105,22 @@ const settings = {
         type: Boolean,
         default: true,
         menu: 'integration'
+    },
+    weaponMastery: {
+        type: String,
+        default: 'pc',
+        choices: {
+            none: 'CAT.Settings.WeaponMastery.None',
+            pc: 'CAT.Settings.WeaponMastery.Pc',
+            npc: 'CAT.Settings.WeaponMastery.Npc',
+            both: 'CAT.Settings.WeaponMastery.Both'
+        },
+        menu: 'mechanics'
+    },
+    advancedWeaponProficiency: {
+        type: Boolean,
+        default: true,
+        menu: 'mechanics'
     },
     animationPriority: {
         type: String,

@@ -1,3 +1,20 @@
+# 0.1.6 Release:
+## Update Notes:
+- New setting: Weapon Mastery. CAT applies the mastery property chosen for a weapon attack, for player characters by default.
+- New setting: Advanced Weapon Proficiency. Advanced weapon types only offer their masteries to characters with an Advanced Weapon Proficiency feature. (Grim Hollow)
+- When CAT or a module that requires it needs a newer version of a dependency, warn the GM.
+- The Troubleshooter lists required module versions at the top of Required Settings, and its startup card flags outdated ones.
+## Bug Fixes:
+- `workflowUtils.completeActivityUse` and `completeItemUse` follow midi's fast-forward settings again unless `fast` is set.
+## API Update Notes:
+- Weapon attacks fire the `weaponMastery` called event before their mastery applies. Macros get `workflow`, `masteries`, `hit` and `missed`, and can add or remove keys in `masteries`. CAT applies the built-in keys and any custom masteries.
+- Custom macros can define weapon masteries. A custom macro that returns `{mastery, label, reference, macro}` adds the mastery to the system's list, and CAT runs `macro` with `workflow`, `hit` and `missed` when an attack uses it.
+- `cat.api.registerMastery` adds a mastery. A mastery's `genericConfig` gives it per-weapon config.
+- `applications.SettingsMenuBase` takes a `namespace` and `langPrefix` for another module's settings menu, and `subMenus`: menu keys shown as buttons that open a nested settings menu.
+- `genericUtils.notify` takes `permanent`, which keeps the notification until it is dismissed.
+- Movement events pass the token's `origin`.
+- `MenuApp` has `number` and `multiSelect` input types. Settings menus show `Number` settings as number inputs and `Array` settings with `choices` as multi-selects. `choices` can be a function.
+- Added `workflowUtils.expandAttackCriticalRange`, `workflowUtils.addTargetAC`, `workflowUtils.removeAttackDisadvantage`, `workflowUtils.rerollDamageDice`, `actorUtils.setBonusActionUsed`, `actorUtils.confirmBonusAction`, `actorUtils.isMasteryEnabled`, `itemUtils.canUseMastery` and `itemUtils.getMasteryLabel`.
 # 0.1.5 Release:
 ## Update Notes:
 - Animation Priority is renamed CAT Animations and has a new Off choice.

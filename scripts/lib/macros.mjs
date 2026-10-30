@@ -1,5 +1,5 @@
 import {constants, Logging} from '../lib/_module.mjs';
-import {documentUtils} from '../utilities/_module.mjs';
+import {documentUtils, itemUtils} from '../utilities/_module.mjs';
 const fields = foundry.data.fields;
 export class RegisteredMacros {
     #macrosSchema;
@@ -13,6 +13,7 @@ export class RegisteredMacros {
             rules: new RulesField({required: true}),
             identifier: new fields.StringField({required: true, nullable: false}),
             generic: new fields.BooleanField({required: false, nullable: false}),
+            label: new fields.StringField({required: false}),
             ...constants.triggerTypes.reduce((schema, trigger) => (schema[trigger] = makeEventGroup(), schema), {}),
             genericConfig: new fields.ObjectField({required: false, nullable: false}),
             documents: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: false})
@@ -44,6 +45,12 @@ export class RegisteredMacros {
             macros,
             generic: fnMacro.generic ?? false
         };
+    }
+    getMasteryMacroData(document, type) {
+        if (document.documentName !== 'Item' || document.type !== 'weapon' || !document.system.mastery) return;
+        const fnMacro = this.#getMacroByKey('mastery', document.system.mastery, 'all');
+        if (!fnMacro || (type && !fnMacro.macros[type]?.length) || !itemUtils.canUseMastery(document)) return;
+        return {source: 'mastery', rules: 'all', identifier: document.system.mastery};
     }
     getAllMacros({genericOnly = false, documentType} = {}) {
         const uniqueMacros = new Map();
@@ -88,11 +95,12 @@ export class RegisteredMacros {
     }
 }
 class FnMacro {
-    constructor(source, identifier, rules, {generic, genericConfig, documents, ...triggers} = {}) {
+    constructor(source, identifier, rules, {generic, label, genericConfig, documents, ...triggers} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
         this.generic = generic;
+        this.label = label;
         this.genericConfig = genericConfig;
         this.documents = documents;
         this.macros = {};

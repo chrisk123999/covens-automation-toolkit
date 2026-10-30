@@ -19,6 +19,7 @@ export function buildApi(handlers) {
         registerAnimations: registeredAnimations.registerAnimations.bind(registeredAnimations),
         registerTroubleshooterCheck: troubleshooter.registerTroubleshooterCheck.bind(troubleshooter),
         registerTroubleshooterChecks: troubleshooter.registerTroubleshooterChecks.bind(troubleshooter),
+        registerMastery: handlers.weapon.registerMastery,
         postWelcome: handlers.welcome.postWelcome
     };
 };

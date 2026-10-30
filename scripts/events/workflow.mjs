@@ -1,7 +1,7 @@
+import {effects, manualRolls, regions, weapon} from '../handlers/_module.mjs';
+import {diceSoNice} from '../integration/_modules.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {optionalBonus, regionAttacks, regionDamage, regionVisibility} from '../mechanics/_module.mjs';
-import {diceSoNice} from '../integration/_modules.mjs';
-import {effects, manualRolls, regions} from '../handlers/_module.mjs';
 import {workflowUtils} from '../utilities/_module.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
     let event = await new Events.PreTargetingWorkflowEvent(constants.workflowPasses.preTargeting, {activity, token, config, dialog, message}).run();
@@ -32,10 +32,14 @@ async function attackRollConfig(workflow) {
     await optionalBonus.attackPreRoll(workflow);
 }
 function preRollAttack(config) {
-    const parts = config.workflow ? workflowUtils.getWorkflowProperty(config.workflow, 'attackRollParts') : undefined;
-    if (!parts?.length || !config.rolls?.[0]) return;
-    config.rolls[0].parts = [...(config.rolls[0].parts ?? []), ...parts];
-    workflowUtils.setWorkflowProperty(config.workflow, 'attackRollParts', []);
+    if (!config.workflow || !config.rolls?.[0]) return;
+    const parts = workflowUtils.getWorkflowProperty(config.workflow, 'attackRollParts');
+    if (parts?.length) {
+        config.rolls[0].parts = [...(config.rolls[0].parts ?? []), ...parts];
+        workflowUtils.setWorkflowProperty(config.workflow, 'attackRollParts', []);
+    }
+    const criticalRange = workflowUtils.getWorkflowProperty(config.workflow, 'attackCriticalRange');
+    if (criticalRange) config.rolls[0].options.criticalSuccess = (config.rolls[0].options.criticalSuccess ?? 20) - criticalRange;
 }
 async function postAttackRoll(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRoll, workflow).run();
@@ -46,6 +50,7 @@ async function postAttackRoll(workflow) {
 async function attackRollComplete(workflow) {
     regionAttacks.complete(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollComplete, workflow).run();
+    await weapon.attackRollComplete(workflow);
     await effects.specialDuration(workflow, 'attack');
 }
 async function savesComplete(workflow) {
@@ -56,6 +61,7 @@ async function damageRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.damageRoll, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.damageRollBonuses, workflow).run();
     await optionalBonus.damage(workflow);
+    await weapon.damageRollComplete(workflow);
     await manualRolls.manualDamageRolls(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.damageRollComplete, workflow).run();
     if (game.settings.get('cat', 'diceSoNice') && game.modules.get('dice-so-nice')?.active) await diceSoNice.damageRollComplete(workflow);
@@ -82,6 +88,7 @@ async function rollFinished(workflow) {
     await regions.stampCastTargets(workflow, placedRegions);
     await new Events.WorkflowEvent(constants.workflowPasses.rollFinished, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.onHit, workflow).run();
+    await weapon.rollFinished(workflow);
     await effects.specialDuration(workflow, 'finished');
     await new Events.WorkflowEvent(constants.workflowPasses.cleanup, workflow).run();
 }
