@@ -2,7 +2,7 @@ import {ddbi} from '../integration/_modules.mjs';
 import {constants} from '../lib/_module.mjs';
 import {automationUtils, compendiumUtils, genericUtils} from '../utilities/_module.mjs';
 import CatApp from './cat-app.mjs';
-const {StringField, BooleanField} = foundry.data.fields;
+const {StringField, BooleanField, NumberField} = foundry.data.fields;
 
 export default class MenuApp extends CatApp {
     #context;
@@ -122,18 +122,32 @@ export default class MenuApp extends CatApp {
             case 'checkbox': return this.#buildCheckbox(input);
             case 'selectOption': return this.#buildSelectOption(input);
             case 'priority': return this.#buildPriority(input);
-            case 'users': return this.#buildUsers(input);
+            case 'users': return this.#buildMultiSelect({...input, options: Object.fromEntries(game.users.map(user => [user.id, user.name]))});
+            case 'multiSelect': return this.#buildMultiSelect(input);
+            case 'number': return this.#buildNumber(input);
+            case 'subMenu': return {isSubMenu: true, ...input};
         }
     }
 
-    #buildUsers(input) {
+    #buildMultiSelect(input) {
         const selected = new Set(input.value ?? []);
         return {
             isMultiCombobox: true,
             name: input.name,
             label: input.label,
             hint: input.hint,
-            options: game.users.map(user => ({value: user.id, label: user.name, selected: selected.has(user.id)}))
+            options: Object.entries(input.options ?? {}).map(([value, label]) => ({value, label: _loc(label), selected: selected.has(value)}))
+        };
+    }
+
+    #buildNumber(input) {
+        return {
+            useHelper: true,
+            options: [{
+                field: new NumberField({label: _loc(input.label), hint: _loc(input.hint), integer: true, min: 0, required: true, nullable: false}),
+                name: input.name,
+                value: input.value ?? 0
+            }]
         };
     }
 

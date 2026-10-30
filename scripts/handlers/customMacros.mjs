@@ -1,5 +1,6 @@
 import {constants, Events, Logging} from '../lib/_module.mjs';
 import {automationUtils, genericUtils} from '../utilities/_module.mjs';
+import weapon from './weapon.mjs';
 const template = identifier => `async function use({workflow}) {
 }
 return [
@@ -37,6 +38,7 @@ function isCustomMacro(macro) {
 }
 async function load() {
     constants.macros.overwriteMacros.clear();
+    weapon.clearCustomMasteries();
     const warnings = game.messages.filter(m => m.flags.cat?.customMacroWarning);
     if (warnings.length) await ChatMessage.implementation.deleteDocuments(warnings.map(w => w.id));
     const packs = packIds().toReversed().map(packId => game.packs.get(packId)).filter(Boolean);
@@ -71,7 +73,10 @@ async function registerMacro(macro) {
         const {fn, argValues} = Events.CalledEvent.prototype.buildScriptFunction(macro.command, {});
         const data = await fn(...argValues);
         if (!data) throw new Error(_loc('CAT.CustomMacros.NoReturn', {name: macro.name}));
-        constants.macros.registerFnMacros([data].flat(), true);
+        const entries = [data].flat();
+        entries.filter(entry => entry.mastery).forEach(entry => weapon.registerMastery(entry, {custom: true}));
+        const fnMacros = entries.filter(entry => !entry.mastery);
+        if (fnMacros.length) constants.macros.registerFnMacros(fnMacros, true);
     } catch (error) {
         Logging.addRegistrationError({macro: macro.uuid}, 'macro', error);
         return false;
@@ -87,7 +92,7 @@ function preCreateMacro(macro, data, options, userId) {
     macro.updateSource({type: 'script', command: macro.command || template(macro.name.slugify())});
 }
 function changed(macro) {
-    if (isCustomMacro(macro)) registerMacro(macro);
+    if (isCustomMacro(macro)) load();
 }
 async function renderMacroConfig(app, element) {
     if (!isCustomMacro(app.document)) return;

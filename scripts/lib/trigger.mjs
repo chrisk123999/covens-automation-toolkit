@@ -17,7 +17,9 @@ class Trigger {
         if (!this.castData) this.castData = documentUtils.getSavedCastData(document);
         if (!this.castData.saveDC) this.castData.saveDC = documentUtils.getSavedCastData(document).saveDC;
         const fnMacroData = this.document.flags.cat?.macros?.[this.constructor.type] ?? [];
-        this.processFnMacros(fnMacroData, pass);
+        const masteryMacroData = constants.macros.getMasteryMacroData(this.document, this.constructor.type);
+        const addMastery = masteryMacroData && !fnMacroData.some(entry => entry.source === 'mastery' && entry.identifier === masteryMacroData.identifier);
+        this.processFnMacros(addMastery ? [...fnMacroData, masteryMacroData] : fnMacroData, pass);
         this.processEmbeddedMacro();
         if (this.distances) this.processDistanceMacros();
     }

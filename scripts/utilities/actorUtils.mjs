@@ -1,5 +1,5 @@
 /** @import Actor5e from '../../dnd5e/module/documents/actor/actor.mjs'; */
-import {automationUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
+import {automationUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
 
 /**
  * Get all applicable effects on an actor, optionally including item-applied enchantments (not by default).
@@ -430,6 +430,41 @@ function hasUsedBonusAction(actor) {
 }
 
 /**
+ * Mark this actor's bonus action as used for the current round.
+ * @param {foundry.documents.Actor} actor Actor to act on.
+ * @returns {Promise<void>}
+ */
+async function setBonusActionUsed(actor) {
+    return await MidiQOL.setBonusActionUsed(actor);
+}
+
+/**
+ * Ask to spend this actor's bonus action, and mark it used on yes.
+ * @param {Actor5e} actor Actor whose bonus action is spent.
+ * @param {string} title Window title.
+ * @param {string} content Prompt text.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.userId] User the dialog is shown to.
+ * @returns {Promise<boolean>} Whether the bonus action was spent.
+ */
+async function confirmBonusAction(actor, title, content, {userId} = {}) {
+    if (hasUsedBonusAction(actor) || !await dialogUtils.confirm(title, content, {userId})) return false;
+    await setBonusActionUsed(actor);
+    return true;
+}
+
+/**
+ * Whether the Weapon Mastery setting applies masteries for this actor.
+ * @param {Actor5e} actor Actor to check.
+ * @returns {boolean}
+ */
+function isMasteryEnabled(actor) {
+    const setting = game.settings.get('cat', 'weaponMastery');
+    const isCharacter = actor?.type === 'character';
+    return setting === 'both' || (setting === 'pc' && isCharacter) || (setting === 'npc' && !isCharacter);
+}
+
+/**
  * Get all equipped weapons on this actor.
  * @param {Actor5e} actor Actor to act on.
  * @returns {Item[]}
@@ -579,6 +614,9 @@ export default {
     getEquippedWeapons,
     createActor,
     hasUsedBonusAction,
+    setBonusActionUsed,
+    confirmBonusAction,
+    isMasteryEnabled,
     getMaxCastLevel,
     getCR,
     getLevelOrCR,

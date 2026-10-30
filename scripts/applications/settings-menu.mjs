@@ -1,18 +1,18 @@
 import {compendiumUtils} from '../utilities/_module.mjs';
 import {MenuApp} from './_module.mjs';
 export default class SettingsMenu extends MenuApp {
-    #catSettings = [];
     #menuSettings;
     #save = false;
-    constructor(key) {
-        let title = 'CAT.Settings.' + key.capitalize() + '.Name';
-        let inputs = [];
-        let buttons = 'okCancel';
-        let config = {id: 'cat-settings-menu-' + key};
-        super([title, inputs, buttons, config]);
+    static DEFAULT_OPTIONS = {
+        actions: {openSubMenu: SettingsMenu.#openSubMenu}
+    };
+    constructor(key, {namespace = 'cat', langPrefix = 'CAT', subMenus = []} = {}) {
+        super([langPrefix + '.Settings.' + key.capitalize() + '.Name', [], 'okCancel', {id: namespace + '-settings-menu-' + key}]);
         this.key = key;
-        game.settings.settings.forEach(s => s.namespace.includes('cat') ? this.#catSettings.push(s) : '');
-        this.#menuSettings = this.#catSettings.filter(s => s.menu === key && (s.scope !== 'world' || game.user.isGM));
+        this.namespace = namespace;
+        this.langPrefix = langPrefix;
+        this.subMenus = subMenus;
+        this.#menuSettings = game.settings.settings.values().filter(s => s.namespace === namespace && s.menu === key && (s.scope !== 'world' || game.user.isGM)).toArray();
     }
     #formatSetting(setting) {
         let entry = {
@@ -20,7 +20,7 @@ export default class SettingsMenu extends MenuApp {
             label: setting.name,
             hint: setting.hint,
             default: setting.default,
-            value: game.settings.get('cat', setting.key)
+            value: game.settings.get(this.namespace, setting.key)
         };
         const packTypes = {
             monsterCompendiums: 'Actor',
@@ -45,13 +45,22 @@ export default class SettingsMenu extends MenuApp {
             entry.options = {'': 'None', ...Object.fromEntries(packs.map(pack => [pack.metadata.id, compendiumUtils.getPackLabel(pack)]))};
         }
         else if (setting.choices) {
-            entry.type = 'selectOption';
-            entry.options = setting.choices;
+            entry.type = setting.type === Array ? 'multiSelect' : 'selectOption';
+            entry.options = typeof setting.choices === 'function' ? setting.choices() : setting.choices;
         } else if (setting.type === Boolean) entry.type = 'checkbox';
+        else if (setting.type === Number) entry.type = 'number';
         return entry;
     }
+    #formatSubMenu(key) {
+        const prefix = this.langPrefix + '.Settings.' + key.capitalize();
+        return {type: 'subMenu', name: key, label: prefix + '.Name', hint: prefix + '.Hint', buttonLabel: prefix + '.Label'};
+    }
+    /** @this {SettingsMenu} */
+    static #openSubMenu(event, target) {
+        new SettingsMenu(target.dataset.menu, {namespace: this.namespace, langPrefix: this.langPrefix}).render({force: true});
+    }
     async _prepareContext(options) {
-        this.inputs = this.#menuSettings.map(s => this.#formatSetting(s)).filter(Boolean);
+        this.inputs = [...this.#menuSettings.map(s => this.#formatSetting(s)).filter(Boolean), ...this.subMenus.map(key => this.#formatSubMenu(key))];
         const context = await super._prepareContext(options);
         if (!context.tabbed) return context;
         context.tab = options?.tab ?? this.inputs[0]?.name;
@@ -63,7 +72,7 @@ export default class SettingsMenu extends MenuApp {
     close(options) {
         if (this.#save) {
             this.#menuSettings.forEach(s => {
-                if (s.key in this.data) game.settings.set('cat', s.key, this.data[s.key]);
+                if (s.key in this.data) game.settings.set(this.namespace, s.key, this.data[s.key]);
             });
         }
         super.close(options);

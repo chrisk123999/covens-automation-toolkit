@@ -1,7 +1,7 @@
-import {genericUtils, regionUtils} from '../utilities/_module.mjs';
-import {constants, Events} from '../lib/_module.mjs';
 import {regionEvents} from '../events/_module.mjs';
 import {effects, regions} from '../handlers/_module.mjs';
+import {constants, Events} from '../lib/_module.mjs';
+import {genericUtils, regionUtils} from '../utilities/_module.mjs';
 async function moveToken(token, movement, options, user) {
     if (user.id != game.user.id) return;
     const movementPromise = movement.animation.ended;
@@ -40,7 +40,7 @@ async function moveToken(token, movement, options, user) {
         const action = movement.passed.waypoints.at(-1).action;
         const teleport = CONFIG.Token.movement.actions[action]?.teleport;
         if (!skipMove) {
-            await new Events.MovementEvent(token, constants.movementPasses.moved, {action, options, teleport}).run();
+            await new Events.MovementEvent(token, constants.movementPasses.moved, {action, options, origin: movement.origin, teleport}).run();
         }
         const currentRegions = Array.from(token.regions);
         const leavingRegions = previousRegions.filter(i => !currentRegions.includes(i));

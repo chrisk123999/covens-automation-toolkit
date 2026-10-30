@@ -1,6 +1,6 @@
 import * as applications from '../applications/_module.mjs';
 import {constants, Logging} from '../lib/_module.mjs';
-import {animationUtils, automationUtils} from '../utilities/_module.mjs';
+import {animationUtils, automationUtils, genericUtils} from '../utilities/_module.mjs';
 
 const TROUBLESHOOTER = {
     modules: {
@@ -158,6 +158,24 @@ const AUTOMATIONS_CHECK = {
             };
         });
     }
+};
+function versionRequirements() {
+    return game.modules.filter(module => module.id === 'cat' || [...module.relationships.requires].some(relationship => relationship.id === 'cat')).flatMap(module => [...module.relationships.requires]
+        .filter(relationship => relationship.compatibility?.minimum)
+        .map(({id, compatibility: {minimum}}) => {
+            const version = game.modules.get(id)?.version ?? '0';
+            return {module, id, minimum, version, outdated: genericUtils.isNewerVersion(minimum, version)};
+        }));
+}
+const VERSIONS_CHECK = {
+    id: 'required.versions',
+    section: 'required',
+    group: 'CAT.Troubleshooter.Groups.Versions',
+    run: () => versionRequirements().filter(({module, outdated}) => module.active || outdated).map(({module, id, minimum, version, outdated}) => ({
+        status: outdated ? 'fail' : 'pass',
+        label: `${module.title}: ${moduleName(id)}`,
+        detail: outdated ? _loc('CAT.Troubleshooter.Required.Outdated', {version, minimum}) : version
+    }))
 };
 const REPORT_CHECKS = [
     {
@@ -341,6 +359,7 @@ const REPORT_CHECKS = [
 ];
 function registerChecks() {
     constants.troubleshooter.registerTroubleshooterChecks([
+        VERSIONS_CHECK,
         ...Object.entries(TROUBLESHOOTER.requiredSettings).flatMap(([module, settings]) => Object.entries(settings).map(([key, setting]) => settingCheck({module, key, ...setting}))),
         AUTOMATIONS_CHECK,
         ...TROUBLESHOOTER.modules.defunct.map(id => moduleCheck(id, 'Defunct')),
@@ -349,8 +368,14 @@ function registerChecks() {
     ]);
 }
 const CARDS = {
+    versions: {
+        sections: ['required'],
+        filter: check => check.id === VERSIONS_CHECK.id,
+        select: row => row.status === 'fail'
+    },
     settings: {
         sections: ['required'],
+        filter: check => check.id !== VERSIONS_CHECK.id,
         select: row => row.status === 'fail'
     },
     modules: {
@@ -370,6 +395,11 @@ async function cardRows(card) {
     return (await constants.troubleshooter.run({sections, filter})).filter(select);
 }
 async function startup() {
+    versionRequirements().filter(({outdated}) => outdated).forEach(({module, id, minimum, version}) => genericUtils.notify('CAT.Troubleshooter.OutdatedDependency', {
+        type: 'error',
+        permanent: true,
+        format: {module: module.title, dependency: moduleName(id), minimum, version}
+    }));
     for (const card of Object.keys(CARDS)) {
         await ChatMessage.deleteDocuments(game.messages.filter(message => message.getFlag('cat', 'troubleshooter') === card).map(message => message.id));
         if (game.settings.get('cat', 'hideTroubleshooterWarnings')) continue;

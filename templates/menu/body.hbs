@@ -1,17 +1,24 @@
 {{#*inline "priorityRow"}}
-    <li class="row{{#if sources}}{{#if content}}{{#if massApply}} content-mass-apply{{/if}}{{/if}}{{/if}}"{{#if enabled}} draggable="true"{{/if}} data-source-id="{{id}}" data-kind="{{kind}}" data-content="{{content}}">
+    <li class="row{{#if sources}}{{#if content}}{{#if massApply}} content-mass-apply{{/if}}{{/if}}{{/if}}"
+        {{#if enabled}} draggable="true" {{/if}} data-source-id="{{id}}" data-kind="{{kind}}"
+        data-content="{{content}}">
         <span class="pill">{{kindLabel}}</span>
         <span class="name">{{name}}
             {{#if origin}}<span class="origin">{{origin.source}}
-            {{#if origin.folders}} • <span class="folders"><i class="fas fa-folder fa-fw"></i> {{origin.folders}}</span>{{/if}}</span>{{/if}}
-            {{#if sources}}{{#if content}}<span class="mass-apply-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{localize 'CAT.Settings.AutomationSources.ContentMassApplyWarning'}}</span>{{/if}}{{/if}}
+                    {{#if origin.folders}} • <span class="folders"><i class="fas fa-folder fa-fw"></i>
+                            {{origin.folders}}</span>{{/if}}</span>{{/if}}
+            {{#if sources}}{{#if content}}<span class="mass-apply-warning"><i
+                            class="fa-solid fa-triangle-exclamation"></i>
+                        {{localize 'CAT.Settings.AutomationSources.ContentMassApplyWarning'}}</span>{{/if}}{{/if}}
         </span>
         {{#if sources}}
-            <label class="mass-apply-label" draggable="false"{{#unless enabled}} hidden{{/unless}}>
-                <input type="checkbox" class="mass-apply" {{checked massApply}} aria-label="{{localize 'CAT.Settings.AutomationSources.MassApply'}}">
+            <label class="mass-apply-label" draggable="false" {{#unless enabled}} hidden{{/unless}}>
+                <input type="checkbox" class="mass-apply" {{checked massApply}}
+                    aria-label="{{localize 'CAT.Settings.AutomationSources.MassApply'}}">
             </label>
         {{/if}}
-        <input type="number" class="rank" value="{{priority}}" draggable="false"{{#unless enabled}} hidden{{/unless}} aria-label="{{localize 'CAT.Settings.AutomationSources.Rank'}}">
+        <input type="number" class="rank" value="{{priority}}" draggable="false" {{#unless enabled}} hidden{{/unless}}
+            aria-label="{{localize 'CAT.Settings.AutomationSources.Rank'}}">
         {{#if enabled}}
             <button type="button" draggable="false" data-priority-action="disable"
                 data-tooltip="{{localize 'CAT.Settings.AutomationSources.Disable'}}"
@@ -57,6 +64,17 @@
                     <p class="hint">{{localize hint}}</p>
                 {{/if}}
             </div>
+        {{else if isSubMenu}}
+            <div class="form-group">
+                <label>{{localize label}}</label>
+                <div class="form-fields">
+                    <button type="button" class="sub-menu" data-action="openSubMenu" data-menu="{{name}}"><i
+                            class="fas fa-gears" aria-hidden="true"></i> {{localize buttonLabel}}</button>
+                </div>
+                {{#if hint}}
+                    <p class="hint">{{localize hint}}</p>
+                {{/if}}
+            </div>
         {{else if isPriority}}
             <div class="priority" data-source-setting="{{name}}" data-pack-setting="{{packSetting}}">
                 {{#unless ../tabbed}}{{#if label}}
@@ -66,14 +84,18 @@
                     <p class="hint">{{{hint}}}</p>
                 {{/if}}
                 {{#if sources}}
-                    <button type="button" class="recommended" data-priority-action="recommend" data-tooltip="{{localize 'CAT.Settings.AutomationSources.RecommendedHint'}}">
-                        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> {{localize 'CAT.Settings.AutomationSources.Recommended'}}
+                    <button type="button" class="recommended" data-priority-action="recommend"
+                        data-tooltip="{{localize 'CAT.Settings.AutomationSources.RecommendedHint'}}">
+                        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                        {{localize 'CAT.Settings.AutomationSources.Recommended'}}
                     </button>
                 {{/if}}
                 <div class="priority-header">
                     <span class="spacer"></span>
-                    {{#if sources}}<span class="mass-apply-label" data-tooltip="{{localize 'CAT.Settings.AutomationSources.MassApplyHint'}}">{{localize 'CAT.Settings.AutomationSources.MassApply'}}</span>{{/if}}
-                    <span class="rank" data-tooltip="{{localize 'CAT.Settings.AutomationSources.RankHint'}}">{{localize 'CAT.Settings.AutomationSources.Rank'}}</span>
+                    {{#if sources}}<span class="mass-apply-label"
+                            data-tooltip="{{localize 'CAT.Settings.AutomationSources.MassApplyHint'}}">{{localize 'CAT.Settings.AutomationSources.MassApply'}}</span>{{/if}}
+                    <span class="rank"
+                        data-tooltip="{{localize 'CAT.Settings.AutomationSources.RankHint'}}">{{localize 'CAT.Settings.AutomationSources.Rank'}}</span>
                     <span class="action"></span>
                 </div>
                 <ul data-list="enabled">
