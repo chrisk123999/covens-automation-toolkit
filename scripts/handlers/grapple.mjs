@@ -1,5 +1,5 @@
 import {actorUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, rollUtils, tokenUtils, uiUtils, workflowUtils} from '../utilities/_module.mjs';
-import {constants, Events, Logging} from '../lib/_module.mjs';
+import {constants, Events} from '../lib/_module.mjs';
 function abilities(rules) {
     if (rules === '2014') return ['acr', 'ath'];
     if (rules === '2024') return ['str', 'dex'];

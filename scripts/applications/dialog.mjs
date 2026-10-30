@@ -393,9 +393,9 @@ export default class DialogApp extends CatApp {
                         });
                     }
                 } else if (t.total !== 0) dice.push({
-                    tooltip: t.options.source || t.formula,
+                    tooltip: t.options.source || t.flavor || t.total,
                     dieClass: 'generic',
-                    value: t.formula,
+                    value: t.total,
                     add
                 });
             }
