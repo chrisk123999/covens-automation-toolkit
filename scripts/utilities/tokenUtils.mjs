@@ -433,6 +433,17 @@ async function swapTokens(tokenA, tokenB, {animate = true, animation, options = 
     await Promise.all(moves.map(([token, destination]) => new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run()));
 }
 /**
+ * Whether another visible token overlaps the space a token would take at a position.
+ * @param {foundry.documents.TokenDocument} token The token that would move.
+ * @param {{x: number, y: number}} position Top-left position to test.
+ * @returns {boolean}
+ */
+function isOccupied(token, {x, y}) {
+    const size = token.parent.grid.size;
+    const rect = new PIXI.Rectangle(x, y, token.width * size, token.height * size).pad(-1);
+    return token.parent.tokens.some(other => other !== token && !other.hidden && rect.intersects(new PIXI.Rectangle(other.x, other.y, other.width * size, other.height * size)));
+}
+/**
  * Push a token in a given direction.
  * @param {foundry.documents.TokenDocument} token The token document to push.
  * @param {object} options Additional options.
@@ -461,7 +472,16 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
     } else {
         return;
     }
-    const targetPoint = token.getSnappedPosition(token.parent.grid.getTranslatedPoint({x: token.x, y: token.y}, Math.toDegrees(angle), distance));
+    const step = token.parent.grid.distance * Math.sign(distance);
+    let targetPoint;
+    for (let travel = distance; Math.abs(travel) > 0; travel -= step) {
+        const point = token.getSnappedPosition(token.parent.grid.getTranslatedPoint({x: token.x, y: token.y}, Math.toDegrees(angle), travel));
+        if (!isOccupied(token, point)) {
+            targetPoint = point;
+            break;
+        }
+    }
+    if (!targetPoint) return;
     await moveToken(token, [
         {
             x: targetPoint.x,
