@@ -1,3 +1,7 @@
+# 0.1.7 Release:
+## Bug Fixes:
+- Patch dnd5e 6.0.x bug, removed in 6.1.0: Activities remember their range, activation, duration and target after their chat card is created.
+- Pushed and pulled tokens stop short of a space another token occupies.
 # 0.1.6 Release:
 ## Update Notes:
 - New setting: Weapon Mastery. CAT applies the mastery property chosen for a weapon attack, for player characters by default.
