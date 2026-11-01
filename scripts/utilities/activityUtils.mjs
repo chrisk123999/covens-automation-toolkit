@@ -31,7 +31,8 @@ function getSavedCastData(activity) {
  */
 function getConditions(activity) {
     const conditions = getEffectConditions(activity);
-    return activity.otherActivity ? conditions.union(getEffectConditions(activity.otherActivity)) : conditions;
+    for (const status of activity.midiProperties.statuses) conditions.add(status.id);
+    return activity.otherActivity ? conditions.union(getConditions(activity.otherActivity)) : conditions;
 }
 /**
  * Status effect IDs conveyed by this activity's own effects.

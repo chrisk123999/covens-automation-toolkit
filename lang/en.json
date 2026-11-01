@@ -1113,6 +1113,9 @@
                 "Name": "{condition} Condition Resistance",
                 "Description": "Condition Resistance to {condition}, roll at advantage to save. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
             },
+            "CI": {
+                "Name": "{condition} Condition Immunity"
+            },
             "FeatureRollModes": "CAT Feature Roll Modes",
             "FF": {
                 "Name": "Feature Failure",
