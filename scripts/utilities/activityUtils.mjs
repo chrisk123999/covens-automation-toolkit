@@ -30,9 +30,7 @@ function getSavedCastData(activity) {
  * @returns {Set<string>}
  */
 function getConditions(activity) {
-    const conditions = getEffectConditions(activity);
-    for (const status of activity.midiProperties.statuses) conditions.add(status.id);
-    return activity.otherActivity ? conditions.union(getConditions(activity.otherActivity)) : conditions;
+    return new Set([...getEffectConditions(activity), ...activity.midiProperties.statuses.map(status => status.id), ...(activity.otherActivity ? getConditions(activity.otherActivity) : [])]);
 }
 /**
  * Status effect IDs conveyed by this activity's own effects.
