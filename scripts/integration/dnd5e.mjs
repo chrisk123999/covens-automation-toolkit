@@ -56,8 +56,24 @@ async function registerScales() {
     }));
     Logging.groupEnd();
 }
+function registerActivityBehaviors() {
+    for (const type of ['adjustDarknessLevel', 'modifyMovementCost', 'suppressWeather']) {
+        const coreModel = globalThis.CONFIG.RegionBehavior.dataModels[type];
+        globalThis.CONFIG.DND5E.activityBehaviorTypes[type] = {
+            label: 'TYPES.RegionBehavior.' + type,
+            icon: globalThis.CONFIG.RegionBehavior.typeIcons[type],
+            model: class extends dnd5e.dataModels.regionBehavior.BaseActivityBehavior {
+                static LOCALIZATION_PREFIXES = coreModel.LOCALIZATION_PREFIXES;
+                static defineSchema() { return coreModel.defineSchema(); }
+                customizeField(field, data) { data.localize = true; }
+                createBehaviorData() { return {type, system: this.toObject()}; }
+            }
+        };
+    }
+}
 export default {
     CONFIG,
     registerAutomations,
-    registerScales
+    registerScales,
+    registerActivityBehaviors
 };

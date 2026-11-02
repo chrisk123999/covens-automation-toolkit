@@ -1,4 +1,9 @@
 # 0.1.7 Release:
+## Update Notes:
+- Summons have a One creature choice. The user picks a single entry, or a single profile of a summon activity. Entries can have a Label for that choice.
+- A marker shows above the hotbar for GMs while a Development Tools setting is on. Clicking it opens those settings.
+- Mass apply has Switch All Sources and Switch All Rules. Switching rules applies the 2014 or 2024 automation where one exists.
+- Activities can add Adjust Darkness Level, Modify Movement Cost and Suppress Weather behaviors to their placed areas. The activity CatKit's Placed Region tab lists and edits an activity's region behaviors.
 ## Bug Fixes:
 - Patch dnd5e 6.0.x bug, removed in 6.1.0: Activities remember their range, activation, duration and target after their chat card is created.
 - Pushed and pulled tokens stop short of a space another token occupies.

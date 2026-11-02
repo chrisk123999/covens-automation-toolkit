@@ -47,6 +47,9 @@
                 "CycleWarning": "Circular dependency detected among items. Some updates may occur out of sequence!",
                 "NoUpdates": "There are no items in need of updates!",
                 "ChooseSource": "Choose Source",
+                "SwitchSource": "Switch All Sources",
+                "SwitchRules": "Switch All Rules",
+                "PerItem": "Per Item",
                 "Tabs": {
                     "Characters": "Characters",
                     "NPCs": "NPCs",
@@ -590,6 +593,13 @@
                 }
             },
             "Activity": {
+                "Behaviors": {
+                    "Label": "Region Behaviors",
+                    "Hint": "Foundry and system behaviors added to the placed region.",
+                    "Add": "Add Behavior",
+                    "Delete": "Delete Behavior",
+                    "None": "No behaviors."
+                },
                 "SpellIdentifier": {
                     "Label": "Spell Identifier",
                     "Hint": "The spell this cast activity links to. On a CatKit update the link is swapped to the first match in your Spell compendiums."
@@ -743,6 +753,10 @@
         "Region": {
             "AttackerCantSeeTarget": "Attacker Can't See Target",
             "TargetCantSeeAttacker": "Target Can't See Attacker"
+        },
+        "Devtools": {
+            "Marker": "CAT Devtools On",
+            "MarkerHint": "Debug logging is enabled. Turn it off before a live session."
         },
         "Dialog": {
             "Remember": {
@@ -1541,11 +1555,13 @@
                 "Tier": "{count} × CR {cr} or lower",
                 "TierPrompt": "Choose how many creatures appear.",
                 "Pick": "Choose up to {count} creatures.",
+                "PickOne": "Choose a creature.",
                 "NoMatching": "No creatures in the monster compendiums match this summon.",
                 "PickMode": "Creature Choice",
-                "PickModeHint": "All creates every entry. Budget lets the user split a budget across the entries, each costing its weight.",
+                "PickModeHint": "All creates every entry. One lets the user pick a single entry. Budget lets the user split a budget across the entries, each costing its weight.",
                 "PickOptions": {
                     "all": "All",
+                    "one": "One",
                     "budget": "Budget"
                 },
                 "Budget": "Budget",

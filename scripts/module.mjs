@@ -30,6 +30,7 @@ Hooks.once('init', () => {
     handlers.weapon.register();
     handlers.troubleshooter.registerChecks();
     CONFIG.DND5E.senses.devilsSight = {label: 'CAT.Senses.DevilsSight', grantsSight: true};
+    integration.dnd5e.registerActivityBehaviors();
     globalThis.cat = {
         api: buildApi(handlers),
         applications,
@@ -70,6 +71,7 @@ Hooks.once('ready', async () => {
     handlers.summon.register();
     handlers.backups.startup();
     handlers.welcome.startup();
+    handlers.devtools.refresh();
     await handlers.customMacros.load();
     await utils.genericUtils.sleep(1000); //To avoid eating console logs from other modules.
     await handlers.items.registerCompendiums({startup: true});

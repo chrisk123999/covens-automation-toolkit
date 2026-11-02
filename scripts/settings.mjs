@@ -1,5 +1,5 @@
 import {SettingsMenuBase, TroubleshooterApp} from './applications/_module.mjs';
-import {customMacros, items} from './handlers/_module.mjs';
+import {customMacros, devtools, items} from './handlers/_module.mjs';
 import {Auras} from './lib/_module.mjs';
 import {dicePatching} from './patches/_module.mjs';
 import {genericUtils} from './utilities/_module.mjs';
@@ -42,12 +42,14 @@ const settings = {
     displayDebugLogs: {
         type: Boolean,
         default: false,
-        menu: 'devtools'
+        menu: 'devtools',
+        onChange: () => devtools.refresh()
     },
     displayDebugEventData: {
         type: Boolean,
         default: false,
-        menu: 'devtools'
+        menu: 'devtools',
+        onChange: () => devtools.refresh()
     },
     fixDescriptionEnrichers: {
         type: Boolean,
