@@ -21,7 +21,7 @@ class BonusSession {
     #outcome;
     #spent = {};
     #bonuses = [];
-    #consumed = new Map();
+    #consumed = new Set();
     #pendingD20 = [];
     #dismissed = false;
     #ran = new Set();
@@ -96,7 +96,7 @@ class BonusSession {
             .sort((a, b) => b.priority - a.priority);
         D20Bonus.AddCosts(this.#spent, taken);
         for (const bonus of taken) {
-            this.#consumed.set(bonus.id, bonus);
+            this.#consumed.add(bonus.id);
             this.#committed.push(bonus);
             if (bonus instanceof DamageBonus) {
                 this.#damageBonuses.push(bonus);
@@ -109,14 +109,13 @@ class BonusSession {
 
     async applyD20(roll, actor) {
         if (!roll || !this.#pendingD20.length) return roll;
-        const allBonuses = this.#pendingD20.splice(0);
         const toRoll = [];
-        for (const bonus of allBonuses) {
+        for (const bonus of this.#pendingD20.splice(0)) {
             if (bonus.roll.formula !== '0') {
                 toRoll.push(bonus);
                 continue;
             }
-            if (bonus.use) await bonus.use(this.#workflow, allBonuses);
+            if (bonus.use) await bonus.use(this.#workflow, this.#committed);
         }
         if (!toRoll.length) return roll;
         const rolled = await resolveBonusRolls(toRoll, actor, CONFIG.Dice.BasicRoll);
@@ -124,7 +123,7 @@ class BonusSession {
             const bonusRoll = rolled[i];
             if (!bonusRoll._evaluated) await bonusRoll.evaluate({allowInteractive: false});
             bonus.roll = bonusRoll;
-            if (bonus.use) await bonus.use(this.#workflow, allBonuses);
+            if (bonus.use) await bonus.use(this.#workflow, this.#committed);
             const merged = await MidiQOL.addRollToAsync(roll, bonusRoll);
             merged.data = roll.data;
             roll = merged;
