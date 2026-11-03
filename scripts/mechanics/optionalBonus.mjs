@@ -10,7 +10,7 @@ const phaseLabels = {
 
 async function resolveBonusRolls(bonuses, actor, rollClass) {
     const label = bonuses.map(bonus => bonus.name).join(', ');
-    for (const bonus of bonuses) bonus.roll.options.cat = {...bonus.roll.options.cat, source: bonus.name};
+    for (const bonus of bonuses) bonus.roll.options.cat = {...bonus.roll.options.cat, source: bonus.name, bonusId: bonus.id};
     return await rollUtils.resolveManualRolls(bonuses.map(bonus => bonus.roll), actor, label, {rollClass});
 }
 
@@ -21,7 +21,7 @@ class BonusSession {
     #outcome;
     #spent = {};
     #bonuses = [];
-    #consumed = new Set();
+    #consumed = new Map();
     #pendingD20 = [];
     #dismissed = false;
     #ran = new Set();
@@ -59,7 +59,7 @@ class BonusSession {
         this.#ran.add(phaseId);
         const workflow = this.#workflow;
         const roll = rolls?.[0];
-        const candidates = this.#bonuses.filter(bonus => !this.#consumed.has(bonus) && (!(bonus instanceof D20Bonus) || bonus.phase.has(phaseId)));
+        const candidates = this.#bonuses.filter(bonus => !this.#consumed.has(bonus.id) && (!(bonus instanceof D20Bonus) || bonus.phase.has(phaseId)));
         const built = await dialogUtils.buildBonusInputs(candidates, {
             rolls,
             targets: workflow?.targets.map(token => token.document),
@@ -96,13 +96,12 @@ class BonusSession {
             .sort((a, b) => b.priority - a.priority);
         D20Bonus.AddCosts(this.#spent, taken);
         for (const bonus of taken) {
-            this.#consumed.add(bonus);
+            this.#consumed.set(bonus.id, bonus);
             this.#committed.push(bonus);
             if (bonus instanceof DamageBonus) {
                 this.#damageBonuses.push(bonus);
                 continue;
             }
-            if (bonus.use) await bonus.use(this.#workflow, candidates);
             this.#pendingD20.push(bonus);
         }
         this.#damageBonuses.sort((a, b) => b.priority - a.priority);
@@ -113,6 +112,11 @@ class BonusSession {
         const pending = this.#pendingD20.splice(0).filter(bonus => bonus.roll.formula !== '0');
         if (!pending.length) return roll;
         for (const bonusRoll of await resolveBonusRolls(pending, actor, CONFIG.Dice.BasicRoll)) {
+            const bonus = this.#consumed.get(bonusRoll.options.cat?.bonusId);
+            if (bonus?.use) {
+                if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
+                await bonus.use(this.#workflow);
+            }
             const merged = await MidiQOL.addRollToAsync(roll, bonusRoll);
             merged.data = roll.data;
             roll = merged;

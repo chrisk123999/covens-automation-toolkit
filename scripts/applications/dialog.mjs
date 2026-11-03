@@ -383,7 +383,7 @@ export default class DialogApp extends CatApp {
                     const source = t.options.source || t.denomination;
                     const results = t.results?.filter(r => r.active) ?? [];
                     const dieClass = STANDARD_FACES.has(t.faces) ? 'd' + t.faces : 'generic';
-                    for (let k = 0; k < t.number; k++) {
+                    for (let k = 0; k < results.length; k++) {
                         const value = results[k]?.result;
                         dice.push({
                             tooltip: value === undefined ? source : `${source} = ${value}`,
