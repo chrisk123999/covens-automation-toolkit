@@ -20,7 +20,7 @@ async function preItemRoll(workflow) {
 async function preambleComplete(workflow) {
     let event = await new Events.WorkflowEvent(constants.workflowPasses.targeting, workflow).run();
     await refundAborted(workflow);
-    if (event) return;
+    if (event) return false;
     event = await new Events.WorkflowEvent(constants.workflowPasses.preambleComplete, workflow).run();
     await refundAborted(workflow);
     if (event) return false;

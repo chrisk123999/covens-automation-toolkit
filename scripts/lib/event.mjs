@@ -69,7 +69,8 @@ class CatEvent {
             groups: this.groups,
             encounters: this.encounters,
             vehicles: this.vehicles,
-            level: this.level
+            level: this.level,
+            pass: this.pass
         };
     }
     getActorTriggers(actor, pass, data, {token} = {}) {

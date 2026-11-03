@@ -97,6 +97,7 @@ class RollBonus {
     #priority;      // Number   | The priority of the bonus, lower runs first.
     #extraInputs;   // Array    | Additional dialog subinputs, in `dialogUtils` input format.
     #inputs;        // Object   | Values of the additional subinputs, keyed by field name.
+    #type;          // String   | The way this bonus will be used. 'attack', 'check', 'save', 'skill', 'tool', 'damage'
     constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor, autoApproveRequests = false, identifier, tags = [], priority = 50} = {}) {
         this.#document = document;
         this.#getActivity(document);
@@ -325,6 +326,14 @@ class RollBonus {
     }
     set inputs(value) {
         this.#inputs = value;
+    }
+    static #types = new Set(['attack', 'check', 'save', 'skill', 'tool', 'damage']);
+    /** @type {'attack'|'check'|'save'|'skill'|'tool'|'damage'} The way this bonus will be used. */
+    get type() {
+        return this.#type;
+    }
+    set type(value) {
+        if (RollBonus.#types.has(value)) this.#type = value;
     }
 
     /**

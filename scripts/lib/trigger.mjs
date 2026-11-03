@@ -34,7 +34,8 @@ class Trigger {
         if (!this.distances || !target) return false;
         const getConfig = (key) => {
             if (fnMacro.generic) return automationUtils.getGenericConfigValue(this.document, fnMacro.source, fnMacro.identifier, key, {rules: fnMacro.rules});
-            return automationUtils.getConfigValue(this.document, key);
+            const configDocument = this.document.documentName === 'Activity' ? this.document.item : this.document;
+            return automationUtils.getConfigValue(configDocument, key);
         };
         const disabled = macro.configDisabled ? getConfig(macro.configDisabled) : macro.disabled;
         if (disabled) {
