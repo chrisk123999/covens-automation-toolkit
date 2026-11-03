@@ -104,11 +104,11 @@ function isUpToDate(item, {automation} = {}) {
  * @param {Item5e} item Item to act on.
  * @param {object} [options] Additional options.
  * @param {string[]} [options.excludeSources] Sources to leave out.
+ * @param {string} [options.rules] Rules version to look up instead of the item's own.
  * @returns {Automation[]}
  */
-function getAvailableAutomations(item, {excludeSources = []} = {}) {
+function getAvailableAutomations(item, {excludeSources = [], rules = documentUtils.getRules(item) ?? 'all'} = {}) {
     const identifier = documentUtils.getIdentifier(item);
-    const rules = documentUtils.getRules(item) ?? 'all';
     const type = item.type;
     const sourceType = itemUtils.getAdvancementSourceKey(item);
     return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, excludeSources, sourceType});
@@ -281,12 +281,14 @@ function isMassApplyBlocked(item, source) {
 /**
  * Automations mass apply may put on this item.
  * @param {Item5e} item Item to act on.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.rules] Rules version to look up instead of the item's own.
  * @returns {Automation[]}
  */
-function getMassApplyAutomations(item) {
+function getMassApplyAutomations(item, {rules} = {}) {
     const sources = game.settings.get('cat', 'automationSources');
     const excludeSources = [...constants.automations.sources].filter(source => !isMassApplySource(source, sources[source]));
-    return getAvailableAutomations(item, {excludeSources}).filter(automation => !isMassApplyBlocked(item, automation.source));
+    return getAvailableAutomations(item, {excludeSources, rules}).filter(automation => !isMassApplyBlocked(item, automation.source));
 }
 /**
  * Display name for an automation source, resolving registered names, compendiums, modules and the system.
@@ -448,15 +450,15 @@ function isReplaced(item) {
  * @param {Item5e} item Item to act on.
  * @param {object} [options] Additional options.
  * @param {string} [options.source] Force a source rather than using the preferred one.
+ * @param {string} [options.rules] Apply the automation for this rules version instead of the item's own. Needs `source`.
  * @param {string} [options.monsterIdentifier] Narrows the lookup for monster feature automations.
  * @param {boolean} [options.skipEvent] Do not fire the medkit item event.
  * @param {boolean} [options.openSheet] Render the item sheet afterwards.
  */
-async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet} = {}) {
+async function updateItem(item, {source, rules = documentUtils.getRules(item), monsterIdentifier, skipEvent, openSheet} = {}) {
     if (isReplaced(item)) return;
     let automation;
     const identifier = documentUtils.getIdentifier(item);
-    const rules = documentUtils.getRules(item);
     if (source) {
         const sourceType = itemUtils.getAdvancementSourceKey(item);
         automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type: item.type, sourceType});
@@ -475,6 +477,7 @@ async function updateItem(item, {source, monsterIdentifier, skipEvent, openSheet
         const fieldValue = genericUtils.getProperty(oldDocumentData, field);
         if (fieldValue) genericUtils.setProperty(documentData, field, fieldValue);
     });
+    if (['2014', '2024'].includes(automation.rules)) genericUtils.setProperty(documentData, 'system.source.rules', automation.rules);
     const existingDescription = genericUtils.getProperty(documentData, 'system.description.value');
     if (existingDescription) {
         const stripped = itemUtils.stripDescriptionBlock(existingDescription);

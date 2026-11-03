@@ -14,7 +14,9 @@ export default class ActivityMedkit extends MedkitApp {
             toggleRegionTrigger: ActivityMedkit.#toggleRegionTrigger,
             setRegionDisposition: ActivityMedkit.#setRegionDisposition,
             toggleRegionOncePerTurn: ActivityMedkit.#toggleRegionOncePerTurn,
-            toggleRegionDependentEffects: ActivityMedkit.#toggleRegionDependentEffects
+            toggleRegionDependentEffects: ActivityMedkit.#toggleRegionDependentEffects,
+            addRegionBehavior: ActivityMedkit.#addRegionBehavior,
+            deleteRegionBehavior: ActivityMedkit.#deleteRegionBehavior
         }
     };
 
@@ -39,6 +41,8 @@ export default class ActivityMedkit extends MedkitApp {
             initial: 'docprops'
         }
     };
+
+    #behaviors;
 
     get title() {
         return _loc('CAT.MEDKIT.Title', {name: this.#displayName});
@@ -83,6 +87,8 @@ export default class ActivityMedkit extends MedkitApp {
         const siblings = Array.from(this.document.item?.system?.activities ?? []).filter(a => a.id !== this.document.id);
         context.activityChoices = siblings.map(a => ({value: a.id, label: a.name ?? a.id, selected: configuredIds.has(a.id)}));
         context.activityRows = this.#prepareActivityRows(configured);
+        context.showBehaviors = !!this.document.target?.template?.type && Array.isArray(this.document.behaviors);
+        if (context.showBehaviors) context.behaviors = this.#prepareBehaviors();
         if ((this.document.type ?? this.document.metadata?.type) === 'attack') {
             const picked = new Set(flags.otherAbilities?.value ?? []);
             context.showOtherAbilities = true;
@@ -109,10 +115,48 @@ export default class ActivityMedkit extends MedkitApp {
         });
     }
 
+    get #behaviorSource() {
+        this.#behaviors ??= foundry.utils.deepClone(this.document.toObject().behaviors ?? []);
+        return this.#behaviors;
+    }
+
+    #prepareBehaviors() {
+        return this.#behaviorSource.map((source, index) => {
+            const config = CONFIG.DND5E.activityBehaviorTypes[source.type];
+            if (!config) return null;
+            const model = new config.model(source.config ?? {});
+            return {index, label: source.name || config.label, icon: config.icon, fields: Array.from(model.generateFields(source.config ?? {}, {prefix: `behaviors.${index}.config.`}))};
+        }).filter(Boolean);
+    }
+
+    get isDirty() {
+        return super.isDirty || (!!this.#behaviors && !foundry.utils.equals(this.#behaviors, this.document.toObject().behaviors ?? []));
+    }
+
+    async _commit() {
+        const behaviors = this.#behaviors;
+        if (behaviors && !foundry.utils.equals(behaviors, this.document.toObject().behaviors ?? [])) await this.document.update({behaviors});
+        this.#behaviors = undefined;
+        await super._commit();
+    }
+
+    async close(options) {
+        this.#behaviors = undefined;
+        return super.close(options);
+    }
+
     // Region macros + the activity picker write map/array shapes the generic flag setter would mangle.
     async _onChangeForm(formConfig, event) {
         const target = event.target;
         const name = target?.name ?? target?.getAttribute?.('name');
+        if (name?.startsWith('behaviors.')) {
+            const formData = new foundry.applications.ux.FormDataExtended(this.form).object;
+            const behaviors = this.#behaviorSource;
+            for (const [key, value] of Object.entries(formData)) {
+                if (key.startsWith('behaviors.')) foundry.utils.setProperty({behaviors}, key, value);
+            }
+            return;
+        }
         if (target?.dataset?.regionField === 'perDistance') {
             const perDistance = Number(target.value);
             this.#mutateRegionActivity(target.dataset.activityId, entry => {
@@ -152,6 +196,20 @@ export default class ActivityMedkit extends MedkitApp {
         const entry = (foundry.utils.getProperty(this._getFlags(), 'placed.region.activities') ?? []).find(e => e.id === id);
         if (!entry) return;
         mutate(entry);
+        this.render();
+    }
+
+    /** @this {ActivityMedkit} */
+    static async #addRegionBehavior() {
+        const createData = await dnd5e.applications.CreateDocumentDialog.prompt(dnd5e.dataModels.regionBehavior.BaseActivityBehavior, {}, {parent: this.document});
+        if (!createData) return;
+        this.#behaviorSource.push({_id: foundry.utils.randomID(), ...createData});
+        this.render();
+    }
+
+    /** @this {ActivityMedkit} */
+    static #deleteRegionBehavior(_event, target) {
+        this.#behaviorSource.splice(Number(target.dataset.index), 1);
         this.render();
     }
 

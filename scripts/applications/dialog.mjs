@@ -681,6 +681,7 @@ export default class DialogApp extends CatApp {
                 }, {});
                 return {
                     field: new StringField({label: f.label, hint: f.hint, choices, required: true, blank: false}),
+                    selectOptions: (f.options?.options ?? []).map(i => typeof i === 'string' ? {value: i, label: i} : {value: i.value, label: i.label}),
                     name: f.name,
                     value: f.options?.currentValue ?? '',
                     hidden: f.options?.hidden,

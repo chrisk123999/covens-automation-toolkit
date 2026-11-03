@@ -30,10 +30,13 @@ function resolveFormula(formula, rollData) {
 }
 function getEntries(activity, config, profileId) {
     if (activity.type !== 'summon') return config.summons;
+    const toEntry = profile => {
+        const entry = config.summons.find(entry => entry.profile === profile._id) ?? {};
+        return {...entry, name: entry.name || profile.name, sourceActorUuid: entry.sourceActorUuid || profile.uuid, count: entry.count || profile.count || '1', profile};
+    };
+    if (config.pick === 'one') return activity.availableProfiles.map(toEntry);
     const profile = activity.profiles.find(profile => profile._id === profileId) ?? activity.availableProfiles[0];
-    if (!profile) return [];
-    const entry = config.summons.find(entry => entry.profile === profile._id) ?? {};
-    return [{...entry, sourceActorUuid: entry.sourceActorUuid || profile.uuid, count: entry.count || profile.count || '1', profile}];
+    return profile ? [toEntry(profile)] : [];
 }
 function getTypedUpdates(entry, rollData) {
     const updates = {};
@@ -173,10 +176,10 @@ async function pickBudget(item, entries, config, rollData) {
     if (!budget) return [];
     const documents = await Promise.all(entries.map(async (entry, index) => {
         const actor = entry.sourceActorUuid ? await fromUuid(entry.sourceActorUuid) : undefined;
-        return {id: 'entry' + index, name: entry.name ? _loc(entry.name) : actor?.name ?? String(index + 1), img: entry.tokenImg || entry.avatarImg || actor?.img || 'icons/svg/mystery-man.svg'};
+        return {id: 'entry' + index, name: _loc(entry.label || entry.name || '') || actor?.name || String(index + 1), img: entry.tokenImg || entry.avatarImg || actor?.img || 'icons/svg/mystery-man.svg'};
     }));
     const weights = Object.fromEntries(entries.map((entry, index) => ['entry' + index, Number(entry.weight) || 1]));
-    const selection = await dialogUtils.selectDocumentDialog(item.name, _loc('CAT.Macros.Summon.Pick', {count: budget}), documents, {max: budget, weights, userId: queryUtils.firstOwner(item.actor, true)});
+    const selection = await dialogUtils.selectDocumentDialog(item.name, _loc(config.pick === 'one' ? 'CAT.Macros.Summon.PickOne' : 'CAT.Macros.Summon.Pick', {count: budget}), documents, {max: budget, weights, userId: queryUtils.firstOwner(item.actor, true)});
     if (!selection) return [];
     return toPicks(selection).map(pick => ({...entries[Number(pick.document.id.slice(5))], count: String(pick.amount)}));
 }
@@ -191,7 +194,7 @@ async function create(host, activity, {profileId, options = {}, workflowOptions}
     const castData = {castLevel, baseLevel: item.system.level ?? 0, saveDC: itemUtils.getSaveDC(item), mod: rollData.mod};
     const summons = [];
     const summonActivity = getSummonActivity(activity, config);
-    const picked = config.pick === 'budget' ? await pickBudget(item, entries, config, rollData) : entries;
+    const picked = ['budget', 'one'].includes(config.pick) ? await pickBudget(item, entries, config.pick === 'one' ? {...config, budget: '1'} : config, rollData) : entries;
     for (const entry of picked) summons.push(...await createFromEntry(host, activity, entry, {rollData, castData, options, summonActivity, hostileOnParentEnd: config.hostileOnParentEnd, workflowOptions}));
     if (!summons.length) return;
     const commandIds = getCommandIds(config);
@@ -249,8 +252,10 @@ async function command(host, activity) {
     await leash({document: host});
     await followUp(host, config, 'move');
 }
-function preUseActivity(activity) {
-    if (getHost(activity) || getCommandHost(activity)) pendingUses.set(activity.uuid, null);
+function preUseActivity(activity, usageConfig, dialogConfig) {
+    const host = getHost(activity);
+    if (host || getCommandHost(activity)) pendingUses.set(activity.uuid, null);
+    if (host && activity.type === 'summon' && getConfig(host).pick === 'one') genericUtils.setProperty(dialogConfig, 'options.display.create.summons', false);
 }
 function preSummon(activity, profile, options) {
     const host = getHost(activity);
@@ -416,7 +421,7 @@ const summon = {
             category: 'behavior',
             label: 'CAT.Macros.Summon.PickMode',
             hint: 'CAT.Macros.Summon.PickModeHint',
-            get options() { return selectOptions(['all', 'budget'], 'CAT.Macros.Summon.PickOptions.'); }
+            get options() { return selectOptions(['all', 'one', 'budget'], 'CAT.Macros.Summon.PickOptions.'); }
         },
         budget: {
             default: '',

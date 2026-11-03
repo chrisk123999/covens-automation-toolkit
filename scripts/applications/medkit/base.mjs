@@ -8,6 +8,7 @@ import EmbeddedMacroEditorApp from '../embedded-macros.mjs';
 const {fields} = foundry.data;
 const massApplyTabs = {character: 'CAT.MEDKIT.MassApply.Tabs.Characters', npc: 'CAT.MEDKIT.MassApply.Tabs.NPCs', other: 'CAT.MEDKIT.MassApply.Tabs.Other'};
 const massApplyTabOrder = Object.values(massApplyTabs);
+const massApplyRules = ['2014', '2024'];
 
 Hooks.once('setup', () => {
     foundry.applications.handlebars.loadTemplates([
@@ -1256,7 +1257,8 @@ export default class MedkitApp extends CatApp {
             visiting.delete(id);
             visited.add(id);
             const bucket = this._massApplyBucket(item);
-            if (bucket && (bucket.reason !== 'current' || bucket.available?.length > 1)) sortedItems.push({item, ...bucket});
+            const switchable = massApplyRules.filter(rules => rules !== documentUtils.getRules(item) && MedkitApp.#rulesAutomations(item, rules).length);
+            if (switchable.length || (bucket && (bucket.reason !== 'current' || bucket.available?.length > 1))) sortedItems.push({item, ...bucket, switchable});
         };
         rawItems.forEach(visit);
         if (!sortedItems.length) return genericUtils.notify('CAT.MEDKIT.MassApply.NoUpdates', {type: 'warn'});
@@ -1264,12 +1266,19 @@ export default class MedkitApp extends CatApp {
         const choices = await this.#massApplyPrompt(sortedItems);
         if (!choices) return;
         const applying = sortedItems.filter(entry => choices[this.#massApplyID(entry.item)].included);
+        const rules = massApplyRules.includes(choices.switchRules) ? choices.switchRules : undefined;
         const progress = genericUtils.notify('CAT.MEDKIT.MassApply.Started', {progress: true});
         let done = 0;
         for (const entry of applying) {
             const options = choices[this.#massApplyID(entry.item)];
-            const source = options.source ?? entry.preferred?.source;
-            await automationUtils.updateItem(entry.item, {source});
+            const targets = entry.switchable.includes(rules) ? MedkitApp.#rulesAutomations(entry.item, rules) : [];
+            if (targets.length) {
+                let source = options.source ?? entry.preferred?.source ?? entry.applied?.source;
+                if (!targets.some(automation => automation.source === source)) source = automationUtils.sortByPriority(targets)[0].source;
+                await automationUtils.updateItem(entry.item, {source, rules});
+            } else {
+                await automationUtils.updateItem(entry.item, {source: options.source ?? entry.preferred?.source});
+            }
             done++;
             progress.update({pct: done / applying.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: applying.length, name: entry.item.name})});
         }
@@ -1280,6 +1289,60 @@ export default class MedkitApp extends CatApp {
 
     #massApplyID(item) { return item.actor ? `${item.actor.id}|${item.id}` : item.id; }
 
+    static #rulesAutomations(item, rules) {
+        return automationUtils.getMassApplyAutomations(item, {rules}).filter(automation => automation.rules === rules);
+    }
+
+    #massApplySwitchInputs(items) {
+        const rowEntries = new Map(items.map(entry => [this.#massApplyID(entry.item) + '.included', entry]));
+        const rowsOf = fullContext => fullContext.inputs.flatMap(group => group.options ?? []).filter(row => rowEntries.has(row.name));
+        const recount = fullContext => {
+            for (const group of fullContext.inputs.filter(group => group.requireSelection)) group.currentNum = group.options.filter(row => row.isChecked).length;
+            return true;
+        };
+        const sources = [...new Set(items.flatMap(entry => (entry.available ?? []).map(automation => automation.source)))];
+        const fields = [];
+        if (sources.length > 1) fields.push({
+            label: _loc('CAT.MEDKIT.MassApply.SwitchSource'),
+            name: 'switchSource',
+            options: {
+                currentValue: 'item',
+                options: [{label: _loc('CAT.MEDKIT.MassApply.PerItem'), value: 'item'}, ...sources.map(source => ({label: automationUtils.getSourceName(source), value: source}))],
+                onchange: ({input, fullContext}) => {
+                    if (input.value === 'item') return false;
+                    for (const row of rowsOf(fullContext)) {
+                        const select = row.subinputs?.[0]?.options?.[0];
+                        const entry = rowEntries.get(row.name);
+                        if (!select || !entry.available.some(automation => automation.source === input.value)) continue;
+                        select.value = input.value;
+                        if (entry.applied?.source !== input.value) row.isChecked = true;
+                        const tag = row.tags?.find(t => t.id === 'source');
+                        if (tag) tag.label = automationUtils.getSourceName(input.value);
+                    }
+                    return recount(fullContext);
+                }
+            }
+        });
+        if (items.some(entry => entry.switchable.length)) fields.push({
+            label: _loc('CAT.MEDKIT.MassApply.SwitchRules'),
+            name: 'switchRules',
+            options: {
+                currentValue: 'item',
+                options: [{label: _loc('CAT.MEDKIT.MassApply.PerItem'), value: 'item'}, ...massApplyRules.map(rules => ({label: rules, value: rules}))],
+                onchange: ({input, fullContext}) => {
+                    for (const row of rowsOf(fullContext)) {
+                        row.tags = row.tags?.filter(t => t.id !== 'rules') ?? [];
+                        if (!rowEntries.get(row.name).switchable.includes(input.value)) continue;
+                        row.isChecked = true;
+                        row.tags.push({label: input.value, id: 'rules', status: 'available'});
+                    }
+                    return recount(fullContext);
+                }
+            }
+        });
+        return fields.length ? [['selectOption', fields]] : [];
+    }
+
     async #massApplyPrompt(items) {
         const data = {};
         for (const entry of items) {
@@ -1287,7 +1350,7 @@ export default class MedkitApp extends CatApp {
             const i = entry.item;
             const subinputs = [];
             const reasonTags = {available: {label: 'CAT.MEDKIT.MassApply.Counts.Available', status: 'available'}, outdated: {label: 'CAT.MEDKIT.MassApply.Counts.Outdated', status: 'outdated'}, current: {label: 'CAT.MEDKIT.MassApply.Counts.UpToDate', status: 'up-to-date'}};
-            const reason = {...reasonTags[entry.reason], id: 'reason'};
+            const reason = entry.reason && {...reasonTags[entry.reason], id: 'reason'};
             const tags = [];
             if (entry.available?.length > 1) {
                 tags.push({label: 'CAT.MEDKIT.MassApply.ChooseSource', id: 'choose'});
@@ -1315,7 +1378,7 @@ export default class MedkitApp extends CatApp {
                 const label = entry.reason === 'current' ? version : `${version} ⟶ ${entry.applied.version}`;
                 tags.push({label, id: 'update', status: reason.status});
             }
-            tags.push(reason);
+            if (reason) tags.push(reason);
             let collection;
             if (i.actor) {
                 data[i.actor.uuid] ??= {name: i.actor.name, tab: massApplyTabs[i.actor.type] ?? massApplyTabs.other, inputs: []};
@@ -1329,7 +1392,7 @@ export default class MedkitApp extends CatApp {
                 name: this.#massApplyID(i) + '.included',
                 options: {
                     tooltip: await uiUtils.enrichHTML(i.system?.description?.value, i.getRollData()),
-                    isChecked: entry.reason !== 'current',
+                    isChecked: !!entry.reason && entry.reason !== 'current',
                     image: i.img,
                     subinputs,
                     tags
@@ -1345,6 +1408,7 @@ export default class MedkitApp extends CatApp {
                 if (!b[2].legend) return -1;
                 return a[2].legend.localeCompare(b[2].legend, game.i18n.lang);
             });
+        inputs.unshift(...this.#massApplySwitchInputs(items));
         const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', 'CAT.MEDKIT.MassApply.ConfirmPrompt', inputs, 'yesNo');
         if (!choices || !choices.buttons) return false;
         return choices;

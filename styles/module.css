@@ -1424,6 +1424,16 @@ cat-multi-combobox {
             }
         }
 
+        .body > .form-group > .form-fields:has(> select) {
+            flex: 2;
+            width: 100%;
+
+            > select {
+                flex: 1;
+                width: 100%;
+            }
+        }
+
         .tags {
             gap: var(--cat-space-xs);
             display: flex;
@@ -2807,4 +2817,16 @@ cat-multi-combobox {
     dd {
         margin: 0;
     }
+}
+
+#cat-devtools-marker {
+    width: auto;
+    margin-bottom: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid rgb(255 80 80);
+    border-radius: 1rem;
+    background: rgb(160 20 20 / 85%);
+    color: white;
+    font-size: var(--font-size-12);
+    pointer-events: all;
 }

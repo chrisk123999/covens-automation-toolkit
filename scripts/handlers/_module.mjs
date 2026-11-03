@@ -6,6 +6,7 @@ export {default as combat} from './combat.mjs';
 export {default as conditionResistanceAndVulnerability} from './conditionResistanceAndVulnerability.mjs';
 export {default as contextmenu} from './contextmenu.mjs';
 export {default as customMacros} from './customMacros.mjs';
+export {default as devtools} from './devtools.mjs';
 export {default as effects} from './effects.mjs';
 export {default as grapple} from './grapple.mjs';
 export {default as items} from './items.mjs';

@@ -92,6 +92,28 @@
         {{/if}}
     </fieldset>
 
+    {{#if showBehaviors}}
+        <fieldset data-section="region-behaviors">
+            <legend>
+                {{localize "CAT.MEDKIT.Activity.Behaviors.Label"}}
+                <button type="button" class="unbutton" data-action="addRegionBehavior"
+                    data-tooltip="CAT.MEDKIT.Activity.Behaviors.Add"><i class="fa-solid fa-plus" inert></i></button>
+            </legend>
+            <p class="hint">{{localize "CAT.MEDKIT.Activity.Behaviors.Hint"}}</p>
+            {{#each behaviors as |behavior|}}
+                <div class="row">
+                    {{dnd5e-icon behavior.icon}}
+                    <span class="name">{{behavior.label}}</span>
+                    <button type="button" class="unbutton" data-action="deleteRegionBehavior" data-index="{{behavior.index}}"
+                        data-tooltip="CAT.MEDKIT.Activity.Behaviors.Delete"><i class="fa-solid fa-trash" inert></i></button>
+                </div>
+                {{> "dnd5e.fieldlist" behavior.fields}}
+            {{else}}
+                <p class="hint">{{localize "CAT.MEDKIT.Activity.Behaviors.None"}}</p>
+            {{/each}}
+        </fieldset>
+    {{/if}}
+
     {{#if regionEmbeddedCount}}
         <fieldset data-section="region-embedded">
             <legend>{{localize "CAT.MEDKIT.Sections.Embedded"}}</legend>
