@@ -114,7 +114,7 @@ class BonusSession {
         for (const bonusRoll of await resolveBonusRolls(pending, actor, CONFIG.Dice.BasicRoll)) {
             const bonus = this.#consumed.get(bonusRoll.options.cat?.bonusId);
             if (bonus?.use) {
-                if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
+                if (!bonusRoll._evaluated) await bonusRoll.evaluate({allowInteractive: false});
                 await bonus.use(this.#workflow);
             }
             const merged = await MidiQOL.addRollToAsync(roll, bonusRoll);
