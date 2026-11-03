@@ -60,6 +60,7 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
  * @callback OnUse
  * @param {{
  *  bonus: RollBonus,
+ *  allBonuses: RollBonus[],
  *  inputs: Record<string, any>,
  *  workflow: MidiQOL.Workflow|undefined
  * }} params
@@ -455,9 +456,9 @@ class RollBonus {
         this.updateScaling(0, workflow);
         return this;
     }
-    async use(workflow) {
+    async use(workflow, allBonuses) {
         if (!this.#use) return;
-        return await this.#use({workflow, bonus: this, inputs: this.#inputs});
+        return await this.#use({workflow, bonus: this, inputs: this.#inputs, allBonuses});
     }
     async request(workflow, otherBonuses, rollTotal) {
         if (!this.#thirdPartyRequest) {
@@ -620,7 +621,7 @@ class RollBonus {
         return costs;
     }
     /** @type {OnUse} */
-    static async defaultUse({bonus, workflow, inputs}) {
+    static async defaultUse({bonus, workflow, inputs, allBonuses}) {
         const options = {config: {scaling: bonus.scalingIncrease}};
         if (bonus.document.documentName === 'Item') {
             await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets ?? []), options);
