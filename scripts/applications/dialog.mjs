@@ -381,14 +381,15 @@ export default class DialogApp extends CatApp {
                 const add = j === 0 || f.terms[j - 1]?.operator === '+';
                 if (t.faces) {
                     const source = t.options.source || t.denomination;
-                    const results = t.results?.filter(r => r.active) ?? [];
                     const dieClass = STANDARD_FACES.has(t.faces) ? 'd' + t.faces : 'generic';
-                    for (let k = 0; k < t.number; k++) {
-                        const value = results[k]?.result;
+                    const count = Math.max(t.number, t.results.length);
+                    for (let k = 0; k < count; k++) {
+                        const {active, result} = t.results[k] ?? {};
+                        if (result && !active) continue;
                         dice.push({
-                            tooltip: value === undefined ? source : `${source} = ${value}`,
+                            tooltip: result === undefined ? source : `${source} = ${result}`,
+                            value: result,
                             dieClass,
-                            value,
                             add
                         });
                     }

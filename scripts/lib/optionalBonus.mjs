@@ -58,7 +58,12 @@ const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
 /**
  * @callback OnUse
- * @param {RollBonusHandlerOptions & {inputs: Record<string, any>}} params
+ * @param {{
+ *  bonus: RollBonus,
+ *  allBonuses: RollBonus[],
+ *  inputs: Record<string, any>,
+ *  workflow: MidiQOL.Workflow|undefined
+ * }} params
  * @returns {Promise}
  */
 
@@ -97,7 +102,8 @@ class RollBonus {
     #priority;      // Number   | The priority of the bonus, lower runs first.
     #extraInputs;   // Array    | Additional dialog subinputs, in `dialogUtils` input format.
     #inputs;        // Object   | Values of the additional subinputs, keyed by field name.
-    #type;          // String   | The way this bonus will be used. 'attack', 'check', 'save', 'skill', 'tool', 'damage'
+    #type;          // String   | The way this bonus will be used. 'attack', 'check', 'save', 'skill', 'tool', 'damage'.
+    #id;            // String   | Unique string for this bonus.
     constructor(document, {roll, formula, maxScaling, optional = true, action, actor, targetActor, autoApproveRequests = false, identifier, tags = [], priority = 50} = {}) {
         this.#document = document;
         this.#getActivity(document);
@@ -120,6 +126,7 @@ class RollBonus {
         this.#priority = Number(priority);
         this.#extraInputs = [];
         this.#inputs = {};
+        this.#id = foundry.utils.randomID();
     }
 
     _makeHints(list) {
@@ -335,6 +342,10 @@ class RollBonus {
     set type(value) {
         if (RollBonus.#types.has(value)) this.#type = value;
     }
+    /** @type {string} A unique string for this bonus. */
+    get id() {
+        return this.#id;
+    }
 
     /**
      * @param {CostScalingHandler} cost
@@ -445,9 +456,9 @@ class RollBonus {
         this.updateScaling(0, workflow);
         return this;
     }
-    async use(workflow, otherBonuses) {
+    async use(workflow, allBonuses) {
         if (!this.#use) return;
-        return await this.#use({workflow, bonus: this, otherBonuses, inputs: this.#inputs});
+        return await this.#use({workflow, bonus: this, inputs: this.#inputs, allBonuses});
     }
     async request(workflow, otherBonuses, rollTotal) {
         if (!this.#thirdPartyRequest) {
@@ -557,7 +568,7 @@ class RollBonus {
             const warning = data.available <= 0 ? 'DND5E.CONSUMPTION.Warning.None' : 'DND5E.CONSUMPTION.Warning.NotEnough';
             tooltip = _loc(warning, {type, cost: formatNumber(data.cost), available: formatNumber(Math.max(0, data.available ?? 0))});
         }
-        return {label, tooltip, icon: warn ? RollBonus.#warningIcon : '', id: target};
+        return {label, tooltip, icon: warn ? RollBonus.#warningIcon : '', id: target + '.' + key};
     }
 
     /** @type {HintGenerator} */
@@ -610,7 +621,7 @@ class RollBonus {
         return costs;
     }
     /** @type {OnUse} */
-    static async defaultUse({bonus, workflow, otherBonuses}) {
+    static async defaultUse({bonus, workflow, inputs, allBonuses}) {
         const options = {config: {scaling: bonus.scalingIncrease}};
         if (bonus.document.documentName === 'Item') {
             await workflowUtils.completeItemUse(bonus.document, Array.from(bonus.targets ?? []), options);

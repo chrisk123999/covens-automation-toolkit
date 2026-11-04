@@ -10,7 +10,7 @@ const phaseLabels = {
 
 async function resolveBonusRolls(bonuses, actor, rollClass) {
     const label = bonuses.map(bonus => bonus.name).join(', ');
-    for (const bonus of bonuses) bonus.roll.options.cat = {...bonus.roll.options.cat, source: bonus.name};
+    for (const bonus of bonuses) bonus.roll.options.cat = {...bonus.roll.options.cat, source: bonus.name, bonusId: bonus.id};
     return await rollUtils.resolveManualRolls(bonuses.map(bonus => bonus.roll), actor, label, {rollClass});
 }
 
@@ -59,7 +59,7 @@ class BonusSession {
         this.#ran.add(phaseId);
         const workflow = this.#workflow;
         const roll = rolls?.[0];
-        const candidates = this.#bonuses.filter(bonus => !this.#consumed.has(bonus) && (!(bonus instanceof D20Bonus) || bonus.phase.has(phaseId)));
+        const candidates = this.#bonuses.filter(bonus => !this.#consumed.has(bonus.id) && (!(bonus instanceof D20Bonus) || bonus.phase.has(phaseId)));
         const built = await dialogUtils.buildBonusInputs(candidates, {
             rolls,
             targets: workflow?.targets.map(token => token.document),
@@ -69,7 +69,7 @@ class BonusSession {
             outcome: this.#outcome,
             damageRolls: [...damageRolls, ...this.#damageBonuses.map(bonus => bonus.roll)]
         });
-        if (this.#dismissed || !prompt || !built?.hasOptional) return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll), candidates);
+        if (this.#dismissed || !prompt || !built?.hasOptional) return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll));
         this.#app ??= new PhasedDialogApp('CAT.OptionalBonus.Title', {
             phases: this.#phaseIds.map(id => ({id, label: phaseLabels[id]}))
         });
@@ -80,29 +80,28 @@ class BonusSession {
         if (!choices) {
             this.#dismissed = true;
             this.#app = undefined;
-            return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll), candidates);
+            return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll));
         }
         built?.readInputs(choices);
-        return this.#commit(this.#validate(candidates, roll), candidates);
+        return this.#commit(this.#validate(candidates, roll));
     }
 
     #validate(candidates, roll) {
         return D20Bonus.ValidateAll(candidates, {workflow: this.#workflow, spent: this.#spent, roll, outcome: this.#outcome});
     }
 
-    async #commit(active, candidates) {
+    async #commit(active) {
         const taken = active
             .filter(bonus => !(bonus.maxTargets && !bonus.targets.size))
             .sort((a, b) => b.priority - a.priority);
         D20Bonus.AddCosts(this.#spent, taken);
         for (const bonus of taken) {
-            this.#consumed.add(bonus);
+            this.#consumed.add(bonus.id);
             this.#committed.push(bonus);
             if (bonus instanceof DamageBonus) {
                 this.#damageBonuses.push(bonus);
                 continue;
             }
-            if (bonus.use) await bonus.use(this.#workflow, candidates);
             this.#pendingD20.push(bonus);
         }
         this.#damageBonuses.sort((a, b) => b.priority - a.priority);
@@ -110,9 +109,21 @@ class BonusSession {
 
     async applyD20(roll, actor) {
         if (!roll || !this.#pendingD20.length) return roll;
-        const pending = this.#pendingD20.splice(0).filter(bonus => bonus.roll.formula !== '0');
-        if (!pending.length) return roll;
-        for (const bonusRoll of await resolveBonusRolls(pending, actor, CONFIG.Dice.BasicRoll)) {
+        const toRoll = [];
+        for (const bonus of this.#pendingD20.splice(0)) {
+            if (bonus.roll.formula !== '0') {
+                toRoll.push(bonus);
+                continue;
+            }
+            if (bonus.use) await bonus.use(this.#workflow, this.#committed);
+        }
+        if (!toRoll.length) return roll;
+        const rolled = await resolveBonusRolls(toRoll, actor, CONFIG.Dice.BasicRoll);
+        for (const [i, bonus] of toRoll.entries()) {
+            const bonusRoll = rolled[i];
+            if (!bonusRoll._evaluated) await bonusRoll.evaluate({allowInteractive: false});
+            bonus.roll = bonusRoll;
+            if (bonus.use) await bonus.use(this.#workflow, this.#committed);
             const merged = await MidiQOL.addRollToAsync(roll, bonusRoll);
             merged.data = roll.data;
             roll = merged;
@@ -207,8 +218,10 @@ async function damage(workflow) {
     const defaultDamageType = rolls[0]?.options.type ?? workflow.defaultDamageType;
     for (const bonus of bonuses) {
         if (workflow.isCritical) bonus.roll = DamageBonus.GetCriticalRoll(bonus);
-        if (bonus.use) await bonus.use(workflow, bonuses);
-        if (bonus.roll.formula === '0') continue;
+        if (bonus.roll.formula === '0') {
+            if (bonus.use) await bonus.use(workflow, bonuses);
+            continue;
+        }
         if (bonus.targets.size > 0 && bonus.targets.size !== workflow.targets.size) {
             targeted.push(bonus);
             continue;
@@ -216,6 +229,7 @@ async function damage(workflow) {
         if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
         bonus.roll.options.type ||= defaultDamageType;
         fullRoll.push(bonus.roll);
+        if (bonus.use) await bonus.use(workflow, bonuses);
     }
     if (fullRoll.length) {
         rolls.push(...fullRoll);
@@ -226,7 +240,8 @@ async function damage(workflow) {
     for (const [i, bonus] of targeted.entries()) {
         bonus.roll = targetedRolls[i];
         if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
-        const type = bonus.roll.options.type ?? defaultDamageType;
+        const type = bonus.roll.options.type ||= defaultDamageType;
+        if (bonus.use) await bonus.use(workflow, bonuses);
         for (const target of bonus.targets) {
             targetedData[target.uuid] ??= [];
             targetedData[target.uuid].push({total: type === 'healing' ? -bonus.roll.total : bonus.roll.total, type});

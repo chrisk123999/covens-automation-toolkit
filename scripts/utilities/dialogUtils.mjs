@@ -347,18 +347,21 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             bonusContext.disabled = !bonus.active && !cls.CheckCost(bonus, budgets.get(cls));
         }
     };
-    const tagLabel = (key, bonus) => {
-        if (key === 'itemUses' || key === 'activityUses') {
-            const targets = Object.keys(bonus.cost[key]).map(t => {
-                const tgt = key === 'itemUses' ? fromUuidSync(t)?.system.uses : fromUuidSync(t)?.uses;
-                if (tgt?.recovery?.length !== 1 || tgt?.recovery?.[0].type !== 'recoverAll') return;
-                const recovery = CONFIG.DND5E.limitedUsePeriods[tgt.recovery[0].period];
-                if (!recovery) return;
-                return _loc('DND5E.AbilityUseConsumableLabel', {max: tgt.max, per: recovery.abbreviation});
-            }).filter(Boolean);
-            if (targets.length) return targets.join(', ');
+    const tagLabel = (key, tooltip) => {
+        const [type, ...parts] = key.split('.');
+        const uuid = parts.join('.');
+        const document = fromUuidSync(uuid);
+        tooltip ||= document?.name;
+        const uses = type === 'itemUses' ? document?.system.uses : type === 'activityUses' ? document?.uses : '';
+        if (uses) {
+            const recoverAll = uses.recovery.find(r => r.type === 'recoverAll');
+            const allLabel = CONFIG.DND5E.limitedUsePeriods[recoverAll?.period];
+            if (allLabel) return {label: _loc('DND5E.AbilityUseConsumableLabel', {max: uses.max, per: allLabel.abbreviation}), tooltip};
+            const formula = uses.recovery.find(r => r.type === 'formula');
+            const formulaLabel = CONFIG.DND5E.limitedUsePeriods[formula?.period];
+            if (formulaLabel) return {label: _loc('DND5E.AbilityUseConsumableLabel', {max: formula.formula, per: formulaLabel.abbreviation}), tooltip};
         }
-        return CONFIG.DND5E.activityActivationTypes[key]?.label ?? CONFIG.DND5E.activityConsumptionTypes[key]?.label ?? key;
+        return {label: CONFIG.DND5E.activityActivationTypes[type]?.label ?? CONFIG.DND5E.activityConsumptionTypes[type]?.label ?? type, tooltip};
     };
     const updateFormula = (ctx, bonus) => {
         const group = groupOf(bonus);
@@ -495,14 +498,19 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
                     onchange: ({fullContext, input, getInputById}) => damageChange({bonus, fullContext, input, getInputById})
                 }
             }]]);
-        for (const [type, fields, options] of bonus.extraInputs)
-            subinputs.push([type, fields.map(f => ({...f, name: name + '.inputs.' + f.name, options: {...f.options, onchange: ctx => extraChange({bonus, name, ctx, onchange: f.options?.onchange})}})), options]);
+        for (const [type, fields, options] of bonus.extraInputs) {
+            if (type === 'radio') options.radioName = name + '.inputs.' + (options.radioName ?? 'radio');
+            subinputs.push([type, fields.map(f => {
+                if (type !== 'radio') f.name = name + '.inputs.' + f.name;
+                return {...f, options: {...f.options, onchange: ctx => extraChange({bonus, name, ctx, onchange: f.options?.onchange})}};
+            }), options]);
+        }
         const tags = [];
         if (bonus.roll) {
             tags.push(formulaTag(bonus));
             if (bonus.damageTypes?.size > 1) tags.push({label: 'CAT.OptionalBonus.DamageTypeChoice', id: 'damageType'});
         }
-        if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, label: tagLabel(h.id, bonus)})));
+        if (bonus.scalingHints?.length) tags.push(...bonus.scalingHints.map(h => ({...h, ...tagLabel(h.id, h.tooltip)})));
         if (bonus.maxScaling > 1) tags.push({label: 'CAT.OptionalBonus.Scaleable', id: 'scaling'});
         if (bonus.maxTargets > 0) tags.push({label: 'CAT.OptionalBonus.Targeted', id: 'targets'});
         const fieldset = bonus.optional ? bonus.isThirdParty ? thirdParty : optional : contextual;
