@@ -1,13 +1,19 @@
 # 0.1.7 Release:
 ## Update Notes:
 - Summons have a One creature choice. The user picks a single entry, or a single profile of a summon activity. Entries can have a Label for that choice.
-- A marker shows above the hotbar for GMs while a Development Tools setting is on. Clicking it opens those settings.
+- Summons have a Dismiss Activity. Using it dismisses the item's summons.
 - Mass apply has Switch All Sources and Switch All Rules. Switching rules applies the 2014 or 2024 automation where one exists.
 - Activities can add Adjust Darkness Level, Modify Movement Cost and Suppress Weather behaviors to their placed areas. The activity CatKit's Placed Region tab lists and edits an activity's region behaviors.
+- The Backup Compendium setting offers module Actor compendiums as well as world ones, except CAT and CPR compendiums. Backups warn when the chosen compendium is locked.
+- A marker shows above the hotbar for GMs while a Development Tools setting is on. Clicking it opens those settings.
 - Added Czech localization. (Thanks Lethrendis)
 ## Bug Fixes:
 - Patch dnd5e 6.0.x bug, removed in 6.1.0: Activities remember their range, activation, duration and target after their chat card is created.
 - Pushed and pulled tokens stop short of a space another token occupies.
+## API Update Notes:
+- `tokenUtils.teleportToken` and `tokenUtils.aimDestination` take `allowedPoints`, a list of token centres the destination must match.
+- `compendiumUtils.getDocumentByName` and `automationUtils.getCompendiumDocumentByName` take an optional `rules` option, and only match documents with those rules.
+- New automation config type: `documentMap`. Each row is a name linked to a document, with an optional count. Set `documentType` to limit drops, and `count: true` to show the count.
 
 # 0.1.6 Release:
 ## Update Notes:

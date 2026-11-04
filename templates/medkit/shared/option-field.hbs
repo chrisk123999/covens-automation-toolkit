@@ -151,6 +151,45 @@
             </button>
         {{/if}}
     </div>
+{{else if isDocumentMap}}
+    <div class="document-map" data-flag-path="{{configPath}}" data-document-type="{{documentType}}">
+        <label>{{label}}</label>
+        {{#if hint}}
+            <p class="hint">{{hint}}</p>
+        {{/if}}
+        {{#each rows}}
+            <div class="document-map-row" data-index="{{index}}">
+                <input type="text" name="{{../name}}.{{index}}.label" value="{{label}}"
+                    placeholder="{{localize 'CAT.MEDKIT.DocumentMap.Label'}}">
+                <i class="fa-solid fa-arrow-right"></i>
+                {{#if docName}}
+                    <span class="doc-chip">
+                        {{#if docImg}}<img src="{{docImg}}">{{/if}}<span>{{docName}}</span>
+                    </span>
+                    <input type="hidden" name="{{../name}}.{{index}}.uuid" value="{{uuid}}">
+                    <button type="button" class="unlink" data-action="unlinkMapRow" data-index="{{index}}"
+                        data-tooltip="{{localize 'CAT.MEDKIT.DocumentMap.Unlink'}}">
+                        <i class="fa-solid fa-link-slash"></i>
+                    </button>
+                {{else}}
+                    <input type="text" name="{{../name}}.{{index}}.uuid" value="{{uuid}}"
+                        class="{{#if invalid}}invalid{{/if}}" placeholder="{{localize 'CAT.MEDKIT.Documents.Placeholder'}}">
+                    <span class="unlink"></span>
+                {{/if}}
+                {{#if ../showCount}}
+                    <input type="number" name="{{../name}}.{{index}}.count" value="{{count}}" min="1" step="1"
+                        data-tooltip="{{localize 'CAT.MEDKIT.DocumentMap.Count'}}">
+                {{/if}}
+                <button type="button" class="remove" data-action="removeMapRow" data-index="{{index}}"
+                    data-tooltip="{{localize 'COMMON.Delete'}}">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        {{/each}}
+        <button type="button" data-action="addMapRow">
+            <i class="fa-solid fa-plus"></i> {{localize 'CAT.MEDKIT.DocumentMap.Add'}}
+        </button>
+    </div>
 {{else if isList}}
     <div class="form-group documents" data-flag-path="{{configPath}}" data-validate="{{validate}}">
         <label for="cat-medkit-opt-{{key}}">{{label}}</label>

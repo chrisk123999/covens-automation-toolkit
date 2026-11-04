@@ -245,7 +245,7 @@ const settings = {
     backupCompendium: {
         type: String,
         default: '',
-        packSelect: {type: 'Actor', packageType: 'world'},
+        packSelect: {type: 'Actor', packageTypes: ['world', 'module'], excludePackages: ['cat', 'chris-premades']},
         menu: 'backups'
     },
     backupFrequency: {

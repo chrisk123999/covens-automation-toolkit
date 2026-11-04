@@ -730,14 +730,16 @@ function getResolvedAnimation(document, settingKey, {source, identifier, rules} 
  * Find a document by name, searching the configured compendiums for that type in priority order.
  * @param {string} name Document name to match.
  * @param {'monster'|'item'|'spell'|'macro'} type Kind of source document.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.rules] Only match documents with these rules, '2014' or '2024'.
  * @returns {Promise<foundry.abstract.Document|undefined>}
  */
-async function getCompendiumDocumentByName(name, type) {
+async function getCompendiumDocumentByName(name, type, {rules} = {}) {
     if (!['monster', 'item', 'spell', 'macro'].includes(type)) return;
     let setting = Object.entries(game.settings.get('cat', type + 'Compendiums')).map(([key, value]) => ({id: key, ...value})).filter(i => i.enabled).sort((a, b) => a.priority - b.priority);
     let result;
     for (const data of setting) {
-        result = await compendiumUtils.getDocumentByName(data.id, name);
+        result = await compendiumUtils.getDocumentByName(data.id, name, {rules});
         if (result) return result;
     }
 }

@@ -22,7 +22,7 @@ function getCommandHost(activity) {
     return [item, ...item.system.activities].find(document => {
         if (!getStored(document)) return false;
         const config = getConfig(document);
-        return [config.placeActivityId, config.recallActivityId, config.moveActivityId].includes(activity.id);
+        return [config.placeActivityId, config.recallActivityId, config.moveActivityId, config.dismissActivityId].includes(activity.id);
     });
 }
 function resolveFormula(formula, rollData) {
@@ -209,7 +209,7 @@ function getRange(activity, config) {
     return config.range || activity.range?.value || 5;
 }
 function getCommandIds(config) {
-    return [config.placeActivityId, config.recallActivityId, config.moveActivityId, config.followUpActivityId, ...(config.commandActivityIds ?? [])].filter(Boolean);
+    return [config.placeActivityId, config.recallActivityId, config.moveActivityId, config.dismissActivityId, config.followUpActivityId, ...(config.commandActivityIds ?? [])].filter(Boolean);
 }
 function getCommandIdentifiers(item, config) {
     return getCommandIds(config).map(id => item.system.activities.get(id)).filter(Boolean).map(activity => activity.identifier);
@@ -247,6 +247,7 @@ async function command(host, activity) {
     const range = activity.range?.value || getRange(activity, config);
     if (activity.id === config.placeActivityId) await summonUtils.placeAllSourceSummons(host, range, {token});
     if (activity.id === config.recallActivityId) await summonUtils.recallAllSourceSummons(host);
+    if (activity.id === config.dismissActivityId) await Promise.all(summonUtils.getSummonsBySource(host).map(summon => summonUtils.deleteSummon(summon)));
     if (activity.id !== config.moveActivityId) return;
     for (const summon of summonUtils.getSummonsBySource(host).filter(summon => summon.token)) await summon.move(range, {token});
     await leash({document: host});
@@ -464,6 +465,13 @@ const summon = {
             category: 'behavior',
             label: 'CAT.Macros.Summon.RecallActivity',
             hint: 'CAT.Macros.Summon.RecallActivityHint'
+        },
+        dismissActivityId: {
+            default: '',
+            type: 'selectActivity',
+            category: 'behavior',
+            label: 'CAT.Macros.Summon.DismissActivity',
+            hint: 'CAT.Macros.Summon.DismissActivityHint'
         },
         moveActivityId: {
             default: '',

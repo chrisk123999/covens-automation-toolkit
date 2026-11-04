@@ -83,6 +83,9 @@ export default class MedkitApp extends CatApp {
             removeEmbeddedMacro: MedkitApp.#removeEmbeddedMacro,
             addListEntry: MedkitApp.#addListEntry,
             removeListEntry: MedkitApp.#removeListEntry,
+            addMapRow: MedkitApp.#addMapRow,
+            removeMapRow: MedkitApp.#removeMapRow,
+            unlinkMapRow: MedkitApp.#unlinkMapRow,
             addSummonEntry: MedkitApp.#addSummonEntry,
             removeSummonEntry: MedkitApp.#removeSummonEntry,
             addSummonItem: MedkitApp.#addSummonItem,
@@ -334,7 +337,6 @@ export default class MedkitApp extends CatApp {
                 grouped.set(category, {
                     id: category,
                     label: _loc(`CAT.MEDKIT.Categories.${category}.Label`),
-                    tooltip: `CAT.MEDKIT.Categories.${category}.Tooltip`,
                     options: []
                 });
             }
@@ -387,7 +389,7 @@ export default class MedkitApp extends CatApp {
         } catch (err) {
             console.warn(`CAT | Skipping malformed medkit option "${key}".`, err);
         }
-        if (option.isList && configPath) this.#listValues[configPath] = Array.isArray(value) ? value : [];
+        if ((option.isList || option.isDocumentMap) && configPath) this.#listValues[configPath] = Array.isArray(value) ? value : [];
         return option;
     }
 
@@ -476,6 +478,15 @@ export default class MedkitApp extends CatApp {
                 option.moduleAnimations = animationUtils.getModuleAnimationNotices(this.#document.item ?? this.#document);
                 break;
             }
+            case 'documentMap':
+                option.isDocumentMap = true;
+                option.documentType = descriptor.documentType ?? '';
+                option.showCount = !!descriptor.count;
+                option.rows = (Array.isArray(value) ? value : []).map((row, index) => {
+                    const doc = row.uuid ? fromUuidSync(row.uuid) : null;
+                    return {index, label: row.label ?? '', uuid: row.uuid ?? '', count: row.count ?? 1, docName: doc?.name, docImg: doc?.img, invalid: !!row.uuid && !doc};
+                });
+                break;
             case 'selectIdentifiers':
                 option.isList = true;
                 option.validate = 'none';
@@ -1469,6 +1480,39 @@ export default class MedkitApp extends CatApp {
         this.render();
     }
 
+    #mapRows(path) {
+        const current = foundry.utils.getProperty(this.#flags, path);
+        if (Array.isArray(current)) return current;
+        const rows = foundry.utils.deepClone(this.#listValues[path] ?? []);
+        foundry.utils.setProperty(this.#flags, path, rows);
+        return rows;
+    }
+
+    /** @this {MedkitApp} */
+    static #addMapRow(_event, target) {
+        const path = target.closest('.document-map')?.dataset.flagPath;
+        if (!path) return;
+        this.#mapRows(path).push({label: '', uuid: '', count: 1});
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static #removeMapRow(_event, target) {
+        const path = target.closest('.document-map')?.dataset.flagPath;
+        if (!path) return;
+        this.#mapRows(path).splice(Number(target.dataset.index), 1);
+        this.render();
+    }
+
+    /** @this {MedkitApp} */
+    static #unlinkMapRow(_event, target) {
+        const path = target.closest('.document-map')?.dataset.flagPath;
+        if (!path) return;
+        const row = this.#mapRows(path)[Number(target.dataset.index)];
+        if (row) row.uuid = '';
+        this.render();
+    }
+
     /** @this {MedkitApp} */
     static #removeListEntry(_event, target) {
         const group = target.closest('[data-flag-path]');
@@ -1514,6 +1558,11 @@ export default class MedkitApp extends CatApp {
             const path = name.slice('flags.cat.'.length);
             const [animSource, animIdentifier] = value ? value.split('|') : [];
             foundry.utils.setProperty(this.#flags, path, animSource ? {source: animSource, identifier: animIdentifier} : '');
+        } else if (target.closest?.('.document-map')) {
+            const mapPath = target.closest('.document-map').dataset.flagPath;
+            this.#mapRows(mapPath);
+            foundry.utils.setProperty(this.#flags, name.slice('flags.cat.'.length), value);
+            if (!name.endsWith('.uuid')) return;
         } else if (name.startsWith('flags.cat.')) {
             foundry.utils.setProperty(this.#flags, name.slice('flags.cat.'.length), value);
             if (singleCombobox) { this.render(); return; }
@@ -1544,6 +1593,22 @@ export default class MedkitApp extends CatApp {
                 const current = foundry.utils.getProperty(this.#flags, path) ?? [];
                 if (current.includes(uuid)) return;
                 foundry.utils.setProperty(this.#flags, path, [...current, uuid]);
+                this.render();
+            });
+        }
+    }
+
+    #wireMapDrop() {
+        for (const row of this.element.querySelectorAll('.document-map-row')) {
+            const map = row.closest('.document-map');
+            this.#bindDrop(row, async uuid => {
+                const doc = await fromUuid(uuid);
+                if (!doc) return genericUtils.notify('CAT.MEDKIT.Documents.InvalidUuid', {type: 'error'});
+                const type = map.dataset.documentType;
+                if (type && doc.documentName !== type) return genericUtils.notify('CAT.MEDKIT.Documents.WrongType', {type: 'warn', format: {type}});
+                const rows = this.#mapRows(map.dataset.flagPath);
+                const index = Number(row.dataset.index);
+                rows[index] = {...rows[index], uuid, label: rows[index]?.label || doc.name};
                 this.render();
             });
         }
@@ -1617,6 +1682,7 @@ export default class MedkitApp extends CatApp {
         super._onRender(context, options);
         this.#wireDocumentDrop();
         this.#wireFieldDrop();
+        this.#wireMapDrop();
         this.#applyTabPermissions();
         if (options.isFirstRender) {
             this.#fitNavToOneRow();

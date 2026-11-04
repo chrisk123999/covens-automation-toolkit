@@ -134,7 +134,7 @@
                 {{#each options}}
                     <div class="row" {{#if subinputs}} data-collapsible-id="{{id}}" {{/if}}>
                         <div>
-                            <div class="form-group">
+                            <div class="form-group inline">
                                 {{#if ../hasSubinputs}}
                                     <div class="icon-slot" {{#if subinputs}}data-action="toggleCollapsed" {{/if}}>
                                         {{#if subinputs}}<i class="fas fa-chevron-down fa-fw"></i>{{/if}}
@@ -144,7 +144,7 @@
                                     data-reference-tooltip="{{reference}}" {{/if}}>
                                     {{#if image}}<img class="label-image{{#if invertColor}} cat-svg-color-invert{{/if}}"
                                             src="{{image}}" data-token-id="{{name}}">{{/if}}
-                                    {{localize label}}
+                                    <span>{{{localize label}}}</span>
                                 </label>
                                 {{#if tags}}
                                     <div class="tags">

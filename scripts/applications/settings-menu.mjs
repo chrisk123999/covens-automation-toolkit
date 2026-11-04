@@ -39,8 +39,8 @@ export default class SettingsMenu extends MenuApp {
             if (packFilters[setting.key]) entry.packFilter = packFilters[setting.key];
         } else if (setting.key === 'manualRollsUsers') entry.type = 'users';
         else if (setting.packSelect) {
-            const {type, packageType} = setting.packSelect;
-            const packs = game.packs.filter(pack => pack.metadata.type === type && (!packageType || pack.metadata.packageType === packageType));
+            const {type, packageTypes, excludePackages = []} = setting.packSelect;
+            const packs = game.packs.filter(pack => pack.metadata.type === type && (!packageTypes || packageTypes.includes(pack.metadata.packageType)) && !excludePackages.includes(pack.metadata.packageName));
             entry.type = 'selectOption';
             entry.options = {'': 'None', ...Object.fromEntries(packs.map(pack => [pack.metadata.id, compendiumUtils.getPackLabel(pack)]))};
         }

@@ -261,9 +261,10 @@ function floorBelow(token) {
  * @param {object} [options.crosshairsConfig] Crosshair config.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
  * @param {boolean} [options.ignoreWalls] Allow spaces that walls block from the token.
+ * @param {object[]} [options.allowedPoints] Only allow these token centres.
  * @returns {Promise<object|undefined>} Crosshair result with `level` and `elevation`; undefined if cancelled.
  */
-async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true, ignoreWalls = false} = {}) {
+async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true, ignoreWalls = false, allowedPoints} = {}) {
     const startView = canvas.level?.id;
     const reachable = reachableSurfaces(token, range);
     let targetLevel = token.level;
@@ -290,7 +291,7 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
             token,
             crosshairsConfig,
             maxRange: range,
-            validityFunctions: [standable],
+            validityFunctions: allowedPoints ? [standable, (_crosshairs, {x, y}) => allowedPoints.some(point => Math.hypot(point.x - x, point.y - y) < token.parent.grid.size / 2)] : [standable],
             ignoreWalls,
             getElevation: floorAt,
             ringElevation: onOwnLevel ? undefined : Math.min(...surfaces.map(surface => surface.elevation), ground ?? Infinity)
@@ -317,14 +318,15 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
  * @param {number} [options.followerRange] Crosshair range for a follower that can't keep its position.
  * @param {string} [options.userId] User who aims the destination crosshair. Defaults to the current user.
  * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
+ * @param {object[]} [options.allowedPoints] Only allow these token centres when aiming.
  * @returns {Promise<undefined>}
  */
-async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], followerRange = 10, userId, ignoreWalls = false} = {}) {
+async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], followerRange = 10, userId, ignoreWalls = false, allowedPoints} = {}) {
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
-        if (userId && userId !== game.user.id) destination = await queryUtils.query('aimDestination', game.users.get(userId), {uuid: token.uuid, range, centerpoint, requireSight, ignoreWalls}, 300000);
-        else destination = await aimDestination(token, {range, centerpoint, requireSight, ignoreWalls});
+        if (userId && userId !== game.user.id) destination = await queryUtils.query('aimDestination', game.users.get(userId), {uuid: token.uuid, range, centerpoint, requireSight, ignoreWalls, allowedPoints}, 300000);
+        else destination = await aimDestination(token, {range, centerpoint, requireSight, ignoreWalls, allowedPoints});
     }
     if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();

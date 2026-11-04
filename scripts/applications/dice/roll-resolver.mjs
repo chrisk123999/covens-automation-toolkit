@@ -210,7 +210,6 @@ export default class CatRollResolver extends RollResolver {
                 const damageLabel = _loc(damage.config.label);
                 if (!groupMod) damageGroups.push({id, group, term, damage: damageLabel, key: `${damage.type}|${term.faces}|${info?.properties ?? ''}`});
                 group.icon = `<img class="dmg" src="${constants.damageIcons[damage.type] ?? damage.config.icon}">`;
-                group.tooltip = this.#groupTooltip(info?.source, group.label, groupMod, damageLabel);
             }
             if (groupMod && (damage || term?.faces !== 20)) {
                 group.modifier = CatRollResolver.#signed(groupMod);
@@ -260,7 +259,6 @@ export default class CatRollResolver extends RollResolver {
             const dice = CatRollResolver.#diceTotal(bucket.map(entry => entry.term));
             const sources = [...new Set(bucket.map(entry => this._termInfo?.get(entry.term)?.source).filter(Boolean))];
             primary.group.label = `${dice}d${faces}`;
-            primary.group.tooltip = this.#groupTooltip(sources.join(', '), primary.group.label, 0, primary.damage);
             Object.assign(primary.group.results[0], {label: primary.group.label, text: true, minValue: dice, maxValue: dice * faces});
             this._mergedTerms.set(primary.id, bucket.map(entry => entry.term));
             for (const entry of rest) delete context.groups[entry.id];
@@ -302,9 +300,6 @@ export default class CatRollResolver extends RollResolver {
         return raw.split(/[\s,]+/).filter(part => part !== '').map(Number);
     }
 
-    #groupTooltip(source, formula, mod, damage) {
-        return `${source ? source + ': ' : ''}${formula}${mod ? CatRollResolver.#signed(mod, true) : ''} ${damage}`;
-    }
 
     static #splitMergedTotal(terms, total) {
         const counts = terms.map(term => Math.max(term.number ?? 1, 1));

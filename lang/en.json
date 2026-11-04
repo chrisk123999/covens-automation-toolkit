@@ -384,63 +384,56 @@
             },
             "Categories": {
                 "behavior": {
-                    "Label": "Behavior",
-                    "Tooltip": "How the automation triggers and what it applies."
+                    "Label": "Behavior"
                 },
                 "tuning": {
-                    "Label": "Tuning",
-                    "Tooltip": "Numeric and selection tuning for the automation."
+                    "Label": "Tuning"
                 },
                 "visuals": {
-                    "Label": "Visuals",
-                    "Tooltip": "Icons, images, and other visual hooks."
+                    "Label": "Visuals"
                 },
                 "linked": {
-                    "Label": "Linked Items",
-                    "Tooltip": "Documents this automation references."
+                    "Label": "Linked Items"
                 },
                 "general": {
-                    "Label": "General",
-                    "Tooltip": "General settings."
+                    "Label": "General"
                 },
                 "homebrew": {
-                    "Label": "Homebrew",
-                    "Tooltip": "Optional homebrew adjustments to the automation."
+                    "Label": "Homebrew"
                 },
                 "mechanics": {
-                    "Label": "Mechanics",
-                    "Tooltip": "How the automation behaves mechanically."
+                    "Label": "Mechanics"
                 },
                 "utility": {
-                    "Label": "Utility",
-                    "Tooltip": "General-purpose utility automation."
+                    "Label": "Utility"
                 },
                 "targeting": {
-                    "Label": "Targeting",
-                    "Tooltip": "How the automation selects targets."
+                    "Label": "Targeting"
                 },
                 "damage": {
-                    "Label": "Damage",
-                    "Tooltip": "Damage adjustments applied by the automation."
+                    "Label": "Damage"
                 },
                 "movement": {
-                    "Label": "Movement",
-                    "Tooltip": "Movement effects applied by the automation."
+                    "Label": "Movement"
                 },
                 "summons": {
-                    "Label": "Summons",
-                    "Tooltip": "Summoned creatures and their configuration."
+                    "Label": "Summons"
                 },
                 "animations": {
-                    "Label": "Animations",
-                    "Tooltip": "Visual animations played by the automation."
+                    "Label": "Animations"
                 }
             },
             "Documents": {
-                "Placeholder": "Paste UUID or drag a document here",
+                "Placeholder": "Paste UUID or drag a document",
                 "Add": "Add document",
                 "InvalidUuid": "No document found for that UUID.",
                 "WrongType": "Expected a {type} document."
+            },
+            "DocumentMap": {
+                "Label": "Name",
+                "Count": "Count",
+                "Add": "Add Entry",
+                "Unlink": "Unlink"
             },
             "Summons": {
                 "Actor": "Summon Actor",
@@ -1094,7 +1087,7 @@
             },
             "BackupCompendium": {
                 "Name": "Backup Compendium",
-                "Hint": "World Actor compendium that holds backups."
+                "Hint": "Select a compendium to store your backups. A compendium in a module you do not control can be wiped when that module updates. A personal module compendium is strongly recommended."
             },
             "BackupFrequency": {
                 "Name": "Backup Frequency",
@@ -1513,6 +1506,8 @@
                 "PlaceActivityHint": "Activity that places this item's summons that are not on the canvas.",
                 "RecallActivity": "Recall Activity",
                 "RecallActivityHint": "Activity that takes this item's summons off the canvas.",
+                "DismissActivity": "Dismiss Activity",
+                "DismissActivityHint": "Activity that dismisses this item's summons.",
                 "MoveActivity": "Move Activity",
                 "MoveActivityHint": "Activity that moves this item's placed summons up to its range.",
                 "Favorite": "Favorite Activities",
@@ -1572,6 +1567,7 @@
         "Backups": {
             "Title": "Backups",
             "MissingPack": "The backup compendium is missing. Choose one in the Backups settings.",
+            "LockedPack": "The backup compendium {pack} is locked. Unlock it to store backups.",
             "Started": "Backing up characters.",
             "Progress": "Backing up {done}/{total} — {name}",
             "Done": "Backed up {total} characters.",
