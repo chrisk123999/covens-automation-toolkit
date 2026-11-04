@@ -4,9 +4,11 @@
 - A marker shows above the hotbar for GMs while a Development Tools setting is on. Clicking it opens those settings.
 - Mass apply has Switch All Sources and Switch All Rules. Switching rules applies the 2014 or 2024 automation where one exists.
 - Activities can add Adjust Darkness Level, Modify Movement Cost and Suppress Weather behaviors to their placed areas. The activity CatKit's Placed Region tab lists and edits an activity's region behaviors.
+- Added Czech localization. (Thanks Lethrendis)
 ## Bug Fixes:
 - Patch dnd5e 6.0.x bug, removed in 6.1.0: Activities remember their range, activation, duration and target after their chat card is created.
 - Pushed and pulled tokens stop short of a space another token occupies.
+
 # 0.1.6 Release:
 ## Update Notes:
 - New setting: Weapon Mastery. CAT applies the mastery property chosen for a weapon attack, for player characters by default.
@@ -24,6 +26,7 @@
 - Movement events pass the token's `origin`.
 - `MenuApp` has `number` and `multiSelect` input types. Settings menus show `Number` settings as number inputs and `Array` settings with `choices` as multi-selects. `choices` can be a function.
 - Added `workflowUtils.expandAttackCriticalRange`, `workflowUtils.addTargetAC`, `workflowUtils.removeAttackDisadvantage`, `workflowUtils.rerollDamageDice`, `actorUtils.setBonusActionUsed`, `actorUtils.confirmBonusAction`, `actorUtils.isMasteryEnabled`, `itemUtils.canUseMastery` and `itemUtils.getMasteryLabel`.
+
 # 0.1.5 Release:
 ## Update Notes:
 - Animation Priority is renamed CAT Animations and has a new Off choice.
@@ -41,6 +44,7 @@
 - Added `effectUtils.createItemEffect`. It creates an item's effect on an actor with config values stored on the effect, readable after the item is consumed.
 - Summons have a `sourceItem` getter: the item that created the summon, or the item of the activity that did.
 - Added hit die roll passes, descriptor key `hitDie`: `situational`, `bonus` and `post`. `situational` can set `options.maximize`, `minimum`, `parts` and `multiplier`.
+
 # 0.1.4 Release:
 ## Update Notes:
 - CAT posts a welcome card to the GM once per world, with a link to the Coven's Discord and the guided tours. Modules can post their own with `cat.api.postWelcome`.

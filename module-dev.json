@@ -15,10 +15,15 @@
     ],
     "languages": [
         {
-        "lang": "en",
-        "name": "English",
-        "path": "lang/en.json",
-        "flags": {}
+            "lang": "en",
+            "name": "English",
+            "path": "lang/en.json",
+            "flags": {}
+        }, {
+            "lang": "cs",
+            "name": "Čeština",
+            "path": "lang/cs.json",
+            "flags": {}
         }
     ],
     "styles": [

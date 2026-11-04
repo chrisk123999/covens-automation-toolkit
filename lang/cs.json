@@ -1,0 +1,1731 @@
+{
+  "CAT": {
+    "MEDKIT": {
+      "Title": "Nastavení Coven's Automation Toolkit: {name}",
+      "HeaderLabel": "CatKit",
+      "LockedPack": "Kompendium {pack} je zamčené. Změny zde provedené nebudou uloženy, dokud kompendium neodemkneš.",
+      "NoPermission": "Nemáš oprávnění tuto záložku upravovat.",
+      "ReloadWarning": "Dokud svět znovu nenačteš, nebude registrovaná automatizace odrážet provedené změny!",
+      "TABS": {
+        "Automation": "Informace",
+        "Automations": "Automatizace",
+        "Configuration": "Nastavení",
+        "Generic": "Obecné automatizace",
+        "Embedded": "Vložená makra",
+        "Macros": "Registrovaná makra",
+        "DocProps": "Vlastnosti dokumentu",
+        "PlacedRegion": "Umístěná oblast",
+        "Backups": "Zálohy"
+      },
+      "MassApply": {
+        "Counts": {
+          "UpToDate": "Aktuální",
+          "Available": "Dostupné",
+          "Outdated": "Neaktuální"
+        },
+        "Label": "Hromadně použít / aktualizovat",
+        "Button": "Hromadně použít / aktualizovat",
+        "Tooltip": "Použije či aktualizuje automatizace všech položek pod tímto dokumentem.",
+        "ConfirmTitle": "Použít automatizace hromadně?",
+        "ConfirmPrompt": "Použít registrované automatizace na všechny položky pod tímto dokumentem? Tím dojde k přepsání jejich dat a akci nelze vrátit zpět.",
+        "Started": "Hromadná aplikace zahájena.",
+        "Progress": "Používá se {done}/{total} — {name}",
+        "Done": "Hromadná aplikace dokončena.",
+        "PackLocked": "Kompendium {pack} je zamčené. Zkopíruj ho do jiného kompendia a použij automatizace tam.",
+        "Destination": "Cíl",
+        "NewCompendium": "Nové kompendium",
+        "Replace": "Nahradit",
+        "Modes": {
+          "Matching": "Dokumenty se stejným názvem",
+          "All": "Vše v kompendiu"
+        },
+        "PackLockedTitle": "Kompendium je zamčené",
+        "PackTitle": "Použít na kompendium?",
+        "PackWarning": "{pack} patří do modulu {package}, nikoli do tohoto světa. Aktualizace modulu {package} přepíše vše, co zde použiješ.",
+        "CycleWarning": "Mezi položkami byla zjištěna kruhová závislost. Některé aktualizace mohou proběhnout v nesprávném pořadí!",
+        "NoUpdates": "Žádná položka nepotřebuje aktualizaci!",
+        "ChooseSource": "Zvol zdroj",
+        "Tabs": {
+          "Characters": "Postavy",
+          "NPCs": "NP",
+          "Other": "Ostatní"
+        }
+      },
+      "Identifier": {
+        "Label": "Identifikátor dokumentu",
+        "Hint": "Identifikátory položek a aktivit je nutné upravovat na příslušné kartě dokumentu.",
+        "OverrideHint": "Přepíše identifikátor používaný pro přiřazení tohoto dokumentu k automatizaci. Ve výchozím stavu se používá název převedený na identifikátor."
+      },
+      "Source": {
+        "Label": "Zdroj automatizace",
+        "Hint": "Zvol modul, který poskytuje automatizaci tohoto dokumentu.",
+        "HintNone": "Pro tento dokument nezaregistroval automatizaci žádný zdroj automatizace."
+      },
+      "SourceType": {
+        "Label": "Uděleno prostřednictvím",
+        "Hint": "Klíč představující zdroj, který tento dokument udělil, například povolání, odbornost či druh (např. 'class:cleric')."
+      },
+      "Version": {
+        "Label": "Verze automatizace",
+        "Hint": "Hlášena zvoleným zdrojem automatizace."
+      },
+      "Notes": {
+        "Label": "Poznámky k automatizaci"
+      },
+      "IgnoreItem": {
+        "Label": "Ignorovat položku?",
+        "Hint": "Po zaškrtnutí bude při hromadném použití či aktualizaci tato položka přeskakována."
+      },
+      "Sections": {
+        "Rules": "Pravidla",
+        "Automation": "Automatizace",
+        "Embedded": "Vložená makra"
+      },
+      "Embedded": {
+        "Count": "{count} vložených maker v tomto dokumentu.",
+        "Empty": "Tento dokument neobsahuje žádná vložená makra.",
+        "Add": "Přidat makro",
+        "Edit": "Upravit makro"
+      },
+      "EmbeddedMacros": {
+        "Title": "Vložená makra: {name}",
+        "Invalid": "Makro \"{name}\" musí mít před uložením název, událost a průchod.",
+        "Duplicate": "Makro s názvem \"{name}\" již v tomto dokumentu existuje.",
+        "Fields": {
+          "Name": "Název",
+          "Event": "Událost",
+          "Pass": "Průchod",
+          "Priority": "Priorita",
+          "Macro": "Makro",
+          "Distance": "Vzdálenost",
+          "ConfigDistance": "Klíč nastavení vzdálenosti",
+          "Dispositions": "Postoje",
+          "ConfigDispositions": "Klíč nastavení postojů",
+          "Disabled": "Přeskočit, pokud je cíl",
+          "ConfigDisabled": "Klíč nastavení stavu cíle"
+        },
+        "Disposition": {
+          "All": "Všichni",
+          "Ally": "Spojenec",
+          "Enemy": "Nepřítel"
+        },
+        "Disabled": {
+          "Incapacitated": "Zneschopněný",
+          "Dead": "Mrtvý",
+          "Unconscious": "V bezvědomí"
+        }
+      },
+      "DocProps": {
+        "Add": "Přidat",
+        "Empty": "Není definováno.",
+        "Hint": "Vlastnosti dokumentu se používají v úpravách systému DnD5e ({list}).",
+        "InvalidValue": "Je vyžadována hodnota.",
+        "NotDefined": "\"{type}\" není registrovaný atribut!",
+        "Title": "{type}: {name}",
+        "Props": {
+          "Ability": {
+            "Field": "Vlastnosti",
+            "Hint": "Další vlastnosti, které může použít libovolná odpovídající aktivita útoku, ověření, nebo záchrany.",
+            "Label": "Alternativní vlastnosti aktivit"
+          },
+          "ACAbility": {
+            "Field": "Vlastnost",
+            "Hint": "Nahrazení Obratnosti v základním výpočtu OČ, např. Poloplátová zbroj: 15 + int (max 2)",
+            "Label": "Alternativní vlastnost OČ"
+          },
+          "ACFormula": {
+            "Field": "Vzorec",
+            "Hint": "Vzorec nabízený jako alternativní; použije se možnost s nejvyšším základním OČ.",
+            "Label": "Alternativní vzorec OČ"
+          },
+          "DamageFormula": {
+            "Field": "Vzorec",
+            "Hint": "Vzorec nabízený jako alternativní; použije se možnost s nejvyšším výsledkem hodu.",
+            "Label": "Alternativní vzorce zásahu"
+          },
+          "Range": {
+            "Field": "Dosah kouzla",
+            "Hint": "Vzorec přičítaný k dosahu všech odpovídajících kouzel. Může se sčítat.",
+            "Label": "Bonus k dosahu kouzla"
+          },
+          "RollModifier": {
+            "Field": "Opravy",
+            "Hint": "Čárkami oddělené opravy kostek (např. x, min1, kh1).",
+            "Invalid": "Je vyžadována alespoň jedna oprava.",
+            "Label": "Opravy hodu na zásah"
+          }
+        },
+        "otherAbilities": {
+          "Field": "Vlastnosti",
+          "Hint": "Další vlastnosti, které může tento útok používat.",
+          "Label": "Další vlastnosti"
+        },
+        "Restrictions": {
+          "Legend": "Omezení",
+          "Hint": "Pokud omezení nechceš použít, ponech pole prázdné. Více hodnot odděl čárkami.",
+          "Invert": "Invertovat?",
+          "RequireAll": "Vyžadovat vše?",
+          "ExcludeAll": "Vyloučit při shodě všech",
+          "Ability": {
+            "Label": "Vlastnosti",
+            "Hint": "Vybere kouzla používající některou z vybraných vlastností.",
+            "InvertedHint": "Vyloučí kouzla používající vybrané vlastnosti."
+          },
+          "Armor": {
+            "Label": "Nasazená zbroj",
+            "Hint": "Musí být nasazena alespoň jedna, případně všechny.",
+            "InvertedHint": "Nesmí být nasazena ani jedna."
+          },
+          "DamagePart": {
+            "Label": "Část zásahu",
+            "Hint": "Cílí na vybrané části zásahu odpovídajících položek. Pokud není nic vybráno, použije se výchozí \"Základní\".",
+            "Base": "Základní",
+            "First": "První část",
+            "Second": "Druhá část",
+            "Third": "Třetí část"
+          },
+          "DamageType": {
+            "Label": "Typ zranění",
+            "Hint": "Vybere libovolný z vybraných typů zranění.",
+            "InvertedHint": "Vyloučí vybrané typy zranění."
+          },
+          "HasActivity": {
+            "Label": "Má aktivitu",
+            "Hint": "Vyhovuje kterémukoli z vybraných typů aktivit.",
+            "InvertedHint": "Vyloučit vybrané typy aktivit."
+          },
+          "Identifier": {
+            "Label": "Identifikátory cíle",
+            "Hint": "Seznam oddělený čárkami. Vybere jednu či více konkrétních položek podle identifikátoru: item|activity|partIndex."
+          },
+          "Level": {
+            "Label": "Stupeň kouzla",
+            "Hint": "Vybere libovolný z vybraných stupňů kouzel.",
+            "InvertedHint": "Vyloučí vybrané stupně kouzel."
+          },
+          "Method": {
+            "Label": "Způsob sesílání",
+            "Hint": "Vybere libovolný z vybraných způsobů sesílání kouzel.",
+            "InvertedHint": "Vyloučí vybrané způsoby sesílání kouzel."
+          },
+          "MinimumBaseRange": {
+            "Label": "Minimální základní dosah",
+            "Hint": "Neupravený dosah musí být roven této hodnotě či vyšší."
+          },
+          "Property": {
+            "Label": "Vlastnosti",
+            "Hint": "Vybere libovolnou či všechny vybrané vlastnosti položky.",
+            "InvertedHint": "Vyloučí libovolnou či všechny vybrané vlastnosti položky."
+          },
+          "RangeUnits": {
+            "Label": "Jednotky dosahu",
+            "Hint": "Vyhovuje kterákoliv z vybraných jednotek.",
+            "InvertedHint": "Vyloučit vybrané jednotky."
+          },
+          "School": {
+            "Label": "Škola magie",
+            "Hint": "Vybere libovolnou z vybraných škol magie.",
+            "InvertedHint": "Vyloučí vybrané školy magie."
+          },
+          "SourceType": {
+            "Label": "Typ zdroje",
+            "Hint": "Seznam klíčů zdrojů oddělených čárkami, například 'class:cleric' či 'race:human'. Vyhovují položky udělené těmito zdroji."
+          },
+          "Type": {
+            "Label": "Typ položky",
+            "Hint": "Vybere libovolný z vybraných typů položek.",
+            "InvertedHint": "Vyloučí vybrané typy položek."
+          },
+          "Weapon": {
+            "Label": "Vybavené zbraně",
+            "Hint": "Některé či všechny vybrané musí být vybavené.",
+            "InvertedHint": "Některé či všechny vybrané nesmí být vybavené."
+          },
+          "WeaponType": {
+            "Label": "Typ zbraně",
+            "Hint": "Vybere libovolný z vybraných typů zbraní.",
+            "InvertedHint": "Vyloučí vybrané typy zbraní."
+          }
+        }  
+      },
+      "Hero": {
+        "Unavailable": {
+          "Heading": "Žádná automatizace není registrována",
+          "Copy": "Pro tuto položku neposkytuje automatizaci žádný zdroj."
+        },
+        "Available": {
+          "Heading": "Automatizace je dostupná!",
+          "CTA": "Použít zvolený zdroj"
+        },  
+        "Outdated": {
+          "Heading": "Je dostupná aktualizace",
+          "Copy": "{source} obsahuje novější automatizaci.",
+          "CTA": "Aktualizovat nyní"
+        },
+        "UpToDate": {
+          "Heading": "Aktuální",
+          "Copy": "Již se používá nejnovější verze ze zdroje {source}."
+        },
+        "Configurable": {
+          "CTA": "Nastavit >"
+        },
+        "Generic": {
+          "CTA": "Spravovat funkce >"
+        }
+      },
+      "Notif": {
+        "Updated": "Aktualizována automatizace {identifier} z verze {before} na {after}.",
+        "Applied": "Použita automatizace ze zdroje {source} v{version}."
+      },
+      "Footer": {
+        "Cancel": "Zrušit",
+        "Close": "Zavřít",
+        "CancelTooltip": "Zahodí neuložené změny a zavře okno.",
+        "Save": "Uložit",
+        "SaveTooltip": "Uloží změny.",
+        "SaveClose": "Uložit a zavřít",
+        "SaveCloseTooltip": "Uloží změny a zavře okno.",
+        "DiscardTitle": "Zahodit změny?",
+        "DiscardPrompt": "Máš neuložené změny. Chceš je zahodit a zavřít okno?"
+      },
+      "Dirty": {
+        "Label": "Neuloženo",
+        "Tooltip": "Máš neuložené změny."
+      },
+      "RulesToggle": {
+        "2014": "2014",
+        "2024": "2024",
+        "Current": "Aktuální pravidla",
+        "Hint": "Přepíná mezi sadami pravidel 2014 (tradičními) a 2024 (moderními).",
+        "OtherRulesAvailable": "Automatizace je dostupná pro pravidla {otherRulesLabel}.",
+        "NotApplicable": "Volba pravidel není pro tento dokument použitelná."
+      },
+      "STATUSES": {
+        "HasUnregistered": "Neregistrovaná automatizace",
+        "Available": "Automatizace dostupná",
+        "Outdated": "Automatizace zastaralá",
+        "UpToDate": "Automatizace aktuální",
+        "Configurable": "Automatizace nastavitelná",
+        "Generic": "Použita obecná funkce",
+        "Unavailable": "Nenalezeny žádné automatizace"
+      },
+      "Indicator": {
+        "configuration": {
+          "One": "{count} nastavitelná volba",
+          "Other": "{count} nastavitelných voleb"
+        },
+        "generic": {
+          "One": "{count} obecná automatizace",
+          "Other": "{count} obecných automatizací"
+        },
+        "inherited": {
+          "One": "{count} vnořená obecná automatizace",
+          "Other": "{count} vnořených obecných automatizací"
+        },
+        "embedded": {
+          "One": "{count} vložené makro",
+          "Other": "{count} vložených maker"
+        },
+        "macros": {
+          "One": "{count} registrované makro",
+          "Other": "{count} registrovaných maker"
+        },
+        "docprops": {
+          "One": "{count} vlastnost dokumentu",
+          "Other": "{count} vlastností dokumentu"
+        },
+        "region": {
+          "One": "{count} aktivita oblasti",
+          "Other": "{count} aktivit oblasti"
+        }
+      },
+      "Tree": {
+        "Legend": "Související automatizace",
+        "Config": {
+          "config": "Nastavené",
+          "genericConfig": "Obecné",
+          "macros": "Makra",
+          "embeddedMacros": "Vložené",
+          "alternateAttributes": "Vlastnosti dokumentu",
+          "placed": "Oblast",
+          "animation": "Animace"
+        },
+        "Kind": {
+          "Item": "Položka",
+          "Activity": "Aktivita",
+          "ActiveEffect": "Efekt",
+          "Region": "Oblast",
+          "Token": "Token"
+        }
+      },
+      "Configuration": {
+        "None": "Tato automatizace nemá žádné nastavitelné možnosti."
+      },
+      "ClassBonus": {
+        "Label": "Bonusy sesílání kouzel povolání",
+        "Hint": "Pevné bonusy k SO záchran před kouzly a k hodům na útok kouzlem poskytnutým tímto povoláním, pokud je tato položka vybavena (např. Bloodwell Vial).",
+        "Empty": "Nejsou definovány žádné bonusy povolání.",
+        "Class": "Povolání",
+        "DC": "SO záchrany",
+        "Attack": "Útok",
+        "Add": "Přidat bonus povolání",
+        "AddPlaceholder": "Identifikátor povolání",
+        "Duplicate": "Bonus pro povolání \"{identifier}\" již existuje."
+      },
+      "FeatureRollMode": {
+        "Add": "Přidat identifikátor aktivity",
+        "AddPlaceholder": "Identifikátor aktivity",
+        "Duplicate": "Záznam identifikátoru \"{identifier}\" již existuje."
+      },
+      "Categories": {
+        "behavior": {
+          "Label": "Chování",
+          "Tooltip": "Jak se automatizace spouští a co ovlivňuje."
+        },
+        "tuning": {
+          "Label": "Ladění",
+          "Tooltip": "Číselná a výběrová nastavení automatizace."
+        },
+        "visuals": {
+          "Label": "Vizuály",
+          "Tooltip": "Ikony, obrázky a další vizuální prvky."
+        },
+        "linked": {
+          "Label": "Propojené položky",
+          "Tooltip": "Dokumenty, na které tato automatizace odkazuje."
+        },
+        "general": {
+          "Label": "Obecné",
+          "Tooltip": "Obecná nastavení."
+        },
+        "homebrew": {
+          "Label": "Domácí pravidla",
+          "Tooltip": "Volitelná vlastní nastavení automatizace."
+        },
+        "mechanics": {
+          "Label": "Mechaniky",
+          "Tooltip": "Jak se automatizace chová z mechanického hlediska."
+        },
+        "utility": {
+          "Label": "Použití",
+          "Tooltip": "Celkový účel automatizace."
+        },
+        "targeting": {
+          "Label": "Cílení",
+          "Tooltip": "Jak automatizace zaměřuje cíle."
+        },
+        "damage": {
+          "Label": "Zranění",
+          "Tooltip": "Úpravy zranění aplikovaného automatizací."
+        },
+        "movement": {
+          "Label": "Pohyb",
+          "Tooltip": "Efekty pohybu aplikované automatizací."
+        },
+        "summons": {
+          "Label": "Přivolání",
+          "Tooltip": "Přivolané bytosti a jejich nastavení."
+        },
+        "animations": {
+          "Label": "Animace",
+          "Tooltip": "Vizuální animace přehrávané automatizací."
+        }
+      },
+      "Documents": {
+        "Placeholder": "Vlož UUID, nebo sem dokument přetáhni",
+        "Add": "Přidat dokument",
+        "InvalidUuid": "Pro toto UUID nebyl nalezen žádný dokument.",
+        "WrongType": "Očekáván dokument typu {type}."
+      },
+      "Summons": {
+      "Actor": "Vyvolaná bytost",
+        "Name": "Přepsání názvu",
+        "AvatarImg": "Přepsání obrázku aktéra",
+        "TokenImg": "Přepsání obrázku tokenu",
+        "Animation": "Animace",
+        "Initiative": "Iniciativa",
+        "InitiativeStandard": "Hodit na iniciativu",
+        "InitiativeFollows": "Po přivolávači",
+        "InitiativeNone": "Žádná",
+        "SoundPlaced": "Zvuk při umístění",
+        "SoundRemoved": "Zvuk při odstranění",
+        "SoundDeath": "Zvuk při smrti",
+        "CompendiumPick": "Vybrat aktéra z kompendia",
+        "Add": "Přidat přivolání",
+        "Item": "Položka",
+        "MatchDC": "Převzít SO záchrany",
+        "MatchAttack": "Převzít bonus k útoku",
+        "Equip": "Vybavit",
+        "Attune": "Sladit",
+        "Method": "Způsob sesílání",
+        "Prepared": "Příprava",
+        "UsesMax": "Max. použití",
+        "UsesRecovery": "Obnova použití",
+        "RechargeValue": "Hodnota obnovení",
+        "Description": "Přepsání popisu",
+        "ItemCompendiumPick": "Vybrat položku z kompendia",
+        "AddItem": "Přidat položku",
+        "Profile": "Profil přivolání",
+        "ProfileHint": "Nativní profil přivolání, který tento záznam přepisuje.",
+        "Count": "Počet",
+        "CountHint": "Vzorec určující, kolik jich bude vytvořeno. Podporuje @castLevel.",
+        "Disposition": "Postoj",
+        "DispositionOwner": "Stejný jako u přivolávače",
+        "Size": "Velikost",
+        "DismissAtZero": "Odvolat při 0 BV",
+        "FollowUp": "Následná aktivita",
+        "FollowUpHint": "Tuto aktivitu vyhodnotí přivolaná bytost namísto následné aktivity definované chováním.",
+        "Identifier": "Identifikátor přivolání",
+        "IdentifierHint": "Ve výchozím nastavení použije identifikátor zdrojového aktéra.",
+        "AddUpdate": "Přidat aktualizaci aktéra",
+        "Update": "Aktualizace aktéra",
+        "UpdatePath": "Datová cesta",
+        "UpdateValue": "Hodnota",
+        "UpdateMode": "Typ hodnoty",
+        "UpdateModeFormula": "Vzorec",
+        "UpdateModeLiteral": "Doslovná hodnota",
+        "ItemName": "Přepsání názvu",
+        "ItemNameHint": "Podporuje {attacks} pro počet útoků.",
+        "ItemIdentifier": "Přepsání identifikátoru",
+        "ItemIdentifierHint": "Nahradí vlastní položku přivolané bytosti položkou s tímto identifikátorem.",
+        "Attacks": "Počet útoků",
+        "AttacksHint": "Vzorec určující počet útoků při Vícenásobném útoku, který se zapíše do názvu.",
+        "DamageNumber": "Počet kostek zranění",
+        "DamageBonus": "Bonus ke zranění",
+        "DamageTypes": "Typy zranění",
+        "HealingNumber": "Počet kostek léčení",
+        "HealingBonus": "Bonus k léčení",
+        "UsesMaxFormula": "Vzorec maximálního počtu použití",
+        "CompendiumTypes": "Typy bytostí v kompendiu",
+        "CompendiumHint": "Je-li nastaveno kterékoli pole kompendia, bytosti se vybírají z kompendií nestvůr namísto aktéra přivolání.",
+        "CompendiumSubtypes": "Podtypy v kompendiu",
+        "CompendiumNames": "Názvy v kompendiu",
+        "CompendiumMaxCR": "Maximální Nebezpečnost v kompendiu",
+        "CompendiumTiers": "Pásma Nebezpečnosti v kompendiu",
+        "CompendiumRandomTier": "Hod na pásmo",
+        "CompendiumTiersHint": "Volby nabízené před výběrem, zapsané jako N|počet a oddělené středníky. Počty podporují vzorce.",
+        "Weight": "Váha rozpočtu",
+        "WeightHint": "Určuje, jakou část rozpočtu jedna taková bytost spotřebuje. Výchozí hodnota je 1.",
+        "DamageDenomination": "Velikost kostky zásahu"
+      },
+      "PackFolder": {
+        "Folder": "Složka",
+        "Pack": "Kompendium"
+      },
+      "Sequencer": {
+        "Browse": "Procházet databázi Sekvenceru"
+      },
+      "Animation": {
+        "Categories": {
+          "attack": "Útok",
+          "classFeature": "Schopnost povolání",
+          "default": "Ostatní",
+          "generic": "Obecné",
+          "rangedAttack": "Útok na dálku",
+          "spell": "Kouzlo",
+          "weaponAttacks": "Útok zbraní"
+        },
+        "Credits": "Animace od",
+        "Discord": "Discord",
+        "Patreon": "Patreon"
+      },
+      "Region": {
+        "Visibility": "Viditelnost",
+        "MagicalDarkness": {
+          "Label": "Magická tma",
+          "Hint": "Tokeny uvnitř této oblasti nejsou ovlivňovány nemagickými zdroji světla."
+        },
+        "Obscured": {
+          "Label": "Skrytí",
+          "Hint": "Tokeny uvnitř této oblasti jsou silně skryté."
+        }
+      },
+      "Actor": {
+        "Ability": {
+        "All": "Všechny"
+        },
+         "Automations": "Automatizace",
+         "ConditionResistance": {
+          "Label": "Odolání vůči stavům",
+          "Hint": "Stavy, vůči kterým má tento aktér odolání. Klikni na 'Vše' pro libovolnou záchranu, nebo vyber konkrétní vlastnosti, na které se má vztahovat."
+        },
+        "ConditionVulnerability": {
+          "Label": "Zranitelnost vůči stavům",
+          "Hint": "Stavy, vůči kterým má tento aktér zranitelnost. Klikni na 'Vše' pro libovolnou záchranu, nebo vyber konkrétní vlastnosti, na které se má vztahovat."
+        },
+        "FeatureFailure": {
+          "Label": "Selhání vůči schopnostem",
+          "Hint": "Identifikátory aktivit, vůči kterým má tento aktér automaticky selhat. Klikni na 'Vše' pro libovolnou záchranu, nebo vyber konkrétní vlastnosti, na které se má vztahovat."
+        },
+        "FeatureImmunity": {
+          "Label": "Imunity vůči schopnostem",
+          "Hint": "Identifikátory aktivit, vůči kterým má tento aktér automaticky uspět. Klikni na 'Vše' pro libovolnou záchranu, nebo vyber konkrétní vlastnosti, na které se má vztahovat."
+        },
+        "FeatureResistance": {
+          "Label": "Odolání vůči schopnostem",
+          "Hint": "Identifikátory aktivit, vůči kterým má tento aktér odolání. Klikni na 'Vše' pro libovolnou záchranu, nebo vyber konkrétní vlastnosti, na které se má vztahovat."
+        },
+        "FeatureVulnerability": {
+          "Label": "Zranitelnosti vůči schopnostem",
+          "Hint": "Identifikátory aktivit, vůči kterým je tento aktér zranitelný. Klikni na 'Vše' pro libovolnou záchranu, nebo vyber konkrétní vlastnosti, na které se má vztahovat." 
+        },
+        "IgnoreActor": {
+          "Label": "Ignorovat aktéra?",
+          "Hint": "Po zaškrtutí bude při hromadných aktualizacích kompendií a scén tento aktér přeskočen."
+        },
+        "Name": {
+          "Label": "Název pro párování",
+          "Hint": "Páruje tohoto aktéra s automatizacemi pod jiným názvem."
+        },
+        "Backups": {
+          "Label": "Zálohy",
+          "Hint": "Obnovení nahradí tohoto aktéra zálohou. Nejprve se zálohuje jeho aktuální stav.",
+          "Backup": "Zálohovat",
+          "Restore": "Obnovit",
+          "RestoreConfirm": "Nahradit aktéra {name} zálohou z {date}?",
+          "None": "Tento aktér zatím nemá žádné zálohy.",
+          "NoPack": "V nastavení Záloh vyber kompendium pro zálohy."
+        }
+      },
+      "Activity": {
+        "SpellIdentifier": {
+          "Label": "Identifikátor kouzla",
+          "Hint": "Kouzlo, na které tato aktivita seslání odkazuje. Při aktualizaci CatKitu se odkaz nahradí prvním odpovídajícím záznamem ve tvých kompendiích kouzel."
+        },
+        "Hidden": {
+          "Label": "Skrytá aktivita",
+          "Hint": "Skryje tuto aktivitu z dialogu výběru aktivit k použití.",
+          "Badge": "Tato aktivita je spravována automatizací. Pokud přesně nevíš, co děláš, neupravuj ji!"
+        },
+        "PlacedRegion": {
+          "Hint": "Nastavení použitá na každou oblast vytvořenou touto aktivitou."
+        },
+        "Effects": {
+          "Label": "Efekty oblasti",
+          "Field": "Použít efekty",
+          "Hint": "Efekty z této položky aplikované na tokeny uvnitř oblasti vytvořené touto aktivitou.",
+          "None": "Tato položka nemá žádné efekty k použití.",
+          "Disposition": "Cíle efektu",
+          "DispositionHint": "Které tokeny uvnitř oblasti obdrží tyto efekty."
+        },
+          "Filter": {
+            "Label": "Filtr cílů",
+            "Hint": "Makro filtru aury, které určuje, které tokeny oblast ovlivní."
+        },
+        "RegionMacros": {
+          "Label": "Registrovaná makra oblasti",
+          "Hint": "Registrovaná makra zkopírovaná do oblasti vytvořené touto aktivitou."
+        },
+        "Activities": {
+          "Label": "Aktivity oblasti",
+          "Field": "Spouštět aktivity",
+          "Hint": "Aktivity této položky, které se spustí při interakci tokenů s oblastí vytvořenou touto aktivitou.",
+          "NoneAvailable": "Tato položka nemá žádné další aktivity ke spuštění.",
+          "Triggers": "Spouštěče",
+          "Disposition": "Cíle",
+          "OncePerTurn": "Jednou za tah",
+          "DependentEffects": "Odstranit při opuštění",
+          "DependentEffectsHint": "Efekty aplikované touto aktivitou se odstraní, když bytost opustí oblast, nebo je odstraněna oblast. Aktivita se znovu nespustí, dokud má bytost některý z těchto efektů.",
+          "PerDistance": "Podle vzdálenosti",
+          "PerDistanceHint": "Se spouštěčem 'Pohyb tokenu uvnitř' se aktivita spustí jednou za každou takto velkou vzdálenost v jednotkách scény, kterou token uvnitř oblasti urazí. Pokud se má spustit jednou za každý pohyb, ponech prázdné."
+        },
+        "Triggers": {
+          "created": "Oblast byla vytvořena",
+          "enter": "Token vstoupí",
+          "left": "Token opustí",
+          "stay": "Token zůstává",
+          "passedThrough": "Token projde skrz",
+          "entered": "Oblast se přesune na token",
+          "exited": "Oblast se přesune mimo token",
+          "stayed": "Oblast zůstává na tokenu",
+          "passedOver": "Oblast přejde přes token",
+          "turnStart": "Začátek tahu",
+          "turnEnd": "Konec tahu",
+          "everyTurn": "Každý tah",
+          "moved": "Pohyb tokenu uvnitř"
+        },
+        "Disposition": {
+          "all": "Všichni",
+          "ally": "Spojenci",
+          "enemy": "Nepřátelé"
+        },
+        "AttachToCaster": {
+          "Label": "Připojit k sesilateli",
+          "Hint": "Oblast následuje token sesilatele při jeho pohybu."
+        }
+      },
+      "Effect": {
+        "Conditions": {
+          "Label": "Stavy",
+          "Hint": "Stavy aplikované na aktéra po dobu trvání tohoto efektu."
+        },
+        "DisableCondition": {
+          "Label": "Podmínky vypnutí",
+          "Hint": "Spouštěče, které tento efekt automaticky vypnou."
+        },
+        "DisableConditions": {
+          "combatTurn": "Zapnout během tahu"
+        },
+        "SpecialDuration": {
+          "Label": "Zvláštní trvání",
+          "Hint": "Události, které tento efekt automaticky odstraní."
+        },
+        "SpecialDurations": {
+          "endOfWorkflow": "Konec vyhodnocení",
+          "forceSave": "Vynucená záchrana",
+          "dealtDamage": "Způsobené zranění",
+          "turnStart": "Začátek tahu této bytosti",
+          "turnEnd": "Konec tahu této bytosti",
+          "damaged": "Utrpění zranění",
+          "damagedByAlly": "Zranění spojencem",
+          "damagedByEnemy": "Zranění nepřítelem",
+          "damagedBySourceOrAlly": "Zranění zdrojem efektu či jeho spojencem",
+          "damagedBySourceAlly": "Zranění spojencem zdroje efektu",
+          "hitByAnotherCreature": "Zásah jinou bytostí",
+          "attackedByAnotherCreature": "Napadení jinou bytostí",
+          "hitBySource": "Zásah zdrojem efektu",
+          "attackedBySource": "Napadení zdrojem efektu",
+          "moveFinished": "Dokončení pohybu",
+          "zeroSpeed": "Rychlost snížena na nulu",
+          "tempHP": "Ztraceny dočasné BV",
+          "tempMaxHP": "Ztraceno dočasné maximum BV",
+          "toolCheck": "Libovolný nástroj",
+          "Groups": {
+            "Workflow": "Vyhodnocení",
+            "Turn": "Tah",
+            "Movement": "Pohyb",
+            "HitPoints": "Body výdrže",
+            "ConditionAdded": "Stav přidán",
+            "ConditionRemoved": "Stav odstraněn",
+            "Equipped": "Zbroj nasazena",
+            "Unequipped": "Zbroj odložena",
+            "ToolRolled": "Hod nástrojem",
+            "ToolFailed": "Neúspěšný hod nástrojem",
+            "ToolSucceeded": "Úspěšný hod nástrojem"
+          }
+        },
+        "Animation": "Animace",
+        "NoAnimation": {
+          "Label": "Zakázat animaci",
+          "Hint": "Potlačí animace při aplikaci a odstranění tohoto efektu."
+        },
+        "AnimationCreate": {
+          "Label": "Animace při aplikaci",
+          "Tooltip": "Animace přehrávaná při aplikaci efektu."
+        },
+        "AnimationDelete": {
+          "Label": "Animace při odstranění",
+          "Tooltip": "Animace přehrávaná při odstranění efektu."
+        },
+        "AnimationApply": "Aplikovat",
+        "AnimationRemove": "Odstranit"
+      },
+      "Generic": {
+        "SelectLabel": "Obecné funkce",
+        "SelectField": "Použít funkce",
+        "NoMacros": "Nejsou registrovány žádné obecné funkce.",
+        "NoneSelected": "Nejsou vybrány žádné obecné funkce.",
+        "NoConfig": "Tato funkce nemá žádné nastavení.",
+        "IdentifierPlaceholder": "Identifikátor",
+        "AddIdentifier": "Přidat identifikátor"
+      },
+      "Macros": {
+        "Picker": {
+          "Label": "Registrovaná makra",
+          "Field": "Použít registrovaná makra",
+          "Hint": "Vyber, která registrovaná makra se mají na tomto dokumentu spouštět. Každé vybrané makro se spustí při všech událostech, které deklaruje."
+        },
+        "None": "V globálním registru nejsou registrována žádná makra."
+      }
+    },
+    "Region": {
+      "AttackerCantSeeTarget": "Útočník nevidí cíl",
+      "TargetCantSeeAttacker": "Cíl nevidí útočníka"
+    },
+    "Dialog": {
+      "Remember": {
+        "Combat": "Během tohoto boje se znovu neptat",
+        "Cast": "Během tohoto seslání se znovu neptat",
+        "Permanent": "Už se neptat. Uloženou volbu můžeš vyčistit na kartě nastavení CAT této položky."
+      },
+      "Request": {
+        "Approved": "Schváleno",
+        "Automatic": "Automaticky schváleno",
+        "Declined": "Zamítnuto",
+        "Pending": "Čeká na vyřízení",
+        "Request": "Žádost",
+        "Self": "Požadavek pro sebe"
+      },
+      "Combobox": {
+        "Filter": "Zadej filtr...",
+        "NoMatches": "Žádné shody"
+      },
+      "HitDieLabel": "{className}: {remaining}/{max} {denomination}",
+      "SkipDeadAndUnconscious": "Přeskočit mrtvé a bezvědomé",
+      "Total": "Celkem",
+      "UnknownTarget": "Neznámý cíl",
+      "Use": "Použít {document}?",
+      "UseExtraCost": "Použít {document}? (Stojí {quantity} {resource})",
+      "UseRecover": "Použít {document} k obnově {spent}/{max} {resource}?",
+      "UseRollTotal": "Použít {document}? (Celkový hod: {rollTotal})",
+      "UseForRollTotal": "Použít {document} pro {name}? (Celkový hod: {rollTotal})"
+    },
+    "Common": {
+      "AttackType": {
+        "attack": "Útok",
+        "meleeAttack": "Útok na blízko",
+        "meleeSpellAttack": "Útok kouzlem na blízko",
+        "meleeWeaponAttack": "Útok zbraní na blízko",
+        "rangedAttack": "Útok na dálku",
+        "rangedSpellAttack": "Útok kouzlem na dálku",
+        "rangedWeaponAttack": "Útok zbraní na dálku",
+        "spellAttack": "Útok kouzlem",
+        "weaponAttack": "Útok zbraní"
+      },
+      "Cover": "{amount} {cover}"
+    },    
+      "Skill": {
+      "Title": "Ověření dovednosti"
+    },
+    "Check": {
+      "Title": "Ověření vlastnosti"
+    },
+    "Save": {
+      "Title": "Záchrana"
+    },
+    "Tool": {
+      "Title": "Ověření nástroje"
+    },
+    "Manual": {
+      "MethodLabel": "Coven's Automation Toolkit",
+      "Title": "Hoď!",
+      "Part": {
+        "Mod": "Oprava",
+        "Prof": "Zdatnost",
+        "Magic": "Magie",
+        "Bonus": "Bonus",
+        "Situational": "Situační"
+      },
+      "Context": {
+        "weapon": {
+          "attack": "{source} útočí na cíl {target} zbraní {item}, hoď si na útok!",
+          "attackNoTarget": "{source} útočí zbraní {item}, hoď si na útok!",
+          "damage": "{source} zasáhl cíl {target} zbraní {item}, hoď si na zásah!",
+          "damageNoTarget": "{source} zasáhl zbraní {item}, hoď si na zásah!"
+        },
+        "spell": {
+          "attack": "{source} sesílá kouzlo {item} na cíl {target}, hoď si na útok!",
+          "attackNoTarget": "{source} sesílá kouzlo {item}, hoď si na útok!",
+          "damage": "{source} sesílá kouzlo {item} na cíl {target}, hoď si na zásah!",
+          "damageNoTarget": "{source} sesílá kouzlo {item}, hoď si na zásah!"
+        },
+        "feat": {
+          "attack": "{source} používá schopnost {item} na cíl {target}, hoď si na útok!",
+          "attackNoTarget": "{source} používá schopnost {item}, hoď si na útok!",
+          "damage": "{source} používá schopnost {item} na cíl {target}, hoď si na zásah!",
+          "damageNoTarget": "{source} používá schopnost {item}, hoď si na zásah!"
+        }
+      },
+      "SaveContext": "{source} na tebe použil/a {type}, hoď na záchranu!",
+      "SaveLine": "SO {dc} — záchrana vlastností {ability}",
+      "SaveLineNoDC": "Záchrana vlastností {ability}",
+      "UnknownSource": "Někdo",
+      "WithAdvantage": "S Výhodou",
+      "WithDisadvantage": "S Nevýhodou",
+      "ItemType": {
+        "spell": "kouzlo",
+        "weapon": "zbraň",
+        "feat": "schopnost",
+        "consumable": "předmět"
+      },
+      "Unknown": "neviděný cíl",
+      "DiceTotal": "Součet kostek",
+      "RollTotal": "Celkový výsledek",
+      "RerollDepth": "Byla dosažena maximální hloubka přehozů/explozí — upravené hody vyhodnoť ručně před zadáním výsledku.",
+      "Submit": "Potvrdit hody",
+      "Outcome": {
+        "Fumble": "Fatální selhání",
+        "Miss": "Minutí",
+        "Hit": "Zásah",
+        "Critical": "Kritický zásah",
+        "Failure": "Selhání",
+        "Success": "Úspěch"
+      }
+    },
+    "Senses": {
+      "DevilsSight": "Ďábelský zrak"
+    },
+    "Settings": {
+      "FixDescriptionEnrichers": {
+        "Name": "Opravit obohacovače?",
+        "Hint": "Po zaškrtnutí automatizace doplní sama obohacovače [[/damage]] a [[/save]]."
+      },
+      "Automation": {
+        "Name": "Zdroje automatizací",
+        "Label": "Nastavit zdroje automatizací",
+        "Hint": "Povol zdroje automatizací a seřaď je podle priority."
+      },
+      "ManualRolls": {
+        "Name": "Ruční hody",
+        "Label": "Nastavit ruční hody",
+        "Hint": "Nastavení CAT pro vyhodnocování hodů určené pro reálné ruční házení kostkami."
+      },
+      "ManualRollsEnabled": {
+        "Name": "Povolit ruční hody?",
+        "Hint": "Zaškrtnutí povolí vyhodnocovač hodů automaticky neprovedených hodů."
+      },
+      "ManualRollsUsers": {
+        "Name": "Ruční hody povoleny pro",
+        "Hint": "Určuje, kteří uživatelé budou používat ruční hody."
+      },
+      "ManualRollsInclusion": {
+        "0": "U nikoho (bez ručních hodů)",
+        "1": "U všech (dotaz pro jakéhokoli aktéra)",
+        "2": "Pouze u všech postav",
+        "3": "Pouze u všech propojených aktérů",
+        "4": "Pouze u propojených aktérů vlastněných hráči",
+        "5": "U všech aktérů vlastněných či ovládaných hráči",
+        "Name": "Rozsah aktérů",
+        "Hint": "Určuje, u kterých aktérů budou ruční hody vyžadovány."
+      },
+      "ManualRollsPromptOnMiss": {
+        "Name": "Dotazovat i při minutí?",
+        "Hint": "Po zaškrtnutí bude vyžadován hod na zásah i v případě, že útok minul."
+      },
+      "ManualRollsPromptNoData": {
+        "Name": "Dotazovat bez dat?",
+        "Hint": "Po zaškrtnutí bude vyžadován hod i v případech bez dat typicky používaných v makrech."
+      },
+      "ManualRollsEntryMode": {
+        "Name": "Zadávání ručních hodů",
+        "Hint": "Jak se zadávají výsledky kostek při ručním vyhodnocení hodů.",
+        "rollTotal": "Celkový výsledek (včetně oprav)",
+        "diceTotal": "Součet kostek (bez oprav)",
+        "perDie": "Po jednotlivých kostkách (každý výsledek zvlášť)"
+      },
+      "ManualRollsGMFulfill": {
+        "Name": "Má hody vyhodnocovat PJ?",
+        "Hint": "Po zaškrtnutí bude všechny hody vyhodnocovat Pán jeskyně."
+      },
+      "ManualRollsRichContext": {
+        "Name": "Zobrazovat plný kontext?",
+        "Hint": "Po zaškrtnutí bude v dialogu zobrazován plný kontext ručního hodu (cíl, SO záchrany, text zásahu apod.) namísto jednoduchého nadpisu."
+      },
+      "AutomationSources": {
+        "Name": "Zdroje automatizací",
+        "Hint": "CatKit a nástroj hromadného použití nabízejí automatizace z těchto zdrojů. Přednost mají možnosti ze zdrojů výše v tomto seznamu.",
+        "Disabled": "Neaktivní",
+        "Disable": "Zakázat",
+        "Enable": "Povolit",
+        "SourceTag": "Zdroj",
+        "PackTag": "Kompendium"
+      },
+      "Backups": {
+        "Name": "Zálohy",
+        "Label": "Nastavit zálohy",
+        "Hint": "Nastavení automatického vytváření záloh aktérů."
+      },
+      "Compendiums": {
+        "Name": "Kompendia",
+        "Label": "Nastavit kompendia",
+        "Hint": "Urči, kde jsou uloženy tvé plně připravené dokumenty."
+      },
+      "MonsterCompendiums": {
+        "Name": "Nestvůry",
+        "Hint": "Nestvůry připravené k použití. Měly by mít popisy a automatizace. Nestvůry se načítají přednostně z kompendií výše v tomto seznamu."
+      },
+      "ItemCompendiums": {
+        "Name": "Položky",
+        "Hint": "Položky připravené k použití. Měly by mít popisy a automatizace. Položky se načítají přednostně z kompendií výše v tomto seznamu."
+      },
+      "SpellCompendiums": {
+        "Name": "Kouzla",
+        "Hint": "Kouzla připravená k použití. Měla by mít popisy a automatizace. Kouzla se načítají přednostně z kompendií výše v tomto seznamu."
+      },
+      "MacroCompendiums": {
+        "Name": "Makra",
+        "Hint": "<b>VAROVÁNÍ</b>: Tato makra se spouštějí při načtení světa jako součást procesu registrace. Nepovoluj kompendia obsahující makra, která nejsou určena pro CAT.<br><br>Tato makra mohou přepsat a nahradit registrovaná makra nabízená CatKitem. Spouštějí se při načtení světa a musí vracet data v přesně stanoveném formátu, aby mohla být správně zaregistrována. Další podrobnosti najdeš v editoru maker uvnitř kompendia maker CAT."
+      },
+      "Devtools": {
+        "Name": "Vývojářské nástroje",
+        "Label": "Nastavit vývojářské nástroje",
+        "Hint": "Nastavení pro vývojáře."
+      },
+      "DisplayDebugLogs": {
+        "Name": "Zobrazovat záznamy?",
+        "Hint": "Po zaškrtnutí bude konzole zobrazovat záznamy ladění."
+      },
+      "DisplayDebugEventData": {
+        "Name": "Zobrazovat data událostí?",
+        "Hint": "Po zaškrtnutí bude konzole zobrazovat ukázková data každé události."
+      },
+      "Help": {
+        "Name": "Poradce při potížích",
+        "Label": "Otevřít poradce při potížích",
+        "Hint": "Pomoc s požadovaným nastavením modulů a řešením problémů s automatizacemi CAT."
+      },
+      "HideNames": {
+        "Name": "Skrývat názvy tokenů?",
+        "Hint": "Po zaškrtnutí nebudou různé dialogy zobrazovat názvy nepřátelských tokenů."
+      },
+      "HideActivitiesOnActorSheet": {
+        "Name": "Skrývat skryté aktivity?",
+        "Hint": "Po zaškrtnutí se aktivity označené v CatKitu jako skryté odstraní z deníků aktérů. V denících položek se zobrazují vždy."
+      },
+      "DiceSoNice": {
+        "Name": "DSN?",
+        "Hint": "Po zaškrtnutí se budou animace hodů na zásah modulu Dice So Nice přehrávat až po dokončení všech maker souvisejících s hodem na zásah."
+      },
+      "AnimationPriority": {
+        "Name": "Priorita animací",
+        "Hint": "Určuje, která animace se přehraje, když má položka animaci CAT a zároveň ji animují i moduly Automated Animations či Boss Loot FX.",
+        "Cat": "CAT (blokovat automatické animace Automated Animations či Boss Loot FX)",
+        "Module": "Automated Animations či Boss Loot FX (přeskočit animaci CAT)",
+        "Both": "Přehrát obě"
+      },
+      "General": {
+        "Name": "Obecné",
+        "Label": "Nastavit obecné volby",
+        "Hint": "Obecná nastavení modulu a API."
+      },
+      "Integration": {
+        "Name": "Integrace",
+        "Label": "Nastavit integrace",
+        "Hint": "Nastavení různých integrací modulů."
+      },
+      "Interface": {
+        "Name": "Rozhraní",
+        "Label": "Nastavit rozhraní",
+        "Hint": "Nastavení uživatelského rozhraní."
+      },
+      "EffectDescriptions": {
+        "Name": "Automatické popisy efektů",
+        "Hint": "Určení, zda mají efekty bez popisu automaticky doplňovat popis z původní položky."
+      },
+      "AutoRecharge": {
+        "Name": "Obnova schopností hráčských postav",
+        "Hint": "Na začátku tahu postavy, která není NP, se automaticky hodí na obnovu schopností."
+      },
+      "AuraCombatOnly": {
+        "Name": "Aury pouze v boji?",
+        "Hint": "Po zaškrtnutí budou aury aplikovat své efekty a spouštěče pouze ve scénách, kde byl zahájen boj."
+      },
+      "PlacedRegionVisibility": {
+        "Name": "Viditelnost oblastí",
+        "Hint": "Určuje, kde se po umístění vykreslují umístěné oblasti vytvořené aktivitami. Jejich efekty se použijí v obou případech.",
+        "layer": "Pouze ve vrstvě oblastí",
+        "always": "Vždy"
+      },
+      "EffectDescriptionsNPC": {
+        "Name": "Skrývat popisy efektů NP?",
+        "Hint": "Po zaškrtnutí se nastavení 'Automatické popisy efektů' nebude vztahovat na efekty vytvořené NP."
+      },
+      "Mechanics": {
+        "Name": "Mechaniky",
+        "Label": "Nastavit mechaniky",
+        "Hint": "Nastavení automatizací herních mechanik."
+      },
+      "Permissions": {
+        "Name": "Oprávnění",
+        "Label": "Nastavit oprávnění",
+        "Hint": "Nastavení uživatelských oprávnění pro automatizace CAT a nabídky nastavení."
+      },
+      "PermissionsAutomation": {
+        "Name": "Záložka 'Automatizace'",
+        "Hint": "Minimální uživatelská role oprávněná upravovat záložku Automatizace."
+      },
+      "PermissionsConfiguration": {
+        "Name": "Záložka 'Nastavení'",
+        "Hint": "Minimální uživatelská role oprávněná upravovat záložku Nastavení."
+      },
+      "PermissionsGeneric": {
+        "Name": "Záložka 'Obecné'",
+        "Hint": "Minimální uživatelská role oprávněná upravovat záložku Obecné."
+      },
+      "PermissionsEmbedded": {
+        "Name": "Záložka 'Vložená makra'",
+        "Hint": "Minimální uživatelská role oprávněná upravovat záložku Vložená makra."
+      },
+      "PermissionsDocProps": {
+        "Name": "Záložka 'Vlastnosti dokumentu'",
+        "Hint": "Minimální uživatelská role oprávněná upravovat záložku Vlastnosti dokumentu."
+      },
+      "PermissionsMacros": {
+        "Name": "Záložka 'Registrovaná makra'",
+        "Hint": "Minimální uživatelská role oprávněná upravovat záložku Registrovaná makra."
+      },
+      "PermissionsPlacedRegion": {
+        "Name": "Záložka 'Umístěná oblast'",
+        "Hint": "Minimální uživatelská role oprávněná upravovat záložku Umístěná oblast."
+      },
+      "Summons": {
+        "Name": "Přivolání",
+        "Label": "Nastavit přivolání",
+        "Hint": "Nastavení používání a správy přivolaných bytostí."
+      },
+      "AutomaticBackups": {
+        "Name": "Automaticky zálohovat postavy?",
+        "Hint": "Po zaškrtnutí se budou při načtení světa zálohovat postavy vlastněné hráči do kompendia záloh."
+      },
+      "BackupCompendium": {
+        "Name": "Kompendium záloh",
+        "Hint": "Kompendium aktérů světa, ve kterém jsou uloženy zálohy."
+      },
+      "BackupFrequency": {
+        "Name": "Frekvence zálohování",
+        "Hint": "Interval mezi automatickými zálohami."
+      },
+      "BackupRetention": {
+        "Name": "Doba uchování záloh",
+        "Hint": "Jak dlouho se uchovávají automatické a ruční zálohy."
+      }
+    },
+    "DAE": {
+      "CV": {
+        "Category": "CAT zranitelnost vůči stavu",
+        "Name": "Zranitelnost vůči stavu {condition}",
+        "Description": "Zranitelnost vůči stavu {condition}; záchrany proti němu se hází s Nevýhodou. Pro všechny záchrany použij hodnotu 1/true, nebo seznam vlastností oddělených čárkami (např. str,dex)."
+      },
+      "CR": {
+        "Category": "CAT odolání vůči stavu",
+        "Name": "Odolání vůči stavu {condition}",
+        "Description": "Odolání vůči stavu {condition}; záchrany proti němu se hází s Výhodou. Pro všechny záchrany použij hodnotu 1/true, nebo seznam vlastností oddělených čárkami (např. str,dex)."
+      },
+      "FeatureRollModes": "CAT režimy hodů schopností",
+      "FF": {
+        "Name": "Selhání vůči schopnosti",
+        "Description": "Selhání vůči aktivitě podle identifikátoru; záchrany automaticky selžou. Nahraď 'identifier' vlastním identifikátorem. Pro všechny záchrany použij hodnotu 1/true, nebo seznam vlastností oddělených čárkami (např. str,dex)."
+      },
+      "FI": {
+        "Name": "Imunita vůči schopnosti",
+        "Description": "Imunita vůči aktivitě podle identifikátoru; záchrany automaticky uspějí. Nahraď 'identifier' vlastním identifikátorem. Pro všechny záchrany použij hodnotu 1/true, nebo seznam vlastností oddělených čárkami (např. str,dex)."
+      },
+      "FV": {
+        "Name": "Zranitelnost vůči schopnosti",
+        "Description": "Zranitelnost vůči aktivitě podle identifikátoru; při záchranách má aktér Nevýhodu. Nahraď 'identifier' vlastním identifikátorem. Pro všechny záchrany použij hodnotu 1/true, nebo seznam vlastností oddělených čárkami (např. str,dex)."
+      },
+      "FR": {
+        "Name": "Odolání vůči schopnosti",
+        "Description": "Odolání vůči aktivitě podle identifikátoru; při záchranách má aktér Výhodu. Nahraď 'identifier' vlastním identifikátorem. Pro všechny záchrany použij hodnotu 1/true, nebo seznam vlastností oddělených čárkami (např. str,dex)."
+      },
+      "IgnoreDifficultTerrainTokens": {
+        "Name": "Ignorovat obtížný terén: ostatní tokeny",
+        "Description": "Tento aktér nepovažuje ostatní tokeny za obtížný terén."
+      },
+      "Other": "CAT jiné"
+    },
+    "Generic": {
+      "Disabled": "Zakázat",
+      "Chat": "Chat",
+      "Ok": "OK",
+      "Cancel": "Zrušit",
+      "Name": "Název",
+      "DamageGroups": {
+        "Physical": "Fyzické",
+        "Elemental": "Elementární",
+        "Other": "Ostatní"
+      },
+      "Resize": "Změnit velikost"
+    },
+    "QuickConditions": {
+      "Legend": "Dostupné podmínky",
+      "Placeholder": "Kliknutím níže přidej podmínky",
+      "Title": "CAT rychlé podmínky",
+      "Unknown": {
+        "Tooltip": "Nepodařilo se přiřadit podmínky k žádnému vyhledávacímu klíči"
+      },
+      "Logic": {
+        "And": "A",
+        "Or": "Nebo"
+      },
+      "Comparators": {
+        "lt": "méně než",
+        "le": "nejvýše",
+        "gt": "více než",
+        "ge": "alespoň"
+      },
+      "Not": {
+        "Is": "je",
+        "IsNot": "není"
+      },
+      "Conditions": {
+        "typeOrRace": "Typ či druh",
+        "checkNearby": "Zkontrolovat okolí",
+        "reaction": "Reakce",
+        "targetActorSize": "Velikost cíle",
+        "activityType": "Typ aktivity",
+        "damageType": "Typ zranění",
+        "critical": "Kritický zásah",
+        "alignment": "Přesvědčení",
+        "ability": "Vlastnost",
+        "hasCondition": "Má stav",
+        "itemType": "Typ položky"
+      }
+    },
+    "Summons": {
+      "SummonFolder": "Vyvolané bytosti"
+    },
+    "Teleport": {
+      "Title": "Teleport",
+      "WhichLevel": "Která úroveň?",
+      "Current": "{name} (aktuální)"
+    },
+    "Crosshairs": {
+      "Invalid": "Toto místo nelze zvolit.",
+      "PathMustClose": "Uzavři tvar kliknutím na jeho první bod.",
+      "PathTooLong": "Uzavřením tvaru by došlo k překročení povolené délky.",
+      "Help": {
+        "AddPanel": "Přidat panel k nejbližšímu konci",
+        "AddPoint": "Přidat bod",
+        "Back": "Vrátit se zpět a pokračovat v kreslení",
+        "Cancel": "Zrušit",
+        "ChooseSide": "Ukaž na stranu, která má být aktivní",
+        "Close": "Uzavřít tvar",
+        "Confirm": "Potvrdit stranu",
+        "Finish": "Dokončit čáru",
+        "FinishPanels": "Dokončit s menším počtem panelů",
+        "FreeAngle": "Libovolný úhel mimo mřížku",
+        "Free": "Umístit mimo mřížku",
+        "Keys": {
+          "Click": "Klik",
+          "Enter": "Enter",
+          "Esc": "Esc",
+          "FirstPoint": "Kliknout na první bod",
+          "LastPoint": "Enter / kliknout na poslední bod",
+          "Move": "Pohyb",
+          "RightClick": "Klik pravým tlačítkem",
+          "Scroll": "Posun kolečkem",
+          "Shift": "Shift",
+           "F": "F"
+        },
+        "LengthUsed": "Celá délka je využita. Pro dokončení klikni kamkoli, nebo stiskni Enter.",
+        "PanelsStart": "Klikni na místo, kde začíná první panel. Každý panel se připojuje ke konci jiného.",
+        "PlaceEnd": "Umístit konec čáry",
+        "PlaceRing": "Umístit kruh",
+        "Resize": "Změnit velikost",
+        "Start": "Klikni na místo, kde začíná čára.",
+        "StartPanels": "Začít první panel",
+        "StartStraight": "Klikni na místo, kde čára začíná, a poté na místo, kde končí.",
+        "Undo": "Odstranit poslední bod",
+        "UndoPanel": "Odstranit poslední panel",
+        "AddFlat": "Přidat vodorovný panel",
+        "FlatHeight": "Zvednout, nebo snížit vodorovný panel",
+        "ToggleFlat": "Přepnout mezi svislými a vodorovnými panely"
+      },
+      "Sides": {
+        "Inside": "Uvnitř",
+        "Left": "Vlevo",
+        "Outside": "Vně",
+        "Right": "Vpravo"
+      },
+      "PanelNotConnected": "Každý panel se musí dotýkat jiného panelu.",
+      "FlatAt": "vodorovně, ve výšce {elevation} {units}"
+    },
+    "Movement": {
+      "Forced": "Vynucený pohyb"
+    },
+    "Config": {
+      "AvatarImg": "Obrázek portrétu",
+      "ImgPriority": "Priorita obrázku",
+      "TokenImg": "Obrázek tokenu",
+      "None": "Nic",
+      "Dispositions": "Postoje",
+      "CreatureTypes": "Typy bytostí",
+      "Effect": "Efekt"
+    },
+    "Error": {
+      "MissingCostActivity": "Této schopnosti chybí spotřeba aktivity!",
+      "NoAnimations": "Animace této automatizace vyžaduje chybějící modul prostředků s ID: {module}.",
+      "NoMonsterCompendiums": "V nastavení nemáš povolena žádná kompendia nestvůr!",
+      "NoSequencer": "Sekvencer je vypnutý, nebo není nainstalovaný! K používání animací je Sekvencer vyžadován.",
+      "NoSpellCompendiums": "V nastavení nemáš povolena žádná kompendia kouzel!",
+      "OutdatedSequencer": "Sekvencer je neaktualizovaný! Pro použití animací CAT vyžaduje minimálně verzi {minSequencerVersion}",
+      "UnregisteredSpellList": "Pro klíč {key} není registrován žádný seznam kouzel."
+    },
+    "Troubleshooter": {
+      "Title": "Poradce při potížích CAT",
+      "Open": "Otevřít poradce při potížích",
+      "BothJB2A": "Byly zjištěny JB2A Premium i JB2A Free. Odstraň či vypni bezplatnou verzi.",
+      "OneWayDoors": "Monk's Wall Enhancement má zapnuté jednosměrné dveře. Pokud u aur zaznamenáváš zpomalování, toto nastavení vypni.",
+      "ArgonTargetPicker": "Argon Combat HUD má zapnutý 'Výběr cílů'. Vyžaduje jeden jedinečný cíl pro každý počet, což narušuje automatizace, které rozdělují útoky mezi více cílů. Toto nastavení vypni.",
+      "World": "Svět",
+      "Empty": "Není co hlásit.",
+      "Copied": "Hlášení poradce při potížích bylo zkopírováno do schránky.",
+      "Discord": "Zkopírovat hlášení a otevřít Discord",
+      "Sections": {
+        "required": "Požadovaná nastavení",
+        "info": "Informace",
+        "modules": "Moduly",
+        "foundry": "Foundry",
+        "permissions": "Oprávnění",
+        "importer": "Importér",
+        "settings": "Nastavení",
+        "logs": "Protokoly",
+        "options": "Možnosti"
+      },
+      "Tags": {
+        "Required": "Vyžadováno",
+        "Optional": "Volitelné",
+        "AutomationSource": "Zdroj automatizace",
+        "AnimationsLibrary": "Animace",
+        "Defunct": "Zastaralý",
+        "Incompatible": "Nekompatibilní"
+      },
+      "Groups": {
+        "Core": "Jádro",
+        "CatRelated": "Související s CAT",
+        "Active": "Aktivní moduly",
+        "Inactive": "Neaktivní moduly",
+        "Conflicts": "Konflikty",
+        "Automations": "Automatizace",
+        "Scene": "Scéna",
+        "Game": "Hra",
+        "Errors": "Chyby"
+      },
+      "Status": {
+        "pass": "V pořádku",
+        "warn": "Varování",
+        "fail": "Chyba",
+        "info": "Informace"
+      },
+      "Footer": {
+        "FixAll": "Opravit vše",
+        "Save": "Uložit hlášení"
+      },
+      "Save": {
+        "Title": "Uložit hlášení poradce při potížích",
+        "Drop": "Volitelně sem přetáhni aktéra či položku, se kterými máš potíže.",
+        "Saved": "Hlášení poradce při potížích bylo uloženo."
+      },
+      "HideWarnings": {
+        "Name": "Skrýt varování při potížích?",
+        "Hint": "Po zaškrtnutí se PJ při spuštění přestanou šeptem zobrazovat karty s varováními poradce při potížích."
+      },
+      "StripDialog": {
+        "Name": "Ptát se před odstraněním popisů?",
+        "Hint": "Po zaškrtnutí se při exportu dat dokumentu zobrazí dotaz, zda z exportu odstranit popisy."
+      },
+      "Fix": {
+        "Title": "Použít opravy",
+        "Content": "Následující položky budou změněny a Foundry poté požádá o opětovné načtení:",
+        "Label": "Opravit",
+        "Disable": "Vypnout modul"
+      },
+      "Required": {
+        "Expected": "{value} → {fix}",
+        "ClientScope": "(nastavení klienta)",
+        "GmAutoDamage": "Automatický hod na zásah PJ"
+      },
+      "Card": {
+        "settings": "Některá nastavení, na kterých CAT závisí, nejsou nastavena podle očekávání:",
+        "modules": "Některé aktivní moduly jsou zastaralé, nebo jsou v konfliktu s CAT:",
+        "fix": "Opravit",
+        "open": "Poradce při potížích"
+      },
+      "Export": {
+        "Title": "Export dat",
+        "Strip": "Odstranit popisy",
+        "Settings": "Exportovat nastavení",
+        "Exported": "Nastavení CAT byla exportována.",
+        "Imported": "Importováno nastavení CAT: {count}.",
+        "ImportSettings": "Importovat nastavení",
+        "ImportTitle": "Import nastavení CAT",
+        "ImportContent": "Přepsat nastavení CAT nastavením z importovaného souboru?"
+      },
+      "Report": {
+        "Inactive": "Neaktivní",
+        "NotInstalled": "Nenainstalováno",
+        "Defunct": "Zastaralý modul",
+        "Incompatible": "Nekompatibilní modul",
+        "ASEFork": "Chrisův fork",
+        "ModuleAnimation": "Tuto položku animuje i modul {module}",
+        "Language": "Jazyk",
+        "GridType": "Typ mřížky",
+        "GridUnits": "Jednotky mřížky",
+        "GridDistance": "Vzdálenost mřížky",
+        "ActorlessTokens": "Tokeny bez aktéra",
+        "LinkedMultiple": "Propojený aktér s více tokeny",
+        "Invalid": "Neplatný typ: {type}",
+        "Token": "Ovládaný token",
+        "Actor": "Aktér",
+        "UserCount": "{count} uživatelů",
+        "Importer": {
+          "Label": "Zjištěný importér",
+          "None": "Žádný",
+          "Molten": "Scruvy"
+        },
+        "Permissions": {
+          "Users": "Povoleno: {allowed}; zakázáno: {denied}"
+        }
+      }
+    },
+    "Summon": {
+      "DeadTitle": "CAT přivolání",
+      "DeadContext": "Vyvolaná bytost {name} klesla na 0 BV. Odstranit aktéra a token?"
+    },
+    "OptionalBonus": {
+      "Applied": "Již aplikováno",
+      "Content": "Zvol a nastav bonusy pro tento hod.",
+      "Contextual": "Situační bonusy",
+      "DamageType": "Typ zranění",
+      "DamageTypeChoice": "Vybrat typ",
+      "Failure": "Selhání",
+      "Hit": "Zásah",
+      "Invalid": "Bonus vypnut: {reason}",
+      "InvalidResources": "nedostatek zdrojů!",
+      "Miss": "Minutí",
+      "NoDC": "Není SO",
+      "NoRequest": "bonus nemá obsluhu požadavku!",
+      "Optional": "Volitelné bonusy",
+      "Phase": {
+        "PostResult": "Po výsledku",
+        "PreResult": "Před výsledkem",
+        "PreRoll": "Před hodem",
+        "All": "V libovolné fázi"
+      },
+      "Rider": "Doplňkový efekt",
+      "RiderHint": "Tato volba nabízí další efekty namísto bonusu k hodu.",
+      "Scaleable": "Škálovatelné",
+      "Scaling": "Škálování",
+      "Success": "Úspěch",
+      "Targeted": "Cílený",
+      "Targets": "Cíle",
+      "ThirdParty": "Bonusy třetích stran",
+      "Title": "Volitelný bonus",
+      "Unknown": "?"
+    },
+    "CompendiumBrowser": {
+      "SpellPicker": "Vyber kouzla ze seznamu {lists}:",
+      "Title": "Prohlížeč kompendií CAT"
+    },
+    "GrappleShove": {
+      "Grapple": "Držení",
+      "GrappledBy": "Držen/a postavou {name}",
+      "GrappleEscape": "Únik z držení",
+      "Grappling": "Drží {name}",
+      "GrappleImmune": "Cíl nelze držet!",
+      "GrappleSize": "Cíl je příliš velký na držení!",
+      "ShoveSize": "Cíl je příliš velký na odstrčení!",
+      "ShoveProneImmune": "Cíl nelze srazit na zem!",
+      "Surrendered": "Útočník se vzdal"
+      },
+    "Macros": {
+      "Aura": {
+        "CreatureTypesHint": "Ovlivněny jsou pouze tokeny těchto typů bytostí. Na samotný zdroj se tato kontrola nevztahuje.",
+        "DispositionsHint": "Které tokeny aura zasahuje.",
+        "EffectHint": "Efekt této položky, který se zkopíruje na každý token uvnitř aury. Chceš-li vložit hodnotu aury, do hodnoty změny napiš @auraValue.",
+        "EnemyEffect": "Efekt na nepřátele",
+        "EnemyEffectHint": "Je-li nastaveno, použije se efekt na spojence a tento efekt na nepřátele bez ohledu na postoje. Všechna ostatní nastavení jsou společná.",
+        "EnterActivity": "Aktivita při vstupu",
+        "EnterActivityHint": "Aktivita vyhodnocená pro token, když vstoupí do aury.",
+        "EnterOnCreate": "Vstup při vytvoření",
+        "EnterOnCreateHint": "Tokeny, které se už nacházejí uvnitř aury při jejím vzniku, se považují za vstupující do ní.",
+        "ExitActivity": "Aktivita při opuštění",
+        "ExitActivityHint": "Aktivita vyhodnocená pro token, když opustí auru.",
+        "Filter": "Filtr",
+        "FilterHint": "Makro filtru aury spuštěné pro každý token v dosahu. Aura se použije pouze tehdy, když vrátí hodnotu true. Vložené filtry používají událost aury a průchod filtrem.",
+        "IncludeSelf": "Zahrnout sebe",
+        "IncludeSelfHint": "Zdrojový token se nachází uvnitř vlastní aury.",
+        "OncePerTurn": "Jednou za tah",
+        "OncePerTurnHint": "Každá aktivita se pro každý token vyhodnotí nejvýše jednou za tah.",
+        "Radius": "Poloměr",
+        "RadiusHint": "Poloměr v jednotkách vzdálenosti scény. Přijímá vzorec používající data hodu zdroje.",
+        "SourceDisable": "Zdroj vypínají",
+        "SourceDisableHint": "Pokud má zdroj některý z těchto stavů, je aura potlačena.",
+        "SourceStatuses": "Vyžaduje stav od zdroje",
+        "SourceStatusesHint": "Ovlivněny jsou pouze tokeny s některým z těchto stavů uděleným zdrojem aury.",
+        "StackHighest": "Nejvyšší hodnota má přednost",
+        "StackHighestHint": "Pokud tuto auru vyzařuje několik zdrojů, použije se ten s nejvyšší hodnotou. Jinak se použije nejbližší zdroj.",
+        "TargetDisable": "Cíl vypínají",
+        "TargetDisableHint": "Token s některým z těchto stavů není ovlivněn.",
+        "TurnEndActivity": "Aktivita na konci tahu",
+        "TurnEndActivityHint": "Aktivita vyhodnocená pro token, který ukončí svůj tah uvnitř aury.",
+        "TurnStartActivity": "Aktivita na začátku tahu",
+        "TurnStartActivityHint": "Aktivita vyhodnocená pro token, který začne svůj tah uvnitř aury.",
+        "Value": "Vzorec hodnoty",
+        "ValueHint": "Vzorec vyhodnocený pomocí dat hodu zdroje a vložený jako @auraValue.",
+        "Walls": "Blokováno stěnami",
+        "WallsHint": "Stěny mezi zdrojem a tokenem blokují auru."
+      },
+      "Summon": {
+        "Activity": "Aktivita přivolání",
+        "ActivityHint": "Aktivita, která vytváří přivolané bytosti. Je-li pole prázdné, použije se každá aktivita přivolání na položce.",
+        "Summons": "Vyvolané bytosti",
+        "SummonsHint": "Bytosti, které aktivita vytváří. U aktivity přivolání propoj záznam s profilem, chceš-li tento profil přepsat; profily bez záznamu použijí aktéra a počet ze svého profilu.",
+        "Range": "Dosah umístění",
+        "RangeHint": "Vzdálenost ve stopách od přivolávače, do které lze přivolané bytosti umístit. Hodnota 0 použije dosah aktivity.",
+        "CommandActivities": "Aktivity příkazů",
+        "CommandActivitiesHint": "Aktivity zobrazené, dokud existují přivolané bytosti této položky.",
+        "HostileOnParentEnd": "Nepřátelství po ukončení soustředění",
+        "HostileOnParentEndHint": "Po ukončení soustředění přivolané bytosti zůstanou a místo odvolání se stanou nepřátelskými.",
+        "ReplaceExisting": "Nahradit stávající",
+        "ReplaceExistingHint": "Před vytvořením nových přivolaných bytostí odvolá stávající přivolané bytosti této položky.",
+        "MaxDistance": "Maximální vzdálenost",
+        "MaxDistanceHint": "Vyvolané bytosti vzdálené od přivolávače více než tento počet stop budou odvolány, když se pohne přivolávač či příslušná přivolaná bytost. Hodnota 0 tuto možnost vypne.",
+        "PlaceActivity": "Aktivita umístění",
+        "PlaceActivityHint": "Aktivita, která umístí na plátno přivolané bytosti této položky, které na něm nejsou.",
+        "RecallActivity": "Aktivita odvolání",
+        "RecallActivityHint": "Aktivita, která odebere přivolané bytosti této položky z plátna.",
+        "MoveActivity": "Aktivita pohybu",
+        "MoveActivityHint": "Aktivita, která přesune umístěné přivolané bytosti této položky až do vzdálenosti svého dosahu.",
+        "Favorite": "Oblíbené aktivity",
+        "FavoriteHint": "Dokud přivolané bytosti existují, označí aktivity příkazů jako oblíbené.",
+        "FollowUpActivity": "Následná aktivita",
+        "FollowUpActivityHint": "Aktivita vyhodnocená pro bytost vybranou poblíž každé přivolané bytosti bez spotřeby použití či pozic kouzel.",
+        "FollowUpConsume": "Následná aktivita spotřebovává použití",
+        "FollowUpConsumeHint": "Následná aktivita spotřebovává svá použití a zdroje.",
+        "FollowUpTiming": "Načasování následné aktivity",
+        "FollowUpTimingHint": "Vyhodnotí následnou aktivitu po přivolání, po přesunu či v obou případech.",
+        "FollowUpTimingOptions": {
+          "both": "V obou případech",
+          "create": "Po přivolání",
+          "move": "Po přesunu"
+        },
+        "FollowUpRange": "Dosah následné aktivity",
+        "FollowUpRangeHint": "Vzdálenost ve stopách od přivolané bytosti, do které lze vybrat cíl následné aktivity.",
+        "FollowUpTarget": "Vyber cíl následné aktivity.",
+        "FollowUpTargets": "Cíle následné aktivity",
+        "FollowUpTargetsHint": "Vyber jednu bytost poblíž každé přivolané bytosti, nebo vyhodnoť aktivitu proti každé bytosti v dosahu. Volba Všechny bytosti se řídí typem cíle aktivity: spojenci zahrnují přivolávače, všechny ostatní možnosti jej vynechají.",
+          "FollowUpTargetsOptions": {
+          "one": "Jedna bytost",
+          "all": "Všechny bytosti"
+        },
+        "MissingActor": "Aktéra přivolání se nepodařilo najít.",
+        "NoSummons": "Nejsou nastaveny žádné přivolané bytosti.",
+        "AcBonus": "Bonus k OČ",
+        "HpBonus": "Bonus k bodům výdrže",
+        "HdBonus": "Bonus ke kostkám obnovy",
+        "TempHP": "Dočasné body výdrže",
+        "AttackDamageBonus": "Bonus ke zranění z útoku",
+        "SaveDamageBonus": "Bonus ke zranění při záchraně",
+        "HealingBonus": "Bonus k léčení",
+        "NativeHint": "Vzorec. Je-li nastaven, přepíše hodnotu aktivity přivolání. Podporuje @item.level a @summon.",
+        "MatchAttacks": "Použít bonus k útoku přivolávače",
+        "MatchAttacksHint": "Vlastní útoky přivolané bytosti používají bonus k útoku přivolávače.",
+        "MatchSaves": "Použít SO záchrany přivolávače",
+        "MatchSavesHint": "Vlastní SO záchran přivolané bytosti používají SO záchrany přivolávače.",
+        "MatchProficiency": "Použít zdatnost přivolávače",
+        "MatchProficiencyHint": "Vyvolaná bytost používá zdatnostní bonus přivolávače.",
+        "Tier": "{count} × Nebezpečnost {cr} či nižší",
+        "TierPrompt": "Vyber, kolik bytostí se objeví.",
+        "Pick": "Vyber až {count} bytostí.",
+        "NoMatching": "Žádné bytosti v kompendiích nestvůr tomuto přivolání neodpovídají.",
+        "PickMode": "Výběr bytostí",
+        "PickModeHint": "Volba Vše vytvoří každý záznam. Rozpočet umožní uživateli rozdělit rozpočet mezi jednotlivé záznamy, přičemž každý spotřebuje svou váhu.",
+        "PickOptions": {
+          "all": "Vše",
+          "budget": "Rozpočet"
+        },
+        "Budget": "Rozpočet",
+        "BudgetHint": "Vzorec určující celkovou váhu, kterou může uživatel vybrat, když je Výběr bytostí nastaven na Rozpočet."
+      }
+    },
+    "Backups": {
+      "Title": "Zálohy",
+      "MissingPack": "Kompendium záloh chybí. Zvol ho v nastavení Záloh.",
+      "Started": "Probíhá zálohování postav.",
+      "Progress": "Zálohuje se {done}/{total} — {name}",
+      "Done": "Zálohováno postav: {total}.",
+      "BackedUp": "Postava {name} byla zálohována.",
+      "Created": "Vytvořena záloha:",
+      "Deleted": "Odstraněny zálohy po době uchování:",
+      "Restored": "Postava {name} byla obnovena ze zálohy z {date}.",
+      "Daily": "Denně",
+      "Weekly": "Týdně",
+      "Monthly": "Měsíčně",
+      "Forever": "Navždy",
+      "OneWeek": "Jeden týden",
+      "TwoWeeks": "Dva týdny",
+      "OneMonth": "Jeden měsíc",
+      "ThreeMonths": "Tři měsíce",
+      "SixMonths": "Šest měsíců",
+      "OneYear": "Jeden rok"
+    },
+    "CustomMacros": {
+      "MacroWarning": "Tato makra obsahují chyby, nebo vracejí nesprávná data. Očekávaný formát najdeš v poznámkách v editoru maker.",
+      "NoReturn": "Vlastní makro {name} nevrátilo žádná data makra.",
+      "NotFound": "Makro nebylo nalezeno! (uuid) {uuid}",
+      "PackWarning": "Tato kompendia obsahují mnoho neplatných vlastních maker. Registrace byla pro zbytek každého kompendia přeskočena, aby se zabránilo nežádoucím vedlejším účinkům při spouštění maker.",
+      "ScriptOnly": "Do kompendia vlastních maker lze ukládat pouze skriptová makra.",
+      "WarningMessage": "Vlastní makra CAT",
+      "Hint": {
+        "Title": "Pokyny k makrům CAT",
+        "Intro": "CAT spustí toto makro při načtení světa. Makro vrací seznam s jedním záznamem pro každé makro, takže jedno vlastní makro může změnit několik maker. Tento příklad nahrazuje Lovcovu značku pro obě sady pravidel:",
+        "Override": "Chceš-li změnit existující makro, musíš vrátit jeho zdroj, identifikátor a pravidla. Tvůj záznam nahradí každý průchod tohoto makra.",
+        "New": "Chceš-li přidat nové makro, vrať vlastní zdroj a identifikátor. Poté ho vyber na kartě Registrovaná makra v CatKitu dokumentu.",
+        "Scope": "Nástroje CAT jsou dostupné podle názvu. Spusť <code>console.log(cat.utils)</code> v konzoli, chceš-li zobrazit jejich seznam.",
+        "Links": "Podívej se na <a href=\"{wiki}\" target=\"_blank\" rel=\"noopener\">wiki</a>, nebo požádej o pomoc na <a href=\"{discord}\" target=\"_blank\" rel=\"noopener\">našem Discordu</a>."
+      }
+    },
+    "Welcome": {
+      "Title": "Coven's Automation Toolkit",
+        "Content": "<p>Coven's Automation Toolkit (CAT) používá a nastavuje automatizace z modulů, jako je Cauldron of Plentiful Resources.</p><p>Pokud potřebuješ pomoc, nejprve se podívej do kanálu FAQ na Discordu Coven's a poté se zeptej v #support a přilož export z Poradce při potížích.</p><a class=\"cat-welcome-discord\" href=\"https://discord.gg/BumxBcQDrT\" target=\"_blank\" rel=\"noopener\"><i class=\"fa-brands fa-discord\"></i> Připojit se k Discordu Coven's</a><p class=\"cat-welcome-label\">Průvodci</p><div class=\"cat-welcome-tours\"><button type=\"button\" data-cat-tour=\"cat.sources\"><i class=\"fa-solid fa-layer-group\"></i> Zdroje automatizací</button><button type=\"button\" data-cat-tour=\"cat.catkit\"><i class=\"fa-solid fa-shield-cat\"></i> Použití automatizací</button><button type=\"button\" data-cat-tour=\"cat.settings\"><i class=\"fa-solid fa-gears\"></i> Nastavení CAT</button></div>"
+    },
+    "Tours": {
+      "catkit": {
+        "Title": "Použití automatizací",
+        "Description": "Používej a nastavuj automatizace pomocí CatKitu.",
+        "intro": {
+          "Title": "CatKit",
+          "Content": "Každá automatizace se používá a nastavuje prostřednictvím CatKitu."
+        },
+        "sheetControl": {
+          "Title": "Otevření CatKitu",
+          "Content": "CatKit otevřeš pomocí ikony štítu v nabídce ovládacích prvků deníku."
+        },
+        "status": {
+          "Title": "Stav automatizace",
+          "Content": "Barva štítu znázorňuje stav automatizace. Žlutá: dostupná. Červená: dostupná aktualizace. Zelená: aktuální. Modrá: aktuální s možnostmi nastavení. Růžová: vybraný zdroj nemá pro tuto položku žádnou automatizaci."
+        },
+        "apply": {
+          "Title": "Použití automatizace",
+          "Content": "Vyber zdroj a kliknutím na zaškrtnutí nahraď položku automatizovanou verzí."
+        },
+        "rules": {
+          "Title": "Verze pravidel",
+          "Content": "Před použitím nastav verzi pravidel odpovídající položce."
+        },
+        "identifier": {
+          "Title": "Identifikátor",
+          "Content": "Automatizace se párují podle identifikátoru. Pokud CatKit nic nenajde, zkontroluj, zda identifikátor odpovídá názvu položky."
+        },
+        "source": {
+          "Title": "Zdroj automatizace",
+          "Content": "Zde vyber modul, který pro tuto položku přepíše pořadí Zdrojů automatizací."
+        },
+        "ignore": {
+          "Title": "Ignorovat položku",
+          "Content": "Hromadné aktualizace ignorované položky přeskakují."
+        },
+        "tabs": {
+          "Title": "Ostatní karty",
+          "Content": "Karta Nastavení obsahuje možnosti automatizace. Ostatní karty slouží k vytváření vlastních automatizací."
+        },
+        "troubleshooter": {
+          "Title": "Poradce při potížích",
+          "Content": "Ikona stetoskopu otevře Poradce při potížích. Při žádosti o pomoc přilož jeho export."
+        },
+        "actor": {
+          "Title": "Celí aktéři",
+          "Content": "Hromadné použití / aktualizace automatizuje všechny položky aktéra najednou."
+        },
+        "compendium": {
+          "Title": "Celá kompendia",
+          "Content": "CatKit kompendia automatizuje všechny položky v něm. Uzamčená kompendia se nejprve zkopírují."
+        },
+        "outro": {
+          "Title": "Hotovo",
+          "Content": "Nyní nastav zdroje automatizací."
+        }
+      },
+      "sources": {
+        "Title": "Zdroje automatizací",
+        "Description": "Vyber, které moduly poskytují automatizace.",
+        "intro": {
+          "Title": "Zdroje automatizací",
+          "Content": "Zdroje automatizací určují, které moduly CatKit používá a který z nich má přednost."
+        },
+        "open": {
+          "Title": "Otevření seznamu",
+          "Content": "Seznam otevřeš pomocí 'Nastavit zdroje automatizací'."
+        },
+        "order": {
+          "Title": "Pořadí priorit",
+          "Content": "Na první místo dej Cauldron of Plentiful Resources, poté Gambit's Premades a Midi Item Showcase, pokud je používáš, a ukázkové položky Midi-QOL nakonec."
+        },
+        "content": {
+          "Title": "Automatizace, nikoli obsah",
+          "Content": "D&D Beyond Importer, systém a moduly příruček zde ponech vypnuté."
+        },
+        "kinds": {
+          "Title": "Zdroje a kompendia",
+          "Content": "Modré řádky 'Zdroj' představují moduly. Zlaté řádky 'Kompendium' představují jednotlivá kompendia pro automatizace, které sis vytvořil/a sám/a."
+        },
+        "rank": {
+          "Title": "Změna pořadí",
+          "Content": "Přetáhni řádek nebo zadej pořadí. Nižší hodnoty mají přednost."
+        },
+        "disable": {
+          "Title": "Vypnutí zdroje",
+          "Content": "Tlačítko X zdroj vypne."
+        },
+        "inactive": {
+          "Title": "Neaktivní zdroje",
+          "Content": "Vypnuté zdroje čekají zde. Tlačítkem + je znovu přidáš."
+        },
+        "confirm": {
+          "Title": "Uložení",
+          "Content": "Potvrzením seznam uložíš. Použité položky si svou automatizaci ponechají, dokud je neaktualizuješ."
+        },
+        "compendiums": {
+          "Title": "Kompendia",
+          "Content": "Kompendia jsou samostatný seznam míst, kde se hledají úplné dokumenty, například kouzla přidávaná schopností."
+        },
+        "compendiumLists": {
+          "Title": "Seznamy kompendií",
+          "Content": "Uveď kompendia s úplným obsahem v pořadí podle priority. U systému či modulu příručky automatizuj jeho kopii pomocí CatKitu a do seznamu přidej tuto kopii."
+        },
+        "reapply": {
+          "Title": "Oprava použitých položek",
+          "Content": "Položky použité z nesprávného zdroje si tento zdroj zachovají. Vyber správný zdroj v CatKitu položky a automatizaci použij znovu."
+        }
+      },
+      "settings": {
+        "Title": "Nastavení CAT",
+        "Description": "Průvodce nabídkami nastavení CAT.",
+        "intro": {
+          "Title": "Nastavení CAT",
+          "Content": "Cauldron of Plentiful Resources nemá vlastní nastavení. Jeho možnosti najdeš zde."
+        },
+        "help": {
+          "Title": "Poradce při potížích",
+          "Content": "Poradce při potížích vyhledává a opravuje konflikty nastavení. Při žádosti o pomoc přilož jeho export."
+        },
+        "general": {
+          "Title": "Obecné",
+          "Content": "Obecné obsahuje možnosti platné pro celý modul."
+        },
+        "automation": {
+          "Title": "Zdroje automatizací",
+          "Content": "Zdroje automatizací mají vlastního průvodce."
+        },
+        "backups": {
+          "Title": "Zálohy",
+          "Content": "Zálohy ukládají hráčské postavy podle plánu do kompendia."
+        },
+        "compendiums": {
+          "Title": "Kompendia",
+          "Content": "Kompendia uvádějí, kde jsou uloženy tvé úplné dokumenty."
+        },
+        "integration": {
+          "Title": "Integrace",
+          "Content": "Integrace zahrnují Dice So Nice a animační moduly."
+        },
+        "interface": {
+          "Title": "Rozhraní",
+          "Content": "Rozhraní mění, co CAT zobrazuje."
+        },
+        "manualRolls": {
+          "Title": "Ruční hody",
+          "Content": "Ruční hody nastavují vyhodnocování hodů pro fyzické kostky."
+        },
+        "mechanics": {
+          "Title": "Mechaniky",
+          "Content": "Mechaniky obsahují automatizace pravidel, například hody na obnovu."
+        },
+        "permissions": {
+          "Title": "Oprávnění",
+          "Content": "Oprávnění určují, kteří uživatelé mohou otevírat jednotlivé karty CatKitu."
+        },
+        "devtools": {
+          "Title": "Vývojářské nástroje",
+          "Content": "Vývojářské nástroje jsou určeny autorům maker. Během hry je ponech vypnuté."
+        },
+        "outro": {
+          "Title": "Hotovo",
+          "Content": "Tím jsme prošli všechny nabídky nastavení."
+        }
+      }  
+    }  
+  }
+}
