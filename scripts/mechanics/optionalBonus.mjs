@@ -218,8 +218,10 @@ async function damage(workflow) {
     const defaultDamageType = rolls[0]?.options.type ?? workflow.defaultDamageType;
     for (const bonus of bonuses) {
         if (workflow.isCritical) bonus.roll = DamageBonus.GetCriticalRoll(bonus);
-        if (bonus.use) await bonus.use(workflow, bonuses);
-        if (bonus.roll.formula === '0') continue;
+        if (bonus.roll.formula === '0') {
+            if (bonus.use) await bonus.use(workflow, bonuses);
+            continue;
+        }
         if (bonus.targets.size > 0 && bonus.targets.size !== workflow.targets.size) {
             targeted.push(bonus);
             continue;
@@ -227,6 +229,7 @@ async function damage(workflow) {
         if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
         bonus.roll.options.type ||= defaultDamageType;
         fullRoll.push(bonus.roll);
+        if (bonus.use) await bonus.use(workflow, bonuses);
     }
     if (fullRoll.length) {
         rolls.push(...fullRoll);
@@ -237,7 +240,8 @@ async function damage(workflow) {
     for (const [i, bonus] of targeted.entries()) {
         bonus.roll = targetedRolls[i];
         if (!bonus.roll._evaluated) await bonus.roll.evaluate({allowInteractive: false});
-        const type = bonus.roll.options.type ?? defaultDamageType;
+        const type = bonus.roll.options.type ||= defaultDamageType;
+        if (bonus.use) await bonus.use(workflow, bonuses);
         for (const target of bonus.targets) {
             targetedData[target.uuid] ??= [];
             targetedData[target.uuid].push({total: type === 'healing' ? -bonus.roll.total : bonus.roll.total, type});

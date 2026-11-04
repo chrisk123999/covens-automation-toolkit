@@ -371,7 +371,8 @@ function addDamageDetail(ditem, damage, type, multiplier, active) {
     if (ditem.saved) active.type.saved = true;
     if (multiplier === 'auto') {
         const {damageImmunityMultiplier, damageResistanceMultiplier, damageVulnerabilityMultiplier} = MidiQOL.configSettings();
-        multiplier = ditem.calcDamageOptions?.midi.saveMultiplier ?? 1;
+        const midiOptions = ditem.calcDamageOptions?.midi;
+        multiplier = midiOptions?.saved ? (midiOptions?.saveMultiplier ?? 1) : 1;
         const actor = fromUuidSync(ditem.actorUuid);
         if (actor) {
             if (actorUtils.checkTrait(actor, 'di', type)) {

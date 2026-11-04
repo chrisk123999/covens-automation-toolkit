@@ -568,7 +568,7 @@ class RollBonus {
             const warning = data.available <= 0 ? 'DND5E.CONSUMPTION.Warning.None' : 'DND5E.CONSUMPTION.Warning.NotEnough';
             tooltip = _loc(warning, {type, cost: formatNumber(data.cost), available: formatNumber(Math.max(0, data.available ?? 0))});
         }
-        return {label, tooltip, icon: warn ? RollBonus.#warningIcon : '', id: target};
+        return {label, tooltip, icon: warn ? RollBonus.#warningIcon : '', id: target + '.' + key};
     }
 
     /** @type {HintGenerator} */
