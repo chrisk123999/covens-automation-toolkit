@@ -2341,7 +2341,7 @@ cat-multi-combobox {
         background: var(--cat-bg-surface-solid);
     }
 
-    input[type="checkbox"] {
+    input:is([type="checkbox"], [type="radio"]) {
         --checkbox-background-color: var(--cat-text-muted);
         --checkbox-checked-color: var(--cat-border-focus);
         --checkbox-checkmark-color: var(--cat-text-primary);
