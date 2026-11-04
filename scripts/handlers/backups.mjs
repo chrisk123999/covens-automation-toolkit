@@ -1,7 +1,11 @@
 import {genericUtils, queryUtils} from '../utilities/_module.mjs';
-function getPack({warn = true} = {}) {
+function getPack({warn = true, write = true} = {}) {
     const pack = game.packs.get(game.settings.get('cat', 'backupCompendium'));
     if (!pack && warn) genericUtils.notify('CAT.Backups.MissingPack', {type: 'warn'});
+    if (write && pack?.locked) {
+        if (warn) genericUtils.notify('CAT.Backups.LockedPack', {type: 'warn', format: {pack: pack.title}});
+        return;
+    }
     return pack;
 }
 async function whisper(title, names) {
@@ -66,7 +70,7 @@ async function backupActor(actor) {
     return true;
 }
 async function getBackups(actor) {
-    const pack = getPack({warn: false});
+    const pack = getPack({warn: false, write: false});
     if (!pack) return null;
     const index = await pack.getIndex({fields: ['flags.cat.backup']});
     return index.filter(entry => entry.flags?.cat?.backup?.actorId === actor.id)

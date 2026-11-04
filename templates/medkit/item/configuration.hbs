@@ -1,7 +1,7 @@
 <section class="tab body standard-form{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}"
     data-tab="{{tab.id}}">
     {{#each configurationCategories as |category|}}
-        <fieldset data-section="config-{{category.id}}" data-tooltip="{{localize category.tooltip}}">
+        <fieldset data-section="config-{{category.id}}">
             <legend>{{category.label}}</legend>
             {{#each category.groups as |group|}}
                 {{#if group.label}}<span class="subgroup">{{group.label}}</span>{{/if}}

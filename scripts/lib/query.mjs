@@ -136,10 +136,10 @@ async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, c
     const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, consumeUsage, spellSlot, fast});
     return workflow?.getSafeMacroData();
 }
-async function aimDestination({uuid, range, centerpoint, requireSight, ignoreWalls}) {
+async function aimDestination({uuid, range, centerpoint, requireSight, ignoreWalls, allowedPoints}) {
     const token = await fromUuid(uuid);
     if (!token) return;
-    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, requireSight, ignoreWalls});
+    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, requireSight, ignoreWalls, allowedPoints});
     if (!destination) return;
     return {x: destination.x, y: destination.y, elevation: destination.elevation, level: destination.level, cancelled: destination.cancelled};
 }

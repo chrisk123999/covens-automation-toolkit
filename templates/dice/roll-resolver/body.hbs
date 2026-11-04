@@ -7,7 +7,7 @@
     {{/if}}
     <div class="groups">
         {{#each groups}}
-            <fieldset class="group" data-term-id="{{@key}}" {{#if tooltip}} data-tooltip="{{tooltip}}" {{/if}}>
+            <fieldset class="group" data-term-id="{{@key}}">
                 <legend class="label" {{#if labelTooltip}} data-tooltip="{{labelTooltip}}" {{/if}}>
                     <span>{{label}}</span>{{#if modifier}}<span class="modifier" {{#if modifierTooltip}}
                             data-tooltip="{{modifierTooltip}}" {{/if}}>{{modifier}}</span>{{/if}}{{{icon}}}

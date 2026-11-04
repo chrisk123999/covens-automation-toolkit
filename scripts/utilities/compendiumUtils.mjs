@@ -95,13 +95,15 @@ async function getDocumentByIdentifier(packId, identifier, {object = false, desc
  * Fetch a compendium document by exact name.
  * @param {string} packId Compendium to search.
  * @param {string} name Document name to match.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.rules] Only match documents with these rules, '2014' or '2024'. Documents without rules count as 2014.
  * @returns {Promise<foundry.abstract.Document|undefined>}
  */
-async function getDocumentByName(packId, name) {
+async function getDocumentByName(packId, name, {rules} = {}) {
     const pack = game.packs.get(packId);
     if (!pack) return;
-    const index = await pack.getIndex();
-    const found = index.find(i => i.name === name);
+    const index = await pack.getIndex({fields: ['system.source.rules']});
+    const found = index.find(i => i.name === name && (!rules || (i.system?.source?.rules || '2014') === rules));
     if (!found) return;
     return await fromUuid(found.uuid);
 }
