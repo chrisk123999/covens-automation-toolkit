@@ -252,12 +252,13 @@ function getAutomationSources({packsOnly = false} = {}) {
     return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
 }
 /**
- * Whether a source supplies plain content rather than automations: the system, official books, DDBI or a single compendium.
+ * Whether a source supplies plain content rather than automations: the system, official books, or DDBI
+ * A single compendium is assumed to contain custom automations.
  * @param {string} source Source id.
  * @returns {boolean}
  */
 function isContentSource(source) {
-    return constants.contentSources.includes(source) || source.includes('.');
+    return constants.contentSources.includes(source);
 }
 /**
  * Whether a source takes part in mass apply, defaulting to off for content sources.

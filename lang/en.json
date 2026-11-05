@@ -932,10 +932,10 @@
                 "Rank": "Order",
                 "RankHint": "Lower numbers come first.",
                 "Recommended": "Use Recommended",
-                "RecommendedHint": "Automation modules first, content last, single compendiums off.",
+                "RecommendedHint": "Personal custom automations first, then automation modules, and official content or SRD last.",
                 "MassApply": "Mass Apply",
                 "MassApplyHint": "Use this source when mass applying.",
-                "ContentMassApplyWarning": "Plain content. Mass Apply not recommended."
+                "ContentMassApplyWarning": "Typically used for character building. Mass Apply not recommended."
             },
             "Backups": {
                 "Name": "Backups",
