@@ -228,7 +228,8 @@ export default class MedkitApp extends CatApp {
     }
 
     async _prepareAutomationCounts() {
-        const items = Array.from(await this._getMassApplyItems() ?? []).filter(item => !['class', 'subclass'].includes(item.type));
+        const items = Array.from(await this._getMassApplyItems() ?? [])
+            .filter(item => !item.flags.cat?.ignoreItem && !['class', 'subclass'].includes(item.type));
         const buckets = {
             'up-to-date': [],
             available: [],
@@ -1254,6 +1255,11 @@ export default class MedkitApp extends CatApp {
         const visit = (item) => {
             const id = item.uuid;
             if (visited.has(id)) return;
+            if (item.flags.cat?.ignoreItem) {
+                Logging.addEntry('WARNING', `Ignored in mass apply: ${item.name} (ID: ${item.id})`);
+                visited.add(id);
+                return;
+            }
             if (visiting.has(id)) {
                 Logging.addEntry('WARNING', 'Circular dependency detected involving item:' + item.name + '(ID: ' + item.id + ')');
                 cycleDetected = true;

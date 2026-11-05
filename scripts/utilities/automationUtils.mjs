@@ -275,7 +275,7 @@ function isMassApplySource(source, entry = game.settings.get('cat', 'automationS
  * @returns {boolean}
  */
 function isMassApplyBlocked(item, source) {
-    return ['class', 'subclass'].includes(item.type) && isContentSource(source);
+    return item.flags.cat?.ignoreItem || (['class', 'subclass'].includes(item.type) && isContentSource(source));
 }
 /**
  * Automations mass apply may put on this item.
