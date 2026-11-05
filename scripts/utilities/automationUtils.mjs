@@ -12,8 +12,7 @@ function getCurrentAutomation(item) {
     const source = documentUtils.getSource(item);
     const type = item.type;
     const sourceType = itemUtils.getAdvancementSourceKey(item);
-    const actorType = type === 'spell' ? 'character' : item.actor?.type ?? 'character';
-    const monsterIdentifier = actorType === 'npc' ? documentUtils.getIdentifier(item.actor) : undefined;
+    const monsterIdentifier = documentUtils.getMonsterIdentifier(item);
     if (!identifier || !rules) return;
     if (!source) {
         const allAutomations = constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, monsterIdentifier, sourceType});
@@ -111,7 +110,7 @@ function getAvailableAutomations(item, {excludeSources = [], rules = documentUti
     const identifier = documentUtils.getIdentifier(item);
     const type = item.type;
     const sourceType = itemUtils.getAdvancementSourceKey(item);
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, excludeSources, sourceType});
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, excludeSources, sourceType, monsterIdentifier: documentUtils.getMonsterIdentifier(item)});
 }
 /**
  * One config value for the automation on this document, falling back to the registered default.
@@ -451,17 +450,16 @@ function isReplaced(item) {
  * @param {object} [options] Additional options.
  * @param {string} [options.source] Force a source rather than using the preferred one.
  * @param {string} [options.rules] Apply the automation for this rules version instead of the item's own. Needs `source`.
- * @param {string} [options.monsterIdentifier] Narrows the lookup for monster feature automations.
  * @param {boolean} [options.skipEvent] Do not fire the medkit item event.
  * @param {boolean} [options.openSheet] Render the item sheet afterwards.
  */
-async function updateItem(item, {source, rules = documentUtils.getRules(item), monsterIdentifier, skipEvent, openSheet} = {}) {
+async function updateItem(item, {source, rules = documentUtils.getRules(item), skipEvent, openSheet} = {}) {
     if (isReplaced(item)) return;
     let automation;
     const identifier = documentUtils.getIdentifier(item);
     if (source) {
         const sourceType = itemUtils.getAdvancementSourceKey(item);
-        automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type: item.type, sourceType});
+        automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier: documentUtils.getMonsterIdentifier(item), type: item.type, sourceType});
     } else {
         automation = getAppliedOrPreferredAutomation(item);
     }

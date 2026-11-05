@@ -35,6 +35,15 @@ function getIdentifier(document, {documentType = document.documentName} = {}) {
     }
 }
 /**
+ * Get the monster identifier for a document's automations.
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @returns {string|undefined}
+ */
+function getMonsterIdentifier(document) {
+    if (!document.actor || document.type === 'spell') return;
+    return document.actor.type === 'npc' ? getIdentifier(document.actor) : '';
+}
+/**
  * Get the version of the automation registered on this document.
  * @param {foundry.abstract.Document} document Document to act on.
  * @returns {string|undefined}
@@ -320,6 +329,7 @@ export default {
     getRules,
     getSource,
     getIdentifier,
+    getMonsterIdentifier,
     getVersion,
     getSavedCastData,
     deleteEmbeddedDocuments,

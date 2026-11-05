@@ -66,8 +66,7 @@ export default class ItemMedkit extends MedkitApp {
             })
         };
         const identifier = documentUtils.getIdentifier(this.document);
-        const actorType = this.document.type === 'spell' ? 'character' : this.document.actor?.type ?? 'character';
-        const monsterIdentifier = actorType === 'npc' ? documentUtils.getIdentifier(this.document.actor) : undefined;
+        const monsterIdentifier = documentUtils.getMonsterIdentifier(this.document);
         const selectedSource = this._getSelectedSource();
         const rulesValue = this._getRulesValue();
         const itemType = this.document.type;
@@ -131,7 +130,7 @@ export default class ItemMedkit extends MedkitApp {
         context.rules = rulesValue;
         context.otherRulesLabel = _loc(`CAT.MEDKIT.RulesToggle.${otherRules}`);
         context.canToggleRules = this.document.documentName === 'Item' && this.document.system?.source?.rules !== undefined;
-        const otherRulesAutomations = identifier ? constants.automations.getAutomationByIdentifier(identifier, {rules: otherRules, multiple: true, type: itemType}) : [];
+        const otherRulesAutomations = identifier ? constants.automations.getAutomationByIdentifier(identifier, {rules: otherRules, multiple: true, type: itemType, monsterIdentifier}) : [];
         context.otherRulesAutomationAvailable = !availableAutomations.length && otherRulesAutomations.length > 0;
 
         context.configurationCategories = this._prepareConfigurationCategories(currAutomation);

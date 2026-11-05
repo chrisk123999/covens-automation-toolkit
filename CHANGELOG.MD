@@ -1,3 +1,7 @@
+# 0.1.8 Release:
+## Bug Fixes:
+- Monster feature automations only match their own monster. A character's feature never picks up a monster's automation of the same name.
+
 # 0.1.7 Release:
 ## Update Notes:
 - Summons have a One creature choice. The user picks a single entry, or a single profile of a summon activity. Entries can have a Label for that choice.

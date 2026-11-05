@@ -184,21 +184,26 @@ export class RegisteredAutomations {
             if (rules !== 'all' && automation.rules !== 'all' && automation.rules !== rules) return false;
             if (source !== 'all' && automation.source !== source) return false;
             if (excludeSources.includes(automation.source)) return false;
-            if (monsterIdentifier && automation.monsterIdentifier && automation.monsterIdentifier !== monsterIdentifier) return false;
+            if (monsterIdentifier !== undefined && automation.monsterIdentifier && automation.monsterIdentifier !== monsterIdentifier) return false;
             if (type && type !== automation.type) return false;
             if (sourceType && automation.sourceType && automation.sourceType !== sourceType) return false;
             return true;
         };
+        const isMonsterMatch = automation => !!monsterIdentifier && automation.monsterIdentifier === monsterIdentifier;
         if (multiple) {
             const results = [];
             for (const automation of this.automations.values()) {
                 if (predicate(automation)) results.push(automation);
             }
-            return results;
+            return results.some(isMonsterMatch) ? results.filter(isMonsterMatch) : results;
         }
+        let fallback;
         for (const automation of this.automations.values()) {
-            if (predicate(automation)) return automation;
+            if (!predicate(automation)) continue;
+            if (!monsterIdentifier || isMonsterMatch(automation)) return automation;
+            fallback ??= automation;
         }
+        return fallback;
     }
 
     /**
@@ -252,7 +257,8 @@ export class RegisteredAutomations {
         const automation = this.getAutomationByIdentifier(documentUtils.getIdentifier(document), {
             rules: documentUtils.getRules(document),
             source: documentUtils.getSource(document),
-            sourceType: itemUtils.getAdvancementSourceKey(document)
+            sourceType: itemUtils.getAdvancementSourceKey(document),
+            monsterIdentifier: documentUtils.getMonsterIdentifier(document)
         });
         return automation?.config?.[key]?.default;
     }
