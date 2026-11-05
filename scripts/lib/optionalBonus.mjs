@@ -118,6 +118,7 @@ class RollBonus {
         this.#cost = {};
         if (Number.isFinite(formula)) formula = String(formula);
         this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.() ?? this.#actor?.getRollData());
+        this.#roll = rollUtils.simplify(roll);
         this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
         this.active = !this.#optional;
@@ -209,7 +210,7 @@ class RollBonus {
     }
     set roll(newRoll) {
         if (!(newRoll instanceof this.constructor.rollClass)) return;
-        this.#roll = newRoll;
+        this.#roll = rollUtils.simplify(newRoll);
     }
     /** @type {string} Original bonus formula, before scaling. */
     get baseFormula() {

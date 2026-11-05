@@ -337,6 +337,22 @@ function shouldFastForward(rollType, user = game.user) {
     const settings = MidiQOL.configSettings();
     return user.isGM ? settings.gmAutoFastForward.includes(rollType) : settings.autoFastForward.includes(rollType);
 }
+/**
+ * Replaces deterministic parenthetical terms with their result, e.g. `(1+1)d6 -> 2d6`
+ * @param {foundry.dice.Roll} roll An unevaluated roll.
+ * @returns {foundry.dice.Roll}
+ */
+function simplify(roll) {
+    if (roll._evaluated) return roll;
+    for (const term of roll.terms) {
+        if (!(term._number instanceof Roll)) continue;
+        if (!term._number.isDeterministic) continue;
+        term._number = term._number.evaluateSync().total;
+        term._formula = String(term._number);
+    }
+    roll.resetFormula();
+    return roll;
+}
 export default {
     rollDiceSync,
     rollDice,
@@ -353,5 +369,6 @@ export default {
     setTotalWithBonus,
     requestRoll,
     contestedRoll,
-    shouldFastForward
+    shouldFastForward,
+    simplify
 };
