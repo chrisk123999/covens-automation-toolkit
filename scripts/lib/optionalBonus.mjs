@@ -118,7 +118,7 @@ class RollBonus {
         this.#cost = {};
         if (Number.isFinite(formula)) formula = String(formula);
         this.#roll = roll ?? new this.constructor.rollClass(formula || '0', (this.#activity ?? this.#document).getRollData?.() ?? this.#actor?.getRollData());
-        this.#roll = rollUtils.simplify(roll);
+        this.#roll = rollUtils.simplify(this.#roll);
         this.#rollClass = this.constructor.rollClass;
         this.#baseFormula = this.#roll.formula;
         this.active = !this.#optional;
@@ -163,7 +163,7 @@ class RollBonus {
     }
     #getMaxScaling(override) {
         if (typeof override === 'number') return override;
-        if (!this.activity) return 0;
+        if (!this.activity || this.document.documentName === 'ActiveEffect') return 0;
         let value = Infinity;
         const actor = this.actor;
         if (this.activity.consumption.scaling.max) {

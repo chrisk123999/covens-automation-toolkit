@@ -1,4 +1,5 @@
-import {genericUtils} from './_module.mjs';
+import {effectUtils, genericUtils} from './_module.mjs';
+import {Logging} from '../lib/_module.mjs';
 /**
  * Set document rules in the correct location. Does not perform updates.
  * @param {object | foundry.abstract.Document} documentData Document or document data to write the rules onto.
@@ -145,10 +146,66 @@ function toArray(data) {
     if (typeof data[Symbol.iterator] === 'function') return Array.from(data);
     return [data];
 }
+/**
+ * Fetch information for evaluating roll formulas.
+ * Type `cat.logFormulaData = true` in the console to view the collected data whenever this helper is called.
+ * @param {object} options
+ * @param {foundry.abstract.Document} [options.document]
+ * @param {MidiQOL.Workflow} [options.workflow]
+ * @param {foundry.documents.TokenDocument} [options.target]
+ * @returns {object}
+ */
+function getFormulaData({document, target, workflow} = {}) {
+    const context = {workflow, target};
+    switch (document?.documentName) {
+        case 'ActiveEffect': 
+            context.effect = document;
+            context.actor = document.actor;
+            break;
+        case 'Activity':
+            context.activity = document;
+            context.item = document.item;
+            context.actor = document.actor;
+            break;
+        case 'Item':
+            context.item = document;
+            context.actor = document.actor;
+            break;
+        case 'Actor':
+            context.actor = document;
+            break; 
+        case 'Token':
+            context.token = document;
+            context.actor = document.actor;
+            break;
+    }
+    const data = getData(context);
+    if (globalThis.cat.logFormulaData)
+        Logging.log('INFO', `Formula Data (${document?.name ?? workflow?.item.name ?? target?.name})`, {context, data});
+    return data;
+}
+// used locally only
+function getData(context) {
+    const originalData = context.workflow?.conditionData;
+    const data = MidiQOL.createConditionData(context);
+    if (originalData) context.workflow.conditionData = originalData;
+    if (originalData?.target) data.target = originalData.target;
+    if (!context.effect) return data;
+    data.effect = context.effect;
+    const source = effectUtils.getOriginSync(data.effect);
+    if (source?.getRollData) data.effect.source = source.getRollData();
+    const castData = effectUtils.getCastData(data.effect);
+    if (!castData) return data;
+    const scaling = data.effect.flags.dnd5e?.scaling ?? Math.max(0, castData.castLevel - castData.baseLevel);
+    castData.scaling = new dnd5e.documents.Scaling(scaling);
+    data.effect.castData = castData;
+    return data;
+}
 export default {
     setRules,
     setIdentifier,
     buildEffectData,
     setOrigin,
-    toArray
+    toArray,
+    getFormulaData
 };
