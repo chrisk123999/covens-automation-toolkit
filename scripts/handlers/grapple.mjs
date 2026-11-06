@@ -129,7 +129,7 @@ async function sizeCheck(sourceToken, targetToken, identifier, warning = true) {
         return false;
     }
     let size = actorUtils.getSize(sourceToken.actor);
-    const sizeBonuses = await new Events.GrappleEvent(sourceToken, targetToken, constants.grapplePasses.sizeCheck, {identifier, size}).run({canOverlap: true, multiResult: true});
+    const sizeBonuses = await new Events.GrappleEvent(sourceToken, targetToken, constants.grapplePasses.sizeCheck, {data: {identifier, size}}).run({canOverlap: true, multiResult: true});
     if (sizeBonuses?.length) size = sizeBonuses.reduce((sum, bonus) => typeof bonus === 'number' ? sum + bonus : sum, size);
     if (actorUtils.getSize(targetToken.actor) <= (size + 1)) return true;
     if (warning) genericUtils.notify(`CAT.GrappleShove.${identifier === 'grapple' ? 'Grapple' : 'Shove'}Size`, {type: 'warn'});

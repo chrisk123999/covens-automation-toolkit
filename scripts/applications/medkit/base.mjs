@@ -1,6 +1,6 @@
 import contextmenu from '../../handlers/contextmenu.mjs';
 import {constants, Logging} from '../../lib/_module.mjs';
-import {animationUtils, automationUtils, compendiumUtils, dialogUtils, documentUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
+import {animationUtils, automationUtils, compendiumUtils, dataUtils, dialogUtils, documentUtils, genericUtils, itemUtils} from '../../utilities/_module.mjs';
 import uiUtils from '../../utilities/uiUtils.mjs';
 import CatApp from '../cat-app.mjs';
 import DialogApp from '../dialog.mjs';
@@ -37,6 +37,7 @@ export default class MedkitApp extends CatApp {
     #document;
     #flags;
     #listValues = {};
+    #formulaFields = new Map();
     #selectedSource;
     #rulesValue;
 
@@ -410,6 +411,10 @@ export default class MedkitApp extends CatApp {
             case 'checkbox': option.field = new fields.BooleanField({label}); break;
             case 'number': option.field = new fields.NumberField({label}); break;
             case 'text': option.field = new fields.StringField({label}); break;
+            case 'formula':
+                option.field = dataUtils.formulaField({label, deterministic: !!descriptor.deterministic});
+                this.#formulaFields.set(option.name, option.field);
+                break;
             case 'file': {
                 const category = descriptor.fileType?.toUpperCase();
                 const categories = category && category in CONST.FILE_CATEGORIES ? [category] : ['IMAGE'];
@@ -643,7 +648,7 @@ export default class MedkitApp extends CatApp {
 
     #summonEntryFields(entry, base, i, profiles) {
         const fieldList = [
-            this.#buildOption({key: `summon-count-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Count', hint: 'CAT.MEDKIT.Summons.CountHint'}, {name: `${base}.count`, value: entry.count ?? ''}),
+            this.#buildOption({key: `summon-count-${i}`, type: 'formula', label: 'CAT.MEDKIT.Summons.Count', hint: 'CAT.MEDKIT.Summons.CountHint'}, {name: `${base}.count`, value: entry.count ?? ''}),
             this.#buildOption({key: `summon-disposition-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Disposition', options: [
                 {value: '', label: 'CAT.MEDKIT.Summons.DispositionOwner'},
                 ...Object.entries(CONST.TOKEN_DISPOSITIONS).map(([label, value]) => ({value: String(value), label: 'TOKEN.DISPOSITION.' + label}))
@@ -1552,6 +1557,10 @@ export default class MedkitApp extends CatApp {
         } else if (target.type === 'checkbox') value = target.checked;
         else if (target.type === 'number') value = Number(target.value);
         else value = target.value;
+        if (!dataUtils.validateFormula(this.#formulaFields.get(name), value)) {
+            this.render();
+            return;
+        }
         if (name === 'system.source.rules') {
             this.#rulesValue = value;
         } else if (name === 'selectedSource' || name === 'heroSourcePick') {

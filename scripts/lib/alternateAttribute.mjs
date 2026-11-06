@@ -1,9 +1,8 @@
 import {Logging} from './_module.mjs';
-import {itemUtils} from '../utilities/_module.mjs';
+import {dataUtils, itemUtils} from '../utilities/_module.mjs';
 import {AttributeRestrictions as Restrictions} from './_module.mjs';
 
 const fields = foundry.data.fields;
-const dndFields = dnd5e.dataModels.fields;
 
 class AlternateAttribute {
 
@@ -132,7 +131,7 @@ function buildAttributes() {
 
     registerAttribute({
         type: 'DamageFormula',
-        valueSchema: new dndFields.FormulaField({
+        valueSchema: dataUtils.formulaField({
             placeholder: '1d4 + @mod',
             required: true
         }),
@@ -173,7 +172,7 @@ function buildAttributes() {
 
     registerAttribute({
         type: 'ACFormula',
-        valueSchema: new dndFields.FormulaField({
+        valueSchema: dataUtils.formulaField({
             placeholder: '13 + @abilities.dex.mod',
             deterministic: true,
             required: true

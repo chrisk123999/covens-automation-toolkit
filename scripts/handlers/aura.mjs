@@ -66,7 +66,7 @@ const aura = {
     genericConfig: {
         radius: {
             default: '30',
-            type: 'text',
+            type: 'formula',
             category: 'behavior',
             label: 'CAT.Macros.Aura.Radius',
             hint: 'CAT.Macros.Aura.RadiusHint'
@@ -141,7 +141,7 @@ const aura = {
         },
         value: {
             default: '',
-            type: 'text',
+            type: 'formula',
             category: 'behavior',
             label: 'CAT.Macros.Aura.Value',
             hint: 'CAT.Macros.Aura.ValueHint'
