@@ -348,49 +348,49 @@ const summon = {
         },
         acBonus: {
             default: '',
-            type: 'text',
+            type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.AcBonus',
             hint: 'CAT.Macros.Summon.NativeHint'
         },
         hpBonus: {
             default: '',
-            type: 'text',
+            type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.HpBonus',
             hint: 'CAT.Macros.Summon.NativeHint'
         },
         hdBonus: {
             default: '',
-            type: 'text',
+            type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.HdBonus',
             hint: 'CAT.Macros.Summon.NativeHint'
         },
         tempHP: {
             default: '',
-            type: 'text',
+            type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.TempHP',
             hint: 'CAT.Macros.Summon.NativeHint'
         },
         attackDamageBonus: {
             default: '',
-            type: 'text',
+            type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.AttackDamageBonus',
             hint: 'CAT.Macros.Summon.NativeHint'
         },
         saveDamageBonus: {
             default: '',
-            type: 'text',
+            type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.SaveDamageBonus',
             hint: 'CAT.Macros.Summon.NativeHint'
         },
         healingBonus: {
             default: '',
-            type: 'text',
+            type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.HealingBonus',
             hint: 'CAT.Macros.Summon.NativeHint'

@@ -145,10 +145,20 @@ function toArray(data) {
     if (typeof data[Symbol.iterator] === 'function') return Array.from(data);
     return [data];
 }
+function formulaField(options) {
+    return new dnd5e.dataModels.fields.FormulaField(options);
+}
+function validateFormula(field, value) {
+    if (!(field instanceof dnd5e.dataModels.fields.FormulaField) || !field.validate(value)) return true;
+    genericUtils.notify('CAT.MEDKIT.Configuration.InvalidFormula', {type: 'error', format: {formula: value}});
+    return false;
+}
 export default {
     setRules,
     setIdentifier,
     buildEffectData,
     setOrigin,
-    toArray
+    toArray,
+    formulaField,
+    validateFormula
 };

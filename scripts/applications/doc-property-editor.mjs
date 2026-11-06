@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {genericUtils} from '../utilities/_module.mjs';
+import {dataUtils, genericUtils} from '../utilities/_module.mjs';
 import CatApp from './cat-app.mjs';
 const {fields} = foundry.data;
 
@@ -138,6 +138,7 @@ export default class DocPropertyEditorApp extends CatApp {
         }
         const entry = genericUtils.expandObject(formData.object);
         if (!entry.value?.length) return genericUtils.notify('CAT.MEDKIT.DocProps.InvalidValue', {type: 'error'});
+        if (!dataUtils.validateFormula(schema.fields.value, entry.value)) return;
         if (this.#onSubmit?.(entry) !== false) this.close();
     }
 

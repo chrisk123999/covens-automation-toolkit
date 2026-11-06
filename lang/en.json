@@ -364,7 +364,8 @@
                 }
             },
             "Configuration": {
-                "None": "No configurable options for this automation."
+                "None": "No configurable options for this automation.",
+                "InvalidFormula": "{formula} is not a valid formula."
             },
             "ClassBonus": {
                 "Label": "Class Spellcasting Bonuses",
