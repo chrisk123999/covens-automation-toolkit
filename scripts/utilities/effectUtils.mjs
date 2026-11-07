@@ -121,6 +121,23 @@ function getOriginActivitySync(effect) {
     }
 }
 /**
+ * Retrieve the source Actor or Item, or null if it could not be determined.
+ * @param {ActiveEffect} effect 
+ * @returns {Promise<Activity|ActiveEffect|Actor5e|Item5e|RegionBehavior|null>}
+ */
+async function getOrigin(effect) {
+    return await effect.getSource();
+}
+/**
+ * Synchronous {@link getOrigin}, limited to documents already in memory.
+ * @param {ActiveEffect} effect
+ * @returns {Activity|Item5e|Actor5e|null}
+*/
+function getOriginSync(effect) {
+    const o = effect.system.origin ?? {};
+    return fromUuidSync(o.activity ?? o.item ?? o.actor ?? effect.origin, {strict: false});
+}
+/**
  * Get the concentration effect this actor holds for an item.
  * @param {foundry.documents.Actor} actor Actor holding the concentration.
  * @param {foundry.documents.Item} item Item being concentrated on.
@@ -242,5 +259,7 @@ export default {
     getSceneEffects,
     resetDuration,
     getImageConfig,
-    pushImageChanges
+    pushImageChanges,
+    getOrigin,
+    getOriginSync
 };

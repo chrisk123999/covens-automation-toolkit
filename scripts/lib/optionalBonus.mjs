@@ -163,7 +163,7 @@ class RollBonus {
     }
     #getMaxScaling(override) {
         if (typeof override === 'number') return override;
-        if (!this.activity) return 0;
+        if (!this.activity || this.document.documentName === 'ActiveEffect') return 0;
         let value = Infinity;
         const actor = this.actor;
         if (this.activity.consumption.scaling.max) {
