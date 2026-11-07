@@ -3,6 +3,8 @@
 - New `formula` configuration type. The medkit shows the system's formula input and refuses a formula that does not parse. `deterministic: true` also refuses dice.
 - Aura radius and value, summon bonuses and summon counts use the formula type.
 - Document property formulas share the formula type's field and its invalid formula message.
+- `effectUtils.createEffects` passes `effectOptions` to the creation for the user's own documents too, not only through the GM, so `keepId` works either way.
+- Generic config options can take `showIf`, a function of the generic's current values. The medkit hides the option when it returns false.
 ## Bug Fixes:
 - Monster feature automations only match their own monster. A character's feature never picks up a monster's automation of the same name.
 - Grapple and shove size check macros receive the check's identifier and size in `data`. They received nothing, so a macro could not tell a grapple from a shove.

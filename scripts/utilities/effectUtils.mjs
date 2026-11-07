@@ -14,7 +14,7 @@ function getCastData(effect) {
  * @param {object} [options] Additional options.
  * @param {boolean} [options.forceGM] Create through a GM even when the user has permission.
  * @param {MacroGroup[]} [options.macros] Entries may carry an `effectIdentifier` to target one effect in the batch.
- * @param {object} [options.effectOptions] Passed to the creation when it goes through a GM.
+ * @param {object} [options.effectOptions] Passed to the creation, such as `keepId`.
  * @param {CatEffectData} [options.catData] Applied to every effect in the batch. See {@link CatEffectData}
  * @returns {Promise<ActiveEffect[]|undefined>}
  */
@@ -34,7 +34,7 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
     if (hasPermission && !forceGM) {
-        effects = await document.createEmbeddedDocuments('ActiveEffect', data);
+        effects = await document.createEmbeddedDocuments('ActiveEffect', data, effectOptions);
     } else {
         const uuids = await queryUtils.query('createEffects', queryUtils.gmUser(), {uuid: document.uuid, effectDatas: data, effectOptions});
         if (!uuids) return;

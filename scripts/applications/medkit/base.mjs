@@ -565,7 +565,8 @@ export default class MedkitApp extends CatApp {
             documentType: d?.documentType,
             sequencer: d?.sequencer,
             mode: d?.mode,
-            max: d?.max
+            max: d?.max,
+            showIf: d?.showIf
         }));
     }
 
@@ -584,8 +585,10 @@ export default class MedkitApp extends CatApp {
             const [source, identifier] = composite.split('|');
             const macro = macros.find(m => m.source === source && m.identifier === identifier);
             const storedCfg = stored[source]?.[identifier] ?? {};
-            const options = this.#genericDescriptors(macro, source, identifier).map(c => {
-                const value = storedCfg[c.key] ?? c.default;
+            const descriptors = this.#genericDescriptors(macro, source, identifier);
+            const values = Object.fromEntries(descriptors.map(c => [c.key, storedCfg[c.key] ?? c.default]));
+            const options = descriptors.filter(c => !c.showIf || c.showIf(values)).map(c => {
+                const value = values[c.key];
                 return this.#buildOption(c, {
                     name: `flags.cat.genericConfig.${source}.${identifier}.${c.key}`,
                     value,
@@ -1580,7 +1583,7 @@ export default class MedkitApp extends CatApp {
             if (!name.endsWith('.uuid')) return;
         } else if (name.startsWith('flags.cat.')) {
             foundry.utils.setProperty(this.#flags, name.slice('flags.cat.'.length), value);
-            if (singleCombobox) { this.render(); return; }
+            if (singleCombobox || inMultiCombobox) { this.render(); return; }
             return;
         } else {
             return;
