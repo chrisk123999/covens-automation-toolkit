@@ -33,6 +33,7 @@ Hooks.once('init', () => {
     integration.dnd5e.registerActivityBehaviors();
     globalThis.cat = {
         api: buildApi(handlers),
+        logFormulaData: false,
         applications,
         lib,
         utils

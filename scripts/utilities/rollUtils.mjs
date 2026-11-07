@@ -1,14 +1,6 @@
 import CatRollResolver from '../applications/dice/roll-resolver.mjs';
-import {actorUtils, genericUtils, queryUtils} from './_module.mjs';
+import {actorUtils, dataUtils, genericUtils, queryUtils} from './_module.mjs';
 const {OperatorTerm, NumericTerm, ParentheticalTerm} = foundry.dice.terms;
-/**
- * @typedef {object} CritOptions
- * @property {string} [bonusDamage] An extra term in the formula.
- * @property {number} [bonusDice] Add dice to the first term after multiplication.
- * @property {number} [multiplier] Multiply the number of base dice.
- * @property {boolean} [multiplyNumeric] Apply {@link multiplier} to numeric terms.
- * @property {boolean} [powerfulCritical] Reduce {@link multiplier} by 1 and maximize those dice instead.
- */
 
 /**
  * @typedef {object} DamageOptions
@@ -29,12 +21,13 @@ const {OperatorTerm, NumericTerm, ParentheticalTerm} = foundry.dice.terms;
  * Roll a formula synchronously, for data preparation and other places that cannot await.
  * @param {string} formula Formula to roll.
  * @param {object} [options] Additional options.
- * @param {foundry.abstract.Document} [options.document] Document supplying roll data.
+ * @param {foundry.abstract.Document} [options.document] Document supplying roll data. An active effect will provide parent data, with effect origin data under `@effect.source`.
+ * @param {MidiQOL.Workflow} [options.workflow] Add workflow data for formula evaluation.
  * @param {EvaluateOptions & {strict?: boolean}} [options.options]
  * @returns {foundry.dice.Roll}
  */
-function rollDiceSync(formula, {document, options: {strict = false, maximize = false, minimize = false} = {}} = {}) {
-    return new Roll(formula, document?.getRollData()).evaluateSync({strict, maximize, minimize});
+function rollDiceSync(formula, {document, workflow, options: {strict = false, maximize = false, minimize = false} = {}} = {}) {
+    return new Roll(formula, dataUtils.getFormulaData({document, workflow})).evaluateSync({strict, maximize, minimize});
 }
 /**
  * Replace rolls with manually entered results when manual rolls are enabled for the actor.
@@ -58,7 +51,8 @@ async function resolveManualRolls(rolls, actor, label, {rollClass = CONFIG.Dice.
  * Roll a formula, optionally posting it to chat.
  * @param {string} formula Formula to roll.
  * @param {object} [options] Additional options.
- * @param {foundry.abstract.Document} [options.document] Document supplying roll data.
+ * @param {foundry.abstract.Document} [options.document] Document supplying roll data. An active effect will provide parent data, with effect origin data under `@effect.source`.
+ * @param {MidiQOL.Workflow} [options.workflow] Add workflow data for formula evaluation.
  * @param {boolean} [options.message] Post the roll to chat.
  * @param {string} [options.flavor] Flavour text for the chat card.
  * @param {object} [options.speaker] Chat speaker data for the card.
@@ -67,11 +61,11 @@ async function resolveManualRolls(rolls, actor, label, {rollClass = CONFIG.Dice.
  * @param {EvaluateOptions} [options.options] Evaluation options.
  * @returns {Promise<foundry.dice.Roll>}
  */
-async function rollDice(formula, {document, message, flavor, speaker, mode = 'public', manual = false, options: {maximize = false, minimize = false} = {}} = {}) {
-    let roll = new Roll(formula, document?.getRollData());
+async function rollDice(formula, {document, workflow, message, flavor, speaker, mode = 'public', manual = false, options: {maximize = false, minimize = false} = {}} = {}) {
+    let roll = new Roll(formula, dataUtils.getFormulaData({document, workflow}));
     let resolved = false;
     if (manual) {
-        const actor = document?.actor ?? document;
+        const actor = document?.actor ?? workflow?.actor ?? document;
         const [manualRoll] = await resolveManualRolls([roll], actor, flavor, {rollClass: Roll});
         resolved = manualRoll !== roll;
         roll = manualRoll;
@@ -100,18 +94,25 @@ function getRollsTotal(rolls) {
 /**
  * The formula this damage would use on a critical hit.
  * @param {string} formula Formula to roll.
- * @param {foundry.abstract.Document} document Document supplying roll data.
- * @param {CritOptions} [options] Critical and damage handling.
+ * @param {foundry.abstract.Document} document Document supplying roll data. An active effect will provide parent data, with effect origin data under `@effect.source`.
+ * @param {object} [options]
+ * @param {MidiQOL.Workflow} [options.workflow] Add workflow data for formula evaluation.
+ * @param {string} [options.bonusDamage] Formula added on a critical hit.
+ * @param {number} [options.bonusDice] Extra dice added on a critical hit.
+ * @param {number} [options.multiplier] How many times the dice are multiplied.
+ * @param {boolean} [options.multiplyNumeric] Also multiply flat terms.
+ * @param {boolean} [options.powerfulCritical] Maximize the extra dice.
  * @returns {string}
  */
-function getCriticalFormula(formula, document, {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}) {
-    return new CONFIG.Dice.DamageRoll(formula, document.getRollData(), {isCritical: true, critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical}}).formula;
+function getCriticalFormula(formula, document, {workflow, bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}) {
+    return new CONFIG.Dice.DamageRoll(formula, dataUtils.getFormulaData({document, workflow}), {isCritical: true, critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical}}).formula;
 }
 /**
  * Roll damage from a formula, using a document for roll data.
  * @param {string|number} formula Damage formula to roll.
- * @param {foundry.abstract.Document} document Document supplying roll data, usually an item or activity.
+ * @param {foundry.abstract.Document} document Document supplying roll data, usually an item or activity. An active effect will provide parent data, with effect origin data under `@effect.source`.
  * @param {object} [options] Additional options.
+ * @param {MidiQOL.Workflow} [options.workflow] Add workflow data for formula evaluation.
  * @param {object} [options.critOptions] Critical handling, matching dnd5e's DamageRoll critical config.
  * @param {string} [options.critOptions.bonusDamage] Formula added on a critical hit.
  * @param {number} [options.critOptions.bonusDice] Extra dice added on a critical hit.
@@ -127,8 +128,8 @@ function getCriticalFormula(formula, document, {bonusDamage, bonusDice, multipli
  * @param {boolean} [evaluateOptions.minimize] Take the lowest result on every die.
  * @returns {Promise<CONFIG.Dice.DamageRoll>} The evaluated roll.
  */
-async function damageRoll(formula, document, {critOptions: {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}, flavor, isCritical, properties, type} = {}, {maximize, minimize} = {}) {
-    return await new CONFIG.Dice.DamageRoll(String(formula), document.getRollData(), {
+async function damageRoll(formula, document, {workflow, critOptions: {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}, flavor, isCritical, properties, type} = {}, {maximize, minimize} = {}) {
+    return await new CONFIG.Dice.DamageRoll(String(formula), dataUtils.getFormulaData({document, workflow}), {
         critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical},
         flavor, isCritical, properties, type
     }).evaluate({maximize, minimize});

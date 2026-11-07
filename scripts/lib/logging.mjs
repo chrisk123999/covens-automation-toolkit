@@ -5,13 +5,35 @@ const macroWarnings = {};
 const embeddedMacroErrors = {};
 const registrationErrors = {};
 const attributeErrors = {};
+const COLORS = {
+    DEFAULT: 'orange',
+    DEBUG: 'orange',
+    ERROR: 'red',
+    GROUP: 'orange',
+    INFO: 'cyan',
+    WARNING: 'yellow'
+};
+function log(type, message, ...args) {
+    const msg = type === 'GROUP' ? 
+        '%cCAT%c | ' + message :
+        '%cCAT%c | ' + type + ' > ' + message;
+    const params = [msg, `color: ${COLORS[type] ?? COLORS.DEFAULT}; font-weight: bold;`, 'color: inherit;', ...args];
+    switch (type) {
+        case 'ERROR': return console.error(...params);
+        case 'WARNING': return console.warn(...params);
+        case 'GROUP': return console.groupCollapsed(...params);
+        case 'DEBUG':
+        case 'INFO':
+        default: return console.log(...params);
+    }
+}
 function isVerbose(log) {
     return ['DEBUG', 'INFO'].includes(log.type);
 }
 function addEntry(type = 'DEBUG', message, {force = false} = {}) {
     const entry = {type, message};
     logs.push(entry);
-    if (force || game.settings.get('cat', 'displayDebugLogs')) console.log('%cCAT%c | ' + type + ' > ' + message, 'color: orange; font-weight: bold;', 'color: inherit;');
+    if (force || game.settings.get('cat', 'displayDebugLogs')) log(type, message);
     if (logs.length > 100) logs.splice(Math.max(logs.findIndex(isVerbose), 0), 1);
     if (!isVerbose(entry)) Hooks.callAll('catLogEntry', entry);
 }
@@ -28,7 +50,7 @@ function logMacroException(trigger, error) {
         rules: trigger.macroClass.rules
     });
     if (macroErrors[key].length > 10) macroErrors[key].shift();
-    console.error('%cCAT%c | ERROR > Execution error in macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
+    log('ERROR', 'Execution error in macro: ' + key + '\n', error);
 }
 function addMacroWarning(source, identifier, message, {notify, format, user} = {}) {
     message = _loc(message, format);
@@ -59,7 +81,7 @@ function addEmbeddedMacroError(trigger, error) {
         rules: trigger.macroClass.rules
     });
     if (embeddedMacroErrors[key].length > 10) embeddedMacroErrors[key].shift();
-    console.error('%cCAT%c | ERROR > Execution error in embedded macro: ' + key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error);
+    log('ERROR', 'Execution error in embedded macro: ' + key + '\n', error);
 }
 function convertValidationError(error) {
     const v = error instanceof foundry.data.validation.DataModelValidationError;
@@ -76,7 +98,7 @@ function addRegistrationError(data, type, error) {
         data: JSON.stringify(data),
         time: Date.now()
     });
-    console.error('%cCAT%c | ERROR > Validation error for ' + type + ' registry:\n', 'color: red; font-weight: bold;', 'color: inherit;', error.message);
+    log('ERROR', 'Validation error for ' + type + ' registry:\n', error.message);
 }
 function addAttributeError(document, attribute, error) {
     error = convertValidationError(error);
@@ -90,12 +112,10 @@ function addAttributeError(document, attribute, error) {
         time: Date.now()
     });
     if (attributeErrors[key].length > 10) attributeErrors[key].shift();
-    console.error('%cCAT%c | ERROR > Validation error on attribute from document: ' +  key + '\n', 'color: red; font-weight: bold;', 'color: inherit;', error.message);
+    log('ERROR', 'Validation error on attribute from document: ' +  key + '\n', error.message);
 }
 function group(label = 'Group', {force = false} = {}) {
-    if (force || game.settings.get('cat', 'displayDebugLogs')) {
-        console.groupCollapsed('%cCAT%c | ' + label, 'color: orange; font-weight: bold;', 'color: inherit;');
-    }
+    if (force || game.settings.get('cat', 'displayDebugLogs')) log('GROUP', label);
 }
 function groupEnd({force = false} = {}) {
     if (force || game.settings.get('cat', 'displayDebugLogs')) console.groupEnd();
@@ -115,5 +135,6 @@ export default {
     addRegistrationError,
     group,
     groupEnd,
-    addMacroWarning
+    addMacroWarning,
+    log
 };
