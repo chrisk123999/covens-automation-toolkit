@@ -40,6 +40,7 @@ export default class MedkitApp extends CatApp {
     #formulaFields = new Map();
     #selectedSource;
     #rulesValue;
+    #awaitingReady = false;
 
     constructor({document, ...options}) {
         super({...options});
@@ -1702,10 +1703,25 @@ export default class MedkitApp extends CatApp {
         this.#wireFieldDrop();
         this.#wireMapDrop();
         this.#applyTabPermissions();
+        if (!constants.automations.ready) this.#showLoading();
         if (options.isFirstRender) {
             this.#fitNavToOneRow();
             this.#warnIfLocked();
         }
+    }
+
+    #showLoading() {
+        for (const section of this.element.querySelectorAll('section.tab[data-tab]')) {
+            const notice = document.createElement('p');
+            notice.className = 'notice notification warning';
+            notice.textContent = _loc('CAT.MEDKIT.Loading');
+            section.prepend(notice);
+        }
+        if (this.#awaitingReady) return;
+        this.#awaitingReady = true;
+        Hooks.once('catReady', () => {
+            if (this.rendered) this.render();
+        });
     }
 
     #warnIfLocked() {

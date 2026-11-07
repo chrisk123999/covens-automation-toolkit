@@ -5,6 +5,7 @@
 - Document property formulas share the formula type's field and its invalid formula message.
 - `effectUtils.createEffects` passes `effectOptions` to the creation for the user's own documents too, not only through the GM, so `keepId` works either way.
 - Generic config options can take `showIf`, a function of the generic's current values. The medkit hides the option when it returns false.
+- A CatKit opened before CAT finishes loading automations says so, and refreshes once loading is done.
 ## Bug Fixes:
 - Monster feature automations only match their own monster. A character's feature never picks up a monster's automation of the same name.
 - Grapple and shove size check macros receive the check's identifier and size in `data`. They received nothing, so a macro could not tell a grapple from a shove.

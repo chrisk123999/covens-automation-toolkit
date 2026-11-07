@@ -5,6 +5,7 @@
             "HeaderLabel": "CatKit",
             "LockedPack": "{pack} is locked. Changes made here will not be saved until the compendium is unlocked.",
             "NoPermission": "You do not have permission to modify this tab.",
+            "Loading": "CAT is still loading automations. This window refreshes when it is ready.",
             "ReloadWarning": "The registered automation will not reflect your changes until the world is reloaded!",
             "TABS": {
                 "Automation": "Info",
