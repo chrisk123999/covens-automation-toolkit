@@ -50,9 +50,15 @@ const TROUBLESHOOTER = {
 function report(key, detail) {
     return {status: 'info', label: `CAT.Troubleshooter.Report.${key}`, detail: String(detail)};
 }
+function stringifyAsList(object) {
+    return Object.entries(object).map(([key, data]) =>`\n    ${key}: ${JSON.stringify(data)}`).join('');
+}
 function formatValue(value) {
-    if (Array.isArray(value) && value.length && value.every(id => game.users.has(id))) return _loc('CAT.Troubleshooter.Report.UserCount', {count: value.length});
-    return value instanceof Object ? JSON.stringify(value) : String(value);
+    if (Array.isArray(value)) {
+        if (value.length && value.every(id => game.users.has(id))) return _loc('CAT.Troubleshooter.Report.UserCount', {count: value.length});
+        return JSON.stringify(value);
+    }
+    return value instanceof Object ? stringifyAsList(value) : String(value);
 }
 function usersDetail(permission) {
     const allowed = game.users.filter(user => user.hasPermission(permission)).length;

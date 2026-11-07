@@ -10,7 +10,7 @@ const fields = foundry.data.fields;
  * @property {string} version
  * @property {string} uuid
  * @property {AutomationConfig[]} [config]
- * @property {string} [notes] 
+ * @property {string} [notes]
  * @property {string} [sourceType] The key for an advancement source that would grant this document, e.g. 'class:cleric'.
  * @property {string[]} [aliases] Other identifiers this automation also matches, e.g. the SRD's identifier for the same feature.
  * @property {object} [scales] Provide advancement scale data.
@@ -103,7 +103,7 @@ class Automation {
      * @type {string[]}
      */
     aliases;
-    
+
     async getDocument() {
         return await fromUuid(this.uuid);
     }
@@ -208,7 +208,7 @@ export class RegisteredAutomations {
 
     /**
      * Register a single automation
-     * @param {AutomationData} data 
+     * @param {AutomationData} data
      */
     registerAutomation(data) {
         const validationError = this.#automationsSchema.validate(data);
@@ -233,7 +233,7 @@ export class RegisteredAutomations {
 
     /**
      * Register multiple automations
-     * @param {AutomationData[]} data 
+     * @param {AutomationData[]} data
      */
     registerAutomations(data) {
         const validationError = this.#multiAutomationsSchema.validate(data);
@@ -246,8 +246,8 @@ export class RegisteredAutomations {
 
     /**
      * Get the value of a config key for a given document
-     * @param {foundry.abstract.Document} document 
-     * @param {string} key 
+     * @param {foundry.abstract.Document} document
+     * @param {string} key
      */
     getConfigValue(document, key) {
         /** @type {AutomationConfig['default']|undefined} */

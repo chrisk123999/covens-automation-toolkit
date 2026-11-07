@@ -401,8 +401,16 @@ function addDamageDetail(ditem, damage, type, multiplier, active) {
  * @returns {boolean}
  */
 function isSustainedRoll(workflow) {
+    if (getWorkflowProperty(workflow, 'allowSustainedRoll')) return false;
     if (['workflowOptions.isOverTime', 'activity.isOverTimeFlag', 'activity.midiProperties.automationOnly'].some(p => genericUtils.getProperty(workflow, p))) return true;
     return workflow.item?.type === 'spell' && !workflow.activity?.consumption?.spellSlot;
+}
+/**
+ * Treat this workflow as the initial cast of a spell.
+ * @param {MidiQOL.Workflow} workflow
+ */
+function setNotSustainedRoll(workflow) {
+    setWorkflowProperty(workflow, 'allowSustainedRoll', true);
 }
 /**
  * Replace a damage item's total, splitting it across temporary and real hit points.
@@ -815,5 +823,6 @@ export default {
     preventZeroHP,
     grantRollModifier,
     getScaledDuration,
-    rollConfiguredSource
+    rollConfiguredSource,
+    setNotSustainedRoll
 };

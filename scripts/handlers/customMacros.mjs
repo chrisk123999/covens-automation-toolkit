@@ -78,7 +78,7 @@ async function registerMacro(macro) {
         const fnMacros = entries.filter(entry => !entry.mastery);
         if (fnMacros.length) constants.macros.registerFnMacros(fnMacros, true);
     } catch (error) {
-        Logging.addRegistrationError({macro: macro.uuid}, 'macro', error);
+        Logging.addRegistrationError({macro: macro.uuid}, 'custom-macro', error);
         return false;
     }
     return true;

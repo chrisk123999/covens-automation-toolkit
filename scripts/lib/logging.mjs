@@ -14,7 +14,7 @@ const COLORS = {
     WARNING: 'yellow'
 };
 function log(type, message, ...args) {
-    const msg = type === 'GROUP' ? 
+    const msg = type === 'GROUP' ?
         '%cCAT%c | ' + message :
         '%cCAT%c | ' + type + ' > ' + message;
     const params = [msg, `color: ${COLORS[type] ?? COLORS.DEFAULT}; font-weight: bold;`, 'color: inherit;', ...args];
@@ -63,7 +63,7 @@ function addMacroWarning(source, identifier, message, {notify, format, user} = {
         user,
         time: Date.now()
     });
-    addEntry('WARNING', key + ': ' + message + (user ? ' (' + user + ')' : ''));
+    addEntry('WARNING', key + ':\n' + message + (user ? ' (' + user + ')' : ''));
     if (notify && !user) genericUtils.notify(message, {type: notify === true ? 'warn' : notify, localize: false});
     const gm = queryUtils.gmUser();
     if (!user && gm && !gm.isSelf) queryUtils.query('macroWarning', gm, {source, identifier, message, user: game.user.name}).catch(() => {});
