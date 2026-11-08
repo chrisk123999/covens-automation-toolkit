@@ -354,6 +354,9 @@ class BaseWorkflowEvent extends CatEvent {
         if (this.activity && CatEvent.hasCatFlag(this.activity)) triggers.push(new this.trigger(this.activity, 'activity' + passName, {castData: this.castData}));
         if (this.item) {
             if (CatEvent.hasCatFlag(this.item, this.trigger.type)) triggers.push(new this.trigger(this.item, 'item' + passName, {castData: this.castData}));
+            this.item.system.activities?.contents?.filter(activity => CatEvent.hasCatFlag(activity)).forEach(activity => {
+                triggers.push(new this.trigger(activity, 'item' + passName, {castData: this.castData}));
+            });
             this.item.effects.filter(effect => effect.type === 'enchantment' && effect.isAppliedEnchantment && CatEvent.hasCatFlag(effect)).forEach(effect => {
                 triggers.push(new this.trigger(effect, 'enchantment' + passName, {castData: this.castData}));
             });
