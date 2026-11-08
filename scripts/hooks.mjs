@@ -82,6 +82,7 @@ export function readyHooks() {
     Hooks.on(constants.combatHookNames.deleteCombat, combat => dialogUtils.clearRemembered(combat.id));
     // Item Events
     Hooks.on(constants.itemHookNames.preUpdateItem, events.itemEvents.preUpdateItem);
+    Hooks.on(constants.itemHookNames.preCreateItem, events.itemEvents.preCreateItem);
     if (queryUtils.isTheGM()) {
         // Combat Events
         Hooks.on(constants.combatHookNames.preUpdateCombat, events.combatEvents.preUpdateCombat);

@@ -20,8 +20,8 @@ async function cleave({workflow, hit: targets}) {
     const stamps = workflow.actor.flags.cat?.weaponMastery?.cleave ?? [];
     if (combatUtils.isStampedThisTurn(stamps, token.id, combatData)) return;
     const first = targets[0].document;
-    const reach = workflow.item.system.range?.reach ?? 5;
-    const options = tokenUtils.findNearby(first, 5, {disposition: 'all', includeIncapacitated: false}).filter(nearby => nearby.id !== token.id && nearby.actor && tokenUtils.isEnemy(token, nearby) && tokenUtils.getDistance(token, nearby) <= reach);
+    const reach = itemUtils.getRange(workflow.item).reach ?? 5;
+    const options = tokenUtils.findNearby(first, 5, {disposition: 'all', includeIncapacitated: false}).filter(nearby => nearby.id !== token.id && nearby.actor && tokenUtils.isEnemy(token, nearby) && tokenUtils.isWithinDistance(token, nearby, reach));
     if (!options.length) return;
     const selection = await dialogUtils.selectTargetDialog(itemUtils.getMasteryLabel('cleave'), _loc('CAT.WeaponMastery.CleavePrompt'), options, {buttons: 'okCancel'});
     const second = selection?.result;
@@ -42,8 +42,7 @@ async function push({workflow, hit: targets}) {
     const scene = workflow.token.document.parent;
     for (const token of targets) {
         if (actorUtils.getSize(token.actor) > CONFIG.DND5E.actorSizes.lg.numerical) continue;
-        const buttons = [[_loc('CAT.WeaponMastery.NoPush'), 0], ...[5, 10].map(distance => [dnd5e.utils.formatLength(distance, scene.grid.units), distance])];
-        const distance = Number(await dialogUtils.buttonDialog(itemUtils.getMasteryLabel('push'), _loc('CAT.WeaponMastery.PushPrompt', {target: token.name}), buttons));
+        const distance = await dialogUtils.distanceDialog(itemUtils.getMasteryLabel('push'), _loc('CAT.WeaponMastery.PushPrompt', {target: token.name}), [5, 10], {none: _loc('CAT.WeaponMastery.NoPush'), scene});
         if (distance) await tokenUtils.slideToken(token.document, {sourceToken: workflow.token.document, distance});
     }
 }

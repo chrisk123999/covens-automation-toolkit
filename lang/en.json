@@ -634,7 +634,7 @@
                     "DependentEffects": "Remove on exit",
                     "DependentEffectsHint": "Effects this activity applies are removed when the creature leaves the region or the region is deleted. The activity does not fire again while the creature still has one.",
                     "PerDistance": "Per distance",
-                    "PerDistanceHint": "With the Token moves inside trigger, fire once for every this many scene units moved inside the region. Leave empty to fire once per move."
+                    "PerDistanceHint": "With the Token moves inside trigger, fire once for every this many feet moved inside the region. Leave empty to fire once per move."
                 },
                 "Triggers": {
                     "created": "Region created",

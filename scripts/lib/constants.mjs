@@ -132,7 +132,7 @@ const movementPasses = {
     postTeleport: 'postTeleport',
     /** Before a displacement moves the token. Return true to cancel it. */
     displace: 'displace',
-    /** Before a push or pull. Return a number to add to the distance, or 0 to cancel the move. */
+    /** Before a push or pull. Return feet to add to the distance, or 0 to cancel the move. */
     slide: 'slide'
 };
 const movementHookNames = {
@@ -319,7 +319,8 @@ const itemHookNames = {
     deleteItem: 'deleteItem',
     updateItem: 'updateItem',
     munched: 'ddb-importer.characterProcessDataComplete',
-    preUpdateItem: 'preUpdateItem'
+    preUpdateItem: 'preUpdateItem',
+    preCreateItem: 'preCreateItem'
 };
 const contextMenuHookNames = {
     getActorContextOptions: 'getActorContextOptions',

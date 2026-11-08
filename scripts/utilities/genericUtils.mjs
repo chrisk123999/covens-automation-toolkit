@@ -67,18 +67,6 @@ function expandObject(obj) {
     return foundry.utils.expandObject(obj);
 }
 /**
- * Convert a distance in feet to the scene's grid units.
- * @param {foundry.documents.Scene} scene Scene whose grid units are converted to.
- * @param {number} distanceFt Distance in feet.
- * @returns {number}
- */
-function convertDistance(scene, distanceFt) {
-    switch(scene.grid.units) {
-        case 'm': return Math.floor((distanceFt / 5) * 1.5);
-        default: return distanceFt;
-    }
-}
-/**
  * Resolve after a delay.
  * @param {number} ms Milliseconds to wait.
  * @returns {Promise<void>}
@@ -134,7 +122,6 @@ export default {
     duplicate,
     deepClone,
     mergeObject,
-    convertDistance,
     sleep,
     decimalToFraction,
     isEmpty,

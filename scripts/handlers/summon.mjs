@@ -206,7 +206,7 @@ async function create(host, activity, {profileId, options = {}, workflowOptions}
     await followUp(host, config, 'create');
 }
 function getRange(activity, config) {
-    return config.range || activity.range?.value || 5;
+    return config.range || activityUtils.getRange(activity) || 5;
 }
 function getCommandIds(config) {
     return [config.placeActivityId, config.recallActivityId, config.moveActivityId, config.dismissActivityId, config.followUpActivityId, ...(config.commandActivityIds ?? [])].filter(Boolean);
@@ -244,7 +244,7 @@ async function followUp(host, config, timing) {
 async function command(host, activity) {
     const config = getConfig(host);
     const token = activity.getUsageToken?.()?.document ?? actorUtils.getFirstToken(activity.actor);
-    const range = activity.range?.value || getRange(activity, config);
+    const range = activityUtils.getRange(activity) || getRange(activity, config);
     if (activity.id === config.placeActivityId) await summonUtils.placeAllSourceSummons(host, range, {token});
     if (activity.id === config.recallActivityId) await summonUtils.recallAllSourceSummons(host);
     if (activity.id === config.dismissActivityId) await Promise.all(summonUtils.getSummonsBySource(host).map(summon => summonUtils.deleteSummon(summon)));
@@ -282,7 +282,7 @@ async function leash({document}) {
     const maxDistance = getConfig(document).maxDistance;
     const token = actorUtils.getFirstToken(getItem(document).actor);
     if (!maxDistance || !token) return;
-    const summons = summonUtils.getSummonsBySource(document).filter(summon => summon.token && tokenUtils.getDistance(token, summon.token) > maxDistance);
+    const summons = summonUtils.getSummonsBySource(document).filter(summon => summon.token && !tokenUtils.isWithinDistance(token, summon.token, maxDistance));
     await Promise.all(summons.map(summon => summonUtils.deleteSummon(summon)));
 }
 async function deleted({document, summon}) {

@@ -40,7 +40,7 @@ item.flags.cat.alternateAttributes = {
             }
         }
     ],
-    DamageFormula: [ 
+    DamageFormula: [
         {
             value: '1d8 + @mod',
             restrictions: {
@@ -213,7 +213,7 @@ function range(wrapped, rollData, labels) {
         if (value) bonus += value;
     }
     if (bonus) {
-        this.range.value += bonus;
+        this.range.value += dnd5e.utils.convertLength(bonus, 'ft', this.range.units);
         this.range.catModified = true;
     }
     return wrapped(rollData, labels);

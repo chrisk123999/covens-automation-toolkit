@@ -1,4 +1,4 @@
-import {documentUtils, effectUtils, summonUtils, tokenUtils} from './_module.mjs';
+import {distanceUtils, documentUtils, effectUtils, summonUtils, tokenUtils} from './_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import regionShapes from '../lib/regionShapes.mjs';
 const wallPresets = {
@@ -258,22 +258,31 @@ function tokensOnPath(scene, path, {visibleOnly = false} = {}) {
     });
 }
 /**
- * Create a region along a drawn path, an optional region over one side of it, and optional Wall documents along it.
- * The side region depends on the path region; the walls are deleted with the path region.
+ * Create a region along a path, with optional side region and walls. Everything else is deleted with the path region.
  * @param {foundry.documents.Scene} scene Scene to create on.
  * @param {WallPath & {side?: 'left'|'right'|'inside'|'outside'}} path Result of `crosshairUtils.drawPath`.
  * @param {object} options Additional options.
- * @param {number} options.thickness Path region thickness in scene units.
- * @param {object} [options.regionData] Region data for the path region, without shapes.
- * @param {number} [options.sideDepth] Side region depth in scene units.
- * @param {object} [options.sideData] Region data for the side region, without shapes. Omit for no side region.
- * @param {'opaque'|'solid'|'clear'|object} [options.walls] Wall data for each wall segment, without coordinates, or a preset: `opaque` blocks sight but not movement, `solid` blocks both, `clear` blocks movement only. Omit for no walls.
- * @param {boolean} [options.push] Push creatures the path cuts through out of its area, to whichever side their centre is on.
- * @param {number} [options.sectionLength] Split the Wall documents into sections no longer than this many scene units, such as walls with hit points per 10-foot section.
- * @returns {Promise<{region?: foundry.documents.RegionDocument, side?: foundry.documents.RegionDocument, flats?: foundry.documents.RegionDocument[]}>} Flat panels of the path each get their own region, a surface at the panel's height that depends on the path region.
+ * @param {number} options.thickness Path thickness in feet.
+ * @param {number} [options.height] Path and side region height in feet.
+ * @param {object} [options.regionData] Path region data, without shapes.
+ * @param {number} [options.sideDepth] Side region depth in feet.
+ * @param {object} [options.sideData] Side region data, without shapes. Omit for no side region.
+ * @param {'opaque'|'solid'|'clear'|object} [options.walls] Wall data without coordinates, or a preset. `opaque` blocks sight, `clear` blocks movement, `solid` blocks both.
+ * @param {boolean} [options.push] Push creatures out of the path.
+ * @param {number} [options.sectionLength] Maximum wall section length in feet.
+ * @returns {Promise<{region?: foundry.documents.RegionDocument, side?: foundry.documents.RegionDocument, flats?: foundry.documents.RegionDocument[]}>} `flats` has one surface region per flat panel.
  */
-async function createPathRegions(scene, path, {thickness, regionData = {}, sideDepth, sideData, walls, push, sectionLength} = {}) {
+async function createPathRegions(scene, path, {thickness, height, regionData = {}, sideDepth, sideData, walls, push, sectionLength} = {}) {
     const pixels = scene.dimensions.distancePixels;
+    if (height) {
+        const bottom = regionData.elevation?.bottom ?? 0;
+        const elevation = {bottom, top: bottom + distanceUtils.convertDistance(scene, height)};
+        regionData = {...regionData, elevation};
+        if (sideData) sideData = {...sideData, elevation};
+    }
+    thickness = distanceUtils.convertDistance(scene, thickness);
+    sideDepth = distanceUtils.convertDistance(scene, sideDepth);
+    sectionLength = distanceUtils.convertDistance(scene, sectionLength);
     if (push) await pushOffPath(scene, path, thickness);
     if (typeof walls === 'string') walls = wallPresets[walls];
     const flags = foundry.utils.mergeObject(regionData.flags ?? {}, {cat: {path, pathThickness: thickness, pathWalls: walls ?? null, pathSectionLength: sectionLength ?? null}}, {inplace: false});
@@ -342,7 +351,7 @@ async function pushOffPath(scene, path, thickness) {
         const angle = best.distance > 1 ? Math.atan2(center.y - best.closest.y, center.x - best.closest.x) : Math.atan2(best.b.y - best.a.y, best.b.x - best.a.x) - Math.PI / 2;
         const reach = (Math.max(token.w, token.h) / 2 + thickness * pixels / 2 - best.distance) / pixels;
         const step = scene.grid.distance;
-        return tokenUtils.slideToken(token.document, {ray: {angle}, distance: Math.ceil(reach / step) * step});
+        return tokenUtils.slideToken(token.document, {ray: {angle}, distance: distanceUtils.toFeet(scene, Math.ceil(reach / step) * step)});
     }));
 }
 /**
@@ -465,6 +474,26 @@ function isSpellWarded(token, item, castLevel, sourceToken) {
     const level = castLevel >= 0 ? castLevel : item.system.level;
     return token.parent.regions.some(region => region.flags.cat?.spellWard >= level && token.testInsideRegion(region) && !sourceToken?.testInsideRegion(region));
 }
+/**
+ * Place a light at a region's centre that is deleted with the region.
+ * @param {foundry.documents.RegionDocument} region Region the light belongs to.
+ * @param {object} [config] Light config, with radii in feet.
+ * @param {number} [config.bright] Bright radius in feet.
+ * @param {number} [config.dim] Dim radius in feet. Defaults to the region's radius.
+ * @returns {Promise<foundry.documents.AmbientLightDocument|undefined>}
+ */
+async function createRegionLight(region, {bright, dim, ...config} = {}) {
+    const scene = region.parent;
+    const {x, y, radius} = getArea(region);
+    const [light] = await documentUtils.createEmbeddedDocuments(scene, 'AmbientLight', [{
+        x: Math.round(x),
+        y: Math.round(y),
+        config: {...config, bright: distanceUtils.convertDistance(scene, bright ?? 0), dim: dim === undefined ? Math.max(radius, 0) / scene.dimensions.distancePixels : distanceUtils.convertDistance(scene, dim)}
+    }]);
+    if (!light) return;
+    await documentUtils.makeDependent(region, [light]);
+    return light;
+}
 export default {
     getActivity,
     isSpellWard,
@@ -491,5 +520,6 @@ export default {
     addWallPanels,
     breakWallPanel,
     deletePathWalls,
-    addRegionTimer
+    addRegionTimer,
+    createRegionLight
 };

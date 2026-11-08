@@ -1,5 +1,5 @@
-import {activityUtils, actorUtils, dataUtils, documentUtils, effectUtils, genericUtils, regionUtils, tokenUtils, workflowUtils, combatUtils} from '../utilities/_module.mjs';
 import {Auras, constants, Logging} from '../lib/_module.mjs';
+import {activityUtils, actorUtils, combatUtils, dataUtils, distanceUtils, documentUtils, effectUtils, genericUtils, regionUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 import aura from './aura.mjs';
 function placed(region) {
     const activity = regionUtils.getActivity(region);
@@ -72,7 +72,7 @@ async function updateRegionEffects(token, currentRegions = []) {
             matchedExistingIds.add(existing.id);
             const existingCastData = existing.flags.cat?.castData || {};
             const desiredCastData = desired.flags.cat.castData;
-            const needsUpdate = 
+            const needsUpdate =
                 existing.origin !== desired.origin ||
                 existingCastData.castLevel !== desiredCastData.castLevel ||
                 existingCastData.saveDC !== desiredCastData.saveDC;
@@ -134,7 +134,7 @@ async function runRegionActivity(sourceActivity, targets, castLevel, {times = 1,
 }
 function getMovedDistance(token, region, waypoints = []) {
     const grid = token.parent.grid;
-    if (grid.isGridless) return token.segmentizeRegionMovementPath(region, waypoints).filter(segment => segment.type === CONST.REGION_MOVEMENT_SEGMENTS.MOVE).reduce((total, segment) => total + grid.measurePath([segment.from, segment.to]).distance, 0);
+    if (grid.isGridless) return distanceUtils.toFeet(token.parent, token.segmentizeRegionMovementPath(region, waypoints).filter(segment => segment.type === CONST.REGION_MOVEMENT_SEGMENTS.MOVE).reduce((total, segment) => total + grid.measurePath([segment.from, segment.to]).distance, 0));
     let cells = 0;
     for (let i = 1; i < waypoints.length; i++) {
         const from = waypoints[i - 1];
@@ -146,7 +146,7 @@ function getMovedDistance(token, region, waypoints = []) {
             return token.testInsideRegion(region, {...to, x: from.x + center.x - start.x, y: from.y + center.y - start.y});
         }).length;
     }
-    return cells * grid.distance;
+    return distanceUtils.toFeet(token.parent, cells * grid.distance);
 }
 function getPlacedRegions(workflow) {
     return (workflow.templateUuids ?? []).map(uuid => fromUuidSync(uuid, {strict: false})).filter(region => region?.flags.cat);
@@ -232,7 +232,7 @@ async function processRegionActivities(token, currentRegions, triggerType, {comb
             let times = 1;
             if (triggerType === constants.movementPasses.moved) {
                 movedDistance ??= getMovedDistance(token, region, waypoints);
-                times = actConfig.perDistance ? Math.floor(movedDistance / actConfig.perDistance) : Number(movedDistance > 0);
+                times = actConfig.perDistance ? Math.floor((distanceUtils.convertDistance(token.parent, movedDistance) / distanceUtils.toRangeUnits(token.parent, actConfig.perDistance)).toNearest(0.01)) : Number(movedDistance > 0);
                 if (!times) continue;
             }
             if (actConfig.dependentEffects && hasDependentEffect(token, actConfig.uuid)) continue;

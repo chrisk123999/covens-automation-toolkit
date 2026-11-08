@@ -1,5 +1,5 @@
 import {Crosshairs, PathCrosshairs} from '../lib/_module.mjs';
-import {genericUtils, uiUtils} from '../utilities/_module.mjs';
+import {distanceUtils, genericUtils, uiUtils} from '../utilities/_module.mjs';
 const getSizeIndex = (token) => {
     const size = CONFIG.DND5E.actorSizes[token.actor?.system?.traits?.size]?.numerical;
     if (size !== undefined) return size;
@@ -11,13 +11,13 @@ const getSizeIndex = (token) => {
     return 5;
 };
 /**
- * Horizontal reach left at an elevation.
- * @param {{x: number, y: number, elevation: number}} origin Origin point.
+ * Find how far a range reaches horizontally from a point at an elevation, in scene units.
+ * @param {{x: number, y: number, elevation: number}} origin Point measured from.
  * @param {number} range Range in scene units.
- * @param {number} elevation Elevation to measure at.
- * @returns {number} Scene units, or -1 if out of range.
+ * @param {number} elevation Elevation measured to.
+ * @returns {number} -1 when the elevation alone is out of range.
  */
-function horizontalReach(origin, range, elevation) {
+function reachInSceneUnits(origin, range, elevation) {
     const measure = offset => canvas.grid.measurePath([origin, {x: origin.x + (offset * canvas.grid.size / canvas.grid.distance), y: origin.y, elevation}]).distance;
     if (measure(0) > range) return -1;
     let low = 0;
@@ -28,6 +28,17 @@ function horizontalReach(origin, range, elevation) {
         else high = middle;
     }
     return low;
+}
+/**
+ * Horizontal reach left at an elevation.
+ * @param {{x: number, y: number, elevation: number}} origin Origin point.
+ * @param {number} range Range in feet.
+ * @param {number} elevation Elevation to measure at.
+ * @returns {number} Feet, or -1 if out of range.
+ */
+function horizontalReach(origin, range, elevation) {
+    const reach = reachInSceneUnits(origin, distanceUtils.convertDistance(canvas.scene, range), elevation);
+    return reach < 0 ? reach : distanceUtils.toFeet(canvas.scene, reach);
 }
 /**
  * Draw a faded copy of a token whose level is not being viewed.
@@ -66,32 +77,34 @@ function drawRange(center, radius) {
  * Show a crosshair, optionally bounded to a range from a token.
  * @param {object} [options] Additional options.
  * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check, and the default icon.
- * @param {number} [options.maxRange] Scene units. Without one, the crosshair is unbounded and placed freely.
- * @param {object} [options.crosshairsConfig] Passed to {@link Crosshairs.showCrosshairs}.
+ * @param {number} [options.maxRange] Feet. Without one, the crosshair is unbounded and placed freely.
+ * @param {object} [options.crosshairsConfig] Passed to {@link Crosshairs.showCrosshairs}, with `size` in feet.
  * @param {object} [options.centerpoint] Measure from here instead of the token's centre, skipping width compensation.
  * @param {boolean} [options.drawBoundries] Draw the range boundary.
  * @param {boolean} [options.checkOverlap] Reject a placement overlapping another token.
  * @param {object} [options.customCallbacks] Merged over the internal crosshair callbacks.
  * @param {boolean} [options.trackDistance] Show the live distance from the origin.
- * @param {number} [options.fudgeDistance] Extra slack in scene units, on top of the token's own width compensation.
+ * @param {number} [options.fudgeDistance] Extra slack in feet, on top of the token's own width compensation.
  * @param {Function[]} [options.validityFunctions] Receive the crosshair and `{x, y, elevation}`; a falsy return blocks the click.
  * @param {Function} [options.getElevation] Returns the destination elevation for the crosshair.
  * @param {number} [options.ringElevation] Elevation the range boundary is drawn at.
  * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
- * @returns {Promise<object>} The crosshair result, plus `elevation` when `getElevation` is given.
+ * @returns {Promise<object>} The crosshair result with `elevation`, from `getElevation` when given.
  */
 async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, drawBoundries = true, checkOverlap = true, customCallbacks, trackDistance = true, fudgeDistance = 0, validityFunctions = [], getElevation, ringElevation, ignoreWalls = false} = {}) {
     const tokenImg = token?.texture?.src;
     crosshairsConfig = crosshairsConfig || {icon: tokenImg};
     const baseIcon = crosshairsConfig.icon ?? Crosshairs.defaultCrosshairsConfig().icon;
     let widthAdjust = 0;
-    if (maxRange) maxRange = Number(maxRange);
+    if (maxRange) maxRange = distanceUtils.toRangeUnits(canvas.scene, Number(maxRange));
+    const rangeLabel = maxRange ? distanceUtils.formatDistance(canvas.scene, distanceUtils.toFeet(canvas.scene, maxRange)) : '';
+    fudgeDistance = distanceUtils.convertDistance(canvas.scene, fudgeDistance);
     const squareGrid = canvas.grid.type === CONST.GRID_TYPES.SQUARE;
     const cellEdge = squareGrid ? canvas.grid.distance * (centerpoint ? 1 : token.width) / 2 : 0;
     if (!centerpoint && !squareGrid) {
         const actualHalf = token.width / 2;
         widthAdjust += canvas.grid.distance * Math.floor(actualHalf);
-        if (!fudgeDistance && (widthAdjust !== actualHalf * canvas.grid.distance)) fudgeDistance = 2.5;
+        if (!fudgeDistance && (widthAdjust !== actualHalf * canvas.grid.distance)) fudgeDistance = canvas.grid.distance / 2;
         fudgeDistance += widthAdjust;
     }
     centerpoint = centerpoint ?? token.getCenterPoint();
@@ -107,7 +120,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
     };
     const checkDistance = async (crosshairs) => {
         if (maxRange && drawBoundries) {
-            const reach = Math.max(horizontalReach(origin, maxRange, ringElevation ?? origin.elevation), 0);
+            const reach = Math.max(reachInSceneUnits(origin, maxRange, ringElevation ?? origin.elevation), 0);
             drawing = drawRange(centerpoint, reach + fudgeDistance + widthAdjust + cellEdge);
         }
         let last;
@@ -128,7 +141,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
             crosshairs.icon = blocked ? 'icons/svg/hazard.svg' : baseIcon;
             if (drawing) drawing.tint = blocked ? 0xff0000 : 0x32cd32;
             crosshairs.draw();
-            if (maxRange) crosshairs.label = distance + '/' + maxRange + 'ft.';
+            if (maxRange) crosshairs.label = distance + '/' + rangeLabel;
         }
     };
     const callbacks = {
@@ -142,12 +155,13 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         resolution: tokenResolution,
         ...crosshairsConfig
     };
-    if (trackDistance) options.label = '0ft';
+    if (crosshairsConfig.size) options.size = distanceUtils.convertDistance(canvas.scene, crosshairsConfig.size);
+    if (trackDistance) options.label = distanceUtils.formatDistance(canvas.scene, 0);
     if (token?.rotation && options.direction === undefined && !options.lockDirection) options.direction = token.rotation;
     const [restoreWindows, ghost] = await Promise.all([uiUtils.minimizeWindows(), drawGhost(token, centerpoint)]);
     try {
         const result = await Crosshairs.showCrosshairs(options, callbacks);
-        if (getElevation) result.elevation = elevation;
+        result.elevation = getElevation ? elevation : origin.elevation;
         return result;
     } finally {
         ghost?.destroy();
@@ -160,15 +174,16 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
  * Left-click adds a point, Shift skips grid snapping, right-click removes the last point (or cancels), clicking the first point closes the shape, double-click or Enter finishes an open path, Esc cancels. Rings follow the cursor and the mouse wheel changes their diameter.
  * @param {object} config See {@link PathCrosshairs.show}.
  * @param {foundry.documents.TokenDocument} [config.token] Origin of the range check.
- * @param {number} [config.maxRange] Scene units every point must stay within, measured from the token. A border shows the range.
+ * @param {number} [config.maxRange] Feet every point must stay within, measured from the token. A border shows the range.
  * @returns {Promise<object|null>} Points, closed state, side and ring data, or null when cancelled.
  */
 async function drawPath({token, maxRange, ...config} = {}) {
     let drawing;
     if (token && maxRange) {
+        maxRange = distanceUtils.toRangeUnits(canvas.scene, maxRange);
         const origin = {...token.getCenterPoint(), elevation: token.elevation};
         const halfToken = canvas.grid.distance * token.width / 2;
-        drawing = drawRange(origin, Math.max(horizontalReach(origin, maxRange, origin.elevation), 0) + (canvas.grid.type === CONST.GRID_TYPES.SQUARE ? halfToken : 0));
+        drawing = drawRange(origin, Math.max(reachInSceneUnits(origin, maxRange, origin.elevation), 0) + (canvas.grid.type === CONST.GRID_TYPES.SQUARE ? halfToken : 0));
         config.isValid = point => canvas.grid.measurePath([origin, {...point, elevation: origin.elevation}]).distance <= maxRange + halfToken;
         config.onValidity = valid => drawing.tint = valid ? 0x32cd32 : 0xff0000;
     }

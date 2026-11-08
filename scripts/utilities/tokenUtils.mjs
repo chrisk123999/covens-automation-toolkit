@@ -1,6 +1,6 @@
 import {grapple as grappleHandler} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {actorUtils, crosshairUtils, dialogUtils, queryUtils} from './_module.mjs';
+import {actorUtils, crosshairUtils, dialogUtils, distanceUtils, queryUtils} from './_module.mjs';
 /**
  * Movement action for drag ruler. 'catForce' does not consume movement.
  * @typedef {'blink'|'burrow'|'catForce'|'climb'|'crawl'|'displace'|'fly'|'jump'|'swim'|'walk'} MovementAction
@@ -23,14 +23,26 @@ function getSavedCastData(token) {
  * @param {object} [options] Additional options.
  * @param {boolean} [options.wallsBlock] Return -1 when a wall lies between them.
  * @param {boolean} [options.checkCover] Include cover in the measurement.
- * @param {boolean} [options.convertToFt] Convert the scene's distance units to feet.
- * @returns {number}
+ * @returns {number} Feet, or -1 when walls block.
  */
-function getDistance(token, target, {wallsBlock, checkCover, convertToFt = true} = {}) {
+function getDistance(token, target, {wallsBlock, checkCover} = {}) {
     const distance = MidiQOL.getDistance(token.object, target.object, {wallsBlock, includeCover: checkCover});
-    const units = token.parent.grid.units;
-    if (!convertToFt || distance < 0 || units === 'ft') return distance;
-    return dnd5e.utils.convertLength(distance, units, 'ft', {strict: false}).toNearest(0.01);
+    if (distance < 0) return distance;
+    return distanceUtils.toFeet(token.parent, distance).toNearest(0.01);
+}
+/**
+ * Whether a target is within a range of this token, counted in whole grid spaces on gridded scenes.
+ * @param {foundry.documents.TokenDocument} token Token measured from.
+ * @param {foundry.documents.TokenDocument} target Token measured to.
+ * @param {number} range Range in feet.
+ * @param {object} [options] Passed to {@link getDistance}.
+ * @param {boolean} [options.wallsBlock] Out of range when a wall lies between them.
+ * @param {boolean} [options.checkCover] Include cover in the measurement.
+ * @returns {boolean}
+ */
+function isWithinDistance(token, target, range, {wallsBlock, checkCover} = {}) {
+    const distance = getDistance(token, target, {wallsBlock, checkCover});
+    return distance >= 0 && distanceUtils.isWithinRange(token.parent, distance, range);
 }
 /**
  * Get the target's cover from the source, taking the greater of its cover condition and its calculated cover.
@@ -87,7 +99,7 @@ function getCombatData(token) {
 /**
  * Find tokens within range of this one, excluding hidden tokens.
  * @param {foundry.documents.TokenDocument} token Token to read from.
- * @param {number} range Scene units.
+ * @param {number} range Range in feet, counted in whole grid spaces on gridded scenes.
  * @param {object} [options] Additional options.
  * @param {'all'|'ally'|'neutral'|'enemy'} [options.disposition] Dispositions relative to the scene, not to {@link token}.
  * @param {boolean} [options.includeIncapacitated] Include tokens that are incapacitated.
@@ -101,7 +113,7 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
         neutral: 0,
         enemy: -1
     };
-    return MidiQOL.findNearby(dispositions[disposition], token.object, range, {includeIncapacitated, includeToken}).map(placeable => placeable.document).filter(token => !token.hidden);
+    return MidiQOL.findNearby(dispositions[disposition], token.object, distanceUtils.toRangeUnits(token.parent, range) + token.parent.grid.distance / 100, {includeIncapacitated, includeToken}).map(placeable => placeable.document).filter(token => !token.hidden);
 }
 /**
  * Move a token along a path, delegating to a GM when the user lacks permission.
@@ -210,7 +222,7 @@ function highestSurfaceAt(surfaces, point) {
 /**
  * Floors on other levels within a token's range.
  * @param {foundry.documents.TokenDocument} token Token moving.
- * @param {number} range Range in scene units.
+ * @param {number} range Range in feet.
  * @returns {Map<string, {level: Level, surfaces: object[], ground?: number}>} Keyed by level id.
  */
 function reachableSurfaces(token, range) {
@@ -225,7 +237,7 @@ function reachableSurfaces(token, range) {
         if (ground !== undefined && crosshairUtils.horizontalReach(origin, range, ground) >= 0) reachable.set(level.id, {level, surfaces: [], ground});
         for (const surface of token.parent.getSurfaces({type: 'move', level})) {
             const reach = crosshairUtils.horizontalReach(origin, range, surface.elevation);
-            if (reach < 0 || !surface.region.polygonTree.testPoint(origin, (reach * pixels) + halfToken)) continue;
+            if (reach < 0 || !surface.region.polygonTree.testPoint(origin, (distanceUtils.convertDistance(token.parent, reach) * pixels) + halfToken)) continue;
             if (!reachable.has(level.id)) reachable.set(level.id, {level, surfaces: []});
             reachable.get(level.id).surfaces.push(surface);
         }
@@ -253,15 +265,41 @@ function floorBelow(token) {
     return floor ?? {elevation: ground, level: lowest?.id ?? token.level};
 }
 /**
+ * Get the token's height above the floor below it in feet.
+ * @param {foundry.documents.TokenDocument} token Token to measure.
+ * @returns {number}
+ */
+function heightAboveFloor(token) {
+    return distanceUtils.toFeet(token.parent, token.elevation - floorBelow(token).elevation);
+}
+/**
+ * Highlight grid spaces on the canvas.
+ * @param {{x: number, y: number}[]} points Centres of the spaces.
+ * @returns {PIXI.Graphics} The highlight, for the caller to destroy.
+ */
+function drawAllowedPoints(points) {
+    const graphics = new PIXI.Graphics();
+    const shape = canvas.grid.getShape();
+    const unique = new Map(points.map(({x, y}) => [x + '.' + y, {x, y}]));
+    graphics.beginFill(0x32cd32, 0.3);
+    for (const {x, y} of unique.values()) {
+        if (shape.length) graphics.drawPolygon(shape.flatMap(vertex => [vertex.x + x, vertex.y + y]));
+        else graphics.drawCircle(x, y, canvas.grid.size / 2);
+    }
+    graphics.endFill();
+    canvas.controls.addChild(graphics);
+    return graphics;
+}
+/**
  * Aim a destination, offering other levels with a floor in range.
  * @param {foundry.documents.TokenDocument} token Token the range is measured from.
  * @param {object} [options] Additional options.
- * @param {number} [options.range] Maximum distance in scene units.
+ * @param {number} [options.range] Maximum distance in feet.
  * @param {object} [options.centerpoint] Measure from here instead of the token's centre.
  * @param {object} [options.crosshairsConfig] Crosshair config.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
  * @param {boolean} [options.ignoreWalls] Allow spaces that walls block from the token.
- * @param {object[]} [options.allowedPoints] Only allow these token centres.
+ * @param {object[]} [options.allowedPoints] Only allow these token centres, highlighted while aiming.
  * @returns {Promise<object|undefined>} Crosshair result with `level` and `elevation`; undefined if cancelled.
  */
 async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true, ignoreWalls = false, allowedPoints} = {}) {
@@ -284,8 +322,10 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
     const vision = requireSight ? getVisionSource(token) : undefined;
     const standable = (_crosshairs, {x, y, elevation}) => elevation !== undefined
         && (!vision?.source || canSeePoint(token, {x, y, elevation: elevation + 0.01}, {level: targetLevel, source: vision.source}));
+    let highlight;
     try {
         if (canvas.level?.id !== targetLevel) await token.parent.view({level: targetLevel});
+        if (allowedPoints) highlight = drawAllowedPoints(allowedPoints);
         const result = await crosshairUtils.aimCrosshair({
             centerpoint,
             token,
@@ -299,6 +339,7 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
         if (!result || result.cancelled) return;
         return {...result, level: targetLevel};
     } finally {
+        highlight?.destroy();
         vision?.release();
         if (startView && canvas.level?.id !== startView) await token.parent.view({level: startView});
     }
@@ -310,12 +351,12 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
  * @param {Crosshairs} [options.destination] Data for crosshair result (see {@link Crosshairs.prototype.toObject}). A new crosshair is prompted if {@link destination} is undefined.
  * @param {object} [options.centerpoint] If {@link destination} is not provided, the crosshair range will be measured from this point rather than from {@link token}.
  * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
- * @param {number} [options.range] Maximum distance in scene units.
+ * @param {number} [options.range] Maximum distance in feet.
  * @param {number} [options.elevation] Destination elevation.
  * @param {string} [options.level] Destination Level id.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
  * @param {foundry.documents.TokenDocument[]} [options.followers] Tokens teleported along with this one.
- * @param {number} [options.followerRange] Crosshair range for a follower that can't keep its position.
+ * @param {number} [options.followerRange] Crosshair range in feet for a follower that can't keep its position.
  * @param {string} [options.userId] User who aims the destination crosshair. Defaults to the current user.
  * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
  * @param {object[]} [options.allowedPoints] Only allow these token centres when aiming.
@@ -376,7 +417,7 @@ async function teleportToken(token, {destination, centerpoint, animation, option
  * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
  * @param {foundry.documents.TokenDocument} [options.sourceToken] Origin of the movement.
  * @param {MovementAction} [options.action] See {@link MovementAction}.
- * @param {number} [options.range] Maximum distance in scene units.
+ * @param {number} [options.range] Maximum distance in feet.
  * @param {number} [options.elevation] Destination elevation.
  * @param {string} [options.level] Destination Level id.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
@@ -452,7 +493,7 @@ function isOccupied(token, {x, y}) {
  * @param {foundry.canvas.geometry.Ray} [options.ray] Direction for the push. If not provided, {@link sourceToken} is used to create a ray directly away from {@link token}.
  * @param {foundry.documents.TokenDocument} [options.sourceToken] Origin of the push. Must be provided if {@link ray} is undefined.
  * @param {MovementAction} [options.action] See {@link MovementAction}.
- * @param {number} [options.distance=5] Push distance in scene units.
+ * @param {number} [options.distance=5] Push distance in feet, rounded to whole grid spaces with at least one.
  * @returns {Promise<undefined>}
  */
 async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catForce'} = {}) {
@@ -463,7 +504,9 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
             return typeof curr === 'number' ? acc + curr : acc;
         }, distance);
     }
-    if (distance === 0) return;
+    const gridDistance = token.parent.grid.distance;
+    const travelled = Math.sign(distance) * Math.max(1, Math.round(Math.abs(distanceUtils.convertDistance(token.parent, distance)) / gridDistance)) * gridDistance;
+    if (!travelled) return;
     let angle;
     if (ray) {
         angle = ray.angle;
@@ -474,9 +517,9 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
     } else {
         return;
     }
-    const step = token.parent.grid.distance * Math.sign(distance);
+    const step = gridDistance * Math.sign(travelled);
     let targetPoint;
-    for (let travel = distance; Math.abs(travel) > 0; travel -= step) {
+    for (let travel = travelled; Math.abs(travel) > 0; travel -= step) {
         const point = token.getSnappedPosition(token.parent.grid.getTranslatedPoint({x: token.x, y: token.y}, Math.toDegrees(angle), travel));
         if (!isOccupied(token, point)) {
             targetPoint = point;
@@ -581,19 +624,29 @@ function getLightLevel(token) {
     return inBright ? 'bright' : 'dim';
 }
 /**
- * Get the movement spent by this token since the start of the current turn in combat. Core clears every combatant's movement history at each turn start, and does not store it outside of combat.
+ * Get the movement spent by this token since the start of the current turn in combat.
  * @param {foundry.documents.TokenDocument} token
  * @param {boolean} [getRemaining] Return spent movement subtracted from max speed.
- * @returns {number}
+ * @returns {number} Feet.
  */
 function movementSpent(token, getRemaining = false) {
-    const max = token.actor.system.attributes.movement.max;
-    const spent = token.measureMovementPath(token.movementHistory).cost;
+    const max = actorUtils.getSpeed(token.actor, 'max');
+    const spent = measureMovement(token, token.movementHistory);
     return getRemaining ? Math.max(max - spent, 0) : spent;
+}
+/**
+ * Measure the movement cost of a path for a token in feet.
+ * @param {foundry.documents.TokenDocument} token Token that moves.
+ * @param {object[]} waypoints Points along the path.
+ * @returns {number}
+ */
+function measureMovement(token, waypoints) {
+    return distanceUtils.toFeet(token.parent, token.measureMovementPath(waypoints)?.cost ?? 0);
 }
 export default {
     getSavedCastData,
     getDistance,
+    isWithinDistance,
     checkCover,
     isEnemy,
     getCombatData,
@@ -607,11 +660,13 @@ export default {
     canSeePoint,
     reachableSurfaces,
     floorBelow,
+    heightAboveFloor,
     aimDestination,
     canSense,
     getNonSightModes,
     grapple,
     getGrappled,
     grappleShoveSizeCheck,
-    movementSpent
+    movementSpent,
+    measureMovement
 };

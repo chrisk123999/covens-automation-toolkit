@@ -108,6 +108,90 @@ function buildEffectData(effectData, {macros, removeMacros, createAnimation, del
     if (activityUuid) genericUtils.setProperty(effectData, 'flags.cat.activityUuid', activityUuid);
     if (copyConfigs) genericUtils.setProperty(effectData, 'flags.cat.config', genericUtils.mergeObject(effectData.flags.cat?.config ?? {}, copyConfigs));
     if (effectData.origin) setOrigin(effectData, effectData.origin);
+    if (isMetric()) convertEffectLengths(effectData, lengthKeys, dnd5e.utils.defaultUnits('length'));
+    return effectData;
+}
+const lengthKeys = /^system\.attributes\.(movement\.(speeds\.)?(walk|fly|swim|climb|burrow|bonus)|senses\.(ranges\.)?(darkvision|blindsight|tremorsense|truesight))$/;
+const rangeKeys = /^system\.range\.(value|long|reach)$/;
+/**
+ * Whether the system's metric length setting is on.
+ * @returns {boolean}
+ */
+function isMetric() {
+    return game.settings.get('dnd5e', 'metricLengthUnits');
+}
+/**
+ * Whether a value is a number or a numeric string.
+ * @param {*} value Value to test.
+ * @returns {boolean}
+ */
+function isPlainNumber(value) {
+    return value !== null && value !== undefined && String(value).trim() !== '' && Number.isFinite(Number(value));
+}
+/**
+ * Convert a length in feet to other units, keeping a string a string.
+ * @param {number|string} value Length in feet.
+ * @param {string} units Units converted to.
+ * @returns {number|string}
+ */
+function convertValue(value, units) {
+    const converted = dnd5e.utils.convertLength(Number(value), 'ft', units);
+    return typeof value === 'string' ? String(converted) : converted;
+}
+/**
+ * Convert an effect's plain-number length changes from feet, flagging it so it never converts twice.
+ * @param {object} effectData Effect data, changed in place.
+ * @param {RegExp} keys Change keys to convert.
+ * @param {string} units Units converted to.
+ */
+function convertEffectLengths(effectData, keys, units) {
+    if (effectData.flags?.cat?.metric) return;
+    const changes = (effectData.system?.changes ?? []).filter(change => keys.test(change.key) && ['add', 'upgrade', 'downgrade', 'override'].includes(change.type) && isPlainNumber(change.value));
+    if (!changes.length) return;
+    changes.forEach(change => change.value = convertValue(change.value, units));
+    genericUtils.setProperty(effectData, 'flags.cat.metric', true);
+}
+/**
+ * Convert a range or area's plain-number fields from feet and set its units.
+ * @param {object} data Range or area data, changed in place.
+ * @param {string[]} keys Fields to convert.
+ * @param {string} units Units converted to.
+ */
+function convertFields(data, keys, units) {
+    if (data?.units !== 'ft') return;
+    const values = keys.filter(key => data[key] !== null && data[key] !== undefined && data[key] !== '');
+    if (!values.every(key => isPlainNumber(data[key]))) return;
+    values.forEach(key => data[key] = convertValue(data[key], units));
+    data.units = units;
+}
+/**
+ * Convert an item's ranges, reach, areas and effect lengths to meters when the metric setting is on.
+ * @param {object} itemData Item data, changed in place.
+ * @returns {object}
+ */
+function convertItemToMetric(itemData) {
+    if (!isMetric() || itemData.flags?.cat?.automation?.metric) return itemData;
+    const units = dnd5e.utils.defaultUnits('length');
+    convertFields(itemData.system?.range, ['value', 'long', 'reach'], units);
+    convertFields(itemData.system?.target?.template, ['size', 'width', 'height'], units);
+    Object.values(itemData.system?.activities ?? {}).forEach(activity => {
+        convertFields(activity.range, ['value'], units);
+        convertFields(activity.target?.template, ['size', 'width', 'height'], units);
+    });
+    (itemData.effects ?? []).forEach(effect => convertEffectLengths(effect, lengthKeys, units));
+    genericUtils.setProperty(itemData, 'flags.cat.automation.metric', true);
+    return itemData;
+}
+/**
+ * Convert an enchantment's range changes from feet to the enchanted item's range units.
+ * @param {object} effectData Effect data, changed in place.
+ * @param {Item5e} item Item being enchanted.
+ * @returns {object}
+ */
+function convertToItemUnits(effectData, item) {
+    const units = item.system.range?.units;
+    if (effectData.type !== 'enchantment' || !units || units === 'ft' || !(units in CONFIG.DND5E.movementUnits)) return effectData;
+    convertEffectLengths(effectData, rangeKeys, units);
     return effectData;
 }
 /**
@@ -217,5 +301,7 @@ export default {
     toArray,
     getFormulaData,
     formulaField,
-    validateFormula
+    validateFormula,
+    convertItemToMetric,
+    convertToItemUnits
 };

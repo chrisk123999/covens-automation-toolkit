@@ -1,4 +1,4 @@
-import {genericUtils, itemUtils} from '../utilities/_module.mjs';
+import {activityUtils, genericUtils, itemUtils} from '../utilities/_module.mjs';
 import constants from './constants.mjs';
 
 const fields = foundry.data.fields;
@@ -209,7 +209,7 @@ registerRestriction({
         if (!range) return RESULTS.FORCE_FAIL;
         if (!value.length) return RESULTS.PASS;
         const data = (activity ?? item).getRollData();
-        const val = range.value || (item.type === 'weapon' ? 5 : 0);
+        const val = (activity ? activityUtils.getRange(activity) : itemUtils.getRange(item).value) || (item.type === 'weapon' ? 5 : 0);
         const formula = dnd5e.utils.replaceFormulaData(value[0], data, {item: sourceItem, property: _loc('DND5E.RANGE.FIELDS.range.value.label')});
         const min = new Roll(formula).evaluateSync().total;
         return val >= min;

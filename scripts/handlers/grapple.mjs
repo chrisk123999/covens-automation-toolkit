@@ -1,5 +1,5 @@
-import {actorUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, rollUtils, tokenUtils, uiUtils, workflowUtils} from '../utilities/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
+import {activityUtils, actorUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, rollUtils, tokenUtils, uiUtils, workflowUtils} from '../utilities/_module.mjs';
 function abilities(rules) {
     if (rules === '2014') return ['acr', 'ath'];
     if (rules === '2024') return ['str', 'dex'];
@@ -111,7 +111,7 @@ function escapeData(dc) {
 }
 async function createEscapeItem(actor, dc) {
     const data = escapeData(dc);
-    const item = actorUtils.getItemByIdentifier(actor, data.system.identifier, {type: 'feat'}) ?? 
+    const item = actorUtils.getItemByIdentifier(actor, data.system.identifier, {type: 'feat'}) ??
         (await documentUtils.createEmbeddedDocuments(actor, 'Item', [data]))?.[0];
     if (item) await actorUtils.addFavorites(actor, [item]);
     return item;
@@ -125,7 +125,7 @@ async function sizeCheck(sourceToken, targetToken, identifier, warning = true) {
         return false;
     }
     if (identifier === 'shove-prone' && actorUtils.checkTrait(targetToken.actor, 'ci', 'prone')) {
-        if (warning) genericUtils.notify('CAT.GrappleShove.ShoveProneImmune', {type: 'warn'}); 
+        if (warning) genericUtils.notify('CAT.GrappleShove.ShoveProneImmune', {type: 'warn'});
         return false;
     }
     let size = actorUtils.getSize(sourceToken.actor);
@@ -136,8 +136,8 @@ async function sizeCheck(sourceToken, targetToken, identifier, warning = true) {
 }
 async function grapple(sourceToken, targetToken, {activity, rules, flatDC = activity?.save?.dc.value, contest = true, checkSize = true, conditions = []} = {}) {
     if (!sourceToken.actor || !targetToken.actor) return;
-    if (checkSize) { 
-        if (!await sizeCheck(sourceToken, targetToken, 'grapple')) return; 
+    if (checkSize) {
+        if (!await sizeCheck(sourceToken, targetToken, 'grapple')) return;
     }
     else if (actorUtils.checkTrait(targetToken.actor, 'ci', 'grappled')) {
         genericUtils.notify('CAT.GrappleShove.GrappleImmune', {type: 'warn'});
@@ -148,7 +148,7 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
         rules,
         dc: flatDC,
         advantage: false,
-        reach: activity ? (MidiQOL.checkActivityRange(activity, sourceToken, [targetToken], false)?.range || 5) : 5,
+        reach: (activity && activityUtils.getRange(activity)) || 5,
         sourceEffectData: sourceEffectData(_loc('CAT.GrappleShove.Grappling', {name: targetToken.name}), rules, activity?.item.img),
         targetEffectData: targetEffectData(_loc('CAT.GrappleShove.GrappledBy', {name: sourceToken.name}), rules, activity?.item.img)
     };
@@ -191,10 +191,10 @@ async function grappleMoved({action, document: effect, token}) {
     // e.g. player moves themselves but does not have permission to move the enemy token
     const shove = action === 'catForce';
     const teleport = CONFIG.Token.movement.actions[action]?.teleport;
-    const outOfReach = tokenUtils.getDistance(token, otherToken, {wallsBlock: true}) > (info.reach ?? 5);
+    const outOfReach = !tokenUtils.isWithinDistance(token, otherToken, info.reach ?? 5, {wallsBlock: true});
     if (teleport || (shove && outOfReach)) await documentUtils.deleteDocument(effect);
 }
-async function preGrappleEscape({workflow}) {  
+async function preGrappleEscape({workflow}) {
     const data = {};
     const tags = {};
     const grapplers = [];
@@ -268,7 +268,7 @@ function register() {
                 priority: 100
             }
         ],
-        roll: [  
+        roll: [
             {
                 pass: 'itemPreItemRoll',
                 macro: preGrappleEscape,

@@ -496,6 +496,7 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
         if (effect.origin !== sourceDocument.uuid && !Object.values(effect.system?.origin ?? {}).includes(sourceDocument.uuid)) continue;
         dataUtils.setOrigin(effect, item);
     }
+    dataUtils.convertItemToMetric(documentData);
     if (item.flags.dnd5e?.cachedFor && item.system.linkedActivity) {
         const enchantId = item.system.linkedActivity.constructor.ENCHANTMENT_ID;
         const enchantment = oldDocumentData.effects.find(effect => effect._id === enchantId);

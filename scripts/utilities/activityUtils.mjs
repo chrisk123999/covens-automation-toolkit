@@ -1,4 +1,4 @@
-import {documentUtils, effectUtils, itemUtils} from './_module.mjs';
+import {distanceUtils, documentUtils, effectUtils, itemUtils} from './_module.mjs';
 
 /**
  * Get the save DC of the activity, if a save, otherwise infer a save DC from the activity's ability, default 10.
@@ -194,6 +194,26 @@ function getDuration(activity) {
 }
 
 /**
+ * Get the activity's range in feet. Touch ranges use the item's reach.
+ * @param {Activity} activity Activity to read from.
+ * @returns {number|undefined}
+ */
+function getRange(activity) {
+    const {value, units} = activity.range ?? {};
+    if (units === 'touch') return itemUtils.getRange(activity.item).reach;
+    return distanceUtils.lengthToFeet(value, units);
+}
+/**
+ * Get the size of the activity's area in feet.
+ * @param {Activity} activity Activity to read from.
+ * @returns {number|undefined}
+ */
+function getTemplateSize(activity) {
+    const {size, units} = activity.target?.template ?? {};
+    return distanceUtils.lengthToFeet(size, units);
+}
+
+/**
  * Get a set of the activity's "item use" consumption target IDs
  * @param {Activity} activity Activity to read from.
  * @returns {Set<string>}
@@ -297,6 +317,8 @@ export default {
     syntheticActivity,
     getEffectDuration,
     getDuration,
+    getRange,
+    getTemplateSize,
     getDependencies,
     getRecoveryPools,
     hasDefaultIcon,

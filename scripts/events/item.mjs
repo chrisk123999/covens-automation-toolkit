@@ -1,6 +1,6 @@
+import {effects, items} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {genericUtils, queryUtils} from '../utilities/_module.mjs';
-import {items, effects} from '../handlers/_module.mjs';
+import {dataUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
 async function bulkUpdated(items) {
     await new Events.ItemsEvent(items, constants.itemPasses.bulkUpdated).run({canOverlap: true});
 }
@@ -38,7 +38,7 @@ async function updateItem(item, updates, options, userId) {
     const attunement = updates.system?.attunement ?? item.system?.attunement;
     const validTypes = ['required', 'optional'];
     const requiresAttunement = validTypes.includes(attunement);
-    const previousState = (!requiresAttunement || previouslyAttuned) && previouslyEquipped; 
+    const previousState = (!requiresAttunement || previouslyAttuned) && previouslyEquipped;
     const currentState = (!requiresAttunement || currentlyAttuned) && currentlyEquipped;
     if (previousState === currentState) return;
     if (currentState) {
@@ -59,6 +59,12 @@ async function preUpdateItem(item, updates, options, userId) {
     const attuned = item.system.attuned;
     if (attuned != undefined) genericUtils.setProperty(options, 'cat.previous.attuned', attuned);
 }
+function preCreateItem(item) {
+    if (item.pack || !item.flags.cat?.automation || item.flags.cat.automation.metric) return;
+    const source = item.toObject();
+    const converted = dataUtils.convertItemToMetric(genericUtils.deepClone(source));
+    if (converted.flags.cat.automation.metric) item.updateSource(foundry.utils.diffObject(source, converted));
+}
 export default {
     bulkUpdated,
     createItem,
@@ -66,5 +72,6 @@ export default {
     updateItem,
     actorMunched,
     itemMedkit,
-    preUpdateItem
+    preUpdateItem,
+    preCreateItem
 };

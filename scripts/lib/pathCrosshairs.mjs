@@ -1,4 +1,4 @@
-import {genericUtils, regionUtils} from '../utilities/_module.mjs';
+import {distanceUtils, genericUtils, regionUtils} from '../utilities/_module.mjs';
 import regionShapes from './regionShapes.mjs';
 /**
  * Canvas tool for drawing a path of connected points (or placing a ring), then choosing which side of it is active.
@@ -34,13 +34,13 @@ export class PathCrosshairs {
     /**
      * Draw a path or place a ring on the canvas.
      * @param {object} config Tool options.
-     * @param {number} [config.maxLength] Longest total path in scene units. Ignored for rings.
+     * @param {number} [config.maxLength] Longest total path in feet. Ignored for rings.
      * @param {boolean} [config.straight] Limit the path to one straight segment; the second click ends it.
-     * @param {{count: number, size: number, flat?: boolean, elevation?: number}} [config.panels] Build the wall from this many panels of this length instead of a path. Each panel starts at the end of an earlier one, so the wall may branch. The result has `segments` instead of `points`. With `flat`, F switches to flat floor or ceiling panels placed at a height chosen with the mouse wheel, starting from `elevation`; they come back as `flats`.
+     * @param {{count: number, size: number, flat?: boolean, elevation?: number}} [config.panels] Build the wall from this many panels of this length in feet instead of a path. Each panel starts at the end of an earlier one, so the wall may branch.
      * @param {'allow'|'never'|'always'} [config.closed] Whether the path may, may not, or must be closed by clicking its first point.
-     * @param {{maxDiameter: number, minDiameter?: number, step?: number, segments?: number}} [config.ring] Place a ring instead of drawing a path. The mouse wheel changes the diameter.
+     * @param {{maxDiameter: number, minDiameter?: number, step?: number, segments?: number}} [config.ring] Place a ring instead of drawing a path, sized in feet. The mouse wheel changes the diameter.
      * @param {boolean} [config.sides] Ask which side is active once the shape is done.
-     * @param {number} [config.sideDepth] Depth of the side preview in scene units.
+     * @param {number} [config.sideDepth] Depth of the side preview in feet.
      * @param {number} [config.color] Preview colour.
      * @param {{path: number, side: number}} [config.highlightTokens] Outline colours for visible tokens the path crosses and tokens inside the side band. Omit for no outlines.
      * @param {Function} [config.summary] Receives the preview state `{mode, points, closed, side, sideShapes, crossed, inSide}` (points include the segment following the cursor) and returns a line of text for the help panel.
@@ -50,7 +50,13 @@ export class PathCrosshairs {
      */
     static async show(config = {}) {
         PathCrosshairs.active?.finish(null);
-        const tool = new PathCrosshairs({closed: config.straight ? 'never' : 'allow', sides: true, sideDepth: 10, color: 0xff6400, ...config});
+        const toUnits = distance => distanceUtils.convertDistance(canvas.scene, distance);
+        config = {closed: config.straight ? 'never' : 'allow', sides: true, sideDepth: 10, color: 0xff6400, ...config};
+        config.maxLength = toUnits(config.maxLength);
+        config.sideDepth = toUnits(config.sideDepth);
+        if (config.panels) config.panels = {...config.panels, size: toUnits(config.panels.size)};
+        if (config.ring) config.ring = {...config.ring, maxDiameter: toUnits(config.ring.maxDiameter), minDiameter: toUnits(config.ring.minDiameter ?? 5), step: toUnits(config.ring.step ?? 5)};
+        const tool = new PathCrosshairs(config);
         PathCrosshairs.active = tool;
         return tool.run();
     }
@@ -300,7 +306,7 @@ export class PathCrosshairs {
         if (this.mode !== 'ring') return;
         event.preventDefault();
         event.stopPropagation();
-        const {maxDiameter, minDiameter = 5, step = 5} = this.config.ring;
+        const {maxDiameter, minDiameter, step} = this.config.ring;
         this.diameter = Math.clamp(this.diameter - Math.sign(event.deltaY) * step, minDiameter, maxDiameter);
         this.refresh();
     }
@@ -411,9 +417,9 @@ export class PathCrosshairs {
                 graphics.lineStyle(width / 2, 0xffffff, this.nearLast(this.cursor) || this.lengthUsedUp() ? 1 : 0.6).drawRect(last.x - width * 2.5, last.y - width * 2.5, width * 5, width * 5);
             }
             const used = this.usedLength(this.points.length ? [...this.points, next] : []);
-            label = this.config.maxLength ? used.toNearest(0.5) + ' / ' + this.config.maxLength + ' ' + canvas.scene.grid.units : '';
+            label = this.config.maxLength ? used.toNearest(0.5) + ' / ' + this.config.maxLength.toNearest(0.1) + ' ' + canvas.scene.grid.units : '';
         } else if (this.mode === 'ring') {
-            label = this.diameter + ' ' + canvas.scene.grid.units;
+            label = this.diameter.toNearest(0.1) + ' ' + canvas.scene.grid.units;
         } else {
             label = _loc('CAT.Crosshairs.Sides.' + (this.side ?? 'left').capitalize());
         }

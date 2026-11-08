@@ -1,12 +1,27 @@
 # 0.1.8 Release:
 ## Update Notes:
-- New `formula` configuration type. The medkit shows the system's formula input and refuses a formula that does not parse. `deterministic: true` also refuses dice.
+- New `formula` configuration type. The CatKit shows the system's formula input and refuses a formula that does not parse. `deterministic: true` also refuses dice.
 - Aura radius and value, summon bonuses and summon counts use the formula type.
 - Document property formulas share the formula type's field and its invalid formula message.
 - `effectUtils.createEffects` passes `effectOptions` to the creation for the user's own documents too, not only through the GM, so `keepId` works either way.
-- Generic config options can take `showIf`, a function of the generic's current values. The medkit hides the option when it returns false.
+- Generic config options can take `showIf`, a function of the generic's current values. The CatKit hides the option when it returns false.
 - A CatKit opened before CAT finishes loading automations says so, and refreshes once loading is done.
+- API break: `tokenUtils.getDistance` drops `convertToFt` and always returns feet. Distance helpers take feet and convert to the scene's grid units themselves. This covers `tokenUtils.findNearby`, `slideToken`, `teleportToken`, `displaceToken`, `aimDestination` and `movementSpent`, `crosshairUtils.aimCrosshair` (including `crosshairsConfig.size`), `drawPath` and `horizontalReach`, `summonUtils.placeSummon` and `placeSummons`, `regionUtils.createPathRegions` and the path drawing tool. Callers that passed scene units must pass feet.
+- API break: `genericUtils.convertDistance` moves to the new `distanceUtils`. It uses the system's length units, so 5 ft is exactly 1.5 m. Units the system doesn't define count as feet. New `distanceUtils.toFeet` converts back.
+- New helpers read a document's own distance and return feet: `activityUtils.getRange` and `getTemplateSize`, `itemUtils.getRange` (value, long and reach), `actorUtils.getSpeed` and `getSense`, and `workflowUtils.getRange` for midi-qol's measured range.
+- New helpers take feet for scene geometry: `distanceUtils.toPixels`, `toGridSpaces`, `fromGridSpaces` and `measureDistance`, `tokenUtils.measureMovement` and `heightAboveFloor`, `regionUtils.createRegionLight`, and a `height` option on `regionUtils.createPathRegions`.
+- New `dialogUtils.distanceDialog` offers distance buttons in feet, labeled in the scene's units.
+- On metric worlds, applying an automation through the CatKit or dropping an automated item converts its ranges, reach, areas and its effects' plain-number speed and sense changes to meters. An item only converts once.
+- On metric worlds, effects created through `effectUtils.createEffects` convert the same way.
+- Enchantments convert range changes to the enchanted item's units.
+- Pushes and pulls round to the nearest whole grid space, with at least one space for any nonzero distance.
+- On gridded scenes, a range in feet rounds to the nearest whole grid space, with at least one space, so an adjacent creature is within 5 feet on any grid. This covers `tokenUtils.findNearby`, aura radii, crosshair and drawing ranges, reach checks and the new `tokenUtils.isWithinDistance` and `distanceUtils.isWithinRange`. Gridless scenes compare feet directly.
+- Aura radii, the Weapon Mastery Push buttons, summon activity ranges and region per-distance triggers follow the scene's grid units.
+- `tokenUtils.aimDestination` highlights the spaces in `allowedPoints` while aiming.
+- Cleave's weapon reach, grapple reach, sense ranges in obscured regions, summon activity ranges and the Minimum Base Range restriction read the document's own units.
+- Range alternate attribute bonuses are in feet and convert to the range's units.
 ## Bug Fixes:
+- `crosshairUtils.aimCrosshair` results carry the token's elevation, so teleports to an aimed space no longer fail with "elevation must be a number".
 - Monster feature automations only match their own monster. A character's feature never picks up a monster's automation of the same name.
 - Grapple and shove size check macros receive the check's identifier and size in `data`. They received nothing, so a macro could not tell a grapple from a shove.
 
