@@ -1,7 +1,7 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import {D20Bonus, DamageBonus} from '../lib/_module.mjs';
 import constants from '../lib/constants.mjs';
-import {automationUtils, genericUtils, queryUtils, tokenUtils, uiUtils} from './_module.mjs';
+import {automationUtils, distanceUtils, genericUtils, queryUtils, tokenUtils, uiUtils} from './_module.mjs';
 
 /**
  * A token's name for display, replaced with a generic label when names are hidden.
@@ -70,6 +70,21 @@ async function buttonDialog(title, content, buttons, {displayAsRows = true, user
     }
     let result = await runDialog(userId, title, content, inputs, undefined, {width: 400});
     return result?.buttons ?? false;
+}
+/**
+ * Offer distance buttons in feet, labelled in the scene's units.
+ * @param {string} title Dialog title.
+ * @param {string} content Dialog content.
+ * @param {number[]} distances Distances in feet.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.none] Label for the button that picks no distance.
+ * @param {foundry.documents.Scene} [options.scene] Scene whose units label the buttons.
+ * @param {string} [options.userId] User shown the dialog.
+ * @returns {Promise<number>} The chosen distance in feet, 0 for none.
+ */
+async function distanceDialog(title, content, distances, {none, scene = canvas.scene, userId} = {}) {
+    const buttons = [[none, 0], ...distances.map(distance => [distanceUtils.formatDistance(scene, distance), distance])];
+    return Number(await buttonDialog(title, content, buttons, {userId}));
 }
 /**
  * Prompt for a single number.
@@ -192,7 +207,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
         switch (doc.documentName) {
             case 'Item': text = doc.system?.description.value; break;
             case 'Activity': text = doc.description.value || doc.item.system?.description.value; break;
-            case 'ActiveEffect': 
+            case 'ActiveEffect':
             default: text = doc.description; break;
         }
         return await uiUtils.enrichHTML(text, doc.getRollData ? doc.getRollData() : doc.actor?.getRollData() ?? {});
@@ -318,7 +333,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
         rolls = rolls.map(r => {
             if (!r._evaluated) return r;
             const clone = r.clone();
-            if (clone.options.original) 
+            if (clone.options.original)
                 for (const [index, results] of Object.entries(clone.options.original))
                     clone.terms[index].results = results;
             return clone;
@@ -862,7 +877,7 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
         let label = getTokenName(i, {hide: hideNames, counter});
         if (coverToken && !reverseCover) label += ' [' + tokenUtils.checkCover(coverToken, i, {displayName: true}) + ']';
         else if (coverToken) label += ' [' + tokenUtils.checkCover(i, coverToken, {displayName: true}) + ']';
-        if (displayDistance && coverToken) label += ' [' + tokenUtils.getDistance(coverToken, i, {convertToFt: false}).toFixed(2) + ' ' + canvas.scene.grid.units + ' ]';
+        if (displayDistance && coverToken) label += ' [' + distanceUtils.formatDistance(coverToken.parent, tokenUtils.getDistance(coverToken, i)) + ']';
         targetInputs.push({
             label,
             name: i.id,
@@ -935,6 +950,7 @@ async function selectDie(rolls = [], title, content, {max = 1, userId = game.use
 }
 export default {
     buttonDialog,
+    distanceDialog,
     numberDialog,
     selectDialog,
     selectDocumentDialog,

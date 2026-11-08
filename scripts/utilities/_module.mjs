@@ -7,6 +7,7 @@ export {default as compendiumUtils} from './compendiumUtils.mjs';
 export {default as crosshairUtils} from './crosshairUtils.mjs';
 export {default as dataUtils} from './dataUtils.mjs';
 export {default as dialogUtils} from './dialogUtils.mjs';
+export {default as distanceUtils} from './distanceUtils.mjs';
 export {default as documentUtils} from './documentUtils.mjs';
 export {default as effectUtils} from './effectUtils.mjs';
 export {default as folderUtils} from './folderUtils.mjs';

@@ -1,7 +1,7 @@
 /** @import Item5e from "../../dnd5e/module/documents/item.mjs" */
 
 import {constants, Logging} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, documentUtils, effectUtils, genericUtils, queryUtils} from './_module.mjs';
+import {activityUtils, actorUtils, distanceUtils, documentUtils, effectUtils, genericUtils, queryUtils} from './_module.mjs';
 const activityVisibilityLocks = new Map();
 
 /**
@@ -84,7 +84,7 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
         const riderEffects = effects.filter(e => typeof e === 'object');
         const riderItems = items.filter(i => typeof i === 'object').map(i => (genericUtils.setProperty(i, 'flags.dnd5e.enchantment.origin', enchantment.uuid), i));
         if (riderEffects.length) await effectUtils.createEffects(item, riderEffects, {forceGM, parentEntity: enchantment});
-        if (riderItems.length) await createItems(item.actor, riderItems, {favorite: favoriteItems, parentEntity: enchantment}); 
+        if (riderItems.length) await createItems(item.actor, riderItems, {favorite: favoriteItems, parentEntity: enchantment});
     }
     return enchantment;
 }
@@ -462,7 +462,17 @@ function canUseMastery(item, mastery = item?.system.mastery) {
     if (item.actor.type !== 'character') return item.system.mastery === mastery;
     return !!item.system.masteryOptions?.some(option => option.value === mastery);
 }
+/**
+ * Get the item's range, long range and reach in feet.
+ * @param {Item5e} item Item to read from.
+ * @returns {{value: number|undefined, long: number|undefined, reach: number|undefined}}
+ */
+function getRange(item) {
+    const {value, long, reach, units} = item.system.range ?? {};
+    return {value: distanceUtils.lengthToFeet(value, units), long: distanceUtils.lengthToFeet(long, units), reach: distanceUtils.lengthToFeet(reach, units)};
+}
 export default {
+    getRange,
     getBaseWeaponLabel,
     canUseMastery,
     getMasteryLabel,

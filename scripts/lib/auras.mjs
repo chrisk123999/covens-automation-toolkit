@@ -1,4 +1,4 @@
-import {actorUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, rollUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
+import {actorUtils, dataUtils, distanceUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, regionUtils, rollUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 import {constants, Events, Logging} from './_module.mjs';
 const state = {
     ready: false,
@@ -86,7 +86,7 @@ function createEntry(token, document, descriptor) {
     const hostItem = getHostItem(document);
     const key = token.id + '.' + document.uuid + '.' + descriptor.id;
     try {
-        const radius = rollUtils.rollDiceSync(String(descriptor.radius ?? 0), {document: rollDocument, options: {maximize: true}}).total;
+        const radius = distanceUtils.toRangeUnits(token.parent, rollUtils.rollDiceSync(String(descriptor.radius ?? 0), {document: rollDocument, options: {maximize: true}}).total);
         const value = descriptor.value?.formula ? rollUtils.rollDiceSync(String(descriptor.value.formula), {document: rollDocument, options: {maximize: true}}).total : undefined;
         return {
             key,

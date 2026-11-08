@@ -1,5 +1,5 @@
 /** @import Actor5e from '../../dnd5e/module/documents/actor/actor.mjs'; */
-import {automationUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
+import {automationUtils, dialogUtils, distanceUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
 
 /**
  * Get all applicable effects on an actor, optionally including item-applied enchantments (not by default).
@@ -180,6 +180,26 @@ function hasSpellSlots(actor, atLeast = 0) {
 function getSize(actor, returnString) {
     const traits = actor.system.traits;
     return returnString ? traits.size : traits.sizeNumeric;
+}
+/**
+ * Get one of the actor's speeds in feet.
+ * @param {Actor5e} actor Actor to read from.
+ * @param {string} [type] Movement type, or max for the fastest.
+ * @returns {number}
+ */
+function getSpeed(actor, type = 'walk') {
+    const movement = actor.system.attributes.movement;
+    return distanceUtils.lengthToFeet(type === 'max' ? movement.max : movement.speeds?.[type], movement.units) ?? 0;
+}
+/**
+ * Get one of the actor's sense ranges in feet.
+ * @param {Actor5e} actor Actor to read from.
+ * @param {string} sense Sense key, such as darkvision.
+ * @returns {number}
+ */
+function getSense(actor, sense) {
+    const senses = actor.system.attributes.senses;
+    return distanceUtils.lengthToFeet(senses.ranges?.[sense], senses.units) ?? 0;
 }
 
 /**
@@ -597,6 +617,8 @@ export default {
     checkTrait,
     hasSpellSlots,
     getSize,
+    getSpeed,
+    getSense,
     getEffectByStatusID,
     applyConditions,
     getItemByIdentifier,

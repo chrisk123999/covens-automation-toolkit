@@ -1,5 +1,5 @@
 import {constants} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
+import {activityUtils, actorUtils, distanceUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 /**
  * Midi workflow options that skip the attack and damage prompts.
  * @param {boolean} fast Skip the prompts.
@@ -537,6 +537,22 @@ function getCastLevel(workflow) {
     return Math.max(castData.castLevel ?? -1, castData.baseLevel ?? -1);
 }
 /**
+ * Get midi-qol's measured range for the workflow in feet.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @returns {number|undefined}
+ */
+function getRange(workflow) {
+    const range = workflow.rangeDetails?.range;
+    if (!range || !workflow.activity) return range;
+    const units = workflow.activity.range?.units;
+    const sceneUnits = workflow.token?.document.parent.grid.units?.toLowerCase();
+    if (units === 'touch') return itemUtils.getRange(workflow.item).reach ?? distanceUtils.toFeet(workflow.token.document.parent, range);
+    if (units === 'mi' && ['feet', 'ft'].includes(sceneUnits)) return range;
+    if (units === 'mi' && ['yards', 'yd', 'yds'].includes(sceneUnits)) return range * 3;
+    if (units === 'km' && ['meter', 'm', 'meters', 'metre', 'metres'].includes(sceneUnits)) return dnd5e.utils.convertLength(range, 'm', 'ft');
+    return dnd5e.utils.convertLength(range, units, 'ft', {strict: false});
+}
+/**
  * Swap the workflow's activity for a modified copy, by cloning its item in memory.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @param {object} activityData Replacement data for the activity currently in use.
@@ -809,6 +825,7 @@ export default {
     getDamageTypes,
     getDamageDealt,
     getCastLevel,
+    getRange,
     setActivity,
     bonusAttack,
     addAttackRollPart,

@@ -29,7 +29,8 @@ async function createEffects(document, effectDatas, {forceGM = false, macros, ef
                 thisMacros.push({type: macroGroup.type, macros: applicableMacros});
             });
         }
-        return dataUtils.buildEffectData(e, {macros: thisMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities, favoriteActivities, parentEntity});
+        const effectData = dataUtils.buildEffectData(e, {macros: thisMacros, createAnimation, deleteAnimation, createAnimationOptions, deleteAnimationOptions, rules, specialDuration, vae, unhideActivities, favoriteActivities, parentEntity});
+        return document.documentName === 'Item' ? dataUtils.convertToItemUnits(effectData, document) : effectData;
     });
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
     let effects;
@@ -122,7 +123,7 @@ function getOriginActivitySync(effect) {
 }
 /**
  * Retrieve the source Actor or Item, or null if it could not be determined.
- * @param {ActiveEffect} effect 
+ * @param {ActiveEffect} effect
  * @returns {Promise<Activity|ActiveEffect|Actor5e|Item5e|RegionBehavior|null>}
  */
 async function getOrigin(effect) {

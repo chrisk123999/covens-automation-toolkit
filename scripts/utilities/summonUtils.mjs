@@ -31,7 +31,7 @@ async function createSummon(ownerActor, sourceActor, {created = game.time.worldT
 /**
  * Place a summon on the canvas with a crosshair.
  * @param {Summon} summon Summon to place.
- * @param {number} range Scene units the crosshair is bounded to.
+ * @param {number} range Feet the crosshair is bounded to.
  * @param {object} [options] Additional options.
  * @param {Function} [options.preAnimation] Runs before the token appears.
  * @param {Function} [options.postAnimation] Runs after the token appears.
@@ -106,7 +106,7 @@ function getSummonsBySource(document) {
 /**
  * Place several summons in turn, stopping if one is cancelled.
  * @param {Summon[]} summons Summons to place.
- * @param {number} range Scene units each crosshair is bounded to.
+ * @param {number} range Feet each crosshair is bounded to.
  * @param {object} [options] Additional options.
  * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check. Defaults to each summon's owner.
  * @returns {Promise<foundry.documents.TokenDocument[]|undefined>} The tokens placed before any cancellation.
@@ -117,7 +117,7 @@ function placeSummons(summons, range, {token} = {}) {
 /**
  * Place every unplaced summon created by this item or activity.
  * @param {foundry.abstract.Document} document Item or activity that did the summoning.
- * @param {number} range Scene units each crosshair is bounded to.
+ * @param {number} range Feet each crosshair is bounded to.
  * @param {object} [options] Additional options.
  * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check.
  * @returns {Promise<foundry.documents.TokenDocument[]|undefined>}
