@@ -1276,6 +1276,7 @@
             "NoSequencer": "Sequencer is disabled or not installed! Sequencer is required to use animations.",
             "NoSpellCompendiums": "You do not have any spell compendiums enabled in settings!",
             "OutdatedSequencer": "Sequencer is out of date! In order to use animations, CAT requires a minimum of version {minSequencerVersion}",
+            "RequiresGM": "An active GM user may be required to use this automation!",
             "UnregisteredSpellList": "There is no spell list registered for the key {key}."
         },
         "Troubleshooter": {
@@ -1329,12 +1330,12 @@
             },
             "Footer": {
                 "FixAll": "Fix All",
-                "Save": "Save Troubleshooter"
+                "Save": "Export Troubleshooter"
             },
             "Save": {
-                "Title": "Save Troubleshooter",
+                "Title": "Export Troubleshooter",
                 "Drop": "Optionally drop an actor or item you're having issues with here.",
-                "Saved": "Troubleshooter report saved."
+                "Saved": "Troubleshooter report downloaded."
             },
             "HideWarnings": {
                 "Name": "Hide Troubleshooter Warnings",

@@ -1,3 +1,4 @@
+import {Logging} from '../lib/_module.mjs';
 import {genericUtils} from './_module.mjs';
 /**
  * The user id queries should be sent to: midi's preferred GM when active, otherwise the active GM.
@@ -10,6 +11,7 @@ function gmID() {
         const preferredGM = game.users.get(preferredGMId);
         if (preferredGM?.active) gmID = preferredGM.id;
     }
+    if (!gmID) Logging.addMacroWarning('cat', 'queryUtils', 'CAT.Error.RequiresGM', {notify: true});
     return gmID;
 }
 /**
