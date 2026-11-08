@@ -24,6 +24,7 @@
 - `crosshairUtils.aimCrosshair` results carry the token's elevation, so teleports to an aimed space no longer fail with "elevation must be a number".
 - Monster feature automations only match their own monster. A character's feature never picks up a monster's automation of the same name.
 - Grapple and shove size check macros receive the check's identifier and size in `data`. They received nothing, so a macro could not tell a grapple from a shove.
+- `compendiumUtils.getDocumentByName` no longer fails with a server error on Item compendiums.
 
 # 0.1.7 Release:
 ## Update Notes:

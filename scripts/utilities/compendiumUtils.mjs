@@ -102,7 +102,7 @@ async function getDocumentByIdentifier(packId, identifier, {object = false, desc
 async function getDocumentByName(packId, name, {rules} = {}) {
     const pack = game.packs.get(packId);
     if (!pack) return;
-    const index = await pack.getIndex({fields: ['system.source.rules']});
+    const index = await pack.getIndex({fields: ['system.source']});
     const found = index.find(i => i.name === name && (!rules || (i.system?.source?.rules || '2014') === rules));
     if (!found) return;
     return await fromUuid(found.uuid);
