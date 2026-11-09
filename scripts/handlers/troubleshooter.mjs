@@ -18,6 +18,7 @@ const TROUBLESHOOTER = {
     requiredSettings: {
         'dnd5e': {
             allowPolymorphing: {fix: true},
+            allowSummoning: {fix: true},
             rulesVersion: {}
         },
         'dae': {

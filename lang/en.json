@@ -1352,7 +1352,7 @@
                 "Disable": "Disable Module"
             },
             "Required": {
-                "Expected": "{value}: {fix}",
+                "Expected": "{value} → {fix}",
                 "ClientScope": "(client setting)",
                 "GmAutoDamage": "GM Auto Roll Damage",
                 "Outdated": "{version}: {minimum} or newer"
@@ -1499,6 +1499,9 @@
                 "RangeHint": "Feet from the summoner the summons can be placed. 0 uses the activity's range.",
                 "CommandActivities": "Command Activities",
                 "CommandActivitiesHint": "Activities revealed while this item's summons exist.",
+                "ControlActivity": "Control Activity",
+                "ControlActivityHint": "Activity that opens the character sheet(s) for placed summons.",
+                "ControlPrompt": "Open character sheets for the selected summons.",
                 "HostileOnParentEnd": "Hostile When Concentration Ends",
                 "HostileOnParentEndHint": "The summons stay when concentration ends and turn hostile instead of being dismissed.",
                 "ReplaceExisting": "Replace Existing",
@@ -1555,6 +1558,7 @@
                 "TierPrompt": "Choose how many creatures appear.",
                 "Pick": "Choose up to {count} creatures.",
                 "PickOne": "Choose a creature.",
+                "PlaceSummonFirst": "You must place summons from {feature} before using {activity}!",
                 "NoMatching": "No creatures in the monster compendiums match this summon.",
                 "PickMode": "Creature Choice",
                 "PickModeHint": "All creates every entry. One lets the user pick a single entry. Budget lets the user split a budget across the entries, each costing its weight.",

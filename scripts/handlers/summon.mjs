@@ -1,5 +1,5 @@
 import {constants, Logging} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, automationUtils, compendiumUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, rollUtils, summonUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, actorUtils, automationUtils, compendiumUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, rollUtils, summonUtils, tokenUtils, uiUtils, workflowUtils} from '../utilities/_module.mjs';
 const pendingUses = new Map();
 function getStored(document) {
     return document?.flags?.cat?.genericConfig?.cat?.summon;
@@ -22,7 +22,13 @@ function getCommandHost(activity) {
     return [item, ...item.system.activities].find(document => {
         if (!getStored(document)) return false;
         const config = getConfig(document);
-        return [config.placeActivityId, config.recallActivityId, config.moveActivityId, config.dismissActivityId].includes(activity.id);
+        return [
+            config.placeActivityId,
+            config.recallActivityId,
+            config.moveActivityId,
+            config.dismissActivityId,
+            config.controlActivityId
+        ].includes(activity.id);
     });
 }
 function resolveFormula(formula, rollData) {
@@ -209,7 +215,15 @@ function getRange(activity, config) {
     return config.range || activityUtils.getRange(activity) || 5;
 }
 function getCommandIds(config) {
-    return [config.placeActivityId, config.recallActivityId, config.moveActivityId, config.dismissActivityId, config.followUpActivityId, ...(config.commandActivityIds ?? [])].filter(Boolean);
+    return [
+        config.placeActivityId,
+        config.recallActivityId,
+        config.moveActivityId,
+        config.dismissActivityId,
+        config.followUpActivityId,
+        config.controlActivityId,
+        ...(config.commandActivityIds ?? [])
+    ].filter(Boolean);
 }
 function getCommandIdentifiers(item, config) {
     return getCommandIds(config).map(id => item.system.activities.get(id)).filter(Boolean).map(activity => activity.identifier);
@@ -243,15 +257,23 @@ async function followUp(host, config, timing) {
 }
 async function command(host, activity) {
     const config = getConfig(host);
-    const token = activity.getUsageToken?.()?.document ?? actorUtils.getFirstToken(activity.actor);
     const range = activityUtils.getRange(activity) || getRange(activity, config);
-    if (activity.id === config.placeActivityId) await summonUtils.placeAllSourceSummons(host, range, {token});
-    if (activity.id === config.recallActivityId) await summonUtils.recallAllSourceSummons(host);
-    if (activity.id === config.dismissActivityId) await Promise.all(summonUtils.getSummonsBySource(host).map(summon => summonUtils.deleteSummon(summon)));
-    if (activity.id !== config.moveActivityId) return;
-    for (const summon of summonUtils.getSummonsBySource(host).filter(summon => summon.token)) await summon.move(range, {token});
-    await leash({document: host});
-    await followUp(host, config, 'move');
+    const token = activity.getUsageToken?.()?.document ?? actorUtils.getFirstToken(activity.actor);
+    const needPlaced = [config.controlActivityId, config.moveActivityId, config.recallActivityId].includes(activity.id);
+    const placedSummons = needPlaced ? summonUtils.getSummonsBySource(host).filter(summon => summon.token) : undefined;
+    if (needPlaced && !placedSummons.length)
+        return genericUtils.notify('CAT.Macros.Summon.PlaceSummonFirst', {type: 'warn', format: {feature: host.name, activity: activity.name}});
+    switch (activity.id) {
+        case config.placeActivityId: await summonUtils.placeAllSourceSummons(host, range, {token}); break;
+        case config.recallActivityId: await summonUtils.recallAllSourceSummons(host); break;
+        case config.dismissActivityId: await Promise.all(summonUtils.getSummonsBySource(host).map(summon => summonUtils.deleteSummon(summon))); break;
+        case config.controlActivityId: await openActorSheets(host, placedSummons); break;
+        case config.moveActivityId:
+            for (const summon of placedSummons) await summon.move(range, {token});
+            await leash({document: host});
+            await followUp(host, config, 'move');
+            break;
+    }
 }
 function preUseActivity(activity, usageConfig, dialogConfig) {
     const host = getHost(activity);
@@ -284,6 +306,43 @@ async function leash({document}) {
     if (!maxDistance || !token) return;
     const summons = summonUtils.getSummonsBySource(document).filter(summon => summon.token && !tokenUtils.isWithinDistance(token, summon.token, maxDistance));
     await Promise.all(summons.map(summon => summonUtils.deleteSummon(summon)));
+}
+const COLLATE_OFFSET = 30;
+async function openActorSheets(host, placed) {
+    if (placed.length > 1) {
+        const tokens = placed.map(p => p.token);
+        const choices = await dialogUtils.selectTargetDialog(host.name, 'CAT.Macros.Summon.ControlPrompt', tokens, {
+            preselected: tokens.reduce((obj, t) => (obj[t.id] = true, obj), {}),
+            skipDeadAndUnconscious: false,
+            maxAmount: tokens.length,
+            type: 'multiple'
+        });
+        if (!choices?.result?.length) return;
+        placed = choices.result; // Summon[] -> TokenDocument[]
+    }
+    const actorSheet = host.actor.sheet;
+    const win = actorSheet.element?.ownerDocument.defaultView ?? window;
+    const center = {x: win.innerWidth * 0.5, y: win.innerHeight * 0.5};
+    let top = actorSheet.position?.top, left = actorSheet.position?.left;
+    if (actorSheet.rendered && !actorSheet.minimized) await actorSheet.minimize();
+    for (const summon of placed) {
+        const summonSheet = summon.actor.sheet;
+        if (!summonSheet.rendered) {
+            await summonSheet.render({force: true});
+            const p = summonSheet.position;
+            const distY = Math.abs(top - p.top);
+            const distX = Math.abs(left - p.left);
+            if (distX < COLLATE_OFFSET || distX > 2 * COLLATE_OFFSET)
+                left += (Math.sign(center.x - p.left) || 1) * COLLATE_OFFSET;
+            if (distY < COLLATE_OFFSET || distY > 2 * COLLATE_OFFSET)
+                top += (Math.sign(center.y - p.top) || 1) * COLLATE_OFFSET;
+            summonSheet.setPosition({top, left});
+        }
+        if (summonSheet.minimized) await summonSheet.maximize();
+        uiUtils.bringToFront(summonSheet);
+        left = summonSheet.position.left;
+        top = summonSheet.position.top;
+    }
 }
 async function deleted({document, summon}) {
     if (summonUtils.getSummonsBySource(document).some(other => other !== summon)) return;
@@ -479,6 +538,13 @@ const summon = {
             category: 'behavior',
             label: 'CAT.Macros.Summon.MoveActivity',
             hint: 'CAT.Macros.Summon.MoveActivityHint'
+        },
+        controlActivityId: {
+            default: '',
+            type: 'selectActivity',
+            category: 'behavior',
+            label: 'CAT.Macros.Summon.ControlActivity',
+            hint: 'CAT.Macros.Summon.ControlActivityHint'
         },
         commandActivityIds: {
             default: [],
