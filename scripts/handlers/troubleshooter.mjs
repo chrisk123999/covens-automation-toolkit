@@ -44,6 +44,7 @@ const TROUBLESHOOTER = {
         },
         'core': {
             'permissions.QUERY_USER': {expected: roles => roles?.includes(CONST.USER_ROLES.PLAYER), fix: Object.values(CONST.USER_ROLES).filter(Boolean), label: CONST.USER_PERMISSIONS.QUERY_USER.label},
+            'permissions.TOKEN_CREATE': {expected: roles => roles?.includes(CONST.USER_ROLES.PLAYER), fix: Object.values(CONST.USER_ROLES).filter(Boolean), label: CONST.USER_PERMISSIONS.TOKEN_CREATE.label},
             'permissions.REGION_CREATE': {expected: roles => roles?.includes(CONST.USER_ROLES.PLAYER), fix: Object.values(CONST.USER_ROLES).filter(Boolean), label: CONST.USER_PERMISSIONS.REGION_CREATE.label}
         }
     }
@@ -61,9 +62,10 @@ function formatValue(value) {
     }
     return value instanceof Object ? stringifyAsList(value) : String(value);
 }
-function usersDetail(permission) {
+function usersDetail(permission, value) {
+    const roles = value?.map(role => CONST.USER_ROLE_NAMES[role]).join(', ');
     const allowed = game.users.filter(user => user.hasPermission(permission)).length;
-    return _loc('CAT.Troubleshooter.Report.Permissions.Users', {allowed, denied: game.users.size - allowed});
+    return `[${roles}] ${_loc('DOCUMENT.Users')} ${_loc('CAT.Troubleshooter.Report.Permissions.Users', {allowed, denied: game.users.size - allowed})}`;
 }
 function moduleName(id) {
     if (id === 'core') return _loc('CAT.Troubleshooter.Sections.foundry');
@@ -117,7 +119,7 @@ function settingCheck({module, key, fix, expected = value => value === fix, labe
         run: () => {
             const value = read();
             const status = fix === undefined ? 'info' : expected(value) ? 'pass' : 'fail';
-            if (module === 'core') return {status, label: name(), detail: usersDetail(path)};
+            if (module === 'core') return {status, label: name(), detail: usersDetail(path, value)};
             const detail = status === 'fail' ? _loc('CAT.Troubleshooter.Required.Expected', {value: String(value), fix: String(fix)}) : String(value);
             const scope = setting().scope === 'client' ? ' ' + _loc('CAT.Troubleshooter.Required.ClientScope') : '';
             return {status, label: name(), detail: detail + scope};
@@ -269,7 +271,10 @@ const REPORT_CHECKS = [
     {
         id: 'permissions.relevant',
         section: 'permissions',
-        run: () => TROUBLESHOOTER.permissions.map(key => ({status: 'info', label: _loc(CONST.USER_PERMISSIONS[key].label), detail: usersDetail(key)}))
+        run: () => {
+            const setting = game.settings.get('core', 'permissions');
+            return TROUBLESHOOTER.permissions.map(key => ({status: 'info', label: _loc(CONST.USER_PERMISSIONS[key].label), detail: usersDetail(key, setting[key])}));
+        }
     },
     settingsDump('dnd5e'),
     settingsDump('cat'),

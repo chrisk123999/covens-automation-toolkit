@@ -2726,7 +2726,6 @@ cat-multi-combobox {
     td + td {
         padding-left: 0.5rem;
         text-align: right;
-        white-space: nowrap;
     }
 
     .flexrow {
