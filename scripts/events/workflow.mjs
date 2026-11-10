@@ -47,6 +47,24 @@ async function postAttackRoll(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollMissedBonuses, workflow).run();
     await optionalBonus.attack(workflow);
 }
+async function checkHitTarget(context) {
+    const token = context.token instanceof TokenDocument ? context.target : context.target.document;
+    const hitData = {ac: context.targetAC, isHit: context.isHit, isHitEC: context.isHitEC};
+    await new Events.TokenHitWorkflowEvent(constants.workflowPasses.bonusAC, context.workflow, token, context.attackTotal, hitData).run();
+    await new Events.TokenHitWorkflowEvent(constants.workflowPasses.changeHit, context.workflow, token, context.attackTotal, hitData).run();
+    // Crit/Fumble matching skips midi's default attribution from this hook, which only shows the hook name.
+    // Macros should modify crit/fumble through workflow.tracker, preferably in an earlier event.
+    context.isCritical = context.workflow.isCritical;
+    context.isFumble = context.workflow.isFumble;
+    context.isHitEC = hitData.isHitEC;
+    context.targetAC = hitData.ac;
+    context.isHit = hitData.isHit;
+}
+function hitsChecked(workflow) {
+    const acAttributions = workflowUtils.getWorkflowProperty(workflow, 'acAttributions');
+    for (const [uuid, attributions] of foundry.utils.objectEntries(acAttributions))
+        if (attributions?.length) workflow.hitDisplayData[uuid]?.acIcons.push(...attributions);
+}
 async function attackRollComplete(workflow) {
     regionAttacks.complete(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollComplete, workflow).run();
@@ -99,6 +117,8 @@ export default {
     attackRollConfig,
     preRollAttack,
     postAttackRoll,
+    checkHitTarget,
+    hitsChecked,
     attackRollComplete,
     savesComplete,
     damageRollComplete,

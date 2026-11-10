@@ -1,4 +1,4 @@
-import {constants} from '../lib/_module.mjs';
+import {constants, Logging} from '../lib/_module.mjs';
 import {activityUtils, actorUtils, distanceUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 /**
  * Midi workflow options that skip the attack and damage prompts.
@@ -775,6 +775,27 @@ function grantRollModifier(options, type, tokenID, attributionID, attributionDis
     setWorkflowProperty(options, 'rollModifiers', mods);
 }
 /**
+ * Add information to armor class icons in the hit targets section of workflow chat cards. Use within `checkHits` events only.
+ * @param {MidiQOL.Workflow} workflow
+ * @param {foundry.documents.TokenDocument} target
+ * @param {object} attribution Requires at least one of {@link img}, {@link icon}, or {@link tooltip}.
+ * @param {string} [attribution.icon] CSS class for a font awesome icon.
+ * @param {string} [attribution.img] Filepath for an image icon.
+ * @param {string} [attribution.tooltip] Localized string tooltip on the icon.
+ */
+function addACAttribution(workflow, target, {icon, img, tooltip} = {}) {
+    if (!icon && !img && !tooltip)
+        Logging.addMacroWarning('cat', 'addACAttribution', `An icon, image, or tooltip must be used for AC attributions! (item) ${workflow?.item.uuid} (target) ${target?.uuid}`);
+    const attributions = getWorkflowProperty(workflow, 'acAttributions') ?? {};
+    const attribution = {icon, img, tooltip};
+    if (tooltip && !icon && !img) icon = 'fas fa-bolt';
+    if (icon) attribution.cssClass = 'midi-qol-ac-icon-fa';
+    else if (img) attribution.cssClass = 'midi-qol-ac-icon-img cat-ac-icon';
+    attributions[target.uuid] ??= [];
+    attributions[target.uuid].push(attribution);
+    setWorkflowProperty(workflow, 'acAttributions', attributions);
+}
+/**
  * How long a spell lasts once scaled by the level it was cast at, capped at a day.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @returns {number} Duration in seconds.
@@ -839,6 +860,7 @@ export default {
     removeTargets,
     preventZeroHP,
     grantRollModifier,
+    addACAttribution,
     getScaledDuration,
     rollConfiguredSource,
     setNotSustainedRoll

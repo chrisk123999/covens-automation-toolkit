@@ -44,12 +44,15 @@ const cls = (key) => {
     switch (key) {
         case 'activeeffect': return CONFIG.ActiveEffect.documentClass;
         case 'combatant': return CONFIG.Combatant.documentClass;
+        case 'document': return foundry.abstract.Document;
+        case 'folder': return CONFIG.Folder.documentClass;
         case 'region': return CONFIG.Region.documentClass;
         case 'actor': return CONFIG.Actor.documentClass;
         case 'token': return CONFIG.Token.documentClass;
         case 'scene': return CONFIG.Scene.documentClass;
         case 'level': return CONFIG.Level.documentClass;
         case 'item': return CONFIG.Item.documentClass;
+        case 'd20': return CONFIG.Dice.D20Roll;
         default: return {name: 'INVALID'};
     }
 };
@@ -75,17 +78,28 @@ const VARS = {
     vehicles: () => variable(`${cls('actor').name}[]`, 'Any vehicle actors that include the trigger actor.'),
     groups: () => variable(`${cls('actor').name}[]`, 'Any group actors that include the trigger actor.'),
     regions: () => variable(`Set<${cls('region').name}>`, 'Any regions containing the trigger token.'),
-    level: (api) => classInstance(api, CONFIG.Level.documentClass, 'The scene level of the trigger token.'),
-    scene: (api) => classInstance(api, CONFIG.Scene.documentClass, 'The scene for the trigger token.'),
+    level: (api) => classInstance(api, cls('level'), 'The scene level of the trigger token.'),
+    scene: (api) => classInstance(api, cls('scene'), 'The scene for the trigger token.'),
 
     // Shared
     config: (_, {event}) => variable('object', INFO.config[event]),
     dialog: (_, {event}) => variable('object', INFO.dialog[event]),
     message: (_, {event}) => variable('object', INFO.message[event]),
     updates: (_, {event}) => variable('object', INFO.updates[event]),
-    targetToken: (api, {event}) => classInstance(api, CONFIG.Token.documentClass, INFO.targetToken[event]),
+    targetToken: (api, {event}) => classInstance(api, cls('token'), INFO.targetToken[event]),
     DamageBonus: (api) => classCompletion(api, DamageBonus, 'lib.DamageBonus', 'Used in optional bonus prompts.'),
     D20Bonus: (api) => classCompletion(api, D20Bonus, 'lib.D20Bonus', 'Used in optional bonus prompts.'),
+
+    // CheckHits
+    attackTotal: () => variable('number', 'Attack roll total plus bonuses granted by this target.'),
+    hitData: () => ({
+        ...variable('Object', 'Live copy of hit data for this target.'),
+        children: {
+            ac: property('number', 'Current AC for this target on this attack, including bonuses from midi and other previous macros.'),
+            isHit: property('boolean', 'Change to override the hit result.'),
+            isHitEC: property('boolean', 'Change to override hit result.')
+        }
+    }),
 
     // Damage
     ditem: () => variable('object', 'Live copy of workflow.damageItem.'),
@@ -94,11 +108,11 @@ const VARS = {
     tokens: () => variable(`${cls('token').name}[]`, 'Tokens in the trigger region.'),
 
     // Effect
-    effect: (api) => classInstance(api, CONFIG.ActiveEffect.documentClass, 'The trigger ActiveEffect.'),
+    effect: (api) => classInstance(api, cls('activeeffect'), 'The trigger ActiveEffect.'),
 
     // Combat
-    combatant: (api) => classInstance(api, CONFIG.Combatant.documentClass, 'Current combatant.'),
-    previousCombatant: (api) => classInstance(api, CONFIG.Combatant.documentClass, 'Previous combatant.'),
+    combatant: (api) => classInstance(api, cls('combatant'), 'Current combatant.'),
+    previousCombatant: (api) => classInstance(api, cls('combatant'), 'Previous combatant.'),
     previousRound: () => variable('number', 'Previous combat round.'),
     previousTurn: () => variable('number', 'Previous combat turn.'),
     round: () => variable('number', 'Current combat round.'),
@@ -113,8 +127,8 @@ const VARS = {
     },
 
     //Aura
-    source: (api) => classInstance(api, CONFIG.Actor.documentClass, 'The actor projecting the aura.'),
-    target: (api) => classInstance(api, CONFIG.Actor.documentClass, 'The actor tested against the aura.'),
+    source: (api) => classInstance(api, cls('actor'), 'The actor projecting the aura.'),
+    target: (api) => classInstance(api, cls('actor'), 'The actor tested against the aura.'),
     descriptor: () => variable('object', 'The aura descriptor returned by the bound aura generic.'),
     distance: () => variable('number', 'Edge to edge distance between the source and target tokens.'),
 
@@ -122,7 +136,7 @@ const VARS = {
     result: () => variable('object', 'Changes to apply from rest.'),
 
     // Check / Skill / Save / Tool
-    roll: (api) => classInstance(api, CONFIG.Dice.D20Roll, 'The trigger roll.'),
+    roll: (api) => classInstance(api, cls('d20'), 'The trigger roll.'),
 
     // Time
     worldTime: () => variable('number', 'Current world time.'),
@@ -137,14 +151,14 @@ const VARS = {
             fnDetails(summon.getTimeRemaining, `(worldTime) => number`, 'The remaining time before this summon expires. Pass in the current world time.');
             fnDetails(summon.place, `(range, {token} = {}) => Promise<${cls('token').name}>`, 'Place the summon within range of the specified token. Uses the summoner token by default. Returns the summoned token.');
             fnDetails(summon.recall, '() => Promise', 'Delete the summoned token.');
-            summon.folder = propertyClassInstance(api, CONFIG.Folder.documentClass, 'The sidebar folder that holds the template actor for the summon.');
-            summon.actor = propertyClassInstance(api, CONFIG.Actor.documentClass, 'The summoned actor.');
-            summon.token = propertyClassInstance(api, CONFIG.Token.documentClass, 'The summoned token.');
-            summon.owner = propertyClassInstance(api, CONFIG.Actor.documentClass, 'The summoner actor.');
-            summon.ownerToken = propertyClassInstance(api, CONFIG.Token.documentClass, 'The summoner token.');
-            summon.sourceDocument = propertyClassInstance(api, foundry.abstract.Document, 'The document used to create the summon.');
-            summon.sourceItem = propertyClassInstance(api, CONFIG.Item.documentClass, 'The item used to create the summon, or the item of the activity that did.');
-            summon.parent = propertyClassInstance(api, foundry.abstract.Document, 'The parent document of the summon, often a concentration effect.');
+            summon.folder = propertyClassInstance(api, cls('folder'), 'The sidebar folder that holds the template actor for the summon.');
+            summon.actor = propertyClassInstance(api, cls('actor'), 'The summoned actor.');
+            summon.token = propertyClassInstance(api, cls('token'), 'The summoned token.');
+            summon.owner = propertyClassInstance(api, cls('actor'), 'The summoner actor.');
+            summon.ownerToken = propertyClassInstance(api, cls('token'), 'The summoner token.');
+            summon.sourceDocument = propertyClassInstance(api, cls('document'), 'The document used to create the summon.');
+            summon.sourceItem = propertyClassInstance(api, cls('item'), 'The item used to create the summon, or the item of the activity that did.');
+            summon.parent = propertyClassInstance(api, cls('document'), 'The parent document of the summon, often a concentration effect.');
             summon.created = property('number', 'The world time when the summon was created.');
             summon.duration = property('number', 'The duration in world time this summon will last.');
             summon.parentUuid = property('string', 'Parent document uuid for this summon, often a concentration effect.');
@@ -174,8 +188,58 @@ const VARS = {
         return v;
     },
 
-    // Called
-    data: () => variable('object', 'Data provided by events called from macros.'),
+    // Called & Grapple
+    data: (api, {event, pass}) => {
+        switch(event) {
+            case 'called': return variable('object', 'Data provided by events called from macros.');
+            case 'grapple': {
+                const obj = variable('object', 'Live copy of data for this grapple event pass.');
+                const isPass = (p, tgt) => p === tgt || p.toLowerCase().includes(tgt.toLowerCase());
+                if (isPass(pass, constants.grapplePasses.sizeCheck)) return {
+                    ...obj, children: {
+                        identifier: property('string', 'Activity identifier: "grapple", "shove-prone", "shove-push".'),
+                        size: property('number', 'Numeric size of the attacker.')
+                    }
+                };
+                if (isPass(pass, constants.grapplePasses.preGrapple)) return {
+                    ...obj, children: {
+                        rules: property('string', '2014 or 2024.'),
+                        dc: property('number', 'Save or check DC.'),
+                        advantage: property('boolean', 'True grants the attacker advantage in the legacy grapple skill contest.'),
+                        reach: property('number', 'A target shoved this distance from the attacker breaks their grapple.'),
+                        sourceEffectData: property('object', 'Effect data for grapple attacker.'),
+                        targetEffectData: property('object', 'Effect data for grapple target.')
+                    }
+                };
+                if (isPass(pass, constants.grapplePasses.postGrapple)) return {
+                    ...obj, children: {
+                        rules: property('string', '2014 or 2024.'),
+                        sourceEffect: propertyClassInstance(api, cls('activeeffect'), 'Created attacker grapple effect.'),
+                        targetEffect: propertyClassInstance(api, cls('activeeffect'), 'Created target grapple effect.'),
+                        escapeItem: propertyClassInstance(api, cls('item'), 'Escape item on the grapple target.')
+                    }
+                };
+                if (isPass(pass, constants.grapplePasses.preEscape)) return {
+                    ...obj, children: {
+                        selected: {
+                            ...property('object', 'Data about which grapple is being escaped.'),
+                            children: {
+                                dc: property('number', 'The stored DC for escaping a grapple. Leaving this undefined prompts a skill check.'),
+                                effect: propertyClassInstance(api, cls('activeeffect'), 'The target grapple active effect chosen for this escape attempt.')
+                            }
+                        }
+                    }
+                };
+                if (isPass(pass, constants.grapplePasses.postEscape)) return {
+                    ...obj, children: {
+                        effect: propertyClassInstance(api, cls('activeeffect'), 'The target grapple active effect chosen for this escape attempt.'),
+                        remaining: property('({dc, effect})[]', 'Data for other remaining grapples on the escaping target.')
+                    }
+                };
+                return obj;
+            }
+        }
+    },
 
     // Movement
     destination: () => ({
@@ -194,7 +258,7 @@ const VARS = {
         }
     }),
     range: () => variable('number', 'Distance or range limit for movement.'),
-    sourceToken: (api) => classInstance(api, CONFIG.Token.documentClass, 'Token that initiated a displace or slide.'),
+    sourceToken: (api) => classInstance(api, cls('token'), 'Token that initiated a displace or slide.'),
     action: () => variable('string', 'One of CONFIG.Token.movement.actions.'),
     teleport: () => variable('boolean', 'Trigger was a teleport')
 };
@@ -204,7 +268,7 @@ const OVERRIDES = {
     actor: (_, {event}) => ({info: makeInfo(INFO.actor[event] || INFO.actor.none)}),
     item: () => ({info: makeInfo('The item for this workflow.')}),
     activity: () => ({info: makeInfo('The activity for this workflow.')}),
-    token: (api, {event}) => classInstance(api, CONFIG.Token.documentClass, INFO.token[event] || INFO.token.none)
+    token: (api, {event}) => classInstance(api, cls('token'), INFO.token[event] || INFO.token.none)
 };
 
 const INFO = {
@@ -231,8 +295,9 @@ const INFO = {
     },
     targetToken: {
         none: 'Target Token.',
-        roll: 'The token taking damage.',
-        aura: 'The token tested against the aura.'
+        roll: 'The hit or damaged token.',
+        aura: 'The token tested against the aura.',
+        grapple: 'The token attempting to avoid or escape a grapple or shove.'
     },
     config:{
         none: 'Configuration.',
@@ -290,6 +355,7 @@ function inContext(config, context, docType) {
         priority: variable('number', 'The priority of this macro.'),
         macroName: variable('string', 'The name of this macro.'),
         macro: variable('string', 'This macro.'),
+        pass: variable('string', 'The macro pass, without a scope prefix'),
         castData: {
             ...variable('object', 'Cast scaling info for spell effects.'),
             children: {
@@ -340,6 +406,7 @@ function dataForMacroEvent(event, pass) {
         case 'time': eventData = get(Events.TimeEvent); break;
         case 'summon': eventData = get(Events.SummonEvent); break;
         case 'called': eventData = get(Events.CalledEvent); break;
+        case 'grapple': eventData = get(Events.GrappleEvent); break;
         case 'item':
             if (isPass(pass, constants.itemPasses.munched)) {
                 eventData = get(Events.ItemsEvent);
@@ -350,6 +417,13 @@ function dataForMacroEvent(event, pass) {
         case 'roll':
             if (isPass(pass, constants.workflowPasses.preTargeting)) {
                 eventData = get(Events.PreTargetingWorkflowEvent);
+                break;
+            }
+            if ([
+                constants.workflowPasses.bonusAC,
+                constants.workflowPasses.changeHit
+            ].some(p => isPass(pass, p))) {
+                eventData = get(Events.TokenHitWorkflowEvent);
                 break;
             }
             if ([

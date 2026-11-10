@@ -2864,6 +2864,10 @@ cat-multi-combobox {
     }
 }
 
+.cat-ac-icon {
+    filter: none;
+}
+
 #cat-devtools-marker {
     width: auto;
     margin-bottom: 0.25rem;

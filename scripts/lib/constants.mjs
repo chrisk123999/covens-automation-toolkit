@@ -44,6 +44,10 @@ const workflowPasses = {
     attackRollMissedBonuses: 'attackRollMissedBonuses',
     /** Collects optional attack bonuses for the combined dialog. Return a `D20Bonus`. */
     optionalBonusAttack: 'optionalBonusAttack',
+    /** Per Target. Change armor class for this workflow. */
+    bonusAC: 'bonusAC',
+    /** Per Target. Change a hit into a miss or vice versa. */
+    changeHit: 'changeHit',
     /** The attack roll is final. Read only. */
     attackRollComplete: 'attackRollComplete',
     /** Saves are rolled. `hitTargets` and `failedSaves` can still be edited. */
@@ -86,6 +90,8 @@ const workflowHookNames = {
     preAttackRollConfig: 'midi-qol.premades.preAttackRollConfig',
     preRollAttack: 'dnd5e.preRollAttackV2',
     postAttackRoll: 'midi-qol.premades.postWaitForAttackRoll',
+    checkHitTarget: 'midi-qol.premades.checkHitTarget',
+    hitsChecked: 'midi-qol.hitsChecked',
     attackRollComplete: 'midi-qol.premades.postAttackRollComplete',
     preTargetSave: 'midi-qol.preTargetSave',
     savesComplete: 'midi-qol.premades.postSavesComplete',
