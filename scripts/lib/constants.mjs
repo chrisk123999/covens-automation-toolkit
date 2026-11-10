@@ -627,7 +627,7 @@ export async function getPackConstants() {
     for (const [id, {id: uuid}] of Object.entries(CONFIG.DND5E.tools)) {
         const tool = await fromUuid(uuid);
         if (!tool) continue;
-        tools.push({value: id, label: tool.name, image: tool.img});
+        tools.push({value: id, label: tool.name, image: tool.img, type: tool.system.type.value});
     }
 }
 const cachedTypes = new Set();

@@ -231,7 +231,7 @@ export default class CatRollResolver extends RollResolver {
                 const n = term.number ?? 1;
                 const useRollTotal = rollTotal && !!this.#rollContaining(term);
                 const mod = useRollTotal ? groupMod : 0;
-                group.results = [{...group.results[0], value: '', readonly: false, disabled: false, text: n > 1, minValue: n + mod, maxValue: n * term.faces + mod, denomination: _loc(useRollTotal ? 'CAT.Manual.RollTotal' : 'CAT.Manual.DiceTotal')}];
+                group.results = [{...group.results[0], value: '', readonly: false, disabled: false, text: n > 1, minValue: useRollTotal ? null : n, maxValue: n * term.faces + mod, denomination: _loc(useRollTotal ? 'CAT.Manual.RollTotal' : 'CAT.Manual.DiceTotal')}];
             } else {
                 for (const result of group.results) result.readonly = false;
             }

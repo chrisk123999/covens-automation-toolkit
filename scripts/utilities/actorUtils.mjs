@@ -600,7 +600,20 @@ function isBloodied(actor) {
 function isWounded(actor) {
     return actor.system.attributes.hp.value < actor.system.attributes.hp.effectiveMax;
 }
+/**
+ * Whether the actor has one of these tools, as a tool item or a check activity on another item.
+ * @param {Actor5e} actor Actor to act on.
+ * @param {string[]} baseItems Tool keys from CONFIG.DND5E.tools.
+ * @param {object} [options] Additional options.
+ * @param {boolean} [options.equipped] Only count equipped items.
+ * @returns {boolean}
+ */
+function hasTools(actor, baseItems, {equipped = true} = {}) {
+    return actor.items.some(item => (!equipped || item.system.equipped) && ((item.type === 'tool' && baseItems.includes(item.system.type?.baseItem))
+        || item.system.activities?.some(activity => activity.type === 'check' && baseItems.some(tool => activity.check.associated.has(tool)))));
+}
 export default {
+    hasTools,
     getEffects,
     getGroups,
     getSavedCastData,

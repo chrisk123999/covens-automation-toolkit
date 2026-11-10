@@ -18,7 +18,7 @@
                             <label class="icon die-input{{#if isNew}} new-addition{{/if}}"
                                 data-denomination="{{denomination}}" data-method="{{method}}">
                                 <input type="{{#if text}}text{{else}}number{{/if}}" name="{{id}}" step="1"
-                                    {{#unless text}}min="{{#if minValue}}{{minValue}}{{else}}1{{/if}}"
+                                    {{#unless text}}min="{{#if (eq minValue undefined)}}1{{else}}{{minValue}}{{/if}}"
                                     max="{{#if maxValue}}{{maxValue}}{{else}}{{faces}}{{/if}}" {{/unless}}
                                     inputmode="numeric" value="{{value}}" placeholder="{{denomination}}"
                                     {{#if readonly}}readonly{{/if}}{{#if disabled}} disabled{{/if}}>

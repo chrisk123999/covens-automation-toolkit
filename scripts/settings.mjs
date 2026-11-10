@@ -222,7 +222,7 @@ const settings = {
             diceTotal: 'CAT.Settings.ManualRollsEntryMode.diceTotal',
             perDie: 'CAT.Settings.ManualRollsEntryMode.perDie'
         },
-        scope: 'client',
+        scope: 'world',
         menu: 'manualRolls'
     },
     manualRollsGMFulfill: {
@@ -234,7 +234,7 @@ const settings = {
     manualRollsRichContext: {
         type: Boolean,
         default: false,
-        scope: 'client',
+        scope: 'world',
         menu: 'manualRolls'
     },
     automaticBackups: {

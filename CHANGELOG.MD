@@ -20,11 +20,16 @@
 - `tokenUtils.aimDestination` highlights the spaces in `allowedPoints` while aiming.
 - Cleave's weapon reach, grapple reach, sense ranges in obscured regions, summon activity ranges and the Minimum Base Range restriction read the document's own units.
 - Range alternate attribute bonuses are in feet and convert to the range's units.
+- Manual Rolls entry mode and rich context are world settings.
 ## Bug Fixes:
 - `crosshairUtils.aimCrosshair` results carry the token's elevation, so teleports to an aimed space no longer fail with "elevation must be a number".
 - Monster feature automations only match their own monster. A character's feature never picks up a monster's automation of the same name.
 - Grapple and shove size check macros receive the check's identifier and size in `data`. They received nothing, so a macro could not tell a grapple from a shove.
 - `compendiumUtils.getDocumentByName` no longer fails with a server error on Item compendiums.
+- Manual roll Roll Total entry has no lower bound, so negative totals are accepted. Dice Total and per-die entry no longer floor a 0 minimum to 1.
+- Tool options carry their tool type.
+## API Update Notes:
+- New `actorUtils.hasTools`: whether the actor has one of the given tools, as a tool item or a check activity on another item.
 
 # 0.1.7 Release:
 ## Update Notes:
