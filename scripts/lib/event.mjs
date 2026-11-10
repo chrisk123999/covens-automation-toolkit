@@ -249,6 +249,8 @@ class CatEvent {
     static hasCatFlag(document, type) {
         return !!(document.flags?.cat?.macros || document.flags?.cat?.embeddedMacros || constants.macros.getMasteryMacroData(document, type));
     }
+    _preMacroCall() {}
+    _postMacroCall(result) {}
     async run({canOverlap = false, multiResult = false} = {}) {
         if (!this.actor) return;
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.actor.name);
@@ -258,6 +260,7 @@ class CatEvent {
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
+            this._preMacroCall();
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
                 result = await this.executeScript(trigger.macro, trigger);
@@ -269,6 +272,7 @@ class CatEvent {
                     Logging.logMacroException(trigger, error);
                 }
             }
+            this._postMacroCall(result);
             if (result) {
                 if (!this.multiResult) {
                     return result;
@@ -287,6 +291,7 @@ class CatEvent {
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
+            this._preMacroCall();
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
                 result = this.executeScriptSync(trigger.macro, trigger);
@@ -298,6 +303,7 @@ class CatEvent {
                     Logging.logMacroException(trigger, error);
                 }
             }
+            this._postMacroCall(result);
             if (result) {
                 if (!this.multiResult) {
                     return result;
@@ -449,6 +455,37 @@ class PreTargetingWorkflowEvent extends BaseWorkflowEvent {
         };
     }
 }
+class TokenHitWorkflowEvent extends WorkflowEvent {
+    constructor(pass, workflow, token, attackTotal, hitData) {
+        super(pass, workflow);
+        this.targetToken = token;
+        this.targets = new Set([token]);
+        this.attackTotal = attackTotal;
+        this.originalHit = {...hitData};
+        this.hitChanged = false;
+        this.hitData = hitData;
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            attackTotal: this.attackTotal,
+            targetToken: this.targetToken,
+            hitData: this.hitData
+        };
+    }
+    evaluateHit() {
+        if (this.hitChanged) return;
+        if (this.hitData.ac !== this.originalHit.ac)
+            this.hitData.isHit = isFinite(this.hitData.ac) && (this.attackTotal >= this.hitData.ac || this.workflow.isCritical);
+    }
+    _preMacroCall() {
+        this.originalHit.isHit = this.hitData.isHit;
+    }
+    _postMacroCall(result) {
+        if (this.hitData.isHit !== this.originalHit.isHit) this.hitChanged = true;
+        this.evaluateHit();
+    }
+}
 class TokenDamageWorkflowEvent extends WorkflowEvent {
     constructor(pass, workflow, token, ditem) {
         super(pass, workflow);
@@ -552,6 +589,7 @@ class RegionEvent extends CatEvent {
         }
         this._debugEvent();
         for (let trigger of this.sortedTriggers) {
+            this._preMacroCall();
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
                 await this.executeScript(trigger.macro, trigger);
@@ -563,6 +601,7 @@ class RegionEvent extends CatEvent {
                     Logging.logMacroException(trigger, error);
                 }
             }
+            this._postMacroCall();
         }
     }
     appendData(data) {
@@ -857,6 +896,7 @@ class CalledEvent extends CatEvent {
 export default {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
+    TokenHitWorkflowEvent,
     TokenDamageWorkflowEvent,
     MovementEvent,
     GrappleEvent,
