@@ -216,7 +216,7 @@ const VARS = {
                         rules: property('string', '2014 or 2024.'),
                         sourceEffect: propertyClassInstance(api, cls('activeeffect'), 'Created attacker grapple effect.'),
                         targetEffect: propertyClassInstance(api, cls('activeeffect'), 'Created target grapple effect.'),
-                        escapeItem: propertyClassInstance(api, cls('item'), 'Escape item on the grapple target.')
+                        escapeItem: propertyClassInstance(api, cls('item'), 'Grapple escape item on the target.')
                     }
                 };
                 if (isPass(pass, constants.grapplePasses.preEscape)) return {

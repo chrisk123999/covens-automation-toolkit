@@ -782,7 +782,8 @@ function grantRollModifier(options, type, tokenID, attributionID, attributionDis
     setWorkflowProperty(options, 'rollModifiers', mods);
 }
 /**
- * Add information to armor class icons in the hit targets section of workflow chat cards. Use within `checkHits` events only.
+ * Add information to armor class icons in the hit targets section of workflow chat cards.
+ * Use within `bonusAC` or `changeHit` macro passes only.
  * @param {MidiQOL.Workflow} workflow
  * @param {foundry.documents.TokenDocument} target
  * @param {object} attribution Requires at least one of {@link img}, {@link icon}, or {@link tooltip}.
