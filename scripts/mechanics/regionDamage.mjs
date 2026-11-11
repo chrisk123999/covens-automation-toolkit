@@ -12,15 +12,15 @@ function getOrigin(workflow) {
 }
 /**
  * Scale damage that passes through regions with `flags.cat.damageThrough`, a map of damage type to multiplier, then run each crossed region's `damageThrough` pass.
- * @param {foundry.canvas.placeables.Token} token Target taking the damage.
+ * @param {foundry.documents.TokenDocument} token Target taking the damage.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @param {object} ditem Midi damage item for the target.
  */
 export async function regionDamage(token, workflow, ditem) {
     const origin = getOrigin(workflow);
-    const scene = token?.document?.parent ?? token?.parent;
+    const scene = token?.parent;
     if (!origin || !scene || !ditem?.damageDetail?.length) return;
-    const target = token.center ?? token.object?.center;
+    const target = token.object?.center ?? token.getCenterPoint();
     const types = new Set(ditem.damageDetail.filter(detail => detail.value > 0).map(detail => detail.type));
     const regions = scene.regions.filter(region => region.flags.cat?.damageThrough && regionUtils.getIntersections(region, origin, target, true));
     for (const region of regions) {

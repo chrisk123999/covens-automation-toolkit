@@ -102,7 +102,7 @@ async function playAnimation(effect, phase) {
 const damagedBy = (relation) => ({workflow, target, ditem}) => ditem?.totalDamage > 0 && (!relation || (workflow.token.document.disposition === target.disposition) === (relation === 'ally'));
 const attackedBy = (source, hit) => async ({workflow, target, origin}) => {
     if (!workflow.activity || !workflowUtils.isAttackType(workflow, 'attack')) return false;
-    if (hit && !workflow.hitTargets.has(target.object)) return false;
+    if (hit && !workflow.hitTargets.has(target)) return false;
     const actor = (await origin())?.item?.actor;
     return !!actor && (workflow.actor.id === actor.id) === source;
 };
@@ -119,7 +119,7 @@ const specialDurationTriggers = {
     attackedBySource: {stage: 'attack', side: 'target', test: attackedBy(true, false)},
     hitByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, true)},
     hitBySource: {stage: 'attack', side: 'target', test: attackedBy(true, true)},
-    forceSave: {stage: 'save', side: 'actor', test: ({workflow}) => !!workflow.activity?.hasSave && !(workflow.targets.size === 1 && workflow.targets.has(workflow.token))},
+    forceSave: {stage: 'save', side: 'actor', test: ({workflow}) => !!workflow.activity?.hasSave && !(workflow.targets.count === 1 && workflow.targets.has(workflow.token))},
     damaged: {stage: 'damage', side: 'target', test: damagedBy()},
     damagedByAlly: {stage: 'damage', side: 'target', test: damagedBy('ally')},
     damagedByEnemy: {stage: 'damage', side: 'target', test: damagedBy('enemy')},
@@ -152,10 +152,10 @@ async function specialDuration(workflow, stage, {token, ditem} = {}) {
     const sides = stageSides[stage];
     if (!sides) return;
     if (sides.has('target')) {
-        const targets = stage === 'damage' ? [token?.document ?? token] : Array.from(workflow.targets ?? [], target => target.document);
+        const targets = stage === 'damage' ? [token] : workflow.targets?.documents ?? [];
         await Promise.all(targets.filter(target => target?.actor).map(target => expireBySpecialDuration(target.actor, 'target', stage, {workflow, target, ditem})));
     }
-    if (sides.has('actor')) await expireBySpecialDuration(workflow.actor, 'actor', stage, {workflow, target: token?.document ?? token, ditem});
+    if (sides.has('actor')) await expireBySpecialDuration(workflow.actor, 'actor', stage, {workflow, target: token, ditem});
 }
 async function specialDurationConditions(effect) {
     await Promise.all(actorUtils.getEffects(effect.parent, {includeItemEffects: true}).filter(i => i.id != effect.id).map(async eff => {

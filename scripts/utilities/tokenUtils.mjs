@@ -337,7 +337,7 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
             ringElevation: onOwnLevel ? undefined : Math.min(...surfaces.map(surface => surface.elevation), ground ?? Infinity)
         });
         if (!result || result.cancelled) return;
-        return {...result, level: targetLevel};
+        return {...result, x: Math.round(result.x), y: Math.round(result.y), level: targetLevel};
     } finally {
         highlight?.destroy();
         vision?.release();
@@ -567,7 +567,9 @@ function getNonSightModes() {
  */
 function canSense(sourceToken, targetToken, senseModes = ['all']) {
     if (!senseModes.length) return false;
-    return MidiQOL.canSense(sourceToken, targetToken, senseModes);
+    const modes = MidiQOL.canSenseModes(sourceToken, targetToken, senseModes);
+    if (senseModes.includes('all')) return modes.length > 0;
+    return modes.some(mode => senseModes.includes(mode));
 }
 /**
  * Run a grapple attempt between two tokens, applying the condition on success.

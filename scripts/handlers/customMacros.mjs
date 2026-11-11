@@ -13,7 +13,7 @@ return [
 ];
 `;
 const example = `async function marked({workflow}) {
-    console.log(workflow.targets.first()?.name);
+    console.log(workflow.targets.documents[0]?.name);
 }
 return [
     {

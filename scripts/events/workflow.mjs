@@ -71,7 +71,8 @@ async function utilityRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.utilityRollBonuses, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.utilityRollComplete, workflow).run();
 }
-async function preTargetDamageApplication(token, {workflow, ditem}) {
+async function preTargetDamageApplication(target, {workflow, ditem}) {
+    const token = target instanceof TokenDocument ? target : target.document;
     optionalBonus.applyDamage(workflow, token, ditem);
     await regionDamage(token, workflow, ditem);
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damage, workflow, token, ditem).run();
