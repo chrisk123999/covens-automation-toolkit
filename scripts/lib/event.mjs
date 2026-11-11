@@ -249,8 +249,6 @@ class CatEvent {
     static hasCatFlag(document, type) {
         return !!(document.flags?.cat?.macros || document.flags?.cat?.embeddedMacros || constants.macros.getMasteryMacroData(document, type));
     }
-    _preMacroCall() {}
-    _postMacroCall(result) {}
     async run({canOverlap = false, multiResult = false} = {}) {
         if (!this.actor) return;
         Logging.addEntry('DEBUG', 'Executing ' + this.name + ' event for pass ' + this.pass + ' for ' + this.actor.name);
@@ -260,7 +258,6 @@ class CatEvent {
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
-            this._preMacroCall();
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
                 result = await this.executeScript(trigger.macro, trigger);
@@ -272,7 +269,6 @@ class CatEvent {
                     Logging.logMacroException(trigger, error);
                 }
             }
-            this._postMacroCall(result);
             if (result) {
                 if (!this.multiResult) {
                     return result;
@@ -291,7 +287,6 @@ class CatEvent {
         const results = this.multiResult ? [] : undefined;
         for (let trigger of this.sortedTriggers) {
             let result;
-            this._preMacroCall();
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
                 result = this.executeScriptSync(trigger.macro, trigger);
@@ -303,7 +298,6 @@ class CatEvent {
                     Logging.logMacroException(trigger, error);
                 }
             }
-            this._postMacroCall(result);
             if (result) {
                 if (!this.multiResult) {
                     return result;
@@ -461,10 +455,7 @@ class TokenHitWorkflowEvent extends WorkflowEvent {
         this.targetToken = token;
         this.targets = new Set([token]);
         this.attackTotal = attackTotal;
-        this.originalHit = {...hitData};
-        this.hitChanged = false;
         this.hitData = hitData;
-        // TODO fix: the first macro to raise ac enough to change a hit into a miss will swap hitChanged and lock out later macros that might apply AC reductions
     }
     appendData(data) {
         return {
@@ -473,14 +464,6 @@ class TokenHitWorkflowEvent extends WorkflowEvent {
             targetToken: this.targetToken,
             hitData: this.hitData
         };
-    }
-    _preMacroCall() {
-        this.originalHit.isHit = this.hitData.isHit;
-    }
-    _postMacroCall(result) {
-        if (this.hitData.isHit !== this.originalHit.isHit) this.hitChanged = true;
-        if (this.hitChanged || this.hitData.ac === this.originalHit.ac) return;
-        this.hitData.isHit = isFinite(this.hitData.ac) && (this.attackTotal >= this.hitData.ac || this.workflow.isCritical);
     }
 }
 class TokenDamageWorkflowEvent extends WorkflowEvent {
@@ -586,7 +569,6 @@ class RegionEvent extends CatEvent {
         }
         this._debugEvent();
         for (let trigger of this.sortedTriggers) {
-            this._preMacroCall();
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
                 await this.executeScript(trigger.macro, trigger);
@@ -598,7 +580,6 @@ class RegionEvent extends CatEvent {
                     Logging.logMacroException(trigger, error);
                 }
             }
-            this._postMacroCall();
         }
     }
     appendData(data) {

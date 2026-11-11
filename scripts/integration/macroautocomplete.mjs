@@ -92,10 +92,12 @@ const VARS = {
 
     // CheckHits
     attackTotal: () => variable('number', 'Attack roll total plus bonuses granted by this target.'),
-    hitData: () => ({
+    hitData: (api) => ({
         ...variable('Object', 'Live copy of hit data for this target.'),
         children: {
             ac: property('number', 'Current AC for this target on this attack, including bonuses from midi and other previous macros.'),
+            hitOverridden: property('boolean', 'A read only flag marking that the hit state has been changed in a macro.'),
+            target: propertyClassInstance(api, cls('token'), 'The hit target token document.'),
             isHit: property('boolean', 'Change to override the hit result.'),
             isHitEC: property('boolean', 'Change to override hit result.')
         }
