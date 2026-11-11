@@ -47,18 +47,41 @@ async function postAttackRoll(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollMissedBonuses, workflow).run();
     await optionalBonus.attack(workflow);
 }
+/**
+ * @typedef HitData
+ * @property {foundry.documents.TokenDocument} target
+ * @property {boolean} hitOverriden
+ * @property {number} ac
+ * @property {boolean} isHit
+ * @property {boolean} isHitEC
+ * */
 async function checkHitTarget(context) {
     const token = context.token instanceof TokenDocument ? context.target : context.target.document;
-    const hitData = {ac: context.targetAC, isHit: context.isHit, isHitEC: context.isHitEC};
+    let hitOverride = false;
+    /** @type HitData */
+    const hitData = {
+        get target() { return token; },
+        get hitOverriden() { return hitOverride; },
+        get ac() { return context.targetAC; },
+        set ac(value) {
+            context.targetAC = value;
+            if (hitOverride) return;
+            context.isHit = isFinite(context.targetAC) && (context.attackTotal >= context.targetAC || context.workflow.isCritical);
+        },
+        get isHit() { return context.isHit; },
+        set isHit(value) {
+            hitOverride = true;
+            context.isHit = value;
+        },
+        get isHitEC() { return context.isHitEC; },
+        set isHitEC(value) { context.isHitEC = value; }
+    };
     await new Events.TokenHitWorkflowEvent(constants.workflowPasses.bonusAC, context.workflow, token, context.attackTotal, hitData).run();
     await new Events.TokenHitWorkflowEvent(constants.workflowPasses.changeHit, context.workflow, token, context.attackTotal, hitData).run();
     // Crit/Fumble matching skips midi's default attribution from this hook, which only shows the hook name.
     // Macros should modify crit/fumble through workflow.tracker, preferably in an earlier event.
     context.isCritical = context.workflow.isCritical;
     context.isFumble = context.workflow.isFumble;
-    context.isHitEC = hitData.isHitEC;
-    context.targetAC = hitData.ac;
-    context.isHit = hitData.isHit;
 }
 function hitsChecked(workflow) {
     const acAttributions = workflowUtils.getWorkflowProperty(workflow, 'acAttributions');

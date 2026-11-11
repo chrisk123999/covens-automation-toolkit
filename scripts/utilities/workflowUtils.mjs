@@ -781,26 +781,61 @@ function grantRollModifier(options, type, tokenID, attributionID, attributionDis
     mods[tokenID][type + '-' + attributionID] = {type, identifier: attributionID, display: attributionDisplay};
     setWorkflowProperty(options, 'rollModifiers', mods);
 }
+/** @typedef {import('../events/workflow.mjs').HitData} HitData */
 /**
- * Add information to armor class icons in the hit targets section of workflow chat cards.
+ * Change the AC for a target with optional attribution in the chat card.
  * Use within `bonusAC` or `changeHit` macro passes only.
  * @param {MidiQOL.Workflow} workflow
- * @param {foundry.documents.TokenDocument} target
- * @param {object} attribution Requires at least one of {@link img}, {@link icon}, or {@link tooltip}.
+ * @param {HitData} hitData Token hit data provided by the `bonusAC` and `changeHit` macro passes.
+ * @param {number} value Added to target AC.
+ * @param {object} [attribution]
+ * @param {foundry.abstract.Document} [attribution.document] {@link tooltip} and {@link img} are taken from this document unless overrides are provided.
  * @param {string} [attribution.icon] CSS class for a font awesome icon.
  * @param {string} [attribution.img] Filepath for an image icon.
  * @param {string} [attribution.tooltip] Localized string tooltip on the icon.
  */
-function addACAttribution(workflow, target, {icon, img, tooltip} = {}) {
-    if (!icon && !img && !tooltip)
-        Logging.addMacroWarning('cat', 'addACAttribution', `An icon, image, or tooltip must be used for AC attributions! (item) ${workflow?.item.uuid} (target) ${target?.uuid}`);
+function bonusAC(workflow, hitData, value, {document, icon, img, tooltip} = {}) {
+    hitData.ac += value;
+    if (document) {
+        img ||= document.img ?? document.texture.src;
+        tooltip ||= `${document.name} ${Math.sign(value) < 0 ? '' : '+'}${value}`;
+    }
+    if (!icon && !img && !tooltip) return;
     const attributions = getWorkflowProperty(workflow, 'acAttributions') ?? {};
     const attribution = {icon, img, tooltip};
     if (tooltip && !icon && !img) icon = 'fas fa-bolt';
     if (icon) attribution.cssClass = 'midi-qol-ac-icon-fa';
     else if (img) attribution.cssClass = 'midi-qol-ac-icon-img cat-ac-icon';
-    attributions[target.uuid] ??= [];
-    attributions[target.uuid].push(attribution);
+    attributions[hitData.target.uuid] ??= [];
+    attributions[hitData.target.uuid].push(attribution);
+    setWorkflowProperty(workflow, 'acAttributions', attributions);
+}
+/**
+ * Change the hit state for a target with optional attribution in the chat card.
+ * Use within `bonusAC` or `changeHit` macro passes only.
+ * @param {MidiQOL.Workflow} workflow
+ * @param {HitData} hitData Token hit data provided by the `bonusAC` and `changeHit` macro passes.
+ * @param {boolean} value The hit is set to this value.
+ * @param {object} [attribution]
+ * @param {foundry.abstract.Document} [attribution.document] {@link tooltip} and {@link img} are taken from this document unless overrides are provided.
+ * @param {string} [attribution.icon] CSS class for a font awesome icon.
+ * @param {string} [attribution.img] Filepath for an image icon.
+ * @param {string} [attribution.tooltip] Localized string tooltip on the icon.
+ */
+function changeHit(workflow, hitData, value, {document, icon, img, tooltip} = {}) {
+    hitData.isHit = value;
+    if (document) {
+        img ||= document.img ?? document.texture.src;
+        tooltip ||= `${document.name}: ${_loc(value ? 'CAT.Macros.AC.Hit' : 'CAT.Macros.AC.Miss')}`;
+    }
+    if (!icon && !img && !tooltip) return;
+    const attributions = getWorkflowProperty(workflow, 'acAttributions') ?? {};
+    const attribution = {icon, img, tooltip};
+    if (tooltip && !icon && !img) icon = 'fas fa-bolt';
+    if (icon) attribution.cssClass = 'midi-qol-ac-icon-fa';
+    else if (img) attribution.cssClass = 'midi-qol-ac-icon-img cat-ac-icon';
+    attributions[hitData.target.uuid] ??= [];
+    attributions[hitData.target.uuid].push(attribution);
     setWorkflowProperty(workflow, 'acAttributions', attributions);
 }
 /**
@@ -869,7 +904,8 @@ export default {
     removeTargets,
     preventZeroHP,
     grantRollModifier,
-    addACAttribution,
+    bonusAC,
+    changeHit,
     getScaledDuration,
     rollConfiguredSource,
     setNotSustainedRoll

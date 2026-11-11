@@ -1453,6 +1453,10 @@
             "Surrendered": "Attacker Surrendered"
         },
         "Macros": {
+            "AC": {
+                "Hit": "Make Hit",
+                "Miss": "Make Miss"
+            },
             "Aura": {
                 "CreatureTypesHint": "Only tokens of these creature types are affected. The source itself is unaffected by this check.",
                 "DispositionsHint": "Which tokens the aura reaches.",
