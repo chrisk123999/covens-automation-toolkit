@@ -1,10 +1,10 @@
 import {regionUtils, workflowUtils} from '../utilities/_module.mjs';
 function crossedRegions(workflow, target, mode) {
     const sourceToken = workflow.token.document;
-    return sourceToken.parent.regions.filter(region => region.flags.cat?.rangedAttacks === mode && regionUtils.isBetweenTokens(region, sourceToken, target.document));
+    return sourceToken.parent.regions.filter(region => region.flags.cat?.rangedAttacks === mode && regionUtils.isBetweenTokens(region, sourceToken, target));
 }
 function isRangedWeaponAttack(workflow) {
-    return !!workflow.token && !!workflow.targets.size && workflowUtils.isAttackType(workflow, 'rangedWeaponAttack');
+    return !!workflow.token && !!workflow.targets.count && workflowUtils.isAttackType(workflow, 'rangedWeaponAttack');
 }
 /**
  * Impose disadvantage on ranged weapon attacks passing through regions with `flags.cat.rangedAttacks` set to `disadvantage`.
@@ -12,7 +12,7 @@ function isRangedWeaponAttack(workflow) {
  */
 function config(workflow) {
     if (!isRangedWeaponAttack(workflow)) return;
-    workflow.targets.forEach(target => crossedRegions(workflow, target, 'disadvantage').forEach(region => workflow.tracker.disadvantage.add(region.id, region.name)));
+    workflow.targets.documents.forEach(target => crossedRegions(workflow, target, 'disadvantage').forEach(region => workflow.tracker.disadvantage.add(region.id, region.name)));
 }
 /**
  * Make ranged weapon attacks passing through regions with `flags.cat.rangedAttacks` set to `miss` miss their target.
@@ -20,7 +20,7 @@ function config(workflow) {
  */
 function complete(workflow) {
     if (!isRangedWeaponAttack(workflow)) return;
-    workflow.hitTargets.forEach(target => {
+    workflow.hitTargets.documents.forEach(target => {
         if (crossedRegions(workflow, target, 'miss').length) workflow.hitTargets.delete(target);
     });
 }

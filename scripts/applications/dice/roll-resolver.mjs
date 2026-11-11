@@ -103,7 +103,7 @@ export default class CatRollResolver extends RollResolver {
         if (direct) return this.#cachedWorkflow = direct;
         const workflows = [...Workflow.workflows.values()].map(w => w instanceof WeakRef ? w.deref() : w).filter(Boolean);
         return this.#cachedWorkflow = workflows
-            .filter(w => w.activity?.uuid === key || [...(w.targets ?? [])].some(t => t.actor?.uuid === key))
+            .filter(w => w.activity?.uuid === key || (w.targets?.documents ?? []).some(t => t.actor?.uuid === key))
             .sort((a, b) => (b.workflowStartTime ?? 0) - (a.workflowStartTime ?? 0))[0] ?? null;
     }
 
@@ -380,9 +380,9 @@ export default class CatRollResolver extends RollResolver {
 
     #targetNames() {
         const workflow = this.#workflow();
-        const targets = workflow?.targets ? [...workflow.targets] : (game.user?.targets ? [...game.user.targets] : []);
+        const targets = workflow?.targets ? workflow.targets.documents : Array.from(game.user?.targets ?? [], t => t.document);
         if (!targets.length) return null;
-        return targets.map(t => (t.visible || game.user.isGM) ? t.name : _loc('CAT.Manual.Unknown')).join(', ');
+        return targets.map(t => (t.object?.visible || game.user.isGM) ? t.name : _loc('CAT.Manual.Unknown')).join(', ');
     }
 
     #prettyFormula() {

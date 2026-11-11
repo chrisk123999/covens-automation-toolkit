@@ -1,9 +1,9 @@
 import {actorUtils, distanceUtils, regionUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 export async function regionVisibility(workflow) {
-    if (!workflow.item || !workflow.token || !workflow.targets.size || !workflow.activity) return;
+    if (!workflow.item || !workflow.token || !workflow.targets.count || !workflow.activity) return;
     if (!workflowUtils.isAttackType(workflow, 'attack')) return;
     const sourceToken = workflow.token.document;
-    const targetToken = workflow.targets.first().document;
+    const targetToken = workflow.targets.documents[0];
     function isHindering(region) {
         return regionUtils.isObscured(region) || regionUtils.isMagicalDarkness(region);
     }
