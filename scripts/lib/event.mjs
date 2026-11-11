@@ -464,6 +464,7 @@ class TokenHitWorkflowEvent extends WorkflowEvent {
         this.originalHit = {...hitData};
         this.hitChanged = false;
         this.hitData = hitData;
+        // TODO fix: the first macro to raise ac enough to change a hit into a miss will swap hitChanged and lock out later macros that might apply AC reductions
     }
     appendData(data) {
         return {
@@ -473,17 +474,13 @@ class TokenHitWorkflowEvent extends WorkflowEvent {
             hitData: this.hitData
         };
     }
-    evaluateHit() {
-        if (this.hitChanged) return;
-        if (this.hitData.ac !== this.originalHit.ac)
-            this.hitData.isHit = isFinite(this.hitData.ac) && (this.attackTotal >= this.hitData.ac || this.workflow.isCritical);
-    }
     _preMacroCall() {
         this.originalHit.isHit = this.hitData.isHit;
     }
     _postMacroCall(result) {
         if (this.hitData.isHit !== this.originalHit.isHit) this.hitChanged = true;
-        this.evaluateHit();
+        if (this.hitChanged || this.hitData.ac === this.originalHit.ac) return;
+        this.hitData.isHit = isFinite(this.hitData.ac) && (this.attackTotal >= this.hitData.ac || this.workflow.isCritical);
     }
 }
 class TokenDamageWorkflowEvent extends WorkflowEvent {
