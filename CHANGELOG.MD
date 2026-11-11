@@ -1,3 +1,6 @@
+# 0.1.9 Release:
+## Bug Fixes:
+- `rollUtils.damageRoll` passes `configured` through to the roll. A damage roll rebuilt from an already scaled critical hit no longer doubles its dice a second time.
 # 0.1.8 Release:
 ## Update Notes:
 - New `formula` configuration type. The CatKit shows the system's formula input and refuses a formula that does not parse. `deterministic: true` also refuses dice.

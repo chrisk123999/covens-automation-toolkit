@@ -119,6 +119,7 @@ function getCriticalFormula(formula, document, {workflow, bonusDamage, bonusDice
  * @param {number} [options.critOptions.multiplier] How many times the dice are multiplied.
  * @param {boolean} [options.critOptions.multiplyNumeric] Also multiply flat terms.
  * @param {boolean} [options.critOptions.powerfulCritical] Maximize the extra dice.
+ * @param {boolean} [options.configured] Formula is already crit-scaled; skip configuration.
  * @param {string} [options.flavor] Flavour shown on the roll.
  * @param {boolean} [options.isCritical] Roll this as a critical hit.
  * @param {string[]} [options.properties] Item properties carried onto the roll.
@@ -128,10 +129,10 @@ function getCriticalFormula(formula, document, {workflow, bonusDamage, bonusDice
  * @param {boolean} [evaluateOptions.minimize] Take the lowest result on every die.
  * @returns {Promise<CONFIG.Dice.DamageRoll>} The evaluated roll.
  */
-async function damageRoll(formula, document, {workflow, critOptions: {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}, flavor, isCritical, properties, type} = {}, {maximize, minimize} = {}) {
+async function damageRoll(formula, document, {workflow, critOptions: {bonusDamage, bonusDice, multiplier = 2, multiplyNumeric, powerfulCritical} = {}, configured, flavor, isCritical, properties, type} = {}, {maximize, minimize} = {}) {
     return await new CONFIG.Dice.DamageRoll(String(formula), dataUtils.getFormulaData({document, workflow}), {
         critical: {bonusDamage, bonusDice, multiplier, multiplyNumeric, powerfulCritical},
-        flavor, isCritical, properties, type
+        configured, flavor, isCritical, properties, type
     }).evaluate({maximize, minimize});
 }
 /**
