@@ -56,7 +56,7 @@ async function postAttackRoll(workflow) {
  * @property {boolean} isHitEC
  * */
 async function checkHitTarget(context) {
-    const token = context.token instanceof TokenDocument ? context.target : context.target.document;
+    const token = context.target instanceof TokenDocument ? context.target : context.target.document;
     let hitOverride = false;
     /** @type HitData */
     const hitData = {
