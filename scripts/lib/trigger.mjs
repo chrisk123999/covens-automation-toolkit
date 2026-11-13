@@ -9,7 +9,7 @@ class Trigger {
         this.type = this.constructor.type;
         this.document = document;
         this.identifier = documentUtils.getIdentifier(document);
-        this.name = this.document.name.slugify();
+        this.name = (document.documentName === 'Activity' ? document.item.name.slugify() + '|' : '') + document.name.slugify();
         this.pass = pass;
         this.fnMacros = [];
         this.embeddedMacros = [];

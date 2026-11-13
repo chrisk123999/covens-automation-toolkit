@@ -175,8 +175,7 @@ class CatEvent {
         const unsortedTriggers = this.unsortedTriggers;
         let winningTriggers = new Set();
         if (!this.canOverlap) {
-            const groupKey = trigger => (trigger.document.documentName === 'Activity' ? 'activity.' : '') + trigger.name;
-            Object.values(Object.groupBy(unsortedTriggers, groupKey)).forEach(group => {
+            Object.values(Object.groupBy(unsortedTriggers, trigger => trigger.name)).forEach(group => {
                 if (group.length === 1) return winningTriggers.add(group[0]);
                 let maxLevel = Math.max(...group.map(trigger => trigger.castData.castLevel));
                 let maxDC = Math.max(...group.map(trigger => trigger.castData.saveDC));
