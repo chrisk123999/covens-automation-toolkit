@@ -71,6 +71,10 @@
                 "Label": "Granted By",
                 "Hint": "A key that represents the class, feat, race, etc. that granted this document, e.g. 'class:cleric'."
             },
+            "Aliases": {
+                "Label": "Aliases",
+                "Hint": "Comma-separated alternate identifiers for matching automations to multiple content sources, e.g. 'channel-divinity, channel-divinity-cleric'."
+            },
             "Version": {
                 "Label": "Automation Version",
                 "Hint": "Reported by the selected automation source."

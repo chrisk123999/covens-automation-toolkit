@@ -48,6 +48,9 @@
         {{#if (or sourceType inCompendium)}}
             {{formGroup fields.sourceType disabled=(not inCompendium) name="flags.cat.automation.sourceType" value=sourceType hint=(localize "CAT.MEDKIT.SourceType.Hint") rootId=@root.rootId}}
         {{/if}}
+        {{#if (or aliases inCompendium)}}
+            {{formGroup fields.aliases disabled=(not inCompendium) name="flags.cat.automation.aliases" value=aliases hint=(localize "CAT.MEDKIT.Aliases.Hint") rootId=@root.rootId}}
+        {{/if}}
         {{formGroup fields.source name="selectedSource" disabled=disableSources choices=availableSources value=source hint=(localize (ifThen disableSources "CAT.MEDKIT.Source.HintNone" "CAT.MEDKIT.Source.Hint")) rootId=@root.rootId}}
         {{#if version}}
             {{formGroup fields.version disabled=(not inCompendium) name="flags.cat.automation.version" value=version hint=(localize "CAT.MEDKIT.Version.Hint") rootId=@root.rootId}}

@@ -56,6 +56,7 @@ export default class ItemMedkit extends MedkitApp {
             identifier: new fields.StringField({label: _loc('CAT.MEDKIT.Identifier.Label')}),
             source: new fields.StringField({label: _loc('CAT.MEDKIT.Source.Label'), required: true, blank: false}),
             sourceType: new fields.StringField({label: _loc('CAT.MEDKIT.SourceType.Label')}),
+            aliases: new fields.StringField({label: _loc('CAT.MEDKIT.Aliases.Label')}),
             version: new fields.StringField({label: _loc('CAT.MEDKIT.Version.Label')}),
             ignore: new fields.BooleanField({label: _loc('CAT.MEDKIT.IgnoreItem.Label')}),
             rules: new fields.StringField({
@@ -75,6 +76,8 @@ export default class ItemMedkit extends MedkitApp {
         const currAutomation = (identifier && rulesValue && selectedSource && selectedSource !== 'none') ? constants.automations.getAutomationByIdentifier(identifier, {rules: rulesValue, source: selectedSource, monsterIdentifier, type: itemType, sourceType}) : (!savedSource ? automationUtils.getCurrentAutomation(this.document) : undefined);
         context.source = currAutomation?.source ?? selectedSource;
         if (sourceType) context.sourceType = sourceType;
+        const aliases = this.document.flags.cat?.automation?.aliases;
+        if (aliases?.length) context.aliases = aliases.join(', ');
         context.inCompendium = this.document.inCompendium;
         const availableAutomations = automationUtils.getAvailableAutomations(this.document);
         switch (automationUtils.getAutomationStatus(this.document)) {

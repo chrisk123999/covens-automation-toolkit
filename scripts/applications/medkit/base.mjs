@@ -1060,6 +1060,7 @@ export default class MedkitApp extends CatApp {
         if (this.#rulesValue !== (this.#document.system?.source?.rules ?? null)) return true;
         if (this.#document.documentName !== 'Item') return false;
         if (itemUtils.getAdvancementSourceKey(this.#document) !== genericUtils.getProperty(this.#flags, 'automation.sourceType')) return true;
+        if (this.#document.flags.cat?.automation?.aliases?.length !== genericUtils.getProperty(this.#flags, 'automation.aliases')?.length) return true;
         return false;
     }
 
@@ -1590,6 +1591,7 @@ export default class MedkitApp extends CatApp {
             foundry.utils.setProperty(this.#flags, name.slice('flags.cat.'.length), value);
             if (!name.endsWith('.uuid')) return;
         } else if (name.startsWith('flags.cat.')) {
+            if (name.endsWith('aliases')) value = value.split(',').map(v => v.trim());
             foundry.utils.setProperty(this.#flags, name.slice('flags.cat.'.length), value);
             if (singleCombobox || inMultiCombobox) { this.render(); return; }
             return;
