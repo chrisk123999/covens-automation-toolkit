@@ -2397,6 +2397,15 @@ cat-multi-combobox {
         }
     }
 
+    input[type="range"] {
+        --range-thumb-background-color: var(--cat-bg-surface-solid);
+        --range-thumb-border-color: var(--cat-border-focus);
+    }
+
+    range-picker input[type="number"] {
+        font-size: inherit;
+    }
+
     formula-input {
         > input {
             border: none;

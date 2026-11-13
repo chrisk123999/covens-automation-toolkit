@@ -1,4 +1,6 @@
 # 0.1.9 Release:
+## Update Notes:
+- `number` configuration options accept `min`, `max`, `step`, `integer` and `positive`. The CatKit shows a slider when `min`, `max` and `step` are set, or `min` and `max` with `integer`.
 ## Bug Fixes:
 - `rollUtils.damageRoll` passes `configured` through to the roll. A damage roll rebuilt from an already scaled critical hit no longer doubles its dice a second time.
 # 0.1.8 Release:
