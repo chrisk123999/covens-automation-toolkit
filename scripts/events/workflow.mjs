@@ -47,6 +47,47 @@ async function postAttackRoll(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollMissedBonuses, workflow).run();
     await optionalBonus.attack(workflow);
 }
+/**
+ * @typedef HitData
+ * @property {foundry.documents.TokenDocument} target
+ * @property {boolean} hitOverriden
+ * @property {number} ac
+ * @property {boolean} isHit
+ * @property {boolean} isHitEC
+ * */
+async function checkHitTarget(context) {
+    const token = context.target instanceof TokenDocument ? context.target : context.target.document;
+    let hitOverride = false;
+    /** @type HitData */
+    const hitData = {
+        get target() { return token; },
+        get hitOverriden() { return hitOverride; },
+        get ac() { return context.targetAC; },
+        set ac(value) {
+            context.targetAC = value;
+            if (hitOverride) return;
+            context.isHit = isFinite(context.targetAC) && (context.attackTotal >= context.targetAC || context.workflow.isCritical);
+        },
+        get isHit() { return context.isHit; },
+        set isHit(value) {
+            hitOverride = true;
+            context.isHit = value;
+        },
+        get isHitEC() { return context.isHitEC; },
+        set isHitEC(value) { context.isHitEC = value; }
+    };
+    await new Events.TokenHitWorkflowEvent(constants.workflowPasses.bonusAC, context.workflow, token, context.attackTotal, hitData).run();
+    await new Events.TokenHitWorkflowEvent(constants.workflowPasses.changeHit, context.workflow, token, context.attackTotal, hitData).run();
+    // Crit/Fumble matching skips midi's default attribution from this hook, which only shows the hook name.
+    // Macros should modify crit/fumble through workflow.tracker, preferably in an earlier event.
+    context.isCritical = context.workflow.isCritical;
+    context.isFumble = context.workflow.isFumble;
+}
+function hitsChecked(workflow) {
+    const acAttributions = workflowUtils.getWorkflowProperty(workflow, 'acAttributions');
+    for (const [uuid, attributions] of foundry.utils.objectEntries(acAttributions))
+        if (attributions?.length) workflow.hitDisplayData[uuid]?.acIcons.push(...attributions);
+}
 async function attackRollComplete(workflow) {
     regionAttacks.complete(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollComplete, workflow).run();
@@ -71,7 +112,8 @@ async function utilityRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.utilityRollBonuses, workflow).run();
     await new Events.WorkflowEvent(constants.workflowPasses.utilityRollComplete, workflow).run();
 }
-async function preTargetDamageApplication(token, {workflow, ditem}) {
+async function preTargetDamageApplication(target, {workflow, ditem}) {
+    const token = target instanceof TokenDocument ? target : target.document;
     optionalBonus.applyDamage(workflow, token, ditem);
     await regionDamage(token, workflow, ditem);
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damage, workflow, token, ditem).run();
@@ -99,6 +141,8 @@ export default {
     attackRollConfig,
     preRollAttack,
     postAttackRoll,
+    checkHitTarget,
+    hitsChecked,
     attackRollComplete,
     savesComplete,
     damageRollComplete,

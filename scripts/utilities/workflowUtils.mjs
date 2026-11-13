@@ -1,4 +1,4 @@
-import {constants} from '../lib/_module.mjs';
+import {constants, Logging} from '../lib/_module.mjs';
 import {activityUtils, actorUtils, distanceUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 /**
  * Midi workflow options that skip the attack and damage prompts.
@@ -553,13 +553,21 @@ function getRange(workflow) {
     return dnd5e.utils.convertLength(range, units, 'ft', {strict: false});
 }
 /**
+ * Swap the workflow's item for a modified copy, in memory.
+ * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * @param {Item5e} item Replacement item, holding an activity with the current activity's id.
+ */
+function setItem(workflow, item) {
+    workflow.item = item;
+    workflow.activity = item.system.activities.get(workflow.activity.id);
+}
+/**
  * Swap the workflow's activity for a modified copy, by cloning its item in memory.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @param {object} activityData Replacement data for the activity currently in use.
  */
 function setActivity(workflow, activityData) {
-    workflow.item = workflow.item.clone({['system.activities.' + workflow.activity.id]: activityData}, {keepId: true});
-    workflow.activity = workflow.item.system.activities.get(workflow.activity.id);
+    setItem(workflow, workflow.item.clone({['system.activities.' + workflow.activity.id]: activityData}, {keepId: true}));
 }
 /**
  * Add a term to the workflow's attack roll.
@@ -677,7 +685,7 @@ function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flav
             type: sourceItem.type
         };
     }
-    return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, targets.map(t => t.object), damageRoll, {flavor, itemCardUuid, itemData});
+    return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, Array.from(targets), damageRoll, {flavor, itemCardUuid, itemData});
 }
 /**
  * Hit points and temporary hit points the workflow's damage actually removed.
@@ -697,7 +705,7 @@ function getDamageDealt(workflow, token) {
  * @returns {Promise<string[]>} ChatMessage uuids
  */
 async function applyDamage(tokens, value, damageType) {
-    return await MidiQOL.applyTokenDamage([{damage: value, type: damageType}], value, new Set(tokens.map(t => t.object)));
+    return await MidiQOL.applyTokenDamageMany(Array.from(tokens, token => ({token, damageDetail: [{value, type: damageType}], totalDamage: value})));
 }
 /**
  * Replace the workflow's targets, and the user's own targeting.
@@ -707,19 +715,18 @@ async function applyDamage(tokens, value, damageType) {
  */
 async function updateTargets(workflow, targets, userId = game.user.id) {
     workflow.targets = new Set(targets);
-    const ids = targets.map(t => t.id);
+    const ids = Array.from(targets, t => t.id);
     if (userId === game.user.id) canvas.tokens?.setTargets(ids);
     else await queryUtils.query('updateTargets', game.users.get(userId), {ids});
 }
 /**
  * Drop tokens from the workflow's targets, and from the user's own targeting.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {foundry.documents.TokenDocument[]} tokens Tokens to drop, as held in the workflow's targets.
+ * @param {foundry.documents.TokenDocument[]} tokens Tokens to drop.
  * @param {string} userId User whose targets are set. Defaults to the current user.
  */
 async function removeTargets(workflow, tokens, userId = game.user.id) {
-    const targets = Array.from(workflow.targets).filter(token => !tokens.includes(token));
-    await updateTargets(workflow, targets, userId);
+    await updateTargets(workflow, workflow.targets.difference(new Set(tokens)).documents, userId);
 }
 /**
  * Rewrite a damage item so the target survives on the given hit points.
@@ -757,7 +764,7 @@ function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutright =
  * Grant a target the given modifier for their D20 roll. This is useful: - for passing this information into synthetic item rolls - for setting modifers on particular targets during a workflow
  * @example
  * // Modern Blight Spell
- * workflowUtils.grantRollModifier(workflow, 'fail', workflow.targets.first().id, 'creature-type', 'Plant Creature');
+ * workflowUtils.grantRollModifier(workflow, 'fail', workflow.targets.documents[0].id, 'creature-type', 'Plant Creature');
  * // Grapple an incapacitated target
  * const options = {};
  * workflowUtils.grantRollModifier(options, 'fail', target.id, 'incapacitated', 'Incapacitated');
@@ -770,9 +777,66 @@ function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutright =
  */
 function grantRollModifier(options, type, tokenID, attributionID, attributionDisplay = attributionID) {
     const mods = getWorkflowProperty(options, 'rollModifiers') ?? {};
-    mods[tokenID] ??= [];
-    mods[tokenID].push({type, identifier: attributionID, display: attributionDisplay});
+    mods[tokenID] ??= {};
+    mods[tokenID][type + '-' + attributionID] = {type, identifier: attributionID, display: attributionDisplay};
     setWorkflowProperty(options, 'rollModifiers', mods);
+}
+/** @typedef {import('../events/workflow.mjs').HitData} HitData */
+/**
+ * Change the AC for a target with optional attribution in the chat card.
+ * Use within `bonusAC` or `changeHit` macro passes only.
+ * @param {MidiQOL.Workflow} workflow
+ * @param {HitData} hitData Token hit data provided by the `bonusAC` and `changeHit` macro passes.
+ * @param {number} value Added to target AC.
+ * @param {object} [attribution]
+ * @param {foundry.abstract.Document} [attribution.document] {@link tooltip} and {@link img} are taken from this document unless overrides are provided.
+ * @param {string} [attribution.icon] CSS class for a font awesome icon.
+ * @param {string} [attribution.img] Filepath for an image icon.
+ * @param {string} [attribution.tooltip] Localized string tooltip on the icon.
+ */
+function bonusAC(workflow, hitData, value, {document, icon, img, tooltip} = {}) {
+    hitData.ac += value;
+    if (document) {
+        img ||= document.img ?? document.texture.src;
+        tooltip ||= `${document.name} ${Math.sign(value) < 0 ? '' : '+'}${value}`;
+    }
+    if (!icon && !img && !tooltip) return;
+    const attributions = getWorkflowProperty(workflow, 'acAttributions') ?? {};
+    const attribution = {icon, img, tooltip};
+    if (tooltip && !icon && !img) icon = 'fas fa-bolt';
+    if (icon) attribution.cssClass = 'midi-qol-ac-icon-fa';
+    else if (img) attribution.cssClass = 'midi-qol-ac-icon-img cat-ac-icon';
+    attributions[hitData.target.uuid] ??= [];
+    attributions[hitData.target.uuid].push(attribution);
+    setWorkflowProperty(workflow, 'acAttributions', attributions);
+}
+/**
+ * Change the hit state for a target with optional attribution in the chat card.
+ * Use within `bonusAC` or `changeHit` macro passes only.
+ * @param {MidiQOL.Workflow} workflow
+ * @param {HitData} hitData Token hit data provided by the `bonusAC` and `changeHit` macro passes.
+ * @param {boolean} value The hit is set to this value.
+ * @param {object} [attribution]
+ * @param {foundry.abstract.Document} [attribution.document] {@link tooltip} and {@link img} are taken from this document unless overrides are provided.
+ * @param {string} [attribution.icon] CSS class for a font awesome icon.
+ * @param {string} [attribution.img] Filepath for an image icon.
+ * @param {string} [attribution.tooltip] Localized string tooltip on the icon.
+ */
+function changeHit(workflow, hitData, value, {document, icon, img, tooltip} = {}) {
+    hitData.isHit = value;
+    if (document) {
+        img ||= document.img ?? document.texture.src;
+        tooltip ||= `${document.name}: ${_loc(value ? 'CAT.Macros.AC.Hit' : 'CAT.Macros.AC.Miss')}`;
+    }
+    if (!icon && !img && !tooltip) return;
+    const attributions = getWorkflowProperty(workflow, 'acAttributions') ?? {};
+    const attribution = {icon, img, tooltip};
+    if (tooltip && !icon && !img) icon = 'fas fa-bolt';
+    if (icon) attribution.cssClass = 'midi-qol-ac-icon-fa';
+    else if (img) attribution.cssClass = 'midi-qol-ac-icon-img cat-ac-icon';
+    attributions[hitData.target.uuid] ??= [];
+    attributions[hitData.target.uuid].push(attribution);
+    setWorkflowProperty(workflow, 'acAttributions', attributions);
 }
 /**
  * How long a spell lasts once scaled by the level it was cast at, capped at a day.
@@ -827,6 +891,7 @@ export default {
     getCastLevel,
     getRange,
     setActivity,
+    setItem,
     bonusAttack,
     addAttackRollPart,
     expandAttackCriticalRange,
@@ -839,6 +904,8 @@ export default {
     removeTargets,
     preventZeroHP,
     grantRollModifier,
+    bonusAC,
+    changeHit,
     getScaledDuration,
     rollConfiguredSource,
     setNotSustainedRoll

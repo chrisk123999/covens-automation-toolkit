@@ -43,6 +43,8 @@ export function readyHooks() {
     Hooks.on(constants.workflowHookNames.preAttackRollConfig, events.workflowEvents.attackRollConfig);
     Hooks.on(constants.workflowHookNames.preRollAttack, events.workflowEvents.preRollAttack);
     Hooks.on(constants.workflowHookNames.postAttackRoll, events.workflowEvents.postAttackRoll);
+    Hooks.on(constants.workflowHookNames.checkHitTarget, events.workflowEvents.checkHitTarget);
+    Hooks.on(constants.workflowHookNames.hitsChecked, events.workflowEvents.hitsChecked);
     Hooks.on(constants.workflowHookNames.attackRollComplete, events.workflowEvents.attackRollComplete);
     Hooks.on(constants.workflowHookNames.savesComplete, events.workflowEvents.savesComplete);
     Hooks.on(constants.workflowHookNames.damageRollComplete, events.workflowEvents.damageRollComplete);

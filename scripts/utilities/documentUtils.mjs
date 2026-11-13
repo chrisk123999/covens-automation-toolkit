@@ -101,16 +101,27 @@ async function deleteEmbeddedDocuments(document, type, ids, {forceGM = false, op
  * @param {object} [options] Additional options.
  * @param {object} [options.options] Passed to the deletion.
  * @param {boolean} [options.forceGM] Delete through a GM even when the user has permission.
- * @returns {Promise<foundry.abstract.Document>} The now deleted document.
+ * @returns {Promise<foundry.abstract.Document>} The now deleted document. Already deleted or in-flight deletions are skipped.
  */
 async function deleteDocument(document, {options, forceGM = false} = {}) {
-    if (document.canUserModify(game.user, 'delete') && !forceGM) {
-        await document.delete(options);
-    } else {
-        await queryUtils.query('deleteDocument', queryUtils.gmUser(), {uuid: document.uuid, options});
+    if (document.collection && !document.collection.has(document.id)) return document;
+    const pending = pendingDeletions.get(document.uuid);
+    if (pending) {
+        await pending;
+        return document;
+    }
+    const deletion = (document.canUserModify(game.user, 'delete') && !forceGM)
+        ? document.delete(options)
+        : queryUtils.query('deleteDocument', queryUtils.gmUser(), {uuid: document.uuid, options});
+    pendingDeletions.set(document.uuid, deletion);
+    try {
+        await deletion;
+    } finally {
+        pendingDeletions.delete(document.uuid);
     }
     return document;
 }
+const pendingDeletions = new Map();
 /**
  * Create embedded documents, delegating to a GM when the user lacks permission.
  * @param {foundry.abstract.Document} document Document to act on.

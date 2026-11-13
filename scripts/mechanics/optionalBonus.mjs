@@ -49,7 +49,7 @@ class BonusSession {
             if (!bonus.initialized) bonus.initialize(workflow);
             if (targetActor) bonus.targetActor = targetActor;
             if (type) bonus.type = type;
-            if (bonus.maxTargets > 0 && workflow?.targets.size === 1) bonus.maxTargets = 0;
+            if (bonus.maxTargets > 0 && workflow?.targets.count === 1) bonus.maxTargets = 0;
             this.#bonuses.push(bonus);
         }
     }
@@ -62,7 +62,7 @@ class BonusSession {
         const candidates = this.#bonuses.filter(bonus => !this.#consumed.has(bonus.id) && (!(bonus instanceof D20Bonus) || bonus.phase.has(phaseId)));
         const built = await dialogUtils.buildBonusInputs(candidates, {
             rolls,
-            targets: workflow?.targets.map(token => token.document),
+            targets: workflow?.targets.documents,
             workflow,
             spent: this.#spent,
             committed: this.#committed,
@@ -147,8 +147,8 @@ function getAttackOutcome(workflow) {
     const outcome = {isCritical: roll.isCritical, isFumble: roll.isFumble};
     if (roll.isFumble) return {...outcome, success: false};
     if (roll.isCritical) return {...outcome, success: true};
-    if (workflow.targets.size !== 1) return;
-    const ac = workflow.targets.first().actor?.system.attributes?.ac?.value;
+    if (workflow.targets.count !== 1) return;
+    const ac = workflow.targets.documents[0].actor?.system.attributes?.ac?.value;
     if (!Number.isNumeric(ac)) return;
     return {...outcome, success: (roll.total ?? 0) >= ac};
 }
@@ -199,8 +199,8 @@ async function attack(workflow) {
 }
 
 function getDamageOutcome(workflow) {
-    if (workflow.activity?.hasAttack) return {success: workflow.hitTargets?.size > 0};
-    if (workflow.activity?.hasSave) return {success: workflow.failedSaves?.size > 0};
+    if (workflow.activity?.hasAttack) return {success: workflow.hitTargets?.count > 0};
+    if (workflow.activity?.hasSave) return {success: workflow.failedSaves?.count > 0};
 }
 
 async function damage(workflow) {
@@ -222,7 +222,7 @@ async function damage(workflow) {
             if (bonus.use) await bonus.use(workflow, bonuses);
             continue;
         }
-        if (bonus.targets.size > 0 && bonus.targets.size !== workflow.targets.size) {
+        if (bonus.targets.size > 0 && bonus.targets.size !== workflow.targets.count) {
             targeted.push(bonus);
             continue;
         }
@@ -243,8 +243,8 @@ async function damage(workflow) {
         const type = bonus.roll.options.type ||= defaultDamageType;
         if (bonus.use) await bonus.use(workflow, bonuses);
         for (const target of bonus.targets) {
-            targetedData[target.uuid] ??= [];
-            targetedData[target.uuid].push({total: type === 'healing' ? -bonus.roll.total : bonus.roll.total, type});
+            targetedData[target.id] ??= {};
+            targetedData[target.id][type] = (targetedData[target.id][type] ?? 0) + (type === 'healing' ? -bonus.roll.total : bonus.roll.total);
         }
         await bonus.roll.toMessage({
             flavor: `${bonus.name}: ${Array.from(bonus.targets).map(t => t.name).join(', ')}`,
@@ -260,9 +260,7 @@ async function cleanup(workflow) {
 
 function applyDamage(workflow, token, ditem) {
     const stash = workflowUtils.getWorkflowProperty(workflow, 'optionalBonusDamage');
-    const bonuses = stash?.[token.document.uuid];
-    if (!bonuses?.length) return;
-    for (const {total, type} of bonuses) workflowUtils.modifyDamageAppliedFlat(ditem, total, {type, multiplier: 'auto'});
+    for (const [type, total] of Object.entries(stash?.[token.id] ?? {})) workflowUtils.modifyDamageAppliedFlat(ditem, total, {type, multiplier: 'auto'});
 }
 
 const rollEvents = {

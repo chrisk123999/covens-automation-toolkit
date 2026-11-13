@@ -167,7 +167,7 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
             workflowUtils.grantRollModifier(options, 'fail', targetToken.id, 'incapacitated', _loc('DND5E.ConIncapacitated'));
         const item = itemData(data.sourceEffectData, data.targetEffectData, data.dc, rules, activity?.item);
         const result = await workflowUtils.syntheticItemDataRoll(item, sourceToken.actor, [targetToken], {options});
-        if (!result?.failedSaves.size) return;
+        if (!result?.failedSaves.count) return;
         sourceEffect = sourceToken.actor.effects.find(e => e.origin?.startsWith(result.item.uuid));
         targetEffect = targetToken.actor.effects.find(e => e.origin?.startsWith(result.item.uuid));
     } else {
@@ -220,23 +220,23 @@ async function preGrappleEscape({workflow}) {
     await new Events.GrappleEvent(choice, workflow.token.document, constants.grapplePasses.preEscape, {data: selected}).run();
     selected.dc ??= await legacyGrappleDC(choice.actor);
     if (selected.dc === undefined) noDCAutoSucceed(workflow, workflow.token);
-    workflow.item = itemUtils.syntheticItem(escapeData(selected.dc), workflow.actor);
-    workflow.activity = workflow.item.system.activities.get(workflow.activity.id);
+    await workflowUtils.setItem(workflow, itemUtils.syntheticItem(escapeData(selected.dc), workflow.actor));
     workflowUtils.setWorkflowProperty(workflow, 'grappleEscape', {
-        effect: selected.effect, grappler: choice, remaining: Object.values(data).filter(d => d.effect.id !== selected.effect.id)
+        effectUuid: selected.effect.uuid, grapplerUuid: choice.uuid, remainingUuids: Object.values(data).filter(d => d.effect.id !== selected.effect.id).map(d => d.effect.uuid)
     });
     workflowUtils.addMacroConditions(workflow, 'grappled');
 }
 async function grappleEscape({workflow}) {
     const data = workflowUtils.getWorkflowProperty(workflow, 'grappleEscape');
-    if (!data) return;
-    await new Events.GrappleEvent(data.grappler, workflow.token.document, constants.grapplePasses.postEscape, {data: {
-        effect: data.effect, remaining: data.remaining
-    }}).run();
-    if (!workflow.saves.size) return;
-    const nextGrapple = data.remaining[0];
+    const grappler = data ? fromUuidSync(data.grapplerUuid, {strict: false}) : undefined;
+    if (!grappler) return;
+    const effect = fromUuidSync(data.effectUuid, {strict: false});
+    const remaining = data.remainingUuids.map(uuid => fromUuidSync(uuid, {strict: false})).filter(Boolean).map(e => ({dc: e.flags.cat?.grapple?.dc, effect: e}));
+    await new Events.GrappleEvent(grappler, workflow.token.document, constants.grapplePasses.postEscape, {data: {effect, remaining}}).run();
+    if (!workflow.saves.count) return;
+    const nextGrapple = remaining[0];
     if (nextGrapple) await createEscapeItem(workflow.actor, nextGrapple.dc);
-    if (data.effect) await documentUtils.deleteDocument(data.effect);
+    if (effect) await documentUtils.deleteDocument(effect);
 }
 async function deleteGrappleEscape({actor, identifier}) {
     if (!actor) return;
@@ -246,7 +246,7 @@ async function deleteGrappleEscape({actor, identifier}) {
 }
 async function grappleAttackDisadvantage({macroClass: {identifier}, workflow}) {
     const grapples = actorUtils.getEffectByIdentifier(workflow.actor, 'grappleTarget', {multiple: true});
-    if (grapples.some(e => workflow.targets.some(t => t.id === e.flags.cat?.grapple?.tokenId))) return;
+    if (grapples.some(e => workflow.targets.documents.some(t => t.id === e.flags.cat?.grapple?.tokenId))) return;
     for (const grapple of grapples) workflow.tracker.disadvantage.add(grapple.flags.cat?.grapple?.tokenId ?? identifier, grapple.name);
 }
 function register() {

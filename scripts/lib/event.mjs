@@ -414,7 +414,7 @@ class WorkflowEvent extends BaseWorkflowEvent {
         this.workflow = workflow;
         this.activity = workflow.activity;
         this.item = workflow.item;
-        this.targets = workflow.targets.map(token => token.document);
+        this.targets = new Set(workflow.targets.documents);
         this.setContext(workflow.actor, {token: workflow.token?.document});
         this.castData = workflow.castData;
     }
@@ -449,12 +449,29 @@ class PreTargetingWorkflowEvent extends BaseWorkflowEvent {
         };
     }
 }
+class TokenHitWorkflowEvent extends WorkflowEvent {
+    constructor(pass, workflow, token, attackTotal, hitData) {
+        super(pass, workflow);
+        this.targetToken = token;
+        this.targets = new Set([token]);
+        this.attackTotal = attackTotal;
+        this.hitData = hitData;
+    }
+    appendData(data) {
+        return {
+            ...super.appendData(data),
+            attackTotal: this.attackTotal,
+            targetToken: this.targetToken,
+            hitData: this.hitData
+        };
+    }
+}
 class TokenDamageWorkflowEvent extends WorkflowEvent {
     constructor(pass, workflow, token, ditem) {
         super(pass, workflow);
         this.ditem = ditem;
-        this.targetToken = token?.document;
-        this.targets = new Set([token.document]);
+        this.targetToken = token;
+        this.targets = new Set([token]);
     }
     appendData(data) {
         return {
@@ -857,6 +874,7 @@ class CalledEvent extends CatEvent {
 export default {
     WorkflowEvent,
     PreTargetingWorkflowEvent,
+    TokenHitWorkflowEvent,
     TokenDamageWorkflowEvent,
     MovementEvent,
     GrappleEvent,

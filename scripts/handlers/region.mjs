@@ -159,8 +159,8 @@ async function finishPlacedRegions(placedRegions) {
 }
 async function stampCastTargets(workflow, placedRegions) {
     placedRegions = placedRegions.filter(region => region.flags.cat.activities?.some(i => i.oncePerTurn));
-    if (!placedRegions.length || !workflow.hitTargets?.size) return;
-    const tokens = Array.from(workflow.hitTargets).map(token => token.document ?? token);
+    if (!placedRegions.length || !workflow.hitTargets?.count) return;
+    const tokens = workflow.hitTargets.documents;
     await Promise.all(placedRegions.map(async region => {
         const currentStamps = region.flags.cat.processedTokens ?? [];
         const processedTokens = tokens.reduce((stamps, token) => combatUtils.addTurnStamp(stamps, token.id, tokenUtils.getCombatData(token)), currentStamps);

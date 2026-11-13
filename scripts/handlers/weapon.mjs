@@ -19,7 +19,7 @@ async function cleave({workflow, hit: targets}) {
     const combatData = tokenUtils.getCombatData(token);
     const stamps = workflow.actor.flags.cat?.weaponMastery?.cleave ?? [];
     if (combatUtils.isStampedThisTurn(stamps, token.id, combatData)) return;
-    const first = targets[0].document;
+    const first = targets[0];
     const reach = itemUtils.getRange(workflow.item).reach ?? 5;
     const options = tokenUtils.findNearby(first, 5, {disposition: 'all', includeIncapacitated: false}).filter(nearby => nearby.id !== token.id && nearby.actor && tokenUtils.isEnemy(token, nearby) && tokenUtils.isWithinDistance(token, nearby, reach));
     if (!options.length) return;
@@ -36,14 +36,14 @@ async function graze({workflow, missed: targets}) {
     const modifier = getModifier(workflow);
     const damageType = workflow.item.system.damage?.base?.types?.first();
     if (modifier <= 0 || !damageType) return;
-    await workflowUtils.applyDamage(targets.map(token => token.document), modifier, damageType);
+    await workflowUtils.applyDamage(targets, modifier, damageType);
 }
 async function push({workflow, hit: targets}) {
     const scene = workflow.token.document.parent;
     for (const token of targets) {
         if (actorUtils.getSize(token.actor) > CONFIG.DND5E.actorSizes.lg.numerical) continue;
         const distance = await dialogUtils.distanceDialog(itemUtils.getMasteryLabel('push'), _loc('CAT.WeaponMastery.PushPrompt', {target: token.name}), [5, 10], {none: _loc('CAT.WeaponMastery.NoPush'), scene});
-        if (distance) await tokenUtils.slideToken(token.document, {sourceToken: workflow.token.document, distance});
+        if (distance) await tokenUtils.slideToken(token, {sourceToken: workflow.token.document, distance});
     }
 }
 async function sap({workflow, hit: targets}) {
@@ -67,8 +67,8 @@ async function vex({workflow, hit: targets}) {
     const affected = targets.filter(token => workflowUtils.getDamageDealt(workflow, token) > 0);
     if (!affected.length) return;
     const datas = affected.map(token => {
-        const data = effectData(workflow, 'vex', [{key: 'flags.midi-qol.advantage.attack.all', type: 'override', value: 'targetUuid === "' + token.document.uuid + '"', phase: 'initial', priority: 20}], {expiry: 'sourceEnd'});
-        data.flags.cat.weaponMastery = {target: token.document.uuid};
+        const data = effectData(workflow, 'vex', [{key: 'flags.midi-qol.advantage.attack.all', type: 'override', value: 'targetUuid === "' + token.uuid + '"', phase: 'initial', priority: 20}], {expiry: 'sourceEnd'});
+        data.flags.cat.weaponMastery = {target: token.uuid};
         return data;
     });
     await effectUtils.createEffects(workflow.actor, datas);
@@ -114,7 +114,7 @@ function getMasteries(workflow) {
 }
 async function attackRollComplete(workflow) {
     if (!workflow.actor || !workflow.attackRoll) return;
-    const targets = Array.from(workflow.targets, token => token.document.uuid);
+    const targets = workflow.targets.uuids;
     const spent = actorUtils.getEffectByIdentifier(workflow.actor, 'masteryVex', {multiple: true}).filter(effect => targets.includes(effect.flags.cat.weaponMastery?.target));
     await Promise.all(spent.map(effect => documentUtils.deleteDocument(effect)));
 }
@@ -128,8 +128,8 @@ async function damageRollComplete(workflow) {
 async function rollFinished(workflow) {
     const masteries = getMasteries(workflow);
     if (!masteries) return;
-    const hit = Array.from(workflow.hitTargets ?? []).filter(token => token.actor);
-    const missed = Array.from(workflow.targets ?? []).filter(token => token.actor && !workflow.hitTargets.has(token));
+    const hit = workflow.hitTargets.documents.filter(token => token.actor);
+    const missed = workflow.targets.difference(workflow.hitTargets).documents.filter(token => token.actor);
     await automationUtils.calledEvent('weaponMastery', workflow.actor, {canOverlap: true, data: {workflow, masteries, hit, missed}});
     for (const mastery of new Set(masteries)) await apply(workflow, mastery, hit, missed);
 }
