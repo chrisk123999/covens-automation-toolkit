@@ -411,6 +411,14 @@ export default class MedkitApp extends CatApp {
         switch (type) {
             case 'checkbox': option.field = new fields.BooleanField({label}); break;
             case 'number': option.field = new fields.NumberField({label}); break;
+            case 'slider': option.field = new fields.NumberField({
+                label, value,
+                min: descriptor.min ?? 0,
+                max: descriptor.max ?? 1,
+                step: descriptor.step ?? 0.1,
+                integer: descriptor.integer,
+                positive: descriptor.positive
+            }); break;
             case 'text': option.field = new fields.StringField({label}); break;
             case 'formula':
                 option.field = dataUtils.formulaField({label, deterministic: !!descriptor.deterministic});
