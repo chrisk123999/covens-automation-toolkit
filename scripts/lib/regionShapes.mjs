@@ -180,9 +180,8 @@ function trimPath(points, length) {
 function intersection(region, otherRegion) {
     const pathA = region.shapes?.flatMap(shapeToPath);
     const pathB = otherRegion.shapes?.flatMap(shapeToPath);
-    if (!pathA?.length || !pathB?.length) return false;
-    const merged = combine(pathA, pathB, ClipperLib.ClipType.ctIntersection);
-    return merged;
+    if (!pathA?.length || !pathB?.length) return [];
+    return combine(pathA, pathB, ClipperLib.ClipType.ctIntersection);
 }
 export default {
     trimPath,
