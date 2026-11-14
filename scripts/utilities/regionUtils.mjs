@@ -91,6 +91,15 @@ function getIntersections(region, A, B, boolOnly = false) {
     return totalIntersections;
 }
 /**
+ * True when the two regions overlap.
+ * @param {foundry.documents.RegionDocument} region
+ * @param {foundry.documents.RegionDocument} otherRegion
+ * @returns {boolean}
+ */
+function hasOverlap(region, otherRegion) {
+    return regionShapes.intersection(region, otherRegion)?.length > 0;
+}
+/**
  * Whether this region blocks sight of the creatures inside it.
  * @param {foundry.documents.RegionDocument} region Region to read the flag from.
  * @returns {boolean|undefined} Undefined when the region carries no visibility flag.
@@ -126,11 +135,11 @@ function getShapeAnchor(shape) {
  * @returns {{entered: Set, exited: Set, through: Set, stayed: Set}} Token documents grouped by what happened to them.
  */
 function getRegionMovementTokens(region, locationData) {
-    const results = { 
-        entered: new Set(), 
-        exited: new Set(), 
-        through: new Set(), 
-        stayed: new Set() 
+    const results = {
+        entered: new Set(),
+        exited: new Set(),
+        through: new Set(),
+        stayed: new Set()
     };
     const scene = region.parent;
     const tokens = scene.tokens;
@@ -521,5 +530,7 @@ export default {
     breakWallPanel,
     deletePathWalls,
     addRegionTimer,
-    createRegionLight
+    createRegionLight,
+    intersection: regionShapes.intersection,
+    hasOverlap
 };

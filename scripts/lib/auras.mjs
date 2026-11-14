@@ -21,9 +21,6 @@ function logOnce(key, message) {
 function isAuraEffect(effect) {
     return !!effect.flags.cat?.aura;
 }
-function getRollDocument(document) {
-    return document.documentName === 'ActiveEffect' ? document.parent : document;
-}
 function getDescriptorMacros(document) {
     return (document.flags?.cat?.macros?.aura ?? []).map(entry => constants.macros.getFnMacros(entry.source, entry.rules, entry.identifier, 'aura', 'descriptor')).filter(Boolean);
 }
@@ -82,12 +79,11 @@ function getTemplate(document, descriptor) {
     return effectData;
 }
 function createEntry(token, document, descriptor) {
-    const rollDocument = getRollDocument(document);
     const hostItem = getHostItem(document);
     const key = token.id + '.' + document.uuid + '.' + descriptor.id;
     try {
-        const radius = distanceUtils.toRangeUnits(token.parent, rollUtils.rollDiceSync(String(descriptor.radius ?? 0), {document: rollDocument, options: {maximize: true}}).total);
-        const value = descriptor.value?.formula ? rollUtils.rollDiceSync(String(descriptor.value.formula), {document: rollDocument, options: {maximize: true}}).total : undefined;
+        const radius = distanceUtils.toRangeUnits(token.parent, rollUtils.rollDiceSync(String(descriptor.radius ?? 0), {document, options: {maximize: true}}).total);
+        const value = descriptor.value?.formula ? rollUtils.rollDiceSync(String(descriptor.value.formula), {document, options: {maximize: true}}).total : undefined;
         return {
             key,
             auraId: descriptor.id,

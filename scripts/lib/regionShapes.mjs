@@ -26,6 +26,7 @@ function combine(subject, clip, clipType) {
     return solution;
 }
 function shapeToPath(shape) {
+    if (shape.clipperPaths) return shape.clipperPaths;
     return toPath(Array.from({length: shape.points.length / 2}, (_, index) => ({x: shape.points[index * 2], y: shape.points[index * 2 + 1]})));
 }
 function outerPath(points) {
@@ -169,6 +170,20 @@ function trimPath(points, length) {
     }
     return result.length > 1 ? result : [];
 }
+
+/**
+ * Returns a path for the overlapping area of both regions.
+ * @param {foundry.documents.RegionDocument} region
+ * @param {foundry.documents.RegionDocument} otherRegion
+ * @returns {{x: number, y: number}[]}
+ */
+function intersection(region, otherRegion) {
+    const pathA = region.shapes?.flatMap(shapeToPath);
+    const pathB = otherRegion.shapes?.flatMap(shapeToPath);
+    if (!pathA?.length || !pathB?.length) return false;
+    const merged = combine(pathA, pathB, ClipperLib.ClipType.ctIntersection);
+    return merged;
+}
 export default {
     trimPath,
     subtractShapes,
@@ -176,5 +191,6 @@ export default {
     pathSegments,
     containsPoint,
     nearestSegment,
-    sideBand
+    sideBand,
+    intersection
 };
