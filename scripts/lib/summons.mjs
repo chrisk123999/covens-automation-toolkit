@@ -248,7 +248,7 @@ export class SummonsManager {
         const summon = new Summon(ownerActor, sourceActor, created, options);
         summon.actor = await this.#prepareSidebarActor(summon, created, options);
         this.#summons.set(summon.actor.id, summon);
-        if (options.parent) await documentUtils.makeDependent(options.parent, [summon.actor]);
+        if (summon.parent) await documentUtils.makeDependent(summon.parent, [summon.actor]);
         await summonEvents.create(summon);
         return summon;
     }
