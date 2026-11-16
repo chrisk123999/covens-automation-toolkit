@@ -89,10 +89,12 @@ function hitsChecked(workflow) {
         if (attributions?.length) workflow.hitDisplayData[uuid]?.acIcons.push(...attributions);
 }
 async function attackRollComplete(workflow) {
+    const hadHits = workflow.hitTargets.count > 0;
     regionAttacks.complete(workflow);
     await new Events.WorkflowEvent(constants.workflowPasses.attackRollComplete, workflow).run();
     await weapon.attackRollComplete(workflow);
     await effects.specialDuration(workflow, 'attack');
+    if (hadHits && workflow.targets.count && !workflow.hitTargets.count && !workflow.hitTargetsEC?.count) return false;
 }
 async function savesComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.savesComplete, workflow).run();

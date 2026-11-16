@@ -3,6 +3,12 @@
 - `number` configuration options accept `min`, `max`, `step`, `integer` and `positive`. The CatKit shows a slider when `min`, `max` and `step` are set, or `min` and `max` with `integer`.
 ## Bug Fixes:
 - `rollUtils.damageRoll` passes `configured` through to the roll. A damage roll rebuilt from an already scaled critical hit no longer doubles its dice a second time.
+- An attack whose `attackRollComplete` pass removes every hit now finishes as a miss instead of waiting for a damage roll.
+- Panel walls can be closed into a loop: clicking an existing panel end reached by one panel from another end places the connecting panel, and ties go to the latest panel.
+- `dialogUtils.selectDie` labels each die group with its damage type and icon.
+## API Update Notes:
+- New `workflowUtils.rerollKeepDamage` rolls a workflow's damage rolls a second time and keeps the higher total or asks which to keep. The set not kept shows as discarded dice on the chat card. `count` limits it to the first rolls, and manual rolls are supported.
+- `dialogUtils.selectDie` takes `damageTypes` and only offers dice from rolls of those types.
 # 0.1.8 Release:
 ## Update Notes:
 - New `formula` configuration type. The CatKit shows the system's formula input and refuses a formula that does not parse. `deterministic: true` also refuses dice.

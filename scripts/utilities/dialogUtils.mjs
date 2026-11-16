@@ -919,16 +919,18 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
  * @param {number} [options.max] Total dice selectable.
  * @param {string} [options.userId] User the dialog is shown to.
  * @param {string|Array} [options.buttons] Button set for the dialog.
+ * @param {string[]} [options.damageTypes] Only offer dice from rolls of these damage types.
  * @returns {Promise<string[]|false>} Keys shaped `rollIndex-termIndex-resultIndex`.
  */
-async function selectDie(rolls = [], title, content, {max = 1, userId = game.user.id, buttons = 'okCancel'} = {}) {
+async function selectDie(rolls = [], title, content, {max = 1, userId = game.user.id, buttons = 'okCancel', damageTypes} = {}) {
     let dice = [];
     for (let i = 0; i < rolls.length; i++) {
         let roll = rolls[i];
+        if (damageTypes?.length && !damageTypes.includes(roll.options?.type)) continue;
         for (let j = 0; j < roll.terms.length; j++) {
             let term = roll.terms[j];
             if (term.isDeterministic) continue;
-            let flavor = term.flavor || term.options?.flavor || roll.options?.flavor || '';
+            let flavor = term.flavor || roll.options?.type || '';
             let cfg = CONFIG.DND5E.damageTypes[flavor];
             for (let k = 0; k < term.results.length; k++) {
                 dice.push({
