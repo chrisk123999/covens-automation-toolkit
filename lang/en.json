@@ -763,6 +763,11 @@
                 "Cast": "Don't ask again this cast",
                 "Permanent": "Don't ask again. Clear the saved choice in this item's CAT configuration tab."
             },
+            "RerollKeep": {
+                "Choose": "Choose which damage roll to use.",
+                "First": "First Roll: {total}",
+                "Second": "Second Roll: {total}"
+            },
             "Request": {
                 "Approved": "Approved",
                 "Automatic": "Automatic Approval",

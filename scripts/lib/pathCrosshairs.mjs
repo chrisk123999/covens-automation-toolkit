@@ -125,9 +125,19 @@ export class PathCrosshairs {
         if (this.segments.some(([a, b]) => area.contains(a.x, a.y) || area.contains(b.x, b.y) || area.lineSegmentIntersects(a, b))) return true;
         return this.flats.some(other => area.intersects(new PIXI.Rectangle(other.x, other.y, other.size, other.size)));
     }
+    hasSegment([start, end]) {
+        const same = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < 1;
+        return this.segments.some(([a, b]) => (same(a, start) && same(b, end)) || (same(a, end) && same(b, start)));
+    }
     pendingPanel() {
         if (this.flat || (!this.panelStart && !this.flats.length)) return;
-        const anchor = this.panelEnds().reduce((best, point) => Math.hypot(point.x - this.cursor.x, point.y - this.cursor.y) < Math.hypot(best.x - this.cursor.x, best.y - this.cursor.y) ? point : best);
+        const distance = point => Math.hypot(point.x - this.cursor.x, point.y - this.cursor.y);
+        const near = point => distance(point) < canvas.grid.size / 3;
+        const ends = this.panelEnds().reverse().sort((a, b) => distance(a) - distance(b));
+        const reaching = ends.filter(end => !near(end)).map(end => this.panelFrom(end)).find(panel => near(panel[1]) && !this.hasSegment(panel));
+        return reaching ?? this.panelFrom(ends[0]);
+    }
+    panelFrom(anchor) {
         let angle = Math.atan2(this.cursor.y - anchor.y, this.cursor.x - anchor.x);
         if (!this.free) angle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
         const diagonal = this.gridMeasured() && Math.abs(Math.cos(angle)) > 0.1 && Math.abs(Math.sin(angle)) > 0.1;
@@ -168,8 +178,7 @@ export class PathCrosshairs {
                 return this.refresh();
             }
             const panel = this.pendingPanel();
-            const same = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < 1;
-            if (this.segments.some(([a, b]) => (same(a, panel[0]) && same(b, panel[1])) || (same(a, panel[1]) && same(b, panel[0])))) return;
+            if (this.hasSegment(panel)) return;
             this.segments.push(panel);
             this.history.push('segment');
         }

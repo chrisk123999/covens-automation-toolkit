@@ -1,5 +1,5 @@
 import {constants, Logging} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, distanceUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
+import {activityUtils, actorUtils, dialogUtils, distanceUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 /**
  * Midi workflow options that skip the attack and damage prompts.
  * @param {boolean} fast Skip the prompts.
@@ -630,6 +630,34 @@ async function rerollDamageDice(workflow, selection, document) {
     await workflow.setDamageRolls(workflow.damageRolls);
 }
 /**
+ * Roll the workflow's damage rolls a second time and keep one set.
+ * @param {MidiQOL.Workflow} workflow Workflow whose damage rolls change.
+ * @param {Item5e} document Item that names the reroll.
+ * @param {object} [options] Additional options.
+ * @param {'higher'|''} [options.keep] Keep the higher total, or ask which to keep.
+ * @param {number} [options.count] Only reroll this many rolls from the start of the damage rolls.
+ * @returns {Promise<boolean>} True when the second set was kept.
+ */
+async function rerollKeepDamage(workflow, document, {keep = '', count} = {}) {
+    const originals = workflow.damageRolls?.slice(0, count ?? workflow.damageRolls.length) ?? [];
+    if (!originals.some(roll => roll.dice.length)) return false;
+    const rolls = originals.map(roll => new roll.constructor(roll.formula, roll.data, roll.options));
+    const rerolls = await rollUtils.resolveManualRolls(rolls, workflow.actor, document.name);
+    if (rerolls === rolls) await Promise.all(rolls.map(async roll => await roll.evaluate()));
+    const firstTotal = originals.reduce((total, roll) => total + roll.total, 0);
+    const secondTotal = rerolls.reduce((total, roll) => total + roll.total, 0);
+    let useSecond = secondTotal > firstTotal;
+    if (keep !== 'higher') {
+        const selection = await dialogUtils.buttonDialog(document.name, 'CAT.Dialog.RerollKeep.Choose', [
+            [_loc('CAT.Dialog.RerollKeep.First', {total: firstTotal}), 'first'],
+            [_loc('CAT.Dialog.RerollKeep.Second', {total: secondTotal}), 'second']
+        ]);
+        useSecond = selection === 'second';
+    }
+    if (useSecond) await workflow.setDamageRolls([...rerolls, ...workflow.damageRolls.slice(originals.length)]);
+    return useSecond;
+}
+/**
  * Remove one source of disadvantage midi added to the workflow's attack roll, such as 'range' or 'nearbyFoe'.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @param {string} source Midi's source key.
@@ -898,6 +926,7 @@ export default {
     addTargetAC,
     removeAttackDisadvantage,
     rerollDamageDice,
+    rerollKeepDamage,
     applyDamage,
     applyWorkflowDamage,
     updateTargets,
