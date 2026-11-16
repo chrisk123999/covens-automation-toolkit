@@ -654,7 +654,14 @@ async function rerollKeepDamage(workflow, document, {keep = '', count} = {}) {
         ]);
         useSecond = selection === 'second';
     }
-    if (useSecond) await workflow.setDamageRolls([...rerolls, ...workflow.damageRolls.slice(originals.length)]);
+    const kept = useSecond ? rerolls : originals;
+    const discarded = useSecond ? originals : rerolls;
+    kept.forEach((roll, rollIndex) => roll.terms.forEach((term, termIndex) => {
+        if (term.isDeterministic) return;
+        const results = discarded[rollIndex].terms[termIndex].results.map(result => ({...result, active: false, discarded: true}));
+        term.results.push(...results);
+    }));
+    await workflow.setDamageRolls([...kept, ...workflow.damageRolls.slice(originals.length)]);
     return useSecond;
 }
 /**
