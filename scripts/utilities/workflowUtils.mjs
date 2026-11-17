@@ -51,19 +51,21 @@ function isAttackType(workflow, type = 'attack') {
  * @param {object} [options.message] Chat message configuration.
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
+ * @param {boolean|number[]} [options.consumeUsage] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @param {boolean} [options.autoDamage] Roll damage according to midi's autoRollDamage setting.
  * @returns {Promise<MidiQOL.Workflow|undefined>} Undefined when midi declines the use.
  */
-async function completeActivityUse(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = false, autoDamage} = {}) {
+async function completeActivityUse(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources, spellSlot = true, fast = false, autoDamage} = {}) {
     const defaultConfig = {
         consumeUsage,
         consume: {
-            resources: consumeResources,
-            spellSlot
+            spellSlot,
+            resources: consumeResources ?? Array.from(activity.consumption.targets.entries())
+                .filter(([, target]) => !target.combatOnly || activity.actor.inCombat)
+                .map(([index]) => index)
         }
     };
     const defaultOptions = {
@@ -111,12 +113,12 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
  * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
- * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
+ * @param {boolean|number[]} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticActivityRoll(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = true} = {}) {
+async function syntheticActivityRoll(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources, spellSlot = true, fast = true} = {}) {
     return await completeActivityUse(activity, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot, fast, autoDamage: true});
 }
 /**
@@ -132,12 +134,12 @@ async function syntheticActivityRoll(activity, targets = [], {config = {}, optio
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
  * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
- * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
+ * @param {boolean} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = true} = {}) {
+async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources, spellSlot = true, fast = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(item.actor);
     if (user && user.id !== game.user.id) {
         return MidiQOL.restoreWorkflowTokenSets(await queryUtils.query('syntheticActivityDataRoll', user, {
