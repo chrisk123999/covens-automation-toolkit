@@ -178,7 +178,10 @@ async function grapple(sourceToken, targetToken, {activity, rules, flatDC = acti
         sourceEffect = (await effectUtils.createEffects(sourceToken.actor, [data.sourceEffectData]))?.[0];
         targetEffect = (await effectUtils.createEffects(targetToken.actor, [data.targetEffectData]))?.[0];
     }
-    if (!sourceEffect || !targetEffect) return;
+    if (!sourceEffect || !targetEffect) {
+        if (sourceEffect ?? targetEffect) await documentUtils.deleteDocument(sourceEffect ?? targetEffect);
+        return;
+    }
     await documentUtils.makeDependent(sourceEffect, [targetEffect]);
     await documentUtils.makeDependent(targetEffect, [sourceEffect]);
     const escapeItem = await createEscapeItem(targetToken.actor, data.dc);

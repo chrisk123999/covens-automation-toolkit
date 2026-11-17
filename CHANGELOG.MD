@@ -11,6 +11,7 @@
 - Panel walls can be closed into a loop: clicking an existing panel end reached by one panel from another end places the connecting panel, and ties go to the latest panel.
 - `dialogUtils.selectDie` labels each die group with its damage type and icon.
 - Grapples with extra conditions no longer fail to start.
+- A grapple whose grappled effect is prevented no longer leaves the grappling effect on the grappler.
 - Writing a scale that already exists on the class or subclass no longer adds a duplicate scale advancement.
 - Advantage and disadvantage prompts for checks, saves, skills and tools group their options under Advantage and Disadvantage, with a prompt line and room for long names.
 - Workflow events run on rolls made right after the world loads, instead of only once CAT finishes loading weapon and tool lists.
