@@ -45,6 +45,7 @@ async function deleteActiveEffect(effect, options, userId) {
         await effects.specialDurationRemovedConditions(effect);
         await effects.refreshDisableConditions(effectUtils.getActor(effect));
     }
+    await effects.specialDurationGrappleEnded(effect);
     effectAnimations(effect, false);
     await new Events.EffectEvent(effect, constants.effectPasses.deleted, {options}).run();
 }

@@ -57,7 +57,6 @@ const ddbInitGate = new Promise(resolve => {
 Hooks.once('ready', async () => {
     handlers.tours.registerTours();
     lib.constants.summons = lib.SummonsManager.create();
-    await getPackConstants();
     readyHooks();
     if (game.settings.get('cat', 'manualRollsEnabled')) patches.dicePatching.force(true);
     integration.dae.injectFlags();
@@ -67,6 +66,7 @@ Hooks.once('ready', async () => {
     patches.compendiumBrowserPatching.patch(true);
     patches.combatPatching.patch(true);
     patches.daePatching.patch(true);
+    patches.tokenPatching.patch(true);
     handlers.grapple.register();
     handlers.aura.register();
     handlers.summon.register();
@@ -75,7 +75,7 @@ Hooks.once('ready', async () => {
     handlers.devtools.refresh();
     await handlers.customMacros.load();
     await utils.genericUtils.sleep(1000); //To avoid eating console logs from other modules.
-    await handlers.items.registerCompendiums({startup: true});
+    await Promise.all([handlers.items.registerCompendiums({startup: true}), getPackConstants()]);
     catGate();
     if (game.modules.get('ddb-importer')?.active) {
         await Promise.race([

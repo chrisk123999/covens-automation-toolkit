@@ -700,12 +700,14 @@
                     "zeroSpeed": "Speed reduced to zero",
                     "tempHP": "Temporary HP lost",
                     "tempMaxHP": "Temporary max HP lost",
+                    "grappleEnded": "Grapple ended",
                     "toolCheck": "Any tool",
                     "Groups": {
                         "Workflow": "Workflow",
                         "Turn": "Turn",
                         "Movement": "Movement",
                         "HitPoints": "Hit Points",
+                        "Grapple": "Grapple",
                         "ConditionAdded": "Condition Added",
                         "ConditionRemoved": "Condition Removed",
                         "Equipped": "Armor Equipped",
@@ -776,6 +778,7 @@
                 "Request": "Request",
                 "Self": "Self Request"
             },
+            "RollContext": "Choose the options that apply to this roll.",
             "Combobox": {
                 "Filter": "Type to filter...",
                 "NoMatches": "No matches"

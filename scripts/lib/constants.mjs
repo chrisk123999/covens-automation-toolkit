@@ -622,16 +622,20 @@ const tools = [];
 const weapons = [];
 export async function getPackConstants() {
     const weaponMap = CONFIG.DND5E.weaponTypeMap;
-    for (const [id, uuid] of Object.entries(CONFIG.DND5E.weaponIds)) {
-        const weapon = await fromUuid(uuid);
+    const weaponEntries = Object.entries(CONFIG.DND5E.weaponIds);
+    const weaponDocuments = await Promise.all(weaponEntries.map(([, uuid]) => fromUuid(uuid)));
+    for (const [index, [id]] of weaponEntries.entries()) {
+        const weapon = weaponDocuments[index];
         if (!weapon) continue;
         const entry = {value: id, label: weapon.name, image: weapon.img};
         weapons.push(entry);
         if (weaponMap[weapon.system.type.value] === 'melee') meleeWeapons.push(entry);
         else if (weaponMap[weapon.system.type.value] === 'ranged') rangedWeapons.push(entry);
     }
-    for (const [id, {id: uuid}] of Object.entries(CONFIG.DND5E.tools)) {
-        const tool = await fromUuid(uuid);
+    const toolEntries = Object.entries(CONFIG.DND5E.tools);
+    const toolDocuments = await Promise.all(toolEntries.map(([, {id: uuid}]) => fromUuid(uuid)));
+    for (const [index, [id]] of toolEntries.entries()) {
+        const tool = toolDocuments[index];
         if (!tool) continue;
         tools.push({value: id, label: tool.name, image: tool.img, type: tool.system.type.value});
     }

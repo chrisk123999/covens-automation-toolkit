@@ -1,14 +1,23 @@
 # 0.1.9 Release:
 ## Update Notes:
 - `number` configuration options accept `min`, `max`, `step`, `integer` and `positive`. The CatKit shows a slider when `min`, `max` and `step` are set, or `min` and `max` with `integer`.
+- New `grappleEnded` special duration. The effect ends when the grapple between its bearer and its source ends, by escape, release, death or incapacitation.
+- Moving while grappling a creature costs 1 extra foot per foot, unless the creature is two or more sizes smaller (or Tiny under 2024 rules). The `flags.cat.grappleDrag.freeSizeOffset` actor flag waives it for creatures up to that many sizes larger than the mover.
+- Scales an automation registers are written to the class or subclass when its item is added to an actor, not only when it is applied through the CatKit.
 ## Bug Fixes:
 - `rollUtils.damageRoll` passes `configured` through to the roll. A damage roll rebuilt from an already scaled critical hit no longer doubles its dice a second time.
 - An attack whose `attackRollComplete` pass removes every hit now finishes as a miss instead of waiting for a damage roll.
+- Escape Grapple used from a macro returns when the escape finishes instead of waiting until it times out.
 - Panel walls can be closed into a loop: clicking an existing panel end reached by one panel from another end places the connecting panel, and ties go to the latest panel.
 - `dialogUtils.selectDie` labels each die group with its damage type and icon.
+- Grapples with extra conditions no longer fail to start.
+- Writing a scale that already exists on the class or subclass no longer adds a duplicate scale advancement.
+- Advantage and disadvantage prompts for checks, saves, skills and tools group their options under Advantage and Disadvantage, with a prompt line and room for long names.
+- Workflow events run on rolls made right after the world loads, instead of only once CAT finishes loading weapon and tool lists.
 ## API Update Notes:
 - New `workflowUtils.rerollKeepDamage` rolls a workflow's damage rolls a second time and keeps the higher total or asks which to keep. The set not kept shows as discarded dice on the chat card. `count` limits it to the first rolls, and manual rolls are supported.
 - `dialogUtils.selectDie` takes `damageTypes` and only offers dice from rolls of those types.
+- `tokenUtils.grapple` takes `bonus`, added to the grappler's skill check when no DC is given.
 # 0.1.8 Release:
 ## Update Notes:
 - New `formula` configuration type. The CatKit shows the system's formula input and refuses a formula that does not parse. `deterministic: true` also refuses dice.
