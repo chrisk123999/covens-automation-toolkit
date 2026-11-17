@@ -51,8 +51,8 @@ function isAttackType(workflow, type = 'attack') {
  * @param {object} [options.message] Chat message configuration.
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean|number[]} [options.consumeUsage] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
- * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
+ * @param {boolean|number[]} [options.consumeUsage] Spend the item or activity's own uses.
+ * @param {boolean} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @param {boolean} [options.autoDamage] Roll damage according to midi's autoRollDamage setting.
