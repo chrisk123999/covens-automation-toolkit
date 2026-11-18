@@ -336,7 +336,7 @@ function negateDamageItemDamage(ditem) {
 }
 /**
  * Add or subtract a flat amount of damage on one target, recalculating the resulting hit points. Use in the `damageFlatReductions` or `damagePercentReductions` macro passes.
- * @param {object} ditem Midi damage item, from workflow.damageList.
+ * @param {object} ditem Midi damage item, from `workflow.damageList`.
  * @param {number} modificationAmount Negative to reduce damage. Reductions are capped at the damage dealt.
  * @param {object} [options] Additional options.
  * @param {string} [options.type] Damage type of the modification.
@@ -362,9 +362,14 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
         }
     } else addDamageDetail(ditem, modificationAmount, type, multiplier);
     const actualTotal = ditem.totalDamage = ditem.damageDetail.reduce((total, dmg) => total + dmg.value, 0);
-    const newTempHP = ditem.oldTempHP - actualTotal;
-    ditem.newTempHP = Math.max(newTempHP, 0);
-    ditem.newHP = Math.clamp(ditem.oldHP + Math.min(0, newTempHP), 0, ditem.oldHP);
+    if (type === 'healing') {
+        ditem.newHP = ditem.oldHP - actualTotal;
+    } else {
+        const dmgPastTempHP = ditem.oldTempHP - actualTotal;
+        ditem.newTempHP = Math.max(dmgPastTempHP, 0);
+        ditem.newHP = Math.clamp(ditem.oldHP + Math.min(0, dmgPastTempHP), 0, ditem.oldHP);
+    }
+    ditem.tempDamage = ditem.oldTempHP - ditem.newTempHP;
     ditem.hpDamage = ditem.oldHP - ditem.newHP;
 }
 // used locally only
@@ -375,6 +380,7 @@ function addDamageDetail(ditem, damage, type, multiplier, active) {
         const {damageImmunityMultiplier, damageResistanceMultiplier, damageVulnerabilityMultiplier} = MidiQOL.configSettings();
         const midiOptions = ditem.calcDamageOptions?.midi;
         multiplier = midiOptions?.saved ? (midiOptions?.saveMultiplier ?? 1) : 1;
+        if (type === 'healing' && ditem.calcDamageOptions?.invertHealing) multiplier *= -1;
         const actor = fromUuidSync(ditem.actorUuid);
         if (actor) {
             if (actorUtils.checkTrait(actor, 'di', type)) {

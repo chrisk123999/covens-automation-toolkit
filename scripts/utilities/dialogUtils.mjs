@@ -973,5 +973,7 @@ export default {
     confirmRecoverUses,
     queuedConfirmDialog,
     selectTargetDialog,
-    selectDie
+    selectDie,
+    runDialog,
+    runQueuedDialog
 };
