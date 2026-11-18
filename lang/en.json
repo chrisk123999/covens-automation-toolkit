@@ -830,38 +830,46 @@
                 "Bonus": "Bonus",
                 "Situational": "Situational"
             },
-            "Context": {
-                "weapon": {
-                    "attack": "{source} attacks {target} with {item}",
-                    "attackNoTarget": "{source} attacks with {item}",
-                    "damage": "{source} hits {target} with {item}, roll damage!",
-                    "damageNoTarget": "{source} hits with {item}, roll damage!"
-                },
-                "spell": {
-                    "attack": "{source} casts {item} at {target}, roll to hit!",
-                    "attackNoTarget": "{source} casts {item}, roll to hit!",
-                    "damage": "{source} casts {item} on {target}, roll damage!",
-                    "damageNoTarget": "{source} casts {item}, roll damage!"
-                },
-                "feat": {
-                    "attack": "{source} uses {item} on {target}, roll to hit!",
-                    "attackNoTarget": "{source} uses {item}, roll to hit!",
-                    "damage": "{source} uses {item} on {target}, roll damage!",
-                    "damageNoTarget": "{source} uses {item}, roll damage!"
-                }
+            "Action": {
+                "attack": "{source} makes an {roll} against {target} with {item}!",
+                "attackNoTarget": "{source} makes an {roll} with {item}!",
+                "damage": "{source} deals {roll} to {target} with {item}!",
+                "damageNoTarget": "{source} deals {roll} with {item}!",
+                "heal": "{source} {roll} {target} with {item}!",
+                "healNoTarget": "{source} {roll} with {item}!",
+                "healTemp": "{source} grants {roll} to {target} with {item}!",
+                "healTempNoTarget": "{source} grants {roll} with {item}!",
+                "healMax": "{source} raises {target}'s {roll} with {item}!",
+                "healMaxNoTarget": "{source} raises a {roll} with {item}!"
             },
-            "SaveContext": "{source} targets you with a {type}, roll to save!",
-            "SaveLine": "DC {dc} {ability} Saving Throw",
-            "SaveLineNoDC": "{ability} Saving Throw",
-            "UnknownSource": "Someone",
+            "ActorRoll": {
+                "makes": "{source} makes a {roll}!",
+                "rolls": "{source} rolls {roll}!",
+                "concentration": "{source} makes a {roll} to maintain Concentration!",
+                "concentrationOn": "{source} makes a {roll} to maintain Concentration on {spell}!"
+            },
+            "Roll": {
+                "check": "{ability} check",
+                "skill": "{ability} ({skill}) check",
+                "tool": "{tool} check",
+                "save": "{ability} saving throw",
+                "deathSave": "Death Saving Throw",
+                "hitDie": "a Hit Die",
+                "initiative": "Initiative",
+                "attack": "attack roll",
+                "damage": "damage",
+                "heal": "heals",
+                "healTemp": "Temporary Hit Points",
+                "healMax": "Hit Point maximum"
+            },
+            "DCLine": "DC {dc}",
+            "CriticalHit": "Critical Hit",
+            "GMUnavailable": "The Gamemaster didn't fulfil the roll in time, so the missing dice were rolled digitally.",
+            "GMDisconnected": "The Gamemaster disconnected before fulfilling the roll, so the missing dice were rolled digitally.",
+            "SaveContext": "{saver} makes a {roll} against {source}'s {item}!",
+            "UnknownSource": "someone",
             "WithAdvantage": "With Advantage",
             "WithDisadvantage": "With Disadvantage",
-            "ItemType": {
-                "spell": "spell",
-                "weapon": "weapon",
-                "feat": "feature",
-                "consumable": "item"
-            },
             "Unknown": "an unseen target",
             "DiceTotal": "Dice Total",
             "RollTotal": "Roll Total",
@@ -873,8 +881,18 @@
                 "Hit": "Hit",
                 "Critical": "Critical",
                 "Failure": "Failure",
-                "Success": "Success"
-            }
+                "Success": "Success",
+                "Minimum": "Minimum",
+                "Maximum": "Maximum"
+            },
+            "QuickButtons": "Shortcuts to complete the roll with the desired result",
+            "TitleFor": "Roll for {user}!",
+            "GMOnlyTooltip": "Roll for {user}",
+            "WaitRoll": "Roll Digitally",
+            "TimerPause": "Pause",
+            "TimerResume": "Resume",
+            "SharedTooltip": "Waiting for {user} to roll",
+            "Healing": "Healing"
         },
         "Senses": {
             "DevilsSight": "Devil's Sight"
@@ -927,13 +945,20 @@
                 "diceTotal": "Dice Total - Excludes Modifiers",
                 "perDie": "Per Die - Each Result"
             },
-            "ManualRollsGMFulfill": {
-                "Name": "Gamemaster Fulfils Rolls",
-                "Hint": "When enabled the Gamemaster fulfils all rolls."
+            "ManualRollsFulfiller": {
+                "Name": "Who Fulfils Rolls",
+                "Hint": "Who answers players' roll prompts. With Both, the prompt opens for the player and the Gamemaster, and the first answer is used.",
+                "player": "Player",
+                "gm": "Gamemaster",
+                "both": "Both - First Answer Wins"
+            },
+            "ManualRollsTimer": {
+                "Name": "Prompt Timer",
+                "Hint": "Seconds before an unanswered dialog closes. A roll prompt rolls its remaining dice digitally. 0 turns the timer off."
             },
             "ManualRollsRichContext": {
                 "Name": "Manual Rolls Rich Context",
-                "Hint": "Show full roll context (targets, save DCs, damage phrasing) in the prompt instead of a plain heading."
+                "Hint": "Describe each roll in the prompt, including who rolls it, against whom, which check or save it is, and any DC the user may see, instead of a plain heading."
             },
             "AutomationSources": {
                 "Name": "Automation Sources",
@@ -1204,6 +1229,7 @@
                 "activityType": "Activity Type",
                 "damageType": "Damage Type",
                 "critical": "Critical Hit",
+                "failedSave": "Failed Save",
                 "alignment": "Alignment",
                 "ability": "Ability Score",
                 "hasCondition": "Has Condition",
@@ -1380,9 +1406,13 @@
                 "Title": "Export Data",
                 "Strip": "Strip descriptions",
                 "Settings": "Export Settings",
+                "SettingsHint": "Save every CAT setting to a JSON file.",
+                "SettingsButton": "Export",
                 "Exported": "CAT settings exported.",
                 "Imported": "Imported {count} CAT settings.",
                 "ImportSettings": "Import Settings",
+                "ImportSettingsHint": "Overwrite your CAT settings with an exported JSON file.",
+                "ImportSettingsButton": "Import",
                 "ImportTitle": "Import CAT Settings",
                 "ImportContent": "Overwrite your CAT settings with the imported file?"
             },

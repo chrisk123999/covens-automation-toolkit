@@ -63,17 +63,36 @@ async function createFolder({folderData}) {
     const folder = await Folder.create(folderData);
     return folder.id;
 }
-async function manualRoll({roll: rollData, label}) {
+async function manualRoll({roll: rollData, label, info = [], damage = false, id, user, userId, mode}) {
     const ResolverClass = CONFIG.Dice.fulfillment.methods.cat?.resolver;
     if (!ResolverClass) return [];
     const roll = Roll.fromData(rollData);
+    if (roll instanceof CONFIG.Dice.D20Roll) roll.d20;
     const resolver = new ResolverClass(roll);
     resolver._forcePrompt = true;
-    resolver._remoteLabel = label;
+    const sender = game.users.get(userId);
+    const clean = html => html ? foundry.utils.cleanHTML(String(html), {user: sender}) : html;
+    if (label) resolver._remoteLabel = {label: clean(label.label), icon: clean(label.icon), sub: clean(label.sub)};
+    resolver._batchDamage = damage;
+    resolver._fulfillFor = user;
+    resolver._fulfillMode = mode;
+    resolver._peer = {user: game.users.get(userId), id};
+    if (id) ResolverClass.active.set(id, resolver);
+    if (info.some(Boolean)) {
+        const terms = Roll.defaultImplementation.identifyFulfillableTerms(roll.terms);
+        resolver._termInfo = new Map(terms.map((term, i) => [term, info[i]]).filter(([, entry]) => entry));
+    }
     await resolver.awaitFulfillment();
-    const results = Roll.defaultImplementation.identifyFulfillableTerms(roll.terms).map(term => term.results.map(result => result.result));
+    if (id) ResolverClass.active.delete(id);
+    const results = resolver._submitted ? Roll.defaultImplementation.identifyFulfillableTerms(roll.terms).map(term => term.results.map(result => result.result)) : [];
     await resolver.close();
     return results;
+}
+async function manualRollCancel({id}) {
+    await CONFIG.Dice.fulfillment.methods.cat?.resolver.active.get(id)?.close();
+}
+function manualRollPause({id, paused, left}) {
+    CONFIG.Dice.fulfillment.methods.cat?.resolver.active.get(id)?.setTimerPaused(paused, left);
 }
 async function modifyBatch({operations}) {
     if (!operations || !operations.length) return [];
@@ -124,16 +143,16 @@ async function removeFavorites({actorUuid, entityUuids}) {
         }
     }
 }
-async function syntheticItemDataRoll({itemData, actorUuid, targetUuids, config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot, fast}) {
+async function syntheticItemDataRoll({itemData, actorUuid, targetUuids, config, options, dialog, message, atLevel, consumeResources, spellSlot, fast}) {
     const actor = await fromUuid(actorUuid);
     const targets = targetUuids.map(t => fromUuidSync(t));
-    const workflow = await workflowUtils.syntheticItemDataRoll(itemData, actor, targets, {config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot, fast});
+    const workflow = await workflowUtils.syntheticItemDataRoll(itemData, actor, targets, {config, options, dialog, message, atLevel, consumeResources, spellSlot, fast});
     return workflow?.getSafeMacroData();
 }
-async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, config, options, dialog, message, atLevel, consumeUsage, consumeResources, spellSlot, fast}) {
+async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, config, options, dialog, message, atLevel, consumeResources, spellSlot, fast}) {
     const item = await fromUuid(itemUuid);
     const targets = targetUuids.map(t => fromUuidSync(t));
-    const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, consumeUsage, spellSlot, fast});
+    const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, spellSlot, fast});
     return workflow?.getSafeMacroData();
 }
 async function aimDestination({uuid, range, centerpoint, requireSight, ignoreWalls, allowedPoints}) {
@@ -159,6 +178,8 @@ function registerQueries() {
         createActor,
         createFolder,
         manualRoll,
+        manualRollCancel,
+        manualRollPause,
         modifyBatch,
         moveToken,
         updateTargets,

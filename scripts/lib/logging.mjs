@@ -65,7 +65,7 @@ function addMacroWarning(source, identifier, message, {notify, format, user} = {
     });
     addEntry('WARNING', key + ':\n' + message + (user ? ' (' + user + ')' : ''));
     if (notify && !user) genericUtils.notify(message, {type: notify === true ? 'warn' : notify, localize: false});
-    const gm = queryUtils.gmUser();
+    const gm = game.users.activeGM && queryUtils.gmUser();
     if (!user && gm && !gm.isSelf) queryUtils.query('macroWarning', gm, {source, identifier, message, user: game.user.name}).catch(() => {});
 }
 function addEmbeddedMacroError(trigger, error) {

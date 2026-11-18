@@ -316,6 +316,12 @@ async function createPathRegions(scene, path, {thickness, height, regionData = {
     ]);
     return {region, side, flats};
 }
+/**
+ * Create the walls along a path region, split into its configured section length.
+ * @param {foundry.documents.RegionDocument} region Path region.
+ * @param {WallPath} path Path to wall.
+ * @returns {Promise<foundry.documents.WallDocument[]>}
+ */
 function createPathWalls(region, path) {
     const {pathWalls, pathSectionLength} = region.flags.cat;
     const pixels = region.parent.dimensions.distancePixels;
@@ -325,15 +331,36 @@ function createPathWalls(region, path) {
         flags: {...pathWalls.flags, cat: {...pathWalls.flags?.cat, pathRegion: region.uuid}}
     })));
 }
+/**
+ * Walls belonging to a path region.
+ * @param {foundry.documents.RegionDocument} region Path region.
+ * @returns {foundry.documents.WallDocument[]}
+ */
 function getPathWalls(region) {
     return region.parent.walls.filter(wall => wall.flags.cat?.pathRegion === region.uuid);
 }
+/**
+ * Flat panel regions belonging to a path region.
+ * @param {foundry.documents.RegionDocument} region Path region.
+ * @returns {foundry.documents.RegionDocument[]}
+ */
 function getFlatPanels(region) {
     return region.parent.regions.filter(other => other.flags.cat?.flatPanel && other.flags.cat.pathRegion === region.uuid);
 }
+/**
+ * A wall's endpoints as points.
+ * @param {foundry.documents.WallDocument} wall Wall to read.
+ * @returns {{x: number, y: number}[]}
+ */
 function wallSegment(wall) {
     return [{x: wall.c[0], y: wall.c[1]}, {x: wall.c[2], y: wall.c[3]}];
 }
+/**
+ * Split segments into pieces no longer than the given length.
+ * @param {{x: number, y: number}[][]} segments Segments to split.
+ * @param {number} [maxLength] Maximum piece length in pixels; segments are returned unchanged without it.
+ * @returns {{x: number, y: number}[][]}
+ */
 function splitSegments(segments, maxLength) {
     if (!maxLength) return segments;
     return segments.flatMap(([a, b]) => {

@@ -1,4 +1,4 @@
-import {activityUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, queryUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, actorUtils, dataUtils, dialogUtils, documentUtils, effectUtils, genericUtils, queryUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
 import {constants, Logging} from './_module.mjs';
 const {formatNumber, getHumanReadableAttributeLabel} = dnd5e.utils;
 
@@ -803,7 +803,7 @@ class RollBonus {
                 data.available = Math.max(0, (actions?.bonusActionsMax ?? 1) - (actions?.bonusActionsUsed ?? 0));
                 break;
             case 'reaction':
-                data.available = Math.max(0, (actions?.reactionsMax ?? 1) - (actions?.reactionsUsed ?? 0));
+                data.available = actor && actorUtils.hasNoReactions(actor) ? 0 : Math.max(0, (actions?.reactionsMax ?? 1) - (actions?.reactionsUsed ?? 0));
                 break;
             default:
                 data.available = 999;

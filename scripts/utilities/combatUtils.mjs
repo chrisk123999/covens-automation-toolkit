@@ -31,14 +31,13 @@ function addTurnStamp(stamps, tokenId, combatData) {
 }
 /**
  * Whether it is currently this token's turn.
- * @param {foundry.documents.TokenDocument|foundry.canvas.placeables.Token} token Token to check.
+ * @param {foundry.documents.TokenDocument} token Token to check.
  * @returns {boolean} True when the token is not in a combat.
  */
 function isOwnTurn(token) {
-    const tokenDocument = token.document ?? token;
-    const combat = tokenDocument.combatant?.combat;
+    const combat = token.combatant?.combat;
     if (!combat) return true;
-    return tokenDocument.id === combat.current.tokenId;
+    return token.id === combat.current.tokenId;
 }
 export default {
     isStampedThisTurn,

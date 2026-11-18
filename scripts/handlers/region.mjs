@@ -1,5 +1,5 @@
 import {Auras, constants, Logging} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, combatUtils, dataUtils, distanceUtils, documentUtils, effectUtils, genericUtils, regionUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, actorUtils, combatUtils, dataUtils, distanceUtils, documentUtils, effectUtils, genericUtils, itemUtils, regionUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 import aura from './aura.mjs';
 function placed(region) {
     const activity = regionUtils.getActivity(region);
@@ -202,7 +202,10 @@ function regionTargetTest(region, sourceActivity, disposition) {
     const source = sourceActivity?.actor;
     const sourceToken = source ? actorUtils.getFirstToken(source) : undefined;
     const castLevel = regionUtils.getCastData(region)?.castLevel;
-    const allowed = token => isValidDispositionTarget(sourceActivity, token, disposition) && !regionUtils.isSpellWarded(token, sourceActivity?.item, castLevel, sourceToken);
+    const item = sourceActivity?.item;
+    const magical = itemUtils.isMagical(item);
+    const sourceSuppressed = magical && !!source?.statuses.has('antimagic');
+    const allowed = token => isValidDispositionTarget(sourceActivity, token, disposition) && !regionUtils.isSpellWarded(token, item, castLevel, sourceToken) && !sourceSuppressed && !(magical && token.actor?.statuses.has('antimagic'));
     const filter = aura.getFilter(region.flags.cat?.filter);
     if (!filter) return allowed;
     if (!filterCaches.has(region)) filterCaches.set(region, {});

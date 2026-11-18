@@ -73,7 +73,7 @@ export default class ItemMedkit extends MedkitApp {
         const itemType = this.document.type;
         const savedSource = documentUtils.getSource(this.document);
         const sourceType = itemUtils.getAdvancementSourceKey(this.document);
-        const currAutomation = (identifier && rulesValue && selectedSource && selectedSource !== 'none') ? constants.automations.getAutomationByIdentifier(identifier, {rules: rulesValue, source: selectedSource, monsterIdentifier, type: itemType, sourceType}) : (!savedSource ? automationUtils.getCurrentAutomation(this.document) : undefined);
+        const currAutomation = (identifier && rulesValue && selectedSource && selectedSource !== 'none') ? constants.automations.getAutomationByIdentifier(identifier, {rules: rulesValue, source: selectedSource, monsterIdentifier, type: itemType, featType: this.document.system?.type?.value, sourceType}) : (!savedSource ? automationUtils.getCurrentAutomation(this.document) : undefined);
         context.source = currAutomation?.source ?? selectedSource;
         if (sourceType) context.sourceType = sourceType;
         const aliases = this.document.flags.cat?.automation?.aliases;
@@ -133,7 +133,7 @@ export default class ItemMedkit extends MedkitApp {
         context.rules = rulesValue;
         context.otherRulesLabel = _loc(`CAT.MEDKIT.RulesToggle.${otherRules}`);
         context.canToggleRules = this.document.documentName === 'Item' && this.document.system?.source?.rules !== undefined;
-        const otherRulesAutomations = identifier ? constants.automations.getAutomationByIdentifier(identifier, {rules: otherRules, multiple: true, type: itemType, monsterIdentifier}) : [];
+        const otherRulesAutomations = identifier ? constants.automations.getAutomationByIdentifier(identifier, {rules: otherRules, multiple: true, type: itemType, featType: this.document.system?.type?.value, monsterIdentifier}) : [];
         context.otherRulesAutomationAvailable = !availableAutomations.length && otherRulesAutomations.length > 0;
 
         context.configurationCategories = this._prepareConfigurationCategories(currAutomation);

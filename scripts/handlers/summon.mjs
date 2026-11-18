@@ -1,5 +1,5 @@
 import {constants, Logging} from '../lib/_module.mjs';
-import {activityUtils, actorUtils, automationUtils, compendiumUtils, dialogUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, rollUtils, summonUtils, tokenUtils, uiUtils, workflowUtils} from '../utilities/_module.mjs';
+import {activityUtils, actorUtils, automationUtils, compendiumUtils, dialogUtils, distanceUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils, rollUtils, summonUtils, tokenUtils, uiUtils, workflowUtils} from '../utilities/_module.mjs';
 const pendingUses = new Map();
 function getStored(document) {
     return document?.flags?.cat?.genericConfig?.cat?.summon;
@@ -252,7 +252,7 @@ async function followUp(host, config, timing) {
             const selection = await dialogUtils.selectTargetDialog(activity.name, 'CAT.Macros.Summon.FollowUpTarget', nearby, {skipDeadAndUnconscious: false, userId});
             if (selection?.result) targets = [selection.result];
         }
-        if (targets.length) await workflowUtils.completeActivityUse(activity, targets, {config: {scaling}, consumeUsage: config.followUpConsume, consumeResources: config.followUpConsume, spellSlot: false, userId});
+        if (targets.length) await workflowUtils.completeActivityUse(activity, targets, {config: {scaling}, consumeResources: config.followUpConsume, spellSlot: false, userId});
     }
 }
 async function command(host, activity) {
@@ -304,7 +304,10 @@ async function leash({document}) {
     const maxDistance = getConfig(document).maxDistance;
     const token = actorUtils.getFirstToken(getItem(document).actor);
     if (!maxDistance || !token) return;
-    const summons = summonUtils.getSummonsBySource(document).filter(summon => summon.token && !tokenUtils.isWithinDistance(token, summon.token, maxDistance));
+    const summons = summonUtils.getSummonsBySource(document).filter(summon => {
+        const distance = summon.token ? tokenUtils.getDistance(token, summon.token) : Infinity;
+        return Number.isFinite(distance) && distance >= 0 && !distanceUtils.isWithinRange(token.parent, distance, maxDistance);
+    });
     await Promise.all(summons.map(summon => summonUtils.deleteSummon(summon)));
 }
 const COLLATE_OFFSET = 30;

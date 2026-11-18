@@ -6,7 +6,7 @@
  */
 function convertDistance(scene, distanceFt) {
     if (!distanceFt) return distanceFt;
-    return dnd5e.utils.convertLength(distanceFt, 'ft', scene.grid.units, {strict: false});
+    return dnd5e.utils.convertLength(distanceFt, 'ft', {to: scene.grid.units || 'ft', legacy: false}).value;
 }
 /**
  * Inverse of {@link convertDistance}.
@@ -16,7 +16,7 @@ function convertDistance(scene, distanceFt) {
  */
 function toFeet(scene, distance) {
     if (!distance) return distance;
-    return dnd5e.utils.convertLength(distance, scene.grid.units, 'ft', {strict: false});
+    return dnd5e.utils.convertLength(distance, scene.grid.units || 'ft', {to: 'ft', legacy: false}).value;
 }
 /**
  * Convert a range to scene units, snapped to whole grid spaces with a minimum of one.
@@ -59,7 +59,7 @@ function formatDistance(scene, distanceFt) {
  */
 function lengthToFeet(value, units) {
     if (!value || !(units in CONFIG.DND5E.movementUnits)) return;
-    return dnd5e.utils.convertLength(Number(value), units, 'ft');
+    return dnd5e.utils.convertLength(Number(value), units, {to: 'ft', legacy: false}).value;
 }
 /**
  * Convert feet to canvas pixels without snapping to the grid.

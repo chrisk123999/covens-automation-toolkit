@@ -135,7 +135,7 @@ function isPlainNumber(value) {
  * @returns {number|string}
  */
 function convertValue(value, units) {
-    const converted = dnd5e.utils.convertLength(Number(value), 'ft', units);
+    const converted = dnd5e.utils.convertLength(Number(value), 'ft', {to: units || 'ft', legacy: false}).value;
     return typeof value === 'string' ? String(converted) : converted;
 }
 /**
@@ -268,7 +268,11 @@ function getFormulaData({document, target, workflow} = {}) {
         Logging.log('INFO', `Formula Data (${document?.name ?? workflow?.item.name ?? target?.name})`, {context, data});
     return data;
 }
-// used locally only
+/**
+ * Build midi-qol condition data for a context, adding the effect's source roll data and cast data.
+ * @param {object} context Workflow, document, effect and target to build from.
+ * @returns {object}
+ */
 function getData(context) {
     const originalData = context.workflow?.conditionData;
     const data = MidiQOL.createConditionData(context);
@@ -285,9 +289,20 @@ function getData(context) {
     data.effect.castData = castData;
     return data;
 }
+/**
+ * Create the system's formula field.
+ * @param {object} [options] Field options.
+ * @returns {dnd5e.dataModels.fields.FormulaField}
+ */
 function formulaField(options) {
     return new dnd5e.dataModels.fields.FormulaField(options);
 }
+/**
+ * Validate a value against a formula field, notifying when it does not parse.
+ * @param {foundry.data.fields.DataField} field Field to validate against. Non-formula fields always pass.
+ * @param {string} value Formula to check.
+ * @returns {boolean} Whether the value is valid.
+ */
 function validateFormula(field, value) {
     if (!(field instanceof dnd5e.dataModels.fields.FormulaField) || !field.validate(value)) return true;
     genericUtils.notify('CAT.MEDKIT.Configuration.InvalidFormula', {type: 'error', format: {formula: value}});

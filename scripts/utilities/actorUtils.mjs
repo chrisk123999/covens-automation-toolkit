@@ -1,4 +1,5 @@
 /** @import Actor5e from '../../dnd5e/module/documents/actor/actor.mjs'; */
+import {constants} from '../lib/_module.mjs';
 import {automationUtils, dialogUtils, distanceUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from '../utilities/_module.mjs';
 
 /**
@@ -403,12 +404,20 @@ function getCastableSpells(actor, {identifiers = []} = {}) {
 }
 
 /**
- * Return whether this actor has used their reaction.
+ * Return whether this actor has used their reaction or has the system's No Reactions effect.
  * @param {Actor5e} actor Actor to act on.
  * @returns {boolean}
  */
 function hasUsedReaction(actor) {
-    return MidiQOL.hasUsedReaction(actor);
+    return MidiQOL.hasUsedReaction(actor) || hasNoReactions(actor);
+}
+/**
+ * Whether this actor has the system's `No Reactions` effect.
+ * @param {Actor5e} actor Actor to act on.
+ * @returns {boolean}
+ */
+function hasNoReactions(actor) {
+    return actor.appliedEffects.some(effect => effect._stats?.compendiumSource === constants.noReactionsEffect || effect.img === constants.noReactionsIcon);
 }
 /**
  * Get this actor's creature type, falling back to its race.
@@ -643,6 +652,7 @@ export default {
     spendHitDice,
     getCastableSpells,
     hasUsedReaction,
+    hasNoReactions,
     setReactionUsed,
     addExhaustion,
     typeOrRace,

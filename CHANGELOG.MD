@@ -1,9 +1,28 @@
 # 0.1.9 Release:
 ## Update Notes:
+- Requires dnd5e 6.1+, midi-qol 14.7 and DAE 14.6.10.
 - `number` configuration options accept `min`, `max`, `step`, `integer` and `positive`. The CatKit shows a slider when `min`, `max` and `step` are set, or `min` and `max` with `integer`.
 - New `grappleEnded` special duration. The effect ends when the grapple between its bearer and its source ends, by escape, release, death or incapacitation.
 - Moving while grappling a creature costs 1 extra foot per foot, unless the creature is two or more sizes smaller (or Tiny under 2024 rules). The `flags.cat.grappleDrag.freeSizeOffset` actor flag waives it for creatures up to that many sizes larger than the mover.
 - Scales an automation registers are written to the class or subclass when its item is added to an actor, not only when it is applied through the CatKit.
+- Manual Rolls Rich Context describes each roll in a sentence and colours names by disposition.
+- Manual roll prompts show the save DC when midi-qol would show it.
+- Players' pending manual rolls appear in midi-qol's waiting list, where the Gamemaster can Roll, Minimum or Maximum them.
+- Manual roll prompts have outcome buttons again.
+- New Who Fulfils Rolls setting: Player, Gamemaster or Both.
+- Same-type damage dice merge into one input across die sizes.
+- New Prompt Timer setting adds a countdown to every CAT dialog and roll prompt.
+- New Failed Save quick condition.
+- Class feature automations no longer match NPC monster features.
+- CAT window and dialog footers are ordered cancel, then neutral actions, then confirm. Confirm buttons fill the row and every footer button tints red, blue or green on hover.
+- Yes/No and OK/Cancel dialogs and settings menus show icons on their buttons. Enter still confirms.
+- Cancel in a CAT settings menu closes it without saving.
+- CatKit Save and Save & Close share the footer equally.
+- The mass apply prompt reads Cancel and Confirm.
+- Export Settings and Import Settings move to the Troubleshooter's Options tab.
+- Items whose magic is unavailable count as inactive and lose their magical bonus on rebuilt damage.
+- Magical auras and regions skip antimagic creatures and stop while their source is in antimagic.
+- Creatures with the system's No Reactions effect count as having used their reaction.
 ## Bug Fixes:
 - `rollUtils.damageRoll` passes `configured` through to the roll. A damage roll rebuilt from an already scaled critical hit no longer doubles its dice a second time.
 - An attack whose `attackRollComplete` pass removes every hit now finishes as a miss instead of waiting for a damage roll.
@@ -15,10 +34,31 @@
 - Writing a scale that already exists on the class or subclass no longer adds a duplicate scale advancement.
 - Advantage and disadvantage prompts for checks, saves, skills and tools group their options under Advantage and Disadvantage, with a prompt line and room for long names.
 - Workflow events run on rolls made right after the world loads, instead of only once CAT finishes loading weapon and tool lists.
+- CAT chat cards follow the interface theme when it differs from the application theme.
+- The prompt timer is readable in light theme.
+- Gamemaster-fulfilled manual rolls roll digitally when the Gamemaster closes the prompt or disconnects.
+- Warnings on a player client with no Gamemaster connected no longer overflow the call stack.
+- The Gamemaster's copy of a roll prompt follows the Roll Total entry mode.
+- Roll Total entry counts formula modifiers such as `floor()`.
+- Changing one target's damage no longer changes every target's raw damage.
+- Damage entries CAT adds carry the record the damage card needs.
+- Looking up the activity behind an effect no longer fails on items with a cast activity.
+- `workflowUtils` damage modifiers work out hit points the way midi-qol does.
+- Summons on another scene are no longer dismissed by their leash.
+- The Troubleshooter drops midi-qol's removed Replace Default Activities setting.
 ## API Update Notes:
 - New `workflowUtils.rerollKeepDamage` rolls a workflow's damage rolls a second time and keeps the higher total or asks which to keep. The set not kept shows as discarded dice on the chat card. `count` limits it to the first rolls, and manual rolls are supported.
 - `dialogUtils.selectDie` takes `damageTypes` and only offers dice from rolls of those types.
 - `tokenUtils.grapple` takes `bonus`, added to the grappler's skill check when no DC is given.
+- New `itemUtils.isMagical`.
+- New `itemUtils.attachCastActivity` copies a cast activity onto an item for a chosen spell. The activity is removed when its parent effect is deleted.
+- API break: `workflowUtils` roll helpers drop `consumeUsage`, use `consumeResources` instead.
+- API break: `tokenUtils.getDistance` returns Infinity when the tokens cannot be measured.
+- New `effectUtils.applyNoReactions` and `actorUtils.hasNoReactions`.
+- `documentUtils.getBaseEffectData` marks effects from spells and magic items as magical.
+- New `workflowUtils.refundUse` refunds a use's consumption.
+- `workflowUtils.applyDamage` takes `properties`.
+- Automations can register a `featType`, also accepted by `getAutomationByIdentifier`.
 # 0.1.8 Release:
 ## Update Notes:
 - New `formula` configuration type. The CatKit shows the system's formula input and refuses a formula that does not parse. `deterministic: true` also refuses dice.

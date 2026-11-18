@@ -274,7 +274,7 @@ function getAdvancementSourceItem(item, {subclass = false} = {}) {
     return source;
 }
 /**
- * Whether this item is currently active: equipped, and attuned when attunement is required.
+ * Whether this item is currently active: equipped, attuned when attunement is required, and with its magic available when it is magical.
  * @param {Item5e} item Item to read from.
  * @returns {boolean} True for items that cannot be equipped at all.
  */
@@ -282,6 +282,7 @@ function getEquipmentState(item) {
     if (item.system.equipped === undefined) return true;
     if (!item.system.equipped) return false;
     if (item.system.attunement === 'required' && !item.system.attuned) return false;
+    if (item.system.properties?.has('mgc') && item.system.magicAvailable === false) return false;
     return true;
 }
 /**
@@ -436,6 +437,33 @@ function addDamageBonus(itemData, bonus) {
     });
 }
 /**
+ * Add a copy of a cast activity to an item, casting a chosen spell, removed when its parent effect is deleted.
+ * @param {Item5e} item Item that receives the activity.
+ * @param {object} activityData Cast activity data to copy.
+ * @param {Item5e} spell Spell the activity casts.
+ * @param {ActiveEffect} parent Effect the activity depends on.
+ * @param {object} [options] Additional options.
+ * @param {Actor5e} [options.caster] Actor whose spell attack bonus and save DC the spell uses.
+ * @param {object} [options.updates] Merged into the copied activity data.
+ * @returns {Promise<Activity|undefined>}
+ */
+async function attachCastActivity(item, activityData, spell, parent, {caster, updates = {}} = {}) {
+    const castData = genericUtils.mergeObject(genericUtils.deepClone(activityData), updates);
+    castData._id = foundry.utils.randomID();
+    castData.spell.uuid = spell.uuid;
+    castData.uses.spent = 0;
+    genericUtils.setProperty(castData, 'midiProperties.automationOnly', false);
+    genericUtils.setProperty(castData, 'flags.cat.hidden', false);
+    genericUtils.setProperty(castData, 'flags.dnd5e.dependentOn', parent.uuid);
+    if (caster) castData.spell.challenge = {
+        attack: caster.system.attributes.spell.attack,
+        save: caster.system.attributes.spell.dc,
+        override: true
+    };
+    await documentUtils.update(item, {['system.activities.' + castData._id]: castData});
+    return item.system.activities.get(castData._id);
+}
+/**
  * Label of a system base weapon.
  * @param {string} key Base weapon key, such as 'longsword'.
  * @returns {string|undefined}
@@ -471,14 +499,24 @@ function getRange(item) {
     const {value, long, reach, units} = item.system.range ?? {};
     return {value: distanceUtils.lengthToFeet(value, units), long: distanceUtils.lengthToFeet(long, units), reach: distanceUtils.lengthToFeet(reach, units)};
 }
+/**
+ * Whether the item counts as magical: a spell or an item with the magical property.
+ * @param {Item5e} [item] Item to check.
+ * @returns {boolean}
+ */
+function isMagical(item) {
+    return item?.type === 'spell' || !!item?.system.properties?.has('mgc');
+}
 export default {
     getRange,
+    isMagical,
     getBaseWeaponLabel,
     canUseMastery,
     getMasteryLabel,
     getSaveDC,
     getSavedCastData,
     getActivityByIdentifier,
+    attachCastActivity,
     syntheticItem,
     enchantItem,
     createItems,

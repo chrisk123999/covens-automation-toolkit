@@ -21,7 +21,7 @@ export default class CompendiumMedkit extends MedkitApp {
     };
 
     get footerButtons() {
-        return [ {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Close', name: 'close', icon: 'fa-solid fa-xmark'} ];
+        return [ {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Close', name: 'close', icon: 'fa-solid fa-xmark', role: 'negative'} ];
     }
 
     _getMassApplyItems() {

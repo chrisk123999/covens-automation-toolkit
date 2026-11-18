@@ -67,7 +67,7 @@ function getDamageModifiedActivityData(activity, formulaOrObj, {types = [], spec
     const activityData = activity.toObject();
     const isHeal = activityData.type === 'heal';
     const isFormula = foundry.utils.getType(formulaOrObj) !== 'Object';
-    const magicalBonus = activity.item?.system?.properties?.has('mgc') ? activity.item?.system?.magicalBonus || '' : '';
+    const magicalBonus = activity.item?.system?.magicAvailable ? activity.item.system.magicalBonus || '' : '';
     let formula, number, denomination, bonus;
     if (isFormula) {
         formula = formulaOrObj;

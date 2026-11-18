@@ -84,6 +84,7 @@ function createEntry(token, document, descriptor) {
     try {
         const radius = distanceUtils.toRangeUnits(token.parent, rollUtils.rollDiceSync(String(descriptor.radius ?? 0), {document, options: {maximize: true}}).total);
         const value = descriptor.value?.formula ? rollUtils.rollDiceSync(String(descriptor.value.formula), {document, options: {maximize: true}}).total : undefined;
+        const template = getTemplate(document, descriptor);
         return {
             key,
             auraId: descriptor.id,
@@ -92,7 +93,8 @@ function createEntry(token, document, descriptor) {
             descriptor,
             radius,
             value,
-            template: getTemplate(document, descriptor),
+            template,
+            magical: itemUtils.isMagical(hostItem) || !!template?.system?.magical,
             dispositions: descriptor.dispositions?.length ? descriptor.dispositions : ['all'],
             sourceDisable: descriptor.sourceDisable ?? [],
             targetDisable: descriptor.targetDisable ?? [],
@@ -315,6 +317,7 @@ function refreshTokens(tokens, {reindex = false, enter = true} = {}) {
 function isEnabled(entry, actor) {
     if (!entry.token.actor) return false;
     if (entry.sourceDisable.some(status => entry.token.actor.statuses.has(status))) return false;
+    if (entry.magical && (entry.token.actor.statuses.has('antimagic') || actor.statuses.has('antimagic'))) return false;
     return !entry.targetDisable.some(status => actor.statuses.has(status));
 }
 function isCurrent(entry, current) {

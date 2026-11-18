@@ -15,6 +15,7 @@ const fields = foundry.data.fields;
  * @property {string[]} [aliases] Other identifiers this automation also matches, e.g. the SRD's identifier for the same feature.
  * @property {object} [scales] Provide advancement scale data.
  * @property {string} [type] Override the document type.
+ * @property {string} [featType] The feature type of a feat document, such as 'class' or 'monster'.
   */
 
 // TODO: More fully document
@@ -29,7 +30,7 @@ const fields = foundry.data.fields;
  */
 
 class Automation {
-    constructor(source, rules, identifier, uuid, version, {config = {}, notes, monsterIdentifier, scales, type, sourceType, aliases} = {}) {
+    constructor(source, rules, identifier, uuid, version, {config = {}, notes, monsterIdentifier, scales, type, featType, sourceType, aliases} = {}) {
         this.source = source;
         this.rules = rules;
         this.identifier = identifier;
@@ -40,6 +41,7 @@ class Automation {
         this.monsterIdentifier = monsterIdentifier;
         this.scales = scales;
         this.type = type;
+        this.featType = featType;
         this.sourceType = sourceType;
         this.aliases = aliases;
     }
@@ -97,6 +99,11 @@ class Automation {
     /**
      * @type {string}
      */
+    featType;
+
+    /**
+     * @type {string}
+     */
     sourceType;
 
     /**
@@ -124,6 +131,7 @@ export class RegisteredAutomations {
         monsterIdentifier: new fields.StringField({required: false, nullable: false}),
         scales: new fields.ArrayField(new fields.ObjectField({required: true, nullable: false}), {required: false}),
         type: new fields.StringField({required: false, nullable: false}),
+        featType: new fields.StringField({required: false, nullable: false}),
         sourceType: new fields.StringField({required: false, nullable: false}),
         aliases: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: false})
     });
@@ -178,7 +186,7 @@ export class RegisteredAutomations {
      * @param {string[]} [options.excludeSources]           Which sources to exclude from consideration, if any
      * @returns {Automation[]|Automation|undefined}
      */
-    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type, sourceType, excludeSources = []} = {}) {
+    getAutomationByIdentifier(identifier, {rules = 'all', source = 'all', multiple = false, monsterIdentifier, type, featType, sourceType, excludeSources = []} = {}) {
         const predicate = automation => {
             if (automation.identifier !== identifier && !automation.aliases?.includes(identifier)) return false;
             if (rules !== 'all' && automation.rules !== 'all' && automation.rules !== rules) return false;
@@ -186,6 +194,7 @@ export class RegisteredAutomations {
             if (excludeSources.includes(automation.source)) return false;
             if (monsterIdentifier !== undefined && automation.monsterIdentifier && automation.monsterIdentifier !== monsterIdentifier) return false;
             if (type && type !== automation.type) return false;
+            if (monsterIdentifier && featType !== 'class' && automation.featType === 'class') return false;
             if (sourceType && automation.sourceType && automation.sourceType !== sourceType) return false;
             return true;
         };
@@ -222,6 +231,7 @@ export class RegisteredAutomations {
             monsterIdentifier: data.monsterIdentifier,
             scales: data.scales,
             type: data.type,
+            featType: data.featType,
             sourceType: data.sourceType,
             aliases: data.aliases
         });
@@ -258,7 +268,8 @@ export class RegisteredAutomations {
             rules: documentUtils.getRules(document),
             source: documentUtils.getSource(document),
             sourceType: itemUtils.getAdvancementSourceKey(document),
-            monsterIdentifier: documentUtils.getMonsterIdentifier(document)
+            monsterIdentifier: documentUtils.getMonsterIdentifier(document),
+            featType: document.system?.type?.value
         });
         return automation?.config?.[key]?.default;
     }
@@ -278,7 +289,7 @@ export class RegisteredAutomations {
      * @param {FetchAutomationInfo} [options.infoFetcherCallback] Provide additional automation info or override defaults. See {@link FetchAutomationInfo}.
      */
     async registerAutomationCompendium(pack, {source = pack.metadata.packageName, infoFetcherCallback} = {}) {
-        const index = await pack.getIndex({fields: ['system.identifier', 'system.source', 'flags.cat.automation', 'type']});
+        const index = await pack.getIndex({fields: ['system.identifier', 'system.source', 'system.type.value', 'flags.cat.automation', 'type']});
         const documentType = pack.metadata.type;
         Logging.group('Automation Compendium Registered: ' + pack.metadata.label + ' (' + pack.metadata.packageName + ')');
         const results = index.map(document => {
@@ -290,6 +301,7 @@ export class RegisteredAutomations {
                 version: documentUtils.getVersion(document) || '0',
                 uuid: document.uuid,
                 type: document.type,
+                featType: document.system?.type?.value,
                 identifier,
                 source
             };

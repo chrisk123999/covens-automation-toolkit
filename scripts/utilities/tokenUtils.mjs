@@ -23,12 +23,12 @@ function getSavedCastData(token) {
  * @param {object} [options] Additional options.
  * @param {boolean} [options.wallsBlock] Return -1 when a wall lies between them.
  * @param {boolean} [options.checkCover] Include cover in the measurement.
- * @returns {number} Feet, or -1 when walls block.
+ * @returns {number} Feet, -1 when walls block, or Infinity when the tokens can't be measured, such as on different scenes or levels.
  */
 function getDistance(token, target, {wallsBlock, checkCover} = {}) {
-    const distance = MidiQOL.getDistance(token.object, target.object, {wallsBlock, includeCover: checkCover});
-    if (distance < 0) return distance;
-    return distanceUtils.toFeet(token.parent, distance).toNearest(0.01);
+    const measure = MidiQOL.measureTokens(token, target, {wallsBlock, includeCover: checkCover});
+    if (!measure.ok) return measure.reason === 'blocked' ? -1 : Infinity;
+    return distanceUtils.toFeet(token.parent, measure.distance).toNearest(0.01);
 }
 /**
  * Whether a target is within a range of this token, counted in whole grid spaces on gridded scenes.
