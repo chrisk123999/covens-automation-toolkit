@@ -582,9 +582,10 @@ function canSense(sourceToken, targetToken, senseModes = ['all']) {
  * @param {boolean} [options.contest] Roll dice before applying effects.
  * @param {boolean} [options.checkSize] Enforce size limits.
  * @param {string[]} [options.conditions] Extra conditions applied with the grapple.
+ * @param {number} [options.bonus] Added to {@link sourceToken}'s skill check total when no DC is given.
  */
-async function grapple(sourceToken, targetToken, {activity, flatDC, rules, contest = true, checkSize = true, conditions = []} = {}) {
-    return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize, conditions});
+async function grapple(sourceToken, targetToken, {activity, flatDC, rules, contest = true, checkSize = true, conditions = [], bonus = 0} = {}) {
+    return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize, conditions, bonus});
 }
 /**
  * Get the tokens this token is currently grappling.

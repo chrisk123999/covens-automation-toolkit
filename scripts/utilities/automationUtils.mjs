@@ -549,7 +549,7 @@ function scalesMatch(registeredScale, targetScale) {
         if (!target) return false;
         for (const [valueKey, value] of Object.entries(data)) {
             const targetValue = target[valueKey];
-            if (targetValue !== value) return false;
+            if (value && typeof value === 'object' ? !foundry.utils.equals(value, targetValue ?? {}) : targetValue !== value) return false;
         }
     }
     return true;
@@ -591,11 +591,13 @@ async function updateScales(item, {automation} = {}) {
         if (!classItem) return;
         const scaleValue = classItem.advancement.byType?.ScaleValue?.find(i => i.configuration.identifier === scale.identifier);
         if (scaleValue && scalesMatch(scale, scaleValue)) return;
-        const advancementKey = scaleValue ? scaleValue.id : (scale.data._id ?? foundry.utils.randomID());
         const classData = classItem.toObject();
-        classData.system.advancement[advancementKey] = scale.data;
-        classData.system.advancement[advancementKey].configuration.identifier = scale.identifier;
-        if (scaleValue) delete classData.system.advancement[advancementKey]._id;
+        const existingKey = scaleValue && Object.keys(classData.system.advancement).find(key => classData.system.advancement[key]._id === scaleValue.id);
+        const advancementKey = existingKey ?? scale.data._id ?? foundry.utils.randomID();
+        const advancementData = genericUtils.deepClone(scale.data);
+        advancementData._id = scaleValue?.id ?? advancementKey;
+        advancementData.configuration.identifier = scale.identifier;
+        classData.system.advancement[advancementKey] = advancementData;
         const change = {_id: classItem.id, 'system.advancement': classData.system.advancement};
         const currentUpdate = updates.find(i => i._id === classItem.id);
         if (currentUpdate) {

@@ -253,6 +253,20 @@ async function specialDurationZeroSpeed(actor) {
     if (!allZero) return;
     await documentUtils.deleteEmbeddedDocuments(actor, 'ActiveEffect', effects.map(i => i.id));
 }
+async function specialDurationGrappleEnded(effect) {
+    if (!['grappleSource', 'grappleTarget'].includes(documentUtils.getIdentifier(effect))) return;
+    const actor = effect.parent;
+    const other = actorUtils.getFirstToken(actor)?.parent.tokens.get(effect.flags.cat?.grapple?.tokenId)?.actor;
+    if (!other) return;
+    const ending = target => actorUtils.getEffects(target).filter(eff => eff.flags.cat?.specialDuration?.includes('grappleEnded'));
+    const [actorEffects, otherEffects] = [ending(actor), ending(other)];
+    const sharedOrigin = (eff, partner) => partner.some(partnerEffect => partnerEffect.origin === eff.origin);
+    const ended = [
+        ...actorEffects.filter(eff => eff.origin?.startsWith(other.uuid + '.') || sharedOrigin(eff, otherEffects)),
+        ...otherEffects.filter(eff => eff.origin?.startsWith(actor.uuid + '.') || sharedOrigin(eff, actorEffects))
+    ];
+    await Promise.all(ended.map(eff => documentUtils.deleteDocument(eff)));
+}
 async function unhideActivities(effect) {
     const identifiers = effect.flags.cat?.unhideActivities;
     if (!identifiers?.length) return;
@@ -288,6 +302,7 @@ export default {
     specialDurationTurn,
     specialDurationMove,
     specialDurationZeroSpeed,
+    specialDurationGrappleEnded,
     playAnimation,
     unhideActivities,
     rehideActivities,

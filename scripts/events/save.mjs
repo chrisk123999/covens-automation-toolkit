@@ -8,28 +8,14 @@ async function targetSituational(actor, data) {
 }
 async function context(actor, data) {
     const selections = await new Events.SaveEvent(actor, constants.rollPasses.context, data).run({multiResult: true});
-    if (selections.length) {
-        const advantages = selections.filter(i => i.type === 'advantage').map(j => ({label: _loc(j.label), name: 'advantage'}));
-        const disadvantages = selections.filter(i => i.type === 'disadvantage').map(j => ({label: _loc(j.label), name: 'disadvantage'}));
-        const inputs = [];
-        if (advantages.length) inputs.push(['checkbox', advantages, {displayAsRows: true}]);
-        if (disadvantages.length) inputs.push(['checkbox', disadvantages, {displayAsRows: true}]);
-        if (!inputs.length) return;
-        const selection = await DialogApp.dialog('CAT.Save.Title', undefined, inputs, 'okCancel');
-        if (selection?.buttons) {
-            if (selection.advantage) {
-                switch(selection.advantage.constructor.name) {
-                    case 'Boolean': data.options.advantage = true; break;
-                    case 'Array': data.options.advantage = selection.advantage.some(Boolean); break;
-                }
-            }
-            if (selection.disadvantage) {
-                switch(selection.disadvantage.constructor.name) {
-                    case 'Boolean': data.options.disadvantage = true; break;
-                    case 'Array': data.options.disadvantage = selection.disadvantage.some(Boolean); break;
-                }
-            }
-        }
+    const types = [['advantage', 'DND5E.Advantage'], ['disadvantage', 'DND5E.Disadvantage']];
+    const inputs = types.map(([type, legend]) => ['checkbox', selections.filter(i => i.type === type).map(j => ({label: _loc(j.label), name: type})), {displayAsRows: true, legend}]).filter(([, list]) => list.length);
+    if (!inputs.length) return;
+    const selection = await DialogApp.dialog('CAT.Save.Title', 'CAT.Dialog.RollContext', inputs, 'okCancel', {width: 400});
+    if (!selection?.buttons) return;
+    for (const [type] of types) {
+        const value = selection[type];
+        if (value) data.options[type] = Array.isArray(value) ? value.some(Boolean) : true;
     }
 }
 async function bonus(actor, data) {

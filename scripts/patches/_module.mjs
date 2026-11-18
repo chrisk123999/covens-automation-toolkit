@@ -1,10 +1,11 @@
 export {default as activityPatching} from './activity.mjs';
 export {default as actorPatching} from './actor.mjs';
+export {default as combatPatching} from './combat.mjs';
+export {default as compendiumBrowserPatching} from './compendiumBrowser.mjs';
+export {default as daePatching} from './dae.mjs';
+export {default as dataModelPatching} from './dataModel.mjs';
+export {default as dicePatching} from './dice.mjs';
 export {default as documentPatching} from './document.mjs';
 export {default as effectPatching} from './effect.mjs';
-export {default as dataModelPatching} from './dataModel.mjs';
 export {default as itemPatching} from './item.mjs';
-export {default as compendiumBrowserPatching} from './compendiumBrowser.mjs';
-export {default as combatPatching} from './combat.mjs';
-export {default as dicePatching} from './dice.mjs';
-export {default as daePatching} from './dae.mjs';
+export {default as tokenPatching} from './token.mjs';

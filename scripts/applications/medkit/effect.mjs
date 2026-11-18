@@ -6,7 +6,8 @@ const SPECIAL_DURATION_GROUPS = {
     Workflow: ['endOfWorkflow', 'forceSave', 'dealtDamage', 'damaged', 'damagedByAlly', 'damagedByEnemy', 'damagedBySourceOrAlly', 'damagedBySourceAlly', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource'],
     Turn: ['turnStart', 'turnEnd'],
     Movement: ['moveFinished', 'zeroSpeed'],
-    HitPoints: ['tempHP', 'tempMaxHP']
+    HitPoints: ['tempHP', 'tempMaxHP'],
+    Grapple: ['grappleEnded']
 };
 
 export default class EffectMedkit extends MedkitApp {

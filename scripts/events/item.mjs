@@ -1,6 +1,6 @@
 import {effects, items} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
-import {dataUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
+import {automationUtils, dataUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
 async function bulkUpdated(items) {
     await new Events.ItemsEvent(items, constants.itemPasses.bulkUpdated).run({canOverlap: true});
 }
@@ -8,6 +8,7 @@ async function createItem(item, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (item.compendium) await items.updateHash(item, {create: true});
     if (!item.actor) return;
+    await automationUtils.updateScales(item);
     await new Events.ItemEvent(item, constants.itemPasses.created, {options}).run();
 }
 async function deleteItem(item, options, userId) {

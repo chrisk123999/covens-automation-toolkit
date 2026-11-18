@@ -444,7 +444,7 @@ export default class DialogApp extends CatApp {
 
     #buildCheckbox(fields, opts, index, parentIndex) {
         // Single checkbox with no totalMax / image → helper route (BooleanField).
-        if (fields.length === 1 && opts?.totalMax == null && !fields[0].options?.image) {
+        if (fields.length === 1 && opts?.totalMax == null && !opts?.displayAsRows && !fields[0].options?.image) {
             const f = fields[0];
             return {
                 useHelper: true,
@@ -454,7 +454,9 @@ export default class DialogApp extends CatApp {
                     value: f.options?.isChecked ?? false,
                     onchange: f.options?.onchange,
                     id: DialogApp.#makeID(index, 0, {parentIndex})
-                }]
+                }],
+                header: opts?.header,
+                legend: opts?.legend
             };
         }
         const options = fields.map((f, i) => ({
