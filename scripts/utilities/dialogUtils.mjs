@@ -304,7 +304,6 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
  * @param {object} [options] Additional options.
  * @param {foundry.dice.Roll[]} [options.rolls] The d20 roll(s) to which selected bonuses will be added.
  * @param {foundry.dice.Roll[]} [options.damageRolls] Damage roll(s) already built for this workflow.
- * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} [options.targets] Tokens the roll is aimed at.
  * @param {MidiQOL.Workflow} [options.workflow] Workflow the bonuses belong to.
  * @param {BonusCost} [options.spent] Resources committed in earlier phases.
  * @param {DamageBonus[]|D20Bonus[]} [options.committed] Bonuses already applied in earlier phases.
@@ -312,7 +311,7 @@ async function selectDocumentDialog(title, content, documents, {max = 1, display
  * @param {boolean} [options.missed] True once the roll is known to have failed.
  * @returns {Promise<{inputs: Array, hasOptional: boolean}|undefined>}
  */
-async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls, spent, committed = [], outcome} = {}) {
+async function buildBonusInputs(bonuses, {rolls, workflow, damageRolls, spent, committed = [], outcome} = {}) {
     if (!bonuses.length && !committed.length && !rolls?.length) return;
     bonuses = bonuses.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
     const roll = rolls?.[0];
@@ -376,6 +375,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
             const formulaLabel = CONFIG.DND5E.limitedUsePeriods[formula?.period];
             if (formulaLabel) return {label: _loc('DND5E.AbilityUseConsumableLabel', {max: formula.formula, per: formulaLabel.abbreviation}), tooltip};
         }
+        if (type === 'effect') return {label: _loc('CAT.OptionalBonus.EndsEffect'), tooltip};
         return {label: CONFIG.DND5E.activityActivationTypes[type]?.label ?? CONFIG.DND5E.activityConsumptionTypes[type]?.label ?? type, tooltip};
     };
     const updateFormula = (ctx, bonus) => {
@@ -442,7 +442,7 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
     const targetsChange = ({bonus, input}) => {
         const selected = new Set(input.options.filter(o => o.selected).map(o => o.value));
         if (selected.size === bonus.targets.size) return;
-        bonus.targets = targets.filter(t => selected.has(t.id));
+        bonus.targets = bonus.targetOptions.filter(t => selected.has(t.id));
     };
     const damageChange = ({bonus, fullContext, input, getInputById}) => {
         bonus.damageType = input.value;
@@ -488,14 +488,15 @@ async function buildBonusInputs(bonuses, {rolls, targets, workflow, damageRolls,
                 }
             }]]);
         const counter = {value: 1};
-        if (targets && bonus.maxTargets > 0)
+        if (bonus.targetOptions?.size && bonus.maxTargets > 0)
             subinputs.push(['comboboxMulti', [{
                 name: name + '.targets',
                 hints: bonus.maxTargetsHints,
                 label: 'CAT.OptionalBonus.Targets',
                 options: {
                     maxTotal: bonus.maxTargets,
-                    options: targets.map(t => ({
+                    options: bonus.targetOptions.map(t => ({
+                        selected: bonus.targets.some(tgt => tgt.id === t.id),
                         label: getTokenName(t, {hide, counter}),
                         image: t.texture.src,
                         value: t.id

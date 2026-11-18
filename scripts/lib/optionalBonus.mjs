@@ -110,7 +110,7 @@ class RollBonus {
         this.#actor = this.#getActor(actor);
         this.#targetActor = targetActor ?? this.#actor;
         this.#autoApprove = autoApproveRequests;
-        this.#action = this.#getAction(action);
+        this.#action = action;
         this.maxScaling = this.#getMaxScaling(maxScaling);
         this.#getScalingHints = this.constructor.defaultScalingHints;
         this.#optional = optional;
@@ -184,10 +184,6 @@ class RollBonus {
             if (limit + 1 < value) value = limit + 1;
         }
         return value === Infinity ? 0 : value;
-    }
-    #getAction(override) {
-        if (override) return override;
-        return this.activity?.activation.type;
     }
     #getActor(override) {
         if (override) return override;
@@ -454,6 +450,7 @@ class RollBonus {
      * @param {MidiQOL.Workflow} [workflow]
      * */
     initialize(workflow) {
+        this.#action ??= this.activity?.activation.type;
         this.updateScaling(0, workflow);
         return this;
     }
@@ -638,7 +635,8 @@ class RollBonus {
         if (user.id === game.user.id) return {result: true, reason: _loc('CAT.Dialog.Request.Self')};
         const name = bonus.targetActor?.name ?? _loc('CAT.MEDKIT.EmbeddedMacros.Disposition.Ally');
         const document = {name: `${bonus.name} (+${bonus.roll.formula})`};
-        if (Number.isNumeric(rollTotal)) {
+        const hasTotal = Number.isNumeric(rollTotal);
+        if (hasTotal) {
             let diceTerms = [];
             otherBonuses.forEach(b => {
                 if (!b.active) return;
@@ -647,7 +645,8 @@ class RollBonus {
             });
             if (diceTerms.length) rollTotal = `${rollTotal} + ${diceTerms.join(' + ')}`;
         }
-        const result = await dialogUtils.confirmUseForRollTotal(document, name, rollTotal, {userId: user.id});
+        const result = hasTotal ? await dialogUtils.confirmUseForRollTotal(document, name, rollTotal, {userId: user.id}) :
+            await dialogUtils.confirm(_loc('COMMON.Confirm'), _loc('CAT.Dialog.UseOn', {document: document.name, target: name}), {userId: user.id});
         return result ? result : {result, reason: `${user.name} ${_loc('CAT.Dialog.Request.Declined')}`};
     }
     /**
@@ -851,6 +850,7 @@ export class D20Bonus extends RollBonus {
  */
 export class DamageBonus extends RollBonus {
     #targets;         // Set           | Target(s) of the bonus.
+    #targetOptions;   // Set           | Target choices for the bonus. Final targets should be a subset.
     #maxTargets;      // Number        | Max targets, if any.
     #baseMaxTargets;  // Number        | The original max targets before scaling.
     #targetScaling;   // Function      | Callback adjusts max targets when the bonus is scaled.
@@ -863,6 +863,7 @@ export class DamageBonus extends RollBonus {
         this.#baseMaxTargets = maxTargets;
         this.#maxTargets = maxTargets;
         this.#canCrit = allowCritical;
+        this.#targetOptions = new Set();
         this.#targets = new Set();
         if (type) {
             this.#damageTypes = new Set(dataUtils.toArray(type));
@@ -877,6 +878,13 @@ export class DamageBonus extends RollBonus {
     set targets(tokens) {
         this.#targets = new Set(tokens);
         if (this.#maxTargets && this.#targets.size > this.#maxTargets) this.#targets = new Set(Array.from(this.#targets).slice(0, this.#maxTargets));
+    }
+    /** @type {Set<foundry.documents.TokenDocument>} Potential targets for the damage. The bonus is applied against selected {@link targets} only. */
+    get targetOptions() {
+        return this.#targetOptions;
+    }
+    set targetOptions(tokens) {
+        this.#targetOptions = new Set(tokens);
     }
     /** @type {number} */
     get maxTargets() {
@@ -922,6 +930,8 @@ export class DamageBonus extends RollBonus {
     _otherScaling({rollTotal, bonus, workflow, otherBonuses}) {
         const maxTargets = this.#targetScaling?.({rollTotal, bonus, workflow, otherBonuses});
         if (Number.isNumeric(maxTargets)) this.maxTargets = maxTargets;
+        if (!this.#targetOptions.size && workflow?.targets.documents.length)
+            this.targetOptions = Array.from(workflow.targets.documents);
     }
 
     static get rollClass() { return CONFIG.Dice.DamageRoll; }

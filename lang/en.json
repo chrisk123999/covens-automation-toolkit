@@ -1424,6 +1424,7 @@
             "Contextual": "Contextual Bonuses",
             "DamageType": "Damage Type",
             "DamageTypeChoice": "Choose Type",
+            "EndsEffect": "Ends Effect",
             "Failure": "Failure",
             "Hit": "Hit",
             "Invalid": "Bonus disabled: {reason}",

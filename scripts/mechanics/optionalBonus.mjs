@@ -49,7 +49,7 @@ class BonusSession {
             if (!bonus.initialized) bonus.initialize(workflow);
             if (targetActor) bonus.targetActor = targetActor;
             if (type) bonus.type = type;
-            if (bonus.maxTargets > 0 && workflow?.targets.count === 1) bonus.maxTargets = 0;
+            if (bonus.maxTargets > 0 && bonus.targetOptions.size === 1) bonus.maxTargets = 0;
             this.#bonuses.push(bonus);
         }
     }
@@ -62,7 +62,6 @@ class BonusSession {
         const candidates = this.#bonuses.filter(bonus => !this.#consumed.has(bonus.id) && (!(bonus instanceof D20Bonus) || bonus.phase.has(phaseId)));
         const built = await dialogUtils.buildBonusInputs(candidates, {
             rolls,
-            targets: workflow?.targets.documents,
             workflow,
             spent: this.#spent,
             committed: this.#committed,

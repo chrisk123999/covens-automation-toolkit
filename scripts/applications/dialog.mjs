@@ -488,6 +488,8 @@ export default class DialogApp extends CatApp {
             })),
             id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
         }));
+        const subinputs = options.filter(i => i.subinputs?.length);
+        subinputs.forEach(s => {if (s.isChecked) this.#queuedOpenSections.add(s.id);});
         return {
             isCheckbox: true,
             options,
@@ -495,7 +497,7 @@ export default class DialogApp extends CatApp {
             showCounter: opts?.totalMax != null,
             currentNum: options.reduce((t, o) => t += o.isChecked * (o.weight ?? 1), 0),
             requireSelection: opts?.requireSelection,
-            hasSubinputs: options.some(i => i.subinputs?.length),
+            hasSubinputs: subinputs.length,
             header: opts?.header,
             legend: opts?.legend
         };
@@ -526,6 +528,7 @@ export default class DialogApp extends CatApp {
         input.stateReason = reason;
         input.isChecked = result;
         if (input.onchange) input.onchange(ctx);
+        if (ctx.group.hasSubinputs && result) this.#queueOpenCollapsible(target);
         await this.render(true);
     }
 
@@ -570,34 +573,37 @@ export default class DialogApp extends CatApp {
     }
 
     #buildRadio(fields, opts, index, parentIndex) {
+        const options = fields.map((f, i) => ({
+            label: f.label,
+            hints: f.hints?.map(h => ({
+                label: h.label,
+                icon: h.icon,
+                tooltip: h.tooltip,
+                id: h.id
+            })),
+            name: f.name,
+            isChecked: f.options?.isChecked ?? false,
+            image: f.options?.image,
+            tooltip: f.options?.tooltip,
+            reference: f.options?.reference,
+            invertColor: f.options?.invertColor,
+            subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs,
+            onchange: f.options?.onchange,
+            tags: f.options?.tags?.map(t => ({
+                tooltip: t.tooltip,
+                label: t.label,
+                image: t.image,
+                icon: t.icon,
+                id: t.id,
+                status: t.status
+            })),
+            id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
+        }));
+        const subinputs = options.filter(i => i.subinputs?.length);
+        subinputs.forEach(s => {if (s.isChecked) this.#queuedOpenSections.add(s.id);});
         return {
             isRadio: true,
-            options: fields.map((f, i) => ({
-                label: f.label,
-                hints: f.hints?.map(h => ({
-                    label: h.label,
-                    icon: h.icon,
-                    tooltip: h.tooltip,
-                    id: h.id
-                })),
-                name: f.name,
-                isChecked: f.options?.isChecked ?? false,
-                image: f.options?.image,
-                tooltip: f.options?.tooltip,
-                reference: f.options?.reference,
-                invertColor: f.options?.invertColor,
-                subinputs: this.#buildInputs(f.options?.subinputs, DialogApp.#makeID(index, i, {parentIndex, header: opts?.header}))?.inputs,
-                onchange: f.options?.onchange,
-                tags: f.options?.tags?.map(t => ({
-                    tooltip: t.tooltip,
-                    label: t.label,
-                    image: t.image,
-                    icon: t.icon,
-                    id: t.id,
-                    status: t.status
-                })),
-                id: DialogApp.#makeID(index, i, {parentIndex, header: opts?.header})
-            })),
+            options,
             hasSubinputs: fields.some(f => f.options?.subinputs?.length),
             radioName: opts?.radioName ?? 'radio',
             header: opts?.header,
