@@ -1105,7 +1105,7 @@ export default class MedkitApp extends CatApp {
     /** @this {MedkitApp} */
     static async #cancel() {
         if (this.isDirty) {
-            const confirmed = await dialogUtils.confirm('CAT.MEDKIT.Footer.DiscardTitle', _loc('CAT.MEDKIT.Footer.DiscardPrompt'));
+            const confirmed = await dialogUtils.confirm('CAT.MEDKIT.Footer.DiscardTitle', _loc('CAT.MEDKIT.Footer.DiscardPrompt'), {timer: false});
             if (!confirmed) return;
         }
         this.#hydrateState();
@@ -1443,7 +1443,7 @@ export default class MedkitApp extends CatApp {
                 return a[2].legend.localeCompare(b[2].legend, game.i18n.lang);
             });
         inputs.unshift(...this.#massApplySwitchInputs(items));
-        const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', 'CAT.MEDKIT.MassApply.ConfirmPrompt', inputs, 'okCancel');
+        const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', 'CAT.MEDKIT.MassApply.ConfirmPrompt', inputs, 'okCancel', {timer: false});
         if (!choices || !choices.buttons) return false;
         return choices;
     }

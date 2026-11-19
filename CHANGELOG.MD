@@ -1,6 +1,10 @@
 # 0.1.10 Release:
+## Update Notes:
+- New Base Weapon restriction for alternate attributes matches the attacking weapon's base item.
+- `tokenUtils.displaceToken` accepts `userId` so another user aims the destination crosshair.
 ## Bug Fixes:
 - Mass apply no longer fails on compendiums with more than 99 updatable items.
+- The prompt timer no longer runs on Medkit, Mass Apply, Troubleshooter and export dialogs. Dialog configs accept `timer: false`.
 # 0.1.9 Release:
 ## Update Notes:
 - Requires dnd5e 6.1+, midi-qol 14.7 and DAE 14.6.10.

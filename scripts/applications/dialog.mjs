@@ -25,6 +25,7 @@ export default class DialogApp extends CatApp {
     #resolveResults;
     #resultsPromise;
     #timer = new PromptTimer(this, () => this.close());
+    #timed = true;
     constructor(options) {
         let title, content, inputs, buttons, config;
         if (options?.length) [title, content, inputs, buttons, config] = options;
@@ -36,6 +37,7 @@ export default class DialogApp extends CatApp {
         }
         super(init);
         this.#anchor = config?.anchor;
+        this.#timed = config?.timer !== false;
         this._armResults();
         if (!options?.length) return;
         this.windowTitle = _loc(title);
@@ -834,7 +836,7 @@ export default class DialogApp extends CatApp {
     async _prepareContext(options) {
         if (!this.#context) this.#formatInputs();
         const context = await super._prepareContext(options);
-        return {...this.#context, ...this.#tabContext(), ...context, timer: PromptTimer.enabled};
+        return {...this.#context, ...this.#tabContext(), ...context, timer: PromptTimer.enabled && this.#timed};
     }
 
     async _preClose(options) {
@@ -961,7 +963,7 @@ export default class DialogApp extends CatApp {
         if (counter && header) header.insertBefore(counter, header.querySelector('[data-action="toggleDetach"]'));
         this.#timer.draw();
         if (options.isFirstRender) {
-            this.#timer.start();
+            if (this.#timed) this.#timer.start();
             if (this.#anchor) this.setPosition({left: this.#anchor.x - this.element.offsetWidth / 2, top: this.#anchor.y - 16});
             this.element.addEventListener('cat-resize', () => {
                 this.setPosition({width: 'auto', height: 'auto'});

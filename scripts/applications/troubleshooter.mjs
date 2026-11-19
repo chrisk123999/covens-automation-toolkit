@@ -199,7 +199,7 @@ export default class TroubleshooterApp extends CatApp {
             });
         });
         const content = `<div class="cat-troubleshooter-drop">${_loc('CAT.Troubleshooter.Save.Drop')}</div>`;
-        const selection = await dialogUtils.confirm('CAT.Troubleshooter.Save.Title', content, {buttons: 'okCancel'});
+        const selection = await dialogUtils.confirm('CAT.Troubleshooter.Save.Title', content, {buttons: 'okCancel', timer: false});
         Hooks.off('renderDialogApp', hook);
         if (!selection) return;
         foundry.utils.saveDataToFile(this.#reportText, 'text/plain', `cat-troubleshooter-${genericUtils.dateStamp()}.txt`);
@@ -234,7 +234,7 @@ export default class TroubleshooterApp extends CatApp {
         input.addEventListener('change', async () => {
             const data = JSON.parse(await foundry.utils.readTextFromFile(input.files[0]));
             const entries = Object.entries(data).filter(([key]) => game.settings.settings.has('cat.' + key));
-            if (!await dialogUtils.confirm('CAT.Troubleshooter.Export.ImportTitle', 'CAT.Troubleshooter.Export.ImportContent')) return;
+            if (!await dialogUtils.confirm('CAT.Troubleshooter.Export.ImportTitle', 'CAT.Troubleshooter.Export.ImportContent', {timer: false})) return;
             for (const [key, value] of entries) await game.settings.set('cat', key, value);
             genericUtils.notify('CAT.Troubleshooter.Export.Imported', {format: {count: entries.length}});
             await foundry.applications.settings.SettingsConfig.reloadConfirm({world: true});

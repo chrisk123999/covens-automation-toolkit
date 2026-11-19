@@ -154,6 +154,14 @@ registerRestriction({
 });
 
 registerRestriction({
+    type: 'BaseItem',
+    propertyPath: 'system.type.baseItem',
+    canInvert: true,
+    choices: () => mapKeyKey(CONFIG.DND5E.weaponIds),
+    evaluate: checkList
+});
+
+registerRestriction({
     type: 'DamagePart',
     choices: () => ({
         1: _loc('CAT.MEDKIT.DocProps.Restrictions.DamagePart.Base'),

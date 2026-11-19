@@ -83,7 +83,7 @@ function wrapExportEntry(app, entries) {
         if (!game.settings.get('cat', 'exportStripDialog')) return coreExport(event, target);
         const selection = await applications.DialogApp.dialog('CAT.Troubleshooter.Export.Title', undefined, [
             ['checkbox', [{label: _loc('CAT.Troubleshooter.Export.Strip'), name: 'strip', options: {isChecked: true}}]]
-        ], 'okCancel', {anchor: {x: event.clientX, y: event.clientY}});
+        ], 'okCancel', {anchor: {x: event.clientX, y: event.clientY}, timer: false});
         if (!selection?.buttons) return;
         if (!selection.strip) return coreExport(event, target);
         documentUtils.exportDocument(await resolveEntry(app, target));

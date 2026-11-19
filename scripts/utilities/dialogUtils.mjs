@@ -754,10 +754,11 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
  * @param {object} [options] Additional options.
  * @param {string} [options.userId] User the dialog is shown to.
  * @param {string|Array} [options.buttons] Button set for the dialog.
+ * @param {boolean} [options.timer] Run the prompt timer.
  * @returns {Promise<boolean|undefined>}
  */
-async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo'} = {}) {
-    const config = {width: content?.length > 100 ? 600 : undefined};
+async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo', timer = true} = {}) {
+    const config = {width: content?.length > 100 ? 600 : undefined, timer};
     let selection = await runDialog(userId, title, content, [], buttons, config);
     return selection?.buttons;
 }
