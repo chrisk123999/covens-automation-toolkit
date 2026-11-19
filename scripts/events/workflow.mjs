@@ -56,7 +56,7 @@ async function postAttackRoll(workflow) {
  * @property {boolean} isHitEC
  * */
 async function checkHitTarget(context) {
-    const token = context.target instanceof TokenDocument ? context.target : context.target.document;
+    const token = new MidiQOL.TokenDocumentSet([context.target]).documents[0];
     let hitOverride = false;
     /** @type HitData */
     const hitData = {
@@ -115,7 +115,7 @@ async function utilityRollComplete(workflow) {
     await new Events.WorkflowEvent(constants.workflowPasses.utilityRollComplete, workflow).run();
 }
 async function preTargetDamageApplication(target, {workflow, ditem}) {
-    const token = target instanceof TokenDocument ? target : target.document;
+    const token = new MidiQOL.TokenDocumentSet([target]).documents[0];
     optionalBonus.applyDamage(workflow, token, ditem);
     await regionDamage(token, workflow, ditem);
     await new Events.TokenDamageWorkflowEvent(constants.workflowPasses.damage, workflow, token, ditem).run();

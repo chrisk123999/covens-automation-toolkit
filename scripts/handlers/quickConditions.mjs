@@ -263,6 +263,12 @@ const constants = new Collection([
         searchKey: 'workflow.isCritical',
         data: {not}
     }],
+    ['failedSave', {
+        label: 'CAT.QuickConditions.Conditions.failedSave',
+        format: '$not$target.failedSave',
+        searchKey: 'target.failedSave',
+        data: {not}
+    }],
     ['alignment', {
         label: 'CAT.QuickConditions.Conditions.alignment',
         format: '$not$target.details.alignment.toLowerCase().includes($alignments)',

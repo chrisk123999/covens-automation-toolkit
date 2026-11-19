@@ -29,7 +29,7 @@ async function cleave({workflow, hit: targets}) {
     if (combatData.inCombat) await documentUtils.setFlag(workflow.actor, 'cat', 'weaponMastery.cleave', combatUtils.addTurnStamp(stamps, token.id, combatData));
     const cleaveOptions = {};
     workflowUtils.setWorkflowProperty(cleaveOptions, 'masteryCleave', true);
-    await workflowUtils.syntheticActivityRoll(workflow.activity, [second], {options: cleaveOptions, consumeUsage: false, consumeResources: false});
+    await workflowUtils.syntheticActivityRoll(workflow.activity, [second], {options: cleaveOptions, consumeResources: false});
 }
 async function graze({workflow, missed: targets}) {
     if (!targets.length) return;

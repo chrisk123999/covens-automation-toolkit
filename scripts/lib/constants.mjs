@@ -594,6 +594,8 @@ function getDamageTypeGroup(type) {
     return 'other';
 }
 const tempConditionIcon = 'icons/magic/time/arrows-circling-green.webp';
+const noReactionsEffect = 'Compendium.dnd5e.effects.ActiveEffect.tZuPpkTWg8lVjxhL';
+const noReactionsIcon = 'systems/dnd5e/icons/svg/statuses/no-reactions.svg';
 const grappleIcon = 'icons/magic/control/buff-strength-muscle-damage-red.webp';
 const grappleEscapeIcon = 'icons/skills/movement/arrows-up-trio-red.webp';
 const itemIconOverrides = {
@@ -719,6 +721,8 @@ export default {
     grappleIcon,
     grappleEscapeIcon,
     tempConditionIcon,
+    noReactionsEffect,
+    noReactionsIcon,
     get abilityOptions() { return Object.entries(CONFIG.DND5E.abilities).map(i => ({label: i[1].label, value: i[0], image: i[1].icon})); },
     get activationTypeOptions() { return Object.entries(CONFIG.DND5E.activityActivationTypes).map(i => ({label: i[1].label, value: i[0]})); },
     get activityTypeOptions() { return Object.entries(CONFIG.DND5E.activityTypes).map(i => ({label: _loc(i[1].documentClass.metadata.title), value: i[0], image: i[1].documentClass.metadata.img})); },

@@ -42,14 +42,14 @@ function hasPermission(document, userId) {
 }
 /**
  * The player who should act for this document, preferring one whose assigned character it is, and falling back to the GM.
- * @param {foundry.abstract.Document} document Document to find an owner for. Tokens resolve to their actor.
+ * @param {foundry.abstract.Document} document Document to find an owner for. Documents with an actor resolve to it.
  * @param {boolean} [useId] Return the id rather than the user document.
  * @returns {foundry.documents.User|string|undefined} Undefined when no document is given.
  */
 function firstOwner(document, useId) {
     if (!document) return;
-    const corrected = document instanceof TokenDocument ? document.actor : document instanceof foundry.canvas.placeables.Token ? document.document.actor : document;
-    const permissions = genericUtils.getProperty(corrected ?? {}, 'ownership') ?? {};
+    const corrected = document.actor ?? document;
+    const permissions = genericUtils.getProperty(corrected, 'ownership') ?? {};
     const playerOwners = Object.entries(permissions).filter(([id, level]) => !game.users.get(id)?.isGM && game.users.get(id)?.active && level === 3).map(([id]) => id);
     if (playerOwners.length > 0) {
         let playerId = playerOwners.find(id => game.users.get(id)?.character?.uuid === corrected.uuid) ?? playerOwners[0];

@@ -1,4 +1,5 @@
-:root {
+:root,
+.theme-dark {
     --cat-bg-active: rgb(66 154 244 / 18%);
     --cat-bg-disabled: rgb(0 0 0 / 55%);
     --cat-bg-header: rgb(0 0 0 / 30%);
@@ -50,7 +51,7 @@
     --cat-transition-fast: all 150ms ease;
 }
 
-/* Foundry stamps theme-light on <body>; tokens inherit down into CAT windows. */
+/* Foundry stamps the application theme on <body> and the interface theme on sidebar panels. */
 .theme-light {
     --cat-bg-active: rgb(19 74 140 / 14%);
     --cat-bg-disabled: rgb(46 42 38 / 13%);
@@ -539,8 +540,16 @@ cat-multi-combobox {
         }
 
         > .title {
+            gap: var(--cat-space-xs);
+            display: flex;
             flex: 1;
+            align-items: center;
             font-weight: 600;
+
+            > i {
+                color: var(--cat-text-muted);
+                font-size: 0.75em;
+            }
         }
 
         > button {
@@ -593,9 +602,29 @@ cat-multi-combobox {
         border-top: 1px solid var(--cat-border-light);
     }
 
-    & > footer button {
-        flex: 1;
+    & > footer > button {
+        --cat-role-tint: var(--cat-status-blue);
+
+        flex: 0 0 auto;
         height: auto;
+
+        &[data-role="positive"] {
+            --cat-role-tint: var(--cat-status-green);
+        }
+
+        &[data-role="negative"] {
+            --cat-role-tint: var(--cat-status-red);
+        }
+
+        &[data-role="positive"],
+        &:only-child {
+            flex: 1 1 0;
+        }
+
+        &:is(:hover, :focus-visible):not([disabled]) {
+            border-color: var(--cat-role-tint);
+            background: color-mix(in srgb, var(--cat-role-tint) 15%, var(--cat-bg-input));
+        }
     }
 
     & > footer button,
@@ -603,7 +632,7 @@ cat-multi-combobox {
     .outcomes > button,
     .priority > .recommended,
     .form-fields > .sub-menu {
-        gap: var(--cat-space-xs);
+        gap: var(--cat-space-sm);
         display: inline-flex;
         justify-content: center;
         align-items: center;
@@ -616,10 +645,13 @@ cat-multi-combobox {
         background: var(--cat-bg-input);
         box-shadow: none;
         transition: var(--cat-transition-fast);
+
+        & > i {
+            font-size: 0.85em;
+        }
     }
 
-    & > footer button:hover,
-    &.cat-medkit > :is(footer, .tab) button:hover,
+    &.cat-medkit > .tab button:hover,
     .outcomes > button:hover,
     .priority > .recommended:hover,
     .form-fields > .sub-menu:hover {
@@ -849,6 +881,86 @@ cat-multi-combobox {
         width: max-content;
         min-width: 250px;
         max-height: 75vh;
+
+        > header:has(.cat-timer) {
+            position: relative;
+        }
+
+        .cat-timer {
+            --timer-color: hsl(calc(var(--timer-progress, 1) * 120) 70% 45%);
+
+            .theme-light & {
+                --timer-color: hsl(calc(var(--timer-progress, 1) * 120) 80% 30%);
+            }
+
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: stretch;
+            height: 1.5rem;
+            border: 1px solid var(--cat-border-light);
+            border-radius: var(--cat-radius-sm);
+            background: var(--cat-bg-input);
+
+            > .time {
+                display: inline-flex;
+                align-items: center;
+                padding: 0 0.375rem;
+                color: var(--timer-color);
+                font-size: var(--font-size-12);
+                font-weight: 600;
+                font-variant-numeric: tabular-nums;
+            }
+
+            > button {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                width: 1.5rem;
+                height: auto;
+                margin: 0;
+                padding: 0;
+                border: none;
+                border-left: 1px solid var(--cat-border-light);
+                border-radius: 0 var(--cat-radius-sm) var(--cat-radius-sm) 0;
+                color: var(--timer-color);
+                font-size: var(--font-size-11);
+                background: transparent;
+                box-shadow: none;
+                transition: background 150ms ease;
+
+                &:hover,
+                &:focus-visible {
+                    background: var(--cat-bg-header);
+                }
+
+                &:is(:focus, :focus-visible) {
+                    outline: none;
+                    box-shadow: none;
+                }
+            }
+
+            > .track {
+                position: absolute;
+                z-index: 1;
+                right: 0;
+                bottom: -2px;
+                left: 0;
+                height: 3px;
+                pointer-events: none;
+
+                > .bar {
+                    width: calc(var(--timer-progress, 1) * 100%);
+                    height: 100%;
+                    background: var(--timer-color);
+                    transition: width 200ms linear;
+                }
+            }
+        }
+
+        &.timer-urgent {
+            outline: 2px solid hsl(0deg 70% 50% / 70%);
+            animation: cat-timer-pulse 1s ease-in-out infinite;
+        }
 
         &#cat-pack-destination .form-group > .form-fields:has(> select) {
             flex: 2;
@@ -1541,20 +1653,42 @@ cat-multi-combobox {
             }
 
             .context {
-                margin: 0 0 var(--cat-space-xs);
+                max-width: 19rem;
+                margin: 0 auto var(--cat-space-xs);
                 color: var(--cat-text-primary);
                 font-weight: 600;
                 text-align: center;
+                text-wrap: balance;
 
                 i {
                     margin-right: var(--cat-space-xs);
                 }
+
+                .roll-action {
+                    color: var(--cat-text-accent);
+                }
+
+                .roll-source {
+                    color: var(--cat-status-blue);
+                }
+
+                .roll-friendly {
+                    color: var(--cat-status-green);
+                }
+
+                .roll-hostile {
+                    color: var(--cat-status-red);
+                }
             }
 
             .subcontext {
-                margin: 0 0 var(--cat-space-sm);
-                color: var(--cat-text-muted);
-                text-align: center;
+                width: fit-content;
+                margin: 0 auto var(--cat-space-sm);
+                padding: 0.2rem 0.5rem;
+                border-radius: var(--cat-radius-sm);
+                color: var(--cat-text-primary);
+                font-weight: 600;
+                background: var(--cat-bg-header);
             }
 
             .groups {
@@ -1684,7 +1818,7 @@ cat-multi-combobox {
             font-size: 0.9em;
 
             &:focus-visible {
-                outline: 2px solid var(--cat-border-focus);
+                outline: 2px solid var(--cat-role-tint, var(--cat-border-focus));
                 outline-offset: 1px;
             }
 
@@ -1936,14 +2070,6 @@ cat-multi-combobox {
             flex-direction: row;
             padding: var(--cat-space-md);
             background: var(--cat-bg-sunken);
-
-            button {
-                flex: 1;
-
-                &[data-action="cancel"] {
-                    flex: 0 0 auto;
-                }
-            }
         }
 
         .notice {
@@ -2471,7 +2597,6 @@ cat-multi-combobox {
         }
 
         > footer {
-            justify-content: flex-end;
             padding: var(--cat-space-sm) var(--cat-space-md);
         }
 
@@ -2607,22 +2732,10 @@ cat-multi-combobox {
                     background: var(--cat-bg-active);
                 }
             }
-
-            > footer button[data-action="close"] {
-                flex: 0 0 auto;
-            }
         }
     }
 
     &.cat-troubleshooter {
-        > footer {
-            flex-wrap: wrap;
-
-            > button {
-                flex-basis: calc(25% - var(--cat-space-sm));
-            }
-        }
-
         .embedded-list {
             margin: var(--cat-space-xs) 0;
 
@@ -2740,6 +2853,39 @@ cat-multi-combobox {
     .flexrow {
         gap: 0.25rem;
         padding: 0.3125rem;
+
+        > button {
+            --cat-role-tint: var(--cat-status-blue);
+
+            flex: 0 0 auto;
+
+            &[data-role="positive"] {
+                --cat-role-tint: var(--cat-status-green);
+            }
+
+            &[data-role="positive"],
+            &:only-child {
+                flex: 1 1 auto;
+            }
+
+            &:is(:hover, :focus-visible) {
+                border-color: var(--cat-role-tint);
+                background: color-mix(in srgb, var(--cat-role-tint) 15%, transparent);
+                box-shadow: none;
+            }
+        }
+    }
+}
+
+:is(.cat-troubleshooter .form-fields, .cat-troubleshooter-card .flexrow) > button {
+    gap: var(--cat-space-sm);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    & > i {
+        margin: 0;
+        font-size: 0.85em;
     }
 }
 
@@ -2887,4 +3033,10 @@ cat-multi-combobox {
     color: white;
     font-size: var(--font-size-12);
     pointer-events: all;
+}
+
+@keyframes cat-timer-pulse {
+    50% {
+        outline-color: hsl(0deg 70% 50% / 20%);
+    }
 }

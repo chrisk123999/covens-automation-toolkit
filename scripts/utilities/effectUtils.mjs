@@ -1,3 +1,4 @@
+import {constants} from '../lib/_module.mjs';
 import {automationUtils, dataUtils, documentUtils, genericUtils, queryUtils} from './_module.mjs';
 /**
  * Get the cast data stashed on this effect by CAT or midi.
@@ -79,6 +80,11 @@ function getConditions(effect) {
     conditions = conditions.union(effect.statuses ?? new Set());
     return conditions;
 }
+/**
+ * Read the uuid of the activity that created this effect.
+ * @param {ActiveEffect} effect Effect to read from.
+ * @returns {string|undefined}
+ */
 function getOriginActivityUuid(effect) {
     return effect.system?.origin?.activity ?? effect.flags.dae?.activity ?? effect.flags.cat?.activityUuid;
 }
@@ -96,11 +102,7 @@ async function getOriginActivity(effect) {
     if (!origin || origin.documentName !== 'ActiveEffect') return;
     const originActivityUuid = origin.flags.dnd5e?.activity?.uuid;
     if (originActivityUuid) return await fromUuid(originActivityUuid);
-    if (origin.parent?.documentName === 'Item') {
-        return origin.parent.system.activities?.find(activity =>
-            activity.effects.some(aEffect => aEffect._id === origin.id)
-        );
-    }
+    if (origin.parent?.documentName === 'Item') return origin.parent.system.activities?.find(activity => activity.effects?.some(aEffect => aEffect._id === origin.id));
 }
 /**
  * Synchronous {@link getOriginActivity}, limited to documents already in memory.
@@ -115,11 +117,7 @@ function getOriginActivitySync(effect) {
     if (!origin || origin.documentName !== 'ActiveEffect') return;
     const originActivityUuid = origin.flags.dnd5e?.activity?.uuid;
     if (originActivityUuid) return fromUuidSync(originActivityUuid, {strict: false});
-    if (origin.parent?.documentName === 'Item') {
-        return origin.parent.system.activities?.find(activity =>
-            activity.effects.some(aEffect => aEffect._id === origin.id)
-        );
-    }
+    if (origin.parent?.documentName === 'Item') return origin.parent.system.activities?.find(activity => activity.effects?.some(aEffect => aEffect._id === origin.id));
 }
 /**
  * Retrieve the source Actor or Item, or null if it could not be determined.
@@ -246,7 +244,24 @@ function durationToSeconds({value, units} = {}) {
     }
     return calendar.componentsToTime({[unit]: value});
 }
+/**
+ * Apply the system's No Reactions effect, which midi and CAT read as the actor being unable to take reactions.
+ * @param {Actor5e} actor Actor to apply it to.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.origin] Uuid of the effect's origin.
+ * @param {object} [options.duration] Effect duration.
+ * @param {string[]} [options.specialDuration] Removal triggers, such as `turnStart`.
+ * @returns {Promise<ActiveEffect|undefined>}
+ */
+async function applyNoReactions(actor, {origin, duration, specialDuration} = {}) {
+    const source = await fromUuid(constants.noReactionsEffect);
+    if (!source) return;
+    const effectData = genericUtils.mergeObject(source.toObject(), {origin, _stats: {compendiumSource: constants.noReactionsEffect}});
+    if (duration) effectData.duration = duration;
+    return (await createEffects(actor, [effectData], {specialDuration}))?.[0];
+}
 export default {
+    applyNoReactions,
     durationToSeconds,
     getCastData,
     createEffects,

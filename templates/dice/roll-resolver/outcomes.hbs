@@ -1,5 +1,7 @@
-<div class="outcomes">
-    {{#each outcomes}}
-        <button type="button" data-action="applyOutcome" data-outcome="{{value}}">{{localize label}}</button>
-    {{/each}}
+<div class="roll-footer">
+    <div class="outcomes" data-tooltip="{{localize 'CAT.Manual.QuickButtons'}}">
+        {{#each outcomes}}
+            <button type="button" data-action="applyOutcome" data-outcome="{{value}}"><i class="fa-solid fa-fw {{icon}}"></i>{{localize label}}</button>
+        {{/each}}
+    </div>
 </div>

@@ -52,10 +52,10 @@ export default class MenuApp extends CatApp {
     };
 
     static #BUTTON_SETS = {
-        yesNo: [['Yes', 'true'], ['No', 'false']],
-        okCancel: [['Confirm', 'true'], ['Cancel', 'false']],
-        ok: [['Confirm', 'true']],
-        cancel: [['Cancel', 'false']]
+        yesNo: [['No', 'false', 'negative'], ['Yes', 'true', 'positive']],
+        okCancel: [['Cancel', 'false', 'negative'], ['Confirm', 'true', 'positive']],
+        ok: [['Confirm', 'true', 'positive']],
+        cancel: [['Cancel', 'false', 'negative']]
     };
 
     get footerButtons() {
@@ -101,8 +101,9 @@ export default class MenuApp extends CatApp {
         return this.windowTitle;
     }
 
-    static #makeButton(label, name) {
-        return {type: 'submit', label, name};
+    static #makeButton(label, name, role) {
+        if (role === 'negative') return {type: 'button', action: 'close', label, name, role, icon: 'fa-solid fa-xmark'};
+        return {type: 'submit', label, name, role, icon: 'fa-solid fa-check'};
     }
 
     // Convert each declarative input tuple into template-ready entry.
@@ -112,7 +113,7 @@ export default class MenuApp extends CatApp {
             const entry = this.#buildInput(input);
             if (entry) context.inputs.push(entry);
         }
-        for (const [label, value] of MenuApp.#BUTTON_SETS[this.buttons] ?? []) context.buttons.push(MenuApp.#makeButton(label, value));
+        for (const [label, value, role] of MenuApp.#BUTTON_SETS[this.buttons] ?? []) context.buttons.push(MenuApp.#makeButton(label, value, role));
         context.tabbed = context.inputs.length > 1 && context.inputs.every(input => input.isPriority);
         this.#context = context;
     }

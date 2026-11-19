@@ -225,9 +225,20 @@ const settings = {
         scope: 'world',
         menu: 'manualRolls'
     },
-    manualRollsGMFulfill: {
-        type: Boolean,
-        default: false,
+    manualRollsFulfiller: {
+        type: String,
+        default: 'player',
+        choices: {
+            player: 'CAT.Settings.ManualRollsFulfiller.player',
+            gm: 'CAT.Settings.ManualRollsFulfiller.gm',
+            both: 'CAT.Settings.ManualRollsFulfiller.both'
+        },
+        scope: 'world',
+        menu: 'manualRolls'
+    },
+    manualRollsTimer: {
+        type: Number,
+        default: 0,
         scope: 'world',
         menu: 'manualRolls'
     },

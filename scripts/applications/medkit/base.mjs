@@ -171,9 +171,9 @@ export default class MedkitApp extends CatApp {
 
     get footerButtons() {
         return [
-            {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Cancel', name: 'cancel', icon: 'fa-solid fa-xmark', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
-            {type: 'button', action: 'saveClose', label: 'CAT.MEDKIT.Footer.SaveClose', name: 'saveClose', icon: 'fa-solid fa-check', tooltip: 'CAT.MEDKIT.Footer.SaveCloseTooltip'},
-            {type: 'button', action: 'save', label: 'CAT.MEDKIT.Footer.Save', name: 'save', icon: 'fa-solid fa-download', tooltip: 'CAT.MEDKIT.Footer.SaveTooltip'}
+            {type: 'button', action: 'cancel', label: 'CAT.MEDKIT.Footer.Cancel', name: 'cancel', icon: 'fa-solid fa-xmark', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip', role: 'negative'},
+            {type: 'button', action: 'save', label: 'CAT.MEDKIT.Footer.Save', name: 'save', icon: 'fa-solid fa-download', tooltip: 'CAT.MEDKIT.Footer.SaveTooltip', role: 'positive'},
+            {type: 'button', action: 'saveClose', label: 'CAT.MEDKIT.Footer.SaveClose', name: 'saveClose', icon: 'fa-solid fa-check', tooltip: 'CAT.MEDKIT.Footer.SaveCloseTooltip', role: 'positive'}
         ];
     }
 
@@ -1443,7 +1443,7 @@ export default class MedkitApp extends CatApp {
                 return a[2].legend.localeCompare(b[2].legend, game.i18n.lang);
             });
         inputs.unshift(...this.#massApplySwitchInputs(items));
-        const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', 'CAT.MEDKIT.MassApply.ConfirmPrompt', inputs, 'yesNo');
+        const choices = await DialogApp.dialog('CAT.MEDKIT.MassApply.ConfirmTitle', 'CAT.MEDKIT.MassApply.ConfirmPrompt', inputs, 'okCancel');
         if (!choices || !choices.buttons) return false;
         return choices;
     }

@@ -31,8 +31,8 @@ export default class QuickConditions extends CatApp {
 
     get footerButtons() {
         return [
-            {label: 'CAT.Generic.Cancel', icon: 'fa-solid fa-xmark', type: 'button', action: 'close', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
-            {label: 'CAT.Generic.Ok', icon: 'fa-solid fa-check'}
+            {label: 'CAT.Generic.Cancel', icon: 'fa-solid fa-xmark', type: 'button', action: 'close', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip', role: 'negative'},
+            {label: 'CAT.Generic.Ok', icon: 'fa-solid fa-check', role: 'positive'}
         ];
     }
     static formHandler(event, form, formData) {

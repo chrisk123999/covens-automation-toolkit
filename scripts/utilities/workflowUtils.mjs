@@ -51,16 +51,14 @@ function isAttackType(workflow, type = 'attack') {
  * @param {object} [options.message] Chat message configuration.
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean|number[]} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @param {boolean} [options.autoDamage] Roll damage according to midi's autoRollDamage setting.
  * @returns {Promise<MidiQOL.Workflow|undefined>} Undefined when midi declines the use.
  */
-async function completeActivityUse(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources, spellSlot = true, fast = false, autoDamage} = {}) {
+async function completeActivityUse(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = false, autoDamage} = {}) {
     const defaultConfig = {
-        consumeUsage,
         consume: {
             spellSlot,
             resources: consumeResources ?? Array.from(activity.consumption.targets.entries())
@@ -112,14 +110,13 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
  * @param {object} [options.message] Chat message configuration.
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean|number[]} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticActivityRoll(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources, spellSlot = true, fast = true} = {}) {
-    return await completeActivityUse(activity, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot, fast, autoDamage: true});
+async function syntheticActivityRoll(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = true} = {}) {
+    return await completeActivityUse(activity, targets, {config, options, dialog, message, userId, atLevel, consumeResources, spellSlot, fast, autoDamage: true});
 }
 /**
  * {@link syntheticActivityRoll} for activity data that is not on the item, such as a modified copy.
@@ -133,13 +130,12 @@ async function syntheticActivityRoll(activity, targets = [], {config = {}, optio
  * @param {object} [options.message] Chat message configuration.
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources, spellSlot = true, fast = true} = {}) {
+async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(item.actor);
     if (user && user.id !== game.user.id) {
         return MidiQOL.restoreWorkflowTokenSets(await queryUtils.query('syntheticActivityDataRoll', user, {
@@ -151,14 +147,13 @@ async function syntheticActivityDataRoll(activityData, item, targets, {config = 
             dialog,
             message,
             atLevel,
-            consumeUsage,
             consumeResources,
             spellSlot,
             fast
         }, fast ? MidiQOL.configSettings().reactionTimeout * 1000 : null));
     }
     const activity = activityUtils.syntheticActivity(activityData, item);
-    return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot, fast});
+    return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeResources, spellSlot, fast});
 }
 /**
  * Spend an activity's consumption at a scaled amount without triggering its parent.
@@ -183,16 +178,14 @@ async function spendScaledCost(item, activityIdentifier, amount) {
  * @param {object} [options.message] Chat message configuration.
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @param {boolean} [options.autoDamage] Roll damage according to midi's autoRollDamage setting.
  * @returns {Promise<MidiQOL.Workflow|undefined>} Undefined when midi declines the use.
  */
-async function completeItemUse(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = false, autoDamage} = {}) {
+async function completeItemUse(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources = true, spellSlot = true, fast = false, autoDamage} = {}) {
     const defaultConfig = {
-        consumeUsage,
         consume: {
             resources: consumeResources,
             spellSlot
@@ -242,14 +235,13 @@ async function completeItemUse(item, targets = [], {config = {}, options = {}, d
  * @param {object} [options.message] Chat message configuration.
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticItemRoll(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = true} = {}) {
-    return await completeItemUse(item, targets, {config, options, dialog, message, userId, atLevel, consumeUsage, consumeResources, spellSlot, fast, autoDamage: true});
+async function syntheticItemRoll(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources = true, spellSlot = true, fast = true} = {}) {
+    return await completeItemUse(item, targets, {config, options, dialog, message, userId, atLevel, consumeResources, spellSlot, fast, autoDamage: true});
 }
 /**
  * {@link syntheticItemRoll} for item data that is not on the actor, such as a compendium copy.
@@ -263,13 +255,12 @@ async function syntheticItemRoll(item, targets = [], {config = {}, options = {},
  * @param {object} [options.message] Chat message configuration.
  * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
  * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeUsage = true, consumeResources = true, spellSlot = true, fast = true} = {}) {
+async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources = true, spellSlot = true, fast = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(actor);
     if (user && user.id !== game.user.id) {
         return MidiQOL.restoreWorkflowTokenSets(await queryUtils.query('syntheticItemDataRoll', user, {
@@ -281,14 +272,13 @@ async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}
             dialog,
             message,
             atLevel,
-            consumeUsage,
             consumeResources,
             spellSlot,
             fast
         }, fast ? MidiQOL.configSettings().reactionTimeout * 1000 : null));
     }
     const newItem = itemUtils.syntheticItem(itemData, actor);
-    return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeUsage, consumeResources, spellSlot, fast});
+    return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeResources, spellSlot, fast});
 }
 /**
  * {@link syntheticItemRoll} with the item's activation types overridden to special for the use, through a temporary enchantment.
@@ -297,11 +287,10 @@ async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}
  * @param {Item5e} sourceFeature Feature granting the special use. Names the enchantment and is its origin.
  * @param {object} [options] Additional options.
  * @param {dnd5e.documents.activity.Activity} [options.activity] Use this activity of the item rather than the item itself.
- * @param {boolean} [options.consumeUsage] Spend the item or activity's own uses.
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  */
-async function specialItemUse(item, targets, sourceFeature, {activity, consumeUsage = false, consumeResources = false} = {}) {
+async function specialItemUse(item, targets, sourceFeature, {activity, consumeResources = false} = {}) {
     const changes = Object.keys(CONFIG.DND5E.activityTypes).map(type => ({
         key: 'activities[' + type + '].activation.type',
         type: 'override',
@@ -317,22 +306,26 @@ async function specialItemUse(item, targets, sourceFeature, {activity, consumeUs
         duration: {value: 1, units: 'seconds'}
     });
     const effect = await itemUtils.enchantItem(item, effectData);
-    const workflow = activity ? await syntheticActivityRoll(item.system.activities.get(activity.id), targets, {consumeUsage, consumeResources}) : await syntheticItemRoll(item, targets, {consumeUsage, consumeResources});
+    const workflow = activity ? await syntheticActivityRoll(item.system.activities.get(activity.id), targets, {consumeResources}) : await syntheticItemRoll(item, targets, {consumeResources});
     if (effect) await documentUtils.deleteDocument(effect);
     return workflow;
+}
+/**
+ * Replace a damage item's raw damage entries, keeping only the first value.
+ * @param {object} ditem Midi damage item, from workflow.damageList.
+ * @param {number} [firstValue] Value for the first entry; the rest are zeroed.
+ */
+function setRawDamageValues(ditem, firstValue = 0) {
+    ditem.damages = ditem.damages.map((entry, index) => ({...entry, value: index ? 0 : firstValue}));
 }
 /**
  * Zero every damage total on a damage item, leaving hit points untouched.
  * @param {object} ditem Midi damage item, from workflow.damageList.
  */
 function negateDamageItemDamage(ditem) {
-    ditem.totalDamage = 0;
-    ditem.newHP = ditem.oldHP;
-    ditem.newTempHP = ditem.oldTempHP;
-    ditem.hpDamage = 0;
-    ditem.tempDamage = 0;
-    ditem.damageDetail.forEach(i => i.value = 0);
-    ditem.rawDamageDetail.forEach(i => i.value = 0);
+    ditem.calculatedDamages.forEach(i => i.value = 0);
+    setRawDamageValues(ditem);
+    recalculateHP(ditem);
 }
 /**
  * Add or subtract a flat amount of damage on one target, recalculating the resulting hit points. Use in the `damageFlatReductions` or `damagePercentReductions` macro passes.
@@ -346,10 +339,10 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
     if (modificationAmount < 0 && type === 'none') {
         const amounts = {};
         let pool = Math.abs(modificationAmount);
-        const damages = genericUtils.deepClone(ditem.damageDetail);
+        const damages = genericUtils.deepClone(ditem.calculatedDamages);
         for (const dmg of damages) {
             const mult = dmg.active?.multiplier ?? 1;
-            if (dmg.active?.immunity || mult === 0 || dmg.value === 0) continue;
+            if (dmg.active?.type?.immunity || mult === 0 || dmg.value === 0) continue;
             if (amounts[dmg.type]) amounts[dmg.type].damage += dmg.damage;
             else amounts[dmg.type] = {damage: dmg.damage, mult, active: dmg.active};
         }
@@ -361,26 +354,24 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
             if (pool <= 0) break;
         }
     } else addDamageDetail(ditem, modificationAmount, type, multiplier);
-    const actualTotal = ditem.totalDamage = ditem.damageDetail.reduce((total, dmg) => total + dmg.value, 0);
-    if (type === 'healing') {
-        ditem.newHP = ditem.oldHP - actualTotal;
-    } else {
-        const dmgPastTempHP = ditem.oldTempHP - actualTotal;
-        ditem.newTempHP = Math.max(dmgPastTempHP, 0);
-        ditem.newHP = Math.clamp(ditem.oldHP + Math.min(0, dmgPastTempHP), 0, ditem.oldHP);
-    }
-    ditem.tempDamage = ditem.oldTempHP - ditem.newTempHP;
-    ditem.hpDamage = ditem.oldHP - ditem.newHP;
+    recalculateHP(ditem);
 }
-// used locally only
+/**
+ * Push a damage entry onto a damage item's calculated and raw damages. Negative non-healing values are capped at the damage dealt.
+ * @param {object} ditem Midi damage item, from workflow.damageList.
+ * @param {number} damage Damage before the multiplier.
+ * @param {string} type Damage type.
+ * @param {number|'auto'} multiplier 'auto' applies the target's immunity, resistance and vulnerability.
+ * @param {object} [active] Active modifiers record to copy onto the entry.
+ */
 function addDamageDetail(ditem, damage, type, multiplier, active) {
     active ??= {type: {}};
     if (ditem.saved) active.type.saved = true;
     if (multiplier === 'auto') {
         const {damageImmunityMultiplier, damageResistanceMultiplier, damageVulnerabilityMultiplier} = MidiQOL.configSettings();
-        const midiOptions = ditem.calcDamageOptions?.midi;
+        const midiOptions = ditem.options?.midi;
         multiplier = midiOptions?.saved ? (midiOptions?.saveMultiplier ?? 1) : 1;
-        if (type === 'healing' && ditem.calcDamageOptions?.invertHealing) multiplier *= -1;
+        if (type === 'healing' && ditem.options?.invertHealing) multiplier *= -1;
         const actor = fromUuidSync(ditem.actorUuid);
         if (actor) {
             if (actorUtils.checkTrait(actor, 'di', type)) {
@@ -400,8 +391,21 @@ function addDamageDetail(ditem, damage, type, multiplier, active) {
     active.multiplier = multiplier;
     let value = Math.trunc(damage * multiplier);
     if (value < 0 && type !== 'healing') value = Math.max(value, -ditem.totalDamage);
-    ditem.damageDetail.push({active, type, value, damage});
-    ditem.rawDamageDetail.push({damage, value: damage, type});
+    ditem.calculatedDamages.push({active, potential: {}, type, value, damage, properties: new Set()});
+    ditem.damages.push({damage, value: damage, type, properties: new Set()});
+}
+/**
+ * Refund what a use consumed, from the deltas the system recorded on its usage card.
+ * @param {MidiQOL.Workflow} workflow Workflow whose use is refunded.
+ * @returns {Promise<boolean>} Whether anything was refunded.
+ */
+async function refundUse(workflow) {
+    const message = workflow.chatCard ?? game.messages.get(workflow.itemCardId);
+    const deltas = message?.system?.deltas;
+    if (!deltas || !workflow.activity) return false;
+    await workflow.activity.refund(deltas);
+    await documentUtils.update(message, {'system.deltas': null});
+    return true;
 }
 /**
  * Whether this roll is a continuation rather than a fresh use: over time effects, automation-only activities, and spells cast without spending a slot.
@@ -427,19 +431,11 @@ function setNotSustainedRoll(workflow) {
  * @param {boolean} [adjustRaw] Also overwrite the raw damage detail, which drives the damage card.
  */
 function setDamageItemDamage(ditem, damageAmount, adjustRaw = true) {
-    const tempDamage = damageAmount > 0 ? Math.min(ditem.oldTempHP ?? 0, damageAmount) : 0;
-    const hpDamage = damageAmount - tempDamage;
-    ditem.totalDamage = damageAmount;
-    ditem.hpDamage = hpDamage;
-    ditem.tempDamage = tempDamage;
-    ditem.newHP = ditem.oldHP - hpDamage;
-    ditem.newTempHP = (ditem.oldTempHP ?? 0) - tempDamage;
-    ditem.damageDetail.forEach(i => i.value = 0);
-    ditem.damageDetail[0].value = damageAmount;
-    if (adjustRaw) {
-        ditem.rawDamageDetail.forEach(i => i.value = 0);
-        ditem.rawDamageDetail[0].value = damageAmount;
-    }
+    const entries = ditem.calculatedDamages;
+    entries.forEach(i => i.value = 0);
+    entries[0].value = damageAmount;
+    if (adjustRaw) setRawDamageValues(ditem, damageAmount);
+    recalculateHP(ditem);
 }
 /**
  * Stash a value on the workflow under CAT's namespace, for reading in a later pass.
@@ -557,8 +553,8 @@ function getRange(workflow) {
     if (units === 'touch') return itemUtils.getRange(workflow.item).reach ?? distanceUtils.toFeet(workflow.token.document.parent, range);
     if (units === 'mi' && ['feet', 'ft'].includes(sceneUnits)) return range;
     if (units === 'mi' && ['yards', 'yd', 'yds'].includes(sceneUnits)) return range * 3;
-    if (units === 'km' && ['meter', 'm', 'meters', 'metre', 'metres'].includes(sceneUnits)) return dnd5e.utils.convertLength(range, 'm', 'ft');
-    return dnd5e.utils.convertLength(range, units, 'ft', {strict: false});
+    if (units === 'km' && ['meter', 'm', 'meters', 'metre', 'metres'].includes(sceneUnits)) return dnd5e.utils.convertLength(range, 'm', {to: 'ft', legacy: false}).value;
+    return dnd5e.utils.convertLength(range, units, {to: 'ft', legacy: false}).value;
 }
 /**
  * Swap the workflow's item for a modified copy, in memory.
@@ -743,12 +739,14 @@ function getDamageDealt(workflow, token) {
 /**
  * Apply damage directly to tokens, without a workflow.
  * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} tokens Tokens taking the damage.
- * @param {number} value Value to stash, or damage to apply.
+ * @param {number} value Damage to apply.
  * @param {string} damageType Damage type to apply it as.
+ * @param {object} [options] Additional options.
+ * @param {string[]} [options.properties] Damage properties, such as falling.
  * @returns {Promise<string[]>} ChatMessage uuids
  */
-async function applyDamage(tokens, value, damageType) {
-    return await MidiQOL.applyTokenDamageMany(Array.from(tokens, token => ({token, damageDetail: [{value, type: damageType}], totalDamage: value})));
+async function applyDamage(tokens, value, damageType, {properties = []} = {}) {
+    return await MidiQOL.applyTokenDamage([{value, type: damageType, properties: new Set(properties)}], value, tokens);
 }
 /**
  * Replace the workflow's targets, and the user's own targeting.
@@ -789,18 +787,39 @@ function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutright =
         if (killedOutright && resultingHP <= -maxHP) return;
     }
     const hpDamage = ditem.oldHP - targetHP;
-    const tempDamage = ditem.oldTempHP ?? 0;
-    const totalDamage = hpDamage + tempDamage;
-    ditem.totalDamage = totalDamage;
-    ditem.hpDamage = hpDamage;
-    ditem.tempDamage = tempDamage;
-    ditem.newHP = targetHP;
-    ditem.newTempHP = 0;
-    ditem.damageDetail.forEach(i => i.value = 0);
-    if (hpDamage < 0) ditem.damageDetail.push({value: hpDamage, type: 'healing'});
-    else ditem.damageDetail[0].value = totalDamage;
-    ditem.rawDamageDetail.forEach(i => i.value = 0);
-    ditem.rawDamageDetail[0].value = totalDamage;
+    const totalDamage = hpDamage + (ditem.oldTempHP ?? 0);
+    const entries = ditem.calculatedDamages;
+    entries.forEach(i => i.value = 0);
+    if (hpDamage < 0) addDamageDetail(ditem, hpDamage, 'healing', 1);
+    else entries[0].value = totalDamage;
+    setRawDamageValues(ditem, hpDamage < 0 ? hpDamage : totalDamage);
+    recalculateHP(ditem);
+}
+/**
+ * Recompute a damage item's totals and resulting hit points from its calculated damages, mirroring midi-qol.
+ * @param {object} ditem Midi damage item, from workflow.damageList.
+ */
+function recalculateHP(ditem) {
+    const hp = fromUuidSync(ditem.actorUuid)?.system.attributes.hp;
+    if (!hp) return;
+    let amount = 0;
+    let temp = 0;
+    let healing = 0;
+    let tempMax = 0;
+    for (const entry of ditem.calculatedDamages) {
+        if (entry.type === 'temphp') temp += entry.value;
+        else if (entry.type === 'maximum') tempMax += entry.value;
+        else if (entry.type === 'healing' || entry.active?.absorption || entry.active?.type?.absorption) healing += entry.value;
+        else if (!['midi-none', 'vitality'].includes(entry.type)) amount += entry.value;
+    }
+    tempMax = Math.trunc(tempMax);
+    const totalDamage = Math.max(0, amount);
+    let change = totalDamage + healing;
+    change = change > 0 ? Math.floor(change) : Math.ceil(change);
+    const oldTemp = hp.temp ?? 0;
+    const tempDamage = change > 0 ? Math.min(oldTemp, change) : 0;
+    const hpDamage = Math.clamp(change - tempDamage, -hp.damage + tempMax, hp.value - tempMax);
+    Object.assign(ditem, {totalDamage, hpDamage, tempDamage, newHP: hp.value - hpDamage, newTempHP: Math.max(oldTemp - tempDamage, temp)});
 }
 
 /**
@@ -904,7 +923,7 @@ async function rollConfiguredSource(bonus, config, targets = []) {
     if (config.rollItem) return await completeItemUse(item, targets);
     if (!config.rollActivity) return;
     const activity = item.system.activities.get(config.rollActivity);
-    if (activity) await completeActivityUse(activity, targets, {consumeResources: config.consume, consumeUsage: config.consume});
+    if (activity) await completeActivityUse(activity, targets, {consumeResources: config.consume});
 }
 export default {
     getActionType,
@@ -921,6 +940,7 @@ export default {
     modifyDamageAppliedFlat,
     setDamageItemDamage,
     isSustainedRoll,
+    refundUse,
     setWorkflowProperty,
     getWorkflowProperty,
     addMacroConditions,

@@ -1,5 +1,6 @@
 import {constants} from '../lib/_module.mjs';
 import CatApp from './cat-app.mjs';
+import PromptTimer from './prompt-timer.mjs';
 const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundry.data.fields;
 
 /**
@@ -14,7 +15,7 @@ const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundr
 const INPUTS_TEMPLATE = 'modules/cat/templates/dialog-fields.hbs';
 const STANDARD_FACES = new Set([4, 6, 8, 10, 12, 20]);
 Hooks.once('setup', () => {
-    foundry.applications.handlebars.loadTemplates([INPUTS_TEMPLATE]);
+    foundry.applications.handlebars.loadTemplates([INPUTS_TEMPLATE, 'modules/cat/templates/shared/timer.hbs']);
 });
 
 // Generic dialog for macros. API matches CPR v13 DialogApp.
@@ -23,6 +24,7 @@ export default class DialogApp extends CatApp {
     #context;
     #resolveResults;
     #resultsPromise;
+    #timer = new PromptTimer(this, () => this.close());
     constructor(options) {
         let title, content, inputs, buttons, config;
         if (options?.length) [title, content, inputs, buttons, config] = options;
@@ -55,7 +57,8 @@ export default class DialogApp extends CatApp {
             confirm: DialogApp.#confirm,
             request: DialogApp.#request,
             toggleCollapsed: DialogApp.#toggleCollapsed,
-            switchTab: DialogApp.#switchTab
+            switchTab: DialogApp.#switchTab,
+            toggleTimer: DialogApp.#toggleTimer
         },
         window: {
             frame: false,
@@ -151,6 +154,11 @@ export default class DialogApp extends CatApp {
     }
 
     /** @this {DialogApp} */
+    static #toggleTimer() {
+        this.#timer.toggle();
+    }
+
+    /** @this {DialogApp} */
     static #toggleCollapsed(_event, target) {
         const collapsible = target.closest('.row');
         if (!collapsible) return;
@@ -235,8 +243,9 @@ export default class DialogApp extends CatApp {
         return this.windowTitle;
     }
 
-    static #makeButton(label, name) {
-        return {type: 'submit', action: 'confirm', label, name};
+    static #makeButton(label, name, role) {
+        const icon = role === 'negative' ? 'fa-solid fa-xmark' : 'fa-solid fa-check';
+        return {type: role === 'negative' ? 'button' : 'submit', action: 'confirm', label, name, role, icon};
     }
 
     static #makeRange(firstNum, lastNum) {
@@ -261,16 +270,16 @@ export default class DialogApp extends CatApp {
         if (subheaders) context.subheaders = subheaders;
         switch (this.buttons) {
             case 'yesNo':
-                context.buttons.push(DialogApp.#makeButton('Yes', 'true'), DialogApp.#makeButton('No', 'false'));
+                context.buttons.push(DialogApp.#makeButton('No', 'false', 'negative'), DialogApp.#makeButton('Yes', 'true', 'positive'));
                 break;
             case 'okCancel':
-                context.buttons.push(DialogApp.#makeButton('Confirm', 'true'), DialogApp.#makeButton('Cancel', 'false'));
+                context.buttons.push(DialogApp.#makeButton('Cancel', 'false', 'negative'), DialogApp.#makeButton('Confirm', 'true', 'positive'));
                 break;
             case 'ok':
-                context.buttons.push(DialogApp.#makeButton('Confirm', 'true'));
+                context.buttons.push(DialogApp.#makeButton('Confirm', 'true', 'positive'));
                 break;
             case 'cancel':
-                context.buttons.push(DialogApp.#makeButton('Cancel', 'false'));
+                context.buttons.push(DialogApp.#makeButton('Cancel', 'false', 'negative'));
                 break;
         }
         context.inputTemplate = INPUTS_TEMPLATE;
@@ -825,7 +834,12 @@ export default class DialogApp extends CatApp {
     async _prepareContext(options) {
         if (!this.#context) this.#formatInputs();
         const context = await super._prepareContext(options);
-        return {...this.#context, ...this.#tabContext(), ...context};
+        return {...this.#context, ...this.#tabContext(), ...context, timer: PromptTimer.enabled};
+    }
+
+    async _preClose(options) {
+        this.#timer.stop();
+        await super._preClose(options);
     }
 
     // Cap each option's max so combined weighted amounts stay under totalMax.
@@ -945,7 +959,9 @@ export default class DialogApp extends CatApp {
         const counter = this.element?.querySelector(':scope > .body .budget');
         const header = this.element?.querySelector(':scope > header');
         if (counter && header) header.insertBefore(counter, header.querySelector('[data-action="toggleDetach"]'));
+        this.#timer.draw();
         if (options.isFirstRender) {
+            this.#timer.start();
             if (this.#anchor) this.setPosition({left: this.#anchor.x - this.element.offsetWidth / 2, top: this.#anchor.y - 16});
             this.element.addEventListener('cat-resize', () => {
                 this.setPosition({width: 'auto', height: 'auto'});

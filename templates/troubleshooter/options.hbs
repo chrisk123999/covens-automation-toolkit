@@ -12,5 +12,14 @@
                 <p class="hint">{{localize hint}}</p>
             </div>
         {{/each}}
+        {{#each transfers}}
+            <div class="form-group">
+                <label>{{localize label}}</label>
+                <div class="form-fields">
+                    <button type="button" data-action="{{action}}"><i class="{{icon}}"></i> {{localize button}}</button>
+                </div>
+                <p class="hint">{{localize hint}}</p>
+            </div>
+        {{/each}}
     </fieldset>
 </section>

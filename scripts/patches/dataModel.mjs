@@ -213,7 +213,7 @@ function range(wrapped, rollData, labels) {
         if (value) bonus += value;
     }
     if (bonus) {
-        this.range.value += dnd5e.utils.convertLength(bonus, 'ft', this.range.units);
+        this.range.value += dnd5e.utils.convertLength(bonus, 'ft', {to: this.range.units || 'ft', legacy: false}).value;
         this.range.catModified = true;
     }
     return wrapped(rollData, labels);

@@ -13,12 +13,13 @@ function getCurrentAutomation(item) {
     const type = item.type;
     const sourceType = itemUtils.getAdvancementSourceKey(item);
     const monsterIdentifier = documentUtils.getMonsterIdentifier(item);
+    const featType = item.system?.type?.value;
     if (!identifier || !rules) return;
     if (!source) {
-        const allAutomations = constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, monsterIdentifier, sourceType});
+        const allAutomations = constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, featType, monsterIdentifier, sourceType});
         return allAutomations.find(automation => automation.uuid === item.uuid);
     }
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type, sourceType});
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type, featType, sourceType});
 }
 /**
  * Whether this document is a registered automation rather than one an automation was applied to.
@@ -110,7 +111,7 @@ function getAvailableAutomations(item, {excludeSources = [], rules = documentUti
     const identifier = documentUtils.getIdentifier(item);
     const type = item.type;
     const sourceType = itemUtils.getAdvancementSourceKey(item);
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, excludeSources, sourceType, monsterIdentifier: documentUtils.getMonsterIdentifier(item)});
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, featType: item.system?.type?.value, excludeSources, sourceType, monsterIdentifier: documentUtils.getMonsterIdentifier(item)});
 }
 /**
  * One config value for the automation on this document, falling back to the registered default.
@@ -460,7 +461,7 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
     const identifier = documentUtils.getIdentifier(item);
     if (source) {
         const sourceType = itemUtils.getAdvancementSourceKey(item);
-        automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier: documentUtils.getMonsterIdentifier(item), type: item.type, sourceType});
+        automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier: documentUtils.getMonsterIdentifier(item), type: item.type, featType: item.system?.type?.value, sourceType});
     } else {
         automation = getAppliedOrPreferredAutomation(item);
     }

@@ -1,7 +1,7 @@
 <header>
     <i class="fa-solid fa-shield-cat" {{#if medkitStatus}} data-medkit-status="{{medkitStatus}}" {{/if}}
         aria-hidden="true"></i>
-    <span class="title">{{localize title}}</span>
+    <span class="title">{{localize title}}{{#if titleIcon}} <i class="fa-solid {{titleIcon}}" data-tooltip="{{titleIconTooltip}}"></i>{{/if}}</span>
     {{#if isDirty}}
         <span class="dirty"
             data-tooltip="{{localize 'CAT.MEDKIT.Dirty.Tooltip'}}">{{localize "CAT.MEDKIT.Dirty.Label"}}</span>
@@ -12,6 +12,9 @@
             <i class="{{icon}}" aria-hidden="true"></i>
         </button>
     {{/each}}
+    {{#if timer}}
+        {{> "modules/cat/templates/shared/timer.hbs"}}
+    {{/if}}
     {{#if detachable}}
         <button type="button" data-action="toggleDetach" data-tooltip="{{localize detachLabel}}"
             aria-label="{{localize detachLabel}}">

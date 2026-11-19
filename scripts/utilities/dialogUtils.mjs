@@ -878,7 +878,8 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
         let label = getTokenName(i, {hide: hideNames, counter});
         if (coverToken && !reverseCover) label += ' [' + tokenUtils.checkCover(coverToken, i, {displayName: true}) + ']';
         else if (coverToken) label += ' [' + tokenUtils.checkCover(i, coverToken, {displayName: true}) + ']';
-        if (displayDistance && coverToken) label += ' [' + distanceUtils.formatDistance(coverToken.parent, tokenUtils.getDistance(coverToken, i)) + ']';
+        const distance = displayDistance && coverToken ? tokenUtils.getDistance(coverToken, i) : NaN;
+        if (Number.isFinite(distance)) label += ' [' + distanceUtils.formatDistance(coverToken.parent, distance) + ']';
         targetInputs.push({
             label,
             name: i.id,

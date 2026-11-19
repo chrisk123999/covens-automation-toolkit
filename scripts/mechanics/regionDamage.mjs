@@ -19,13 +19,13 @@ function getOrigin(workflow) {
 export async function regionDamage(token, workflow, ditem) {
     const origin = getOrigin(workflow);
     const scene = token?.parent;
-    if (!origin || !scene || !ditem?.damageDetail?.length) return;
+    if (!origin || !scene || !ditem?.calculatedDamages?.length) return;
     const target = token.object?.center ?? token.getCenterPoint();
-    const types = new Set(ditem.damageDetail.filter(detail => detail.value > 0).map(detail => detail.type));
+    const types = new Set(ditem.calculatedDamages.filter(detail => detail.value > 0).map(detail => detail.type));
     const regions = scene.regions.filter(region => region.flags.cat?.damageThrough && regionUtils.getIntersections(region, origin, target, true));
     for (const region of regions) {
         for (const [type, multiplier] of Object.entries(region.flags.cat.damageThrough)) {
-            const dealt = ditem.damageDetail.filter(detail => detail.type === type).reduce((total, detail) => total + detail.value, 0);
+            const dealt = ditem.calculatedDamages.filter(detail => detail.type === type).reduce((total, detail) => total + detail.value, 0);
             if (dealt > 0 && multiplier < 1) workflowUtils.modifyDamageAppliedFlat(ditem, -Math.ceil(dealt * (1 - multiplier)), {type});
         }
         await new Events.RegionEvent([region], constants.regionPasses.damageThrough, {workflow, options: {token, origin, target, types: [...types]}}).run();

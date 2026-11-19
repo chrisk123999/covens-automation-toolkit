@@ -264,7 +264,7 @@ function getEffectData(document, id, {duration, concentrationItem, ...catData} =
 }
 /**
  * Build effect data from scratch, rather than from an effect already on a document.
- * @param {foundry.abstract.Document} document An activity supplies the duration when one is not passed.
+ * @param {foundry.abstract.Document} document An activity supplies the duration when one is not passed. A spell or magical item makes the effect magical.
  * @param {object} [options] Additional options.
  * @param {string} [options.name] Effect name.
  * @param {string} [options.img] Effect icon.
@@ -276,11 +276,12 @@ function getEffectData(document, id, {duration, concentrationItem, ...catData} =
  * @returns {object} Effect data ready for creation.
  */
 function getBaseEffectData(document, {name, img, origin, identifier, changes = [], duration, ...buildOptions} = {}) {
+    const item = document?.documentName === 'Item' ? document : document?.item;
     const effectData = {
         name,
         img,
         origin,
-        system: {changes}
+        system: {changes, magical: itemUtils.isMagical(item)}
     };
     if (duration) {
         effectData.duration = duration;

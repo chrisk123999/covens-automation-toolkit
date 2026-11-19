@@ -28,7 +28,6 @@ const TROUBLESHOOTER = {
         },
         'midi-qol': {
             'EnableWorkflow': {fix: true},
-            'ReplaceDefaultActivities': {fix: true},
             'ConfigSettings.autoCEEffects': {fix: 'itempri'},
             'ConfigSettings.attackPerTarget': {fix: false},
             'ConfigSettings.autoCheckHit': {expected: value => value !== 'none', fix: 'all'},
@@ -289,7 +288,7 @@ const REPORT_CHECKS = [
         run: () => {
             const config = game.settings.get('midi-qol', 'ConfigSettings');
             return [
-                ...['EnableWorkflow', 'ReplaceDefaultActivities'].map(key => ({status: 'info', label: _loc(game.settings.settings.get(`midi-qol.${key}`).name), detail: formatValue(game.settings.get('midi-qol', key))})),
+                {status: 'info', label: _loc(game.settings.settings.get('midi-qol.EnableWorkflow').name), detail: formatValue(game.settings.get('midi-qol', 'EnableWorkflow'))},
                 ...TROUBLESHOOTER.midiSettings.map(key => {
                     const label = `midi-qol.${key.capitalize()}.Name`;
                     return {status: 'info', label: game.i18n.has(label) ? _loc(label) : `ConfigSettings.${key}`, detail: formatValue(config[key])};
@@ -417,14 +416,14 @@ async function startup() {
         if (game.settings.get('cat', 'hideTroubleshooterWarnings')) continue;
         const rows = await cardRows(card);
         if (!rows.length) continue;
-        const actions = ['fix', 'open'].filter(action => action !== 'fix' || rows.some(row => row.fixable));
+        const actions = ['open', 'fix'].filter(action => action !== 'fix' || rows.some(row => row.fixable));
         await ChatMessage.create({
             speaker: {alias: _loc('CAT.Troubleshooter.Title')},
             whisper: ChatMessage.getWhisperRecipients('GM').map(user => user.id),
             content: await foundry.applications.handlebars.renderTemplate('modules/cat/templates/troubleshooter/card.hbs', {
                 message: `CAT.Troubleshooter.Card.${card}`,
                 groups: Object.entries(Object.groupBy(rows, row => row.group ?? '')).map(([label, rows]) => ({label, rows})),
-                actions: actions.map(action => ({action, label: `CAT.Troubleshooter.Card.${action}`}))
+                actions: actions.map(action => ({action, label: `CAT.Troubleshooter.Card.${action}`, role: action === 'fix' ? 'positive' : 'neutral', icon: action === 'fix' ? 'fa-solid fa-wrench' : 'fa-solid fa-up-right-from-square'}))
             }),
             flags: {cat: {troubleshooter: card}}
         });

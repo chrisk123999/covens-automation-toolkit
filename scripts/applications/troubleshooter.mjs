@@ -12,6 +12,10 @@ const STATUS = {
 };
 const INFO_SECTIONS = ['modules', 'foundry', 'permissions'];
 const OPTIONS = ['hideTroubleshooterWarnings', 'exportStripDialog'];
+const TRANSFERS = [
+    {action: 'exportSettings', label: 'CAT.Troubleshooter.Export.Settings', hint: 'CAT.Troubleshooter.Export.SettingsHint', button: 'CAT.Troubleshooter.Export.SettingsButton', icon: 'fa-solid fa-file-export'},
+    {action: 'importSettings', label: 'CAT.Troubleshooter.Export.ImportSettings', hint: 'CAT.Troubleshooter.Export.ImportSettingsHint', button: 'CAT.Troubleshooter.Export.ImportSettingsButton', icon: 'fa-solid fa-file-import'}
+];
 
 export default class TroubleshooterApp extends CatApp {
     #rows = [];
@@ -79,11 +83,10 @@ export default class TroubleshooterApp extends CatApp {
     }
 
     get footerButtons() {
+        const fixable = this.#rows.some(row => row.fixable);
         return [
-            this.#rows.some(row => row.fixable) && {type: 'button', action: 'fixAll', label: 'CAT.Troubleshooter.Footer.FixAll', icon: 'fa-solid fa-wrench'},
-            {type: 'button', action: 'saveReport', label: 'CAT.Troubleshooter.Footer.Save', icon: 'fa-solid fa-floppy-disk'},
-            {type: 'button', action: 'exportSettings', label: 'CAT.Troubleshooter.Export.Settings', icon: 'fa-solid fa-file-export'},
-            {type: 'button', action: 'importSettings', label: 'CAT.Troubleshooter.Export.ImportSettings', icon: 'fa-solid fa-file-import'}
+            {type: 'button', action: 'saveReport', label: 'CAT.Troubleshooter.Footer.Save', icon: 'fa-solid fa-floppy-disk', role: fixable ? 'neutral' : 'positive'},
+            fixable && {type: 'button', action: 'fixAll', label: 'CAT.Troubleshooter.Footer.FixAll', icon: 'fa-solid fa-wrench', role: 'positive'}
         ].filter(Boolean);
     }
 
@@ -153,7 +156,7 @@ export default class TroubleshooterApp extends CatApp {
                 return {...partContext, tab, subtabs, panels: INFO_SECTIONS.map(id => ({tab: subtabs[id], label: subtabs[id].label, section: this.#sections[id]}))};
             }
             case 'options':
-                return {...partContext, tab, options: OPTIONS.map(key => {
+                return {...partContext, tab, transfers: TRANSFERS, options: OPTIONS.map(key => {
                     const setting = game.settings.settings.get(`cat.${key}`);
                     return {key, name: setting.name, hint: setting.hint, value: game.settings.get('cat', key), disabled: setting.scope === 'world' && !game.user.isGM};
                 })};

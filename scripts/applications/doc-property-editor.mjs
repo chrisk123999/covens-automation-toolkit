@@ -43,8 +43,8 @@ export default class DocPropertyEditorApp extends CatApp {
 
     get footerButtons() {
         return [
-            {label: 'CAT.MEDKIT.Footer.Cancel', icon: 'fa-solid fa-xmark', type: 'button', action: 'close', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip'},
-            {label: 'DND5E.Confirm', icon: 'fa-solid fa-check'}
+            {label: 'CAT.MEDKIT.Footer.Cancel', icon: 'fa-solid fa-xmark', type: 'button', action: 'close', tooltip: 'CAT.MEDKIT.Footer.CancelTooltip', role: 'negative'},
+            {label: 'DND5E.Confirm', icon: 'fa-solid fa-check', role: 'positive'}
         ];
     }
 

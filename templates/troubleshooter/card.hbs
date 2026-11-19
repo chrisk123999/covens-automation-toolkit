@@ -20,7 +20,7 @@
     {{#if actions}}
         <div class="flexrow">
             {{#each actions}}
-                <button type="button" data-cat-troubleshooter="{{action}}">{{localize label}}</button>
+                <button type="button" data-cat-troubleshooter="{{action}}" data-role="{{role}}"><i class="{{icon}}"></i> {{localize label}}</button>
             {{/each}}
         </div>
     {{/if}}

@@ -227,7 +227,11 @@ function setTotalWithBonus(roll, total) {
     roll.resetFormula();
     return roll;
 }
-// used locally only
+/**
+ * Mark every dice result in a roll as discarded.
+ * @param {Roll} roll Roll to modify, including parenthetical sub-rolls.
+ * @returns {number} Sum of the roll's numeric terms.
+ */
 function discardTerms(roll) {
     let numericTerms = 0;
     for (let i = 0; i < roll.terms.length; i++) {

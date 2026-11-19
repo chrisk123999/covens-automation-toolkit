@@ -19,8 +19,14 @@ function force(enabled) {
     const config = Object.fromEntries(FULFILLABLE.map(d => [d, method]));
     return game.settings.set('core', Roll.DICE_CONFIGURATION_SETTING, config);
 }
+const CONTEXT_HOOKS = {skill: 'skill', tool: 'tool', deathSave: 'deathSave', concentration: 'concentration', hitDie: 'hitDie', initiativeDialog: 'initiativeDialog', SavingThrow: 'savingThrow', AbilityCheck: 'abilityCheck'};
 async function buildEvaluate(wrapped, rolls = [], config = {}, message = {}) {
     const resolverClass = CONFIG.Dice.fulfillment.methods.cat?.resolver;
+    const hook = CONTEXT_HOOKS[Object.keys(CONTEXT_HOOKS).find(name => config.hookNames?.includes(name))];
+    if (resolverClass && hook) {
+        const context = {hook, actorUuid: config.subject?.uuid, workflow: !!config.midiOptions?.workflowId, ability: config.ability, skill: config.skill, tool: config.tool, denomination: config.denomination};
+        for (const roll of rolls) roll.options.cat = {...roll.options.cat, context};
+    }
     if (resolverClass && config.evaluate !== false) {
         const diceConfig = game.settings.get('core', Roll.DICE_CONFIGURATION_SETTING) ?? {};
         const isCat = term => (diceConfig[term.denomination] || diceConfig.default || CONFIG.Dice.fulfillment.defaultMethod) === 'cat';
@@ -31,7 +37,7 @@ async function buildEvaluate(wrapped, rolls = [], config = {}, message = {}) {
             const workflowId = config.midiOptions?.workflowId ?? subject?.uuid;
             if (workflowId) for (const roll of manualRolls) roll.options.workflowId = workflowId;
             if (manualRolls.length > 1) {
-                const label = subject?.item?.name ? `${subject.item.name} — ${subject.name}` : undefined;
+                const label = subject?.item?.name ? `${subject.item.name} - ${subject.name}` : undefined;
                 await resolverClass.fulfillBatch(manualRolls, label);
                 for (const roll of rolls) await roll.evaluate({allowInteractive: false});
                 return;
