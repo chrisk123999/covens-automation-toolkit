@@ -1,3 +1,6 @@
+# 0.1.10 Release:
+## Bug Fixes:
+- Mass apply no longer fails on compendiums with more than 99 updatable items.
 # 0.1.9 Release:
 ## Update Notes:
 - Requires dnd5e 6.1+, midi-qol 14.7 and DAE 14.6.10.

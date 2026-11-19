@@ -502,7 +502,7 @@ export default class DialogApp extends CatApp {
         return {
             isCheckbox: true,
             options,
-            totalMax: opts?.totalMax ?? 99,
+            totalMax: opts?.totalMax ?? Infinity,
             showCounter: opts?.totalMax != null,
             currentNum: options.reduce((t, o) => t += o.isChecked * (o.weight ?? 1), 0),
             requireSelection: opts?.requireSelection,
