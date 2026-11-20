@@ -932,21 +932,26 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
  */
 async function selectDie(rolls = [], title, content, {max = 1, userId = game.user.id, buttons = 'okCancel', damageTypes} = {}) {
     const dice = [];
-    const collectDice = (r, name = '') => {
+    const collectDice = (r, name = '', singleRoll = false) => {
         for (let i = 0; i < r.length; i++) {
             const roll = r[i];
             if (damageTypes?.length && !damageTypes.includes(roll.options?.type)) continue;
+            const rollKey = `${name}${singleRoll ? '' : i + '-'}`;
             for (let j = 0; j < roll.terms.length; j++) {
                 const term = roll.terms[j];
                 if (term.isDeterministic) continue;
-                if (term.rolls) {
-                    dice.push(...(collectDice(term.rolls, `${name ? name + '-' : ''}${i}-terms-${j}-rolls-`) ?? []));
+                if (term.rolls) { // function terms
+                    dice.push(...(collectDice(term.rolls, `${name}${i}-terms-${j}-rolls-`) ?? []));
+                    continue;
+                }
+                if (term.roll instanceof Roll) { // parenthetical terms
+                    dice.push(...(collectDice([term.roll], `${name}${i}-terms-${j}-roll-`, true) ?? []));
                     continue;
                 }
                 const flavor = term.flavor || roll.options?.type || '';
                 const cfg = CONFIG.DND5E.damageTypes[flavor];
                 for (let k = 0; term.results[k]?.active && k < term.results.length; k++) dice.push({
-                    name: `${name}${i}-terms-${j}-results-${k}`,
+                    name: `${rollKey}terms-${j}-results-${k}`,
                     faces: term.faces,
                     result: term.results[k].result,
                     typeLabel: cfg?.label ?? flavor,

@@ -359,6 +359,48 @@ function simplify(roll) {
     roll.resetFormula();
     return roll;
 }
+
+const REPLACE_MODES = {
+    highest: true,
+    lowest: false,
+    replace: undefined
+};
+/**
+ * Reroll terms selected by `dialogUtils.selectDie`. Replace the roll, keep the highest, or take the lowest.
+ * @param {foundry.dice.Roll[]} rolls
+ * @param {string[]} resultKeys A set of selected roll results from `dialogUtils.selectDie`.
+ * @param {'highest'|'lowest'|'replace'} [keep] Replacement mode for rerolled terms. Default is `replace`.
+ * @returns {Promise<foundry.dice.Roll[]>} The provided rolls, modified in place.
+ */
+async function rerollDice(rolls, resultKeys, keep) {
+    const highest = REPLACE_MODES[keep];
+    for (const key of resultKeys) {
+        const parts = key.split('.');
+        const term = genericUtils.getProperty(rolls, parts.slice(0, -2).join('.'));
+        if (!term) continue;
+        await term.roll({reroll: true});
+        if (highest === undefined) {
+            const result = genericUtils.getProperty(rolls, key);
+            result.active = false;
+            result.discarded = true;
+        }
+        else term.results = CONFIG.Dice.termTypes.DiceTerm._keepOrDrop(term.results, term.number, {highest});
+        for (let i = 4; i < parts.length; i++) {
+            const partKey = parts.slice(0, -i).join('.');
+            const part = genericUtils.getProperty(rolls, partKey);
+            if (part?.rolls) {
+                const totals = part.rolls.map(r => r.total);
+                if (part.function.constructor.name === 'AsyncFunction')
+                    part.result = await part.function.apply(part, totals);
+                else part.result = part.function.apply(part, totals);
+                continue;
+            }
+            if (!part || !(part instanceof Roll)) continue;
+            part._total = part._evaluateTotal();
+        }
+    }
+    return rolls;
+}
 export default {
     rollDiceSync,
     rollDice,
@@ -376,5 +418,6 @@ export default {
     requestRoll,
     contestedRoll,
     shouldFastForward,
-    simplify
+    simplify,
+    rerollDice
 };
