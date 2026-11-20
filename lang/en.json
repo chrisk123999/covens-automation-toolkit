@@ -186,6 +186,11 @@
                         "Hint": "Any or all selected must be equipped.",
                         "InvertedHint": "Any or all selected must not be equipped."
                     },
+                    "BaseItem": {
+                        "Label": "Base Weapon",
+                        "Hint": "Match any selected base weapon.",
+                        "InvertedHint": "Exclude selected base weapons."
+                    },
                     "DamagePart": {
                         "Label": "Damage Part",
                         "Hint": "Target selected damage parts on matched items. \"Base\" is default if this is empty.",

@@ -55,7 +55,7 @@ export class RegisteredTroubleshooterChecks {
             message: 'CAT.Troubleshooter.Fix.Content',
             groups: Object.entries(Object.groupBy(fixable, row => row.group ?? '')).map(([label, rows]) => ({label, rows}))
         });
-        if (!await dialogUtils.confirm('CAT.Troubleshooter.Fix.Title', content)) return false;
+        if (!await dialogUtils.confirm('CAT.Troubleshooter.Fix.Title', content, {timer: false})) return false;
         for (const check of checks) await check.fix();
         await foundry.applications.settings.SettingsConfig.reloadConfirm({world: true});
         return true;

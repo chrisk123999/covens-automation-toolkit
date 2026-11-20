@@ -112,6 +112,7 @@ function getFormulaRestrictions() {
         Restrictions.Type,
         Restrictions.SourceType,
         Restrictions.WeaponType,
+        Restrictions.BaseItem,
         Restrictions.Property,
         Restrictions.Ability,
         Restrictions.School,
@@ -165,6 +166,7 @@ function buildAttributes() {
             Restrictions.Type,
             Restrictions.SourceType,
             Restrictions.WeaponType,
+            Restrictions.BaseItem,
             Restrictions.Armor,
             Restrictions.Weapon
         ]

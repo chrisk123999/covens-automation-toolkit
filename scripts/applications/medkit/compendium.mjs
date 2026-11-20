@@ -36,7 +36,7 @@ export default class CompendiumMedkit extends MedkitApp {
         if (enabledIds.includes(pack.collection)) return;
         const compendiums = game.settings.get('cat', settingKey);
         const settingName = _loc(`CAT.Settings.${settingKey.capitalize()}.Name`);
-        if (!await dialogUtils.confirm('CAT.MEDKIT.MassApply.AddCompendiumTitle', _loc('CAT.MEDKIT.MassApply.AddCompendium', {pack: pack.metadata.label, setting: settingName}))) return;
+        if (!await dialogUtils.confirm('CAT.MEDKIT.MassApply.AddCompendiumTitle', _loc('CAT.MEDKIT.MassApply.AddCompendium', {pack: pack.metadata.label, setting: settingName}), {timer: false})) return;
         const priority = (compendiums[enabledIds[0]]?.priority ?? 20) - 10;
         await game.settings.set('cat', settingKey, {...compendiums, [pack.collection]: {enabled: true, priority, pack: true}});
     }
@@ -56,7 +56,8 @@ export default class CompendiumMedkit extends MedkitApp {
         if (pack.metadata.packageType === 'world') return true;
         return !!await dialogUtils.confirm(
             _loc('CAT.MEDKIT.MassApply.PackTitle'),
-            _loc('CAT.MEDKIT.MassApply.PackWarning', {pack: pack.metadata.label, package: pack.metadata.packageName})
+            _loc('CAT.MEDKIT.MassApply.PackWarning', {pack: pack.metadata.label, package: pack.metadata.packageName}),
+            {timer: false}
         );
     }
 
@@ -81,7 +82,7 @@ export default class CompendiumMedkit extends MedkitApp {
                 {label: _loc('CAT.MEDKIT.MassApply.Modes.Matching'), value: 'matching'},
                 {label: _loc('CAT.MEDKIT.MassApply.Modes.All'), value: 'all'}
             ]}}]]
-        ], 'okCancel', {id: 'cat-pack-destination', width: 480});
+        ], 'okCancel', {id: 'cat-pack-destination', width: 480, timer: false});
         if (!selection?.buttons) return;
         if (selection.destination === 'new') return await pack.duplicateCompendium({label: selection.label});
         const destination = game.packs.get(selection.destination);

@@ -221,7 +221,7 @@ export default class ActorMedkit extends MedkitApp {
 
     /** @this {ActorMedkit} */
     static async #restoreBackup(_event, target) {
-        const confirmed = await dialogUtils.confirm('CAT.MEDKIT.Actor.Backups.Restore', _loc('CAT.MEDKIT.Actor.Backups.RestoreConfirm', {name: this.document.name, date: target.dataset.label}));
+        const confirmed = await dialogUtils.confirm('CAT.MEDKIT.Actor.Backups.Restore', _loc('CAT.MEDKIT.Actor.Backups.RestoreConfirm', {name: this.document.name, date: target.dataset.label}), {timer: false});
         if (!confirmed) return;
         await backups.restore(this.document, target.dataset.backupId);
         this.close();

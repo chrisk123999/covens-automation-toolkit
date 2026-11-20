@@ -345,6 +345,17 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
     }
 }
 /**
+ * Prompt a destination crosshair on another user's client, or locally when the user is the current one.
+ * @param {string} [userId] User who aims the crosshair.
+ * @param {foundry.documents.TokenDocument} token The token being moved.
+ * @param {object} [options] Options passed to {@link aimDestination}.
+ * @returns {Promise<object|undefined>}
+ */
+async function aimDestinationAs(userId, token, options) {
+    if (!userId || userId === game.user.id) return await aimDestination(token, options);
+    return await queryUtils.query('aimDestination', game.users.get(userId), {uuid: token.uuid, ...options}, 300000);
+}
+/**
  * Teleport a token to a chosen position. Always uses {@link MovementAction} displace.
  * @param {foundry.documents.TokenDocument} token The token document to teleport.
  * @param {object} [options] Additional options.
@@ -366,8 +377,7 @@ async function teleportToken(token, {destination, centerpoint, animation, option
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
-        if (userId && userId !== game.user.id) destination = await queryUtils.query('aimDestination', game.users.get(userId), {uuid: token.uuid, range, centerpoint, requireSight, ignoreWalls, allowedPoints}, 300000);
-        else destination = await aimDestination(token, {range, centerpoint, requireSight, ignoreWalls, allowedPoints});
+        destination = await aimDestinationAs(userId, token, {range, centerpoint, requireSight, ignoreWalls, allowedPoints});
     }
     if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
@@ -421,10 +431,11 @@ async function teleportToken(token, {destination, centerpoint, animation, option
  * @param {number} [options.elevation] Destination elevation.
  * @param {string} [options.level] Destination Level id.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
+ * @param {string} [options.userId] User who aims the destination crosshair. Defaults to the current user.
  * @returns {Promise<undefined>}
  */
-async function displaceToken(token, {sourceToken, destination, centerpoint, animation, range = 5, action = 'catForce', elevation, level, requireSight = false} = {}) {
-    destination ??= await aimDestination(token, {range, centerpoint, requireSight});
+async function displaceToken(token, {sourceToken, destination, centerpoint, animation, range = 5, action = 'catForce', elevation, level, requireSight = false, userId} = {}) {
+    destination ??= await aimDestinationAs(userId, token, {range, centerpoint, requireSight});
     if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.displace, {sourceToken, animation, action, destination, range}).run();
     if (result) return;
