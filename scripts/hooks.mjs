@@ -79,6 +79,8 @@ export function readyHooks() {
     Hooks.on(constants.tokenHookNames.preCreateToken, events.tokenEvents.preCreateToken);
     // Actor Events
     Hooks.on(constants.actorHookNames.preDeleteActor, events.actorEvents.preDeleteActor);
+    Hooks.on(constants.actorHookNames.createActor, events.actorEvents.createActor);
+    Hooks.on(constants.actorHookNames.deleteActor, events.actorEvents.deleteActor);
     // Combat Events
     Hooks.on(constants.combatHookNames.preUpdateCombatant, events.combatEvents.preUpdateCombatant);
     Hooks.on(constants.combatHookNames.deleteCombat, combat => dialogUtils.clearRemembered(combat.id));

@@ -658,6 +658,7 @@ export default class MedkitApp extends CatApp {
     }
 
     #summonEntryFields(entry, base, i, profiles) {
+        const toggleOptions = [{value: '', label: 'CAT.MEDKIT.Summons.Inherit'}, {value: 'true', label: 'CAT.MEDKIT.Summons.On'}, {value: 'false', label: 'CAT.MEDKIT.Summons.Off'}];
         const fieldList = [
             this.#buildOption({key: `summon-count-${i}`, type: 'formula', label: 'CAT.MEDKIT.Summons.Count', hint: 'CAT.MEDKIT.Summons.CountHint'}, {name: `${base}.count`, value: entry.count ?? ''}),
             this.#buildOption({key: `summon-disposition-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Disposition', options: [
@@ -665,6 +666,9 @@ export default class MedkitApp extends CatApp {
                 ...Object.entries(CONST.TOKEN_DISPOSITIONS).map(([label, value]) => ({value: String(value), label: 'TOKEN.DISPOSITION.' + label}))
             ]}, {name: `${base}.disposition`, value: entry.disposition ?? ''}),
             this.#buildOption({key: `summon-size-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Size', options: [{value: '', label: 'CAT.Config.None'}, ...constants.sizeOptions]}, {name: `${base}.size`, value: entry.size ?? ''}),
+            this.#buildOption({key: `summon-scale-${i}`, type: 'formula', label: 'CAT.MEDKIT.Summons.Scale', hint: 'CAT.MEDKIT.Summons.ScaleHint'}, {name: `${base}.scale`, value: entry.scale ?? ''}),
+            this.#buildOption({key: `summon-lock-rotation-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.LockRotation', options: toggleOptions}, {name: `${base}.lockRotation`, value: entry.lockRotation ?? ''}),
+            this.#buildOption({key: `summon-ring-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Ring', options: toggleOptions}, {name: `${base}.ring`, value: entry.ring ?? ''}),
             this.#buildOption({key: `summon-weight-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Weight', hint: 'CAT.MEDKIT.Summons.WeightHint'}, {name: `${base}.weight`, value: entry.weight ?? ''}),
             this.#buildOption({key: `summon-dismiss-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.DismissAtZero'}, {name: `${base}.dismissAtZero`, value: entry.dismissAtZero ?? false}),
             this.#buildOption({key: `summon-identifier-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Identifier', hint: 'CAT.MEDKIT.Summons.IdentifierHint'}, {name: `${base}.identifier`, value: entry.identifier ?? ''}),

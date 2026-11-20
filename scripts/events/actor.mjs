@@ -13,7 +13,15 @@ async function updateActor(actor, updates, options, userId) {
 function preDeleteActor(actor, options, userId) {
     return actors.preDeleteActor(actor, options);
 }
+function createActor(actor) {
+    constants.summons.register(actor);
+}
+function deleteActor(actor) {
+    constants.summons.unregister(actor);
+}
 export default {
     updateActor,
-    preDeleteActor
+    preDeleteActor,
+    createActor,
+    deleteActor
 };

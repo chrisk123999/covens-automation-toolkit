@@ -2,7 +2,11 @@
 ## Update Notes:
 - New Base Weapon restriction for alternate attributes matches the attacking weapon's base item.
 - `tokenUtils.displaceToken` accepts `userId` so another user aims the destination crosshair.
+- Summon entries have Token Scale, Lock Rotation and Token Ring options.
+- New Third-Party Reactions setting. When off, reactions and optional bonuses offered on behalf of another creature are skipped. Pass entries opt in with `thirdParty: true`.
+- The Troubleshooter requires midi-qol's condition rules, unless Automated Conditions 5e is active.
 ## Bug Fixes:
+- A summon cast by a player is known to every client, so dropping it to 0 hit points prompts the Gamemaster and recasting it is not blocked by a summon that no longer exists. Deleting a dismiss-at-0 summon's token at 0 hit points dismisses it.
 - Mass apply no longer fails on compendiums with more than 99 updatable items.
 - The prompt timer no longer runs on Medkit, Mass Apply, Troubleshooter and export dialogs. Dialog configs accept `timer: false`.
 # 0.1.9 Release:

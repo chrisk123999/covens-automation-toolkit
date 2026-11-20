@@ -124,6 +124,11 @@ const settings = {
         default: true,
         menu: 'mechanics'
     },
+    thirdPartyReactions: {
+        type: Boolean,
+        default: true,
+        menu: 'mechanics'
+    },
     animationPriority: {
         type: String,
         default: 'cat',

@@ -16,27 +16,36 @@ export class SummonsManager {
         return this.#manager;
     }
     get summons() {
-        return [...this.#summons.values()];
+        return [...this.#summons.values()].filter(summon => game.actors.has(summon.actor?.id));
     }
     async #init() {
         const existingSummons = game.actors.filter(actor => actor.flags.cat?.summon);
-        const resolvedSummons = (await Promise.all(existingSummons.map(async actor => {
-            const summonData = actor.flags.cat.summon;
-            const owner = await fromUuid(summonData.owner);
-            const sourceActor = await fromUuid(summonData.sourceActor);
-            const created = summonData.created;
-            const duration = summonData.duration;
-            const animation = summonData.animation;
-            const sourceDocument = summonData.sourceDocument ? await fromUuid(summonData.sourceDocument) : undefined;
-            const parent = summonData.parent ? await fromUuid(summonData.parent) : undefined;
-            const sounds = summonData.sounds;
-            const initiative = summonData.initiative;
-            const dismissAtZero = summonData.dismissAtZero;
-            const identifier = summonData.identifier;
-            if (!owner || !sourceActor || created === undefined) return;
-            return new Summon(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero, identifier});
-        }))).filter(Boolean);
+        const resolvedSummons = (await Promise.all(existingSummons.map(actor => this.#resolve(actor)))).filter(Boolean);
         resolvedSummons.forEach(summon => this.#summons.set(summon.actor.id, summon));
+    }
+    async register(actor) {
+        if (!actor.flags.cat?.summon || this.#summons.has(actor.id)) return;
+        const summon = await this.#resolve(actor);
+        if (summon && !this.#summons.has(actor.id)) this.#summons.set(actor.id, summon);
+    }
+    unregister(actor) {
+        this.#summons.delete(actor.id);
+    }
+    async #resolve(actor) {
+        const summonData = actor.flags.cat.summon;
+        const owner = await fromUuid(summonData.owner);
+        const sourceActor = await fromUuid(summonData.sourceActor);
+        const created = summonData.created;
+        const duration = summonData.duration;
+        const animation = summonData.animation;
+        const sourceDocument = summonData.sourceDocument ? await fromUuid(summonData.sourceDocument) : undefined;
+        const parent = summonData.parent ? await fromUuid(summonData.parent) : undefined;
+        const sounds = summonData.sounds;
+        const initiative = summonData.initiative;
+        const dismissAtZero = summonData.dismissAtZero;
+        const identifier = summonData.identifier;
+        if (!owner || !sourceActor || created === undefined) return;
+        return new Summon(owner, sourceActor, created, {actor, duration, animation, parent, sourceDocument, sounds, initiative, dismissAtZero, identifier});
     }
     async #getRootFolder() {
         let folder = game.folders.find(f => f.flags.cat?.summonFolder && f.type === 'Actor');
@@ -73,7 +82,7 @@ export class SummonsManager {
             this.#creatingOwnerFolders.delete(actor.uuid);
         }
     }
-    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, animation, disposition, sourceDocument, sounds, items = [], size} = {}) {
+    async #prepareSidebarActor(summon, created = game.time.worldTime, {avatarImg, tokenImg, name, updates, animation, disposition, sourceDocument, sounds, items = [], size, scale, lockRotation, ring} = {}) {
         const actorData = (await summon.getSourceActor()).toObject();
         delete actorData._id;
         delete actorData.sort;
@@ -100,6 +109,12 @@ export class SummonsManager {
             genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleX', sizeConfig.dynamicTokenScale ?? 1);
             genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleY', sizeConfig.dynamicTokenScale ?? 1);
         }
+        if (scale) {
+            genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleX', scale);
+            genericUtils.setProperty(actorData, 'prototypeToken.texture.scaleY', scale);
+        }
+        if (lockRotation !== undefined) genericUtils.setProperty(actorData, 'prototypeToken.lockRotation', lockRotation);
+        if (ring !== undefined) genericUtils.setProperty(actorData, 'prototypeToken.ring.enabled', ring);
         await summonEvents.preCreate(summon, updates);
         genericUtils.mergeObject(actorData, updates);
         genericUtils.setProperty(actorData, 'prototypeToken.actorLink', true);

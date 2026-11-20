@@ -21,12 +21,58 @@ import {documentUtils} from './_module.mjs';
  * @param {'follows'|'separate'|'standard'} [options.initiative] How the summon takes its turn.
  * @param {boolean} [options.dismissAtZero] Prompt to dismiss the summon when it drops to zero hit points.
  * @param {string} [options.size] Creature size to resize the token to.
+ * @param {number} [options.scale] Token image scale, applied after the size's scale.
+ * @param {boolean} [options.lockRotation] Lock the token's rotation.
+ * @param {boolean} [options.ring] Enable the dynamic token ring.
  * @param {string} [options.identifier] Summon identifier. Defaults to the source actor's.
  * @param {object} [options.workflowOptions] Workflow options of the use that summoned it, readable by summon passes as `summon.workflowOptions`.
  * @returns {Promise<Summon>} The summon, whose token is placed separately.
  */
-async function createSummon(ownerActor, sourceActor, {created = game.time.worldTime, duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative, dismissAtZero, size, identifier, workflowOptions} = {}) {
-    return await constants.summons.createSummon(ownerActor, sourceActor, created, {duration, animation, placeAlpha, avatarImg, tokenImg, name, updates, disposition, parent, sourceDocument, sounds, items, initiative, dismissAtZero, size, identifier, workflowOptions});
+async function createSummon(ownerActor, sourceActor, {
+    created = game.time.worldTime,
+    duration,
+    animation,
+    placeAlpha,
+    avatarImg,
+    tokenImg,
+    name,
+    updates,
+    disposition,
+    parent,
+    sourceDocument,
+    sounds,
+    items,
+    initiative,
+    dismissAtZero,
+    size,
+    scale,
+    lockRotation,
+    ring,
+    identifier,
+    workflowOptions
+} = {}) {
+    return await constants.summons.createSummon(ownerActor, sourceActor, created, {
+        duration,
+        animation,
+        placeAlpha,
+        avatarImg,
+        tokenImg,
+        name,
+        updates,
+        disposition,
+        parent,
+        sourceDocument,
+        sounds,
+        items,
+        initiative,
+        dismissAtZero,
+        size,
+        scale,
+        lockRotation,
+        ring,
+        identifier,
+        workflowOptions
+    });
 }
 /**
  * Place a summon on the canvas with a crosshair.

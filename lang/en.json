@@ -481,6 +481,13 @@
                 "Disposition": "Disposition",
                 "DispositionOwner": "Same as Summoner",
                 "Size": "Size",
+                "Scale": "Token Scale",
+                "ScaleHint": "Formula for the token's image scale. Leave blank to keep the source actor's.",
+                "LockRotation": "Lock Rotation",
+                "Ring": "Token Ring",
+                "Inherit": "Same as Source",
+                "On": "On",
+                "Off": "Off",
                 "DismissAtZero": "Dismiss at 0 HP",
                 "FollowUp": "Follow-Up Activity",
                 "FollowUpHint": "Rolled by this summon instead of the behavior Follow-Up Activity.",
@@ -1152,6 +1159,10 @@
             "AdvancedWeaponProficiency": {
                 "Name": "Advanced Weapon Proficiency",
                 "Hint": "Characters need an Advanced Weapon Proficiency feat to use the mastery properties of Grim Hollow Advanced weapons."
+            },
+            "ThirdPartyReactions": {
+                "Name": "Third-Party Reactions",
+                "Hint": "Prompt creatures to use reactions and bonuses on behalf of other creatures, such as Protection and Interception. When off, those prompts are skipped."
             }
         },
         "DAE": {

@@ -3,7 +3,8 @@ function preDeleteToken(token, options) {
     if (!token.actor || !token.actorLink || options.cat?.summonRemove) return;
     const summon = summonUtils.getSummonData(token.actor);
     if (!summon) return;
-    summonUtils.removeSummon(summon, {token});
+    if (summon.dismissAtZero && token.actor.system.attributes?.hp?.value === 0) summonUtils.deleteSummon(summon);
+    else summonUtils.removeSummon(summon, {token});
     return false;
 }
 function preCreateToken(token, options) {

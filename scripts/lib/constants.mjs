@@ -422,7 +422,9 @@ const timePasses = {
 };
 const actorHookNames = {
     updateActor: 'updateActor',
-    preDeleteActor: 'preDeleteActor'
+    preDeleteActor: 'preDeleteActor',
+    createActor: 'createActor',
+    deleteActor: 'deleteActor'
 };
 /**
  * Summon passes. Descriptor key: `summon`.

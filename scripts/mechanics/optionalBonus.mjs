@@ -49,6 +49,7 @@ class BonusSession {
             if (!bonus.initialized) bonus.initialize(workflow);
             if (targetActor) bonus.targetActor = targetActor;
             if (type) bonus.type = type;
+            if (bonus.targetActor && bonus.isThirdParty && !game.settings.get('cat', 'thirdPartyReactions')) continue;
             if (bonus.maxTargets > 0 && bonus.targetOptions.size === 1) bonus.maxTargets = 0;
             this.#bonuses.push(bonus);
         }

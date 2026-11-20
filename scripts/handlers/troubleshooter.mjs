@@ -39,7 +39,8 @@ const TROUBLESHOOTER = {
             'ConfigSettings.autoCompleteWorkflow': {fix: true},
             'ConfigSettings.removeButtons': {fix: 'all'},
             'ConfigSettings.autoApplyDamage': {fix: 'yesCard'},
-            'ConfigSettings.addChatDamageButtons': {fix: 'none'}
+            'ConfigSettings.addChatDamageButtons': {fix: 'none'},
+            'ConfigSettings.optionalRules.conditionRules': {fix: true, also: {optionalRulesEnabled: true}, label: 'midi-qol.ConditionRules.Name', skip: () => game.modules.get('automated-conditions-5e')?.active}
         },
         'core': {
             'permissions.QUERY_USER': {expected: roles => roles?.includes(CONST.USER_ROLES.PLAYER), fix: Object.values(CONST.USER_ROLES).filter(Boolean), label: CONST.USER_PERMISSIONS.QUERY_USER.label},
@@ -103,12 +104,14 @@ function settingsDump(namespace) {
         }))
     };
 }
-function settingCheck({module, key, fix, expected = value => value === fix, label}) {
-    const [settingKey, path] = key.split('.');
+function settingCheck({module, key, fix, expected = value => value === fix, label, skip, also = {}}) {
+    const [settingKey, ...parts] = key.split('.');
+    const path = parts.join('.');
     const setting = () => game.settings.settings.get(`${module}.${settingKey}`);
     const read = () => {
         const value = game.settings.get(module, settingKey);
-        return path ? value[path] : value;
+        if (Object.entries(also).some(([alsoPath, alsoValue]) => foundry.utils.getProperty(value, alsoPath) !== alsoValue)) return false;
+        return path ? foundry.utils.getProperty(value, path) : value;
     };
     const name = () => _loc(label ?? (path ? `${module}.${path.capitalize()}.Name` : setting().name));
     return {
@@ -116,6 +119,7 @@ function settingCheck({module, key, fix, expected = value => value === fix, labe
         section: 'required',
         group: moduleName(module),
         run: () => {
+            if (skip?.()) return;
             const value = read();
             const status = fix === undefined ? 'info' : expected(value) ? 'pass' : 'fail';
             if (module === 'core') return {status, label: name(), detail: usersDetail(path, value)};
@@ -126,7 +130,8 @@ function settingCheck({module, key, fix, expected = value => value === fix, labe
         fix: fix === undefined ? undefined : async () => {
             if (!path) return game.settings.set(module, settingKey, fix);
             const data = foundry.utils.deepClone(game.settings.get(module, settingKey));
-            data[path] = fix;
+            foundry.utils.setProperty(data, path, fix);
+            Object.entries(also).forEach(([alsoPath, alsoValue]) => foundry.utils.setProperty(data, alsoPath, alsoValue));
             return game.settings.set(module, settingKey, data);
         }
     };

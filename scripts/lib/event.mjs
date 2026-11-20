@@ -199,6 +199,7 @@ class CatEvent {
             [...trigger.fnMacros, ...trigger.embeddedMacros].forEach(i => {
                 i.macros.forEach(macro => {
                     if (!isWinner && !macro.canOverlap) return;
+                    if (macro.thirdParty && !game.settings.get('cat', 'thirdPartyReactions')) return;
                     if (macro.unique) {
                         if (uniqueMacros.has(macro.unique)) return;
                         uniqueMacros.add(macro.unique);
