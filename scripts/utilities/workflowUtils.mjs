@@ -603,12 +603,13 @@ async function rerollDamageDice(workflow, selection, document) {
     const rerolls = [];
     const changed = new Set();
     for (const key of selection) {
-        const [rollIndex, termIndex, resultIndex] = key.split('-').map(Number);
-        const term = workflow.damageRolls[rollIndex]?.terms[termIndex];
-        const result = term?.results[resultIndex];
+        const result = genericUtils.getProperty(workflow.damageRolls, key);
         if (!result) continue;
+        const parts = key.split('.');
+        const term = genericUtils.getProperty(workflow.damageRolls, parts.slice(0, parts.length - 2).join('.'));
+        if (!term) continue;
         rerolls.push({result, faces: term.faces, original: result.result});
-        changed.add(workflow.damageRolls[rollIndex]);
+        changed.add(workflow.damageRolls[parts[0]]);
     }
     if (!rerolls.length) return;
     const groups = rerolls.reduce((accumulator, reroll) => {

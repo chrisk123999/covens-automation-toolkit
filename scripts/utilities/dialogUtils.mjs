@@ -694,7 +694,7 @@ function clearRemembered(scopeId) {
  * @param {object} [options] Additional options.
  * @param {number} [options.max] Total dice selectable.
  * @param {string} [options.userId] User the dialog is shown to.
- * @param {Array<Item5e>} [options.additionalItems] Items with remaining uses, offered alongside the classes.
+ * @param {Array<Item5e>} [options.additionalItems] Items with remaining uses, offered alongside the classes. Expected to have an automation config, `diceSize`.
  * @param {boolean} [options.recover] Offer spent dice to recover rather than remaining dice to spend.
  * @returns {Promise<Array|false>} False when nothing is available or the prompt is dismissed.
  */
@@ -915,6 +915,11 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
 }
 /**
  * Prompt for individual dice across evaluated rolls, skipping deterministic terms.
+ * Fetch selected dice like so:
+ * @example
+ * const choices = await dialogUtils.selectDie(rolls, 'Title', 'Content');
+ * if (!choices) return;
+ * const diceResults = choices.map(c => genericUtils.getProperty(rolls, c)).filter(Boolean);
  * @param {foundry.dice.Roll[]} [rolls] Rolls whose dice may be chosen.
  * @param {string} title Window title.
  * @param {string} content Text shown above the inputs.
@@ -923,21 +928,25 @@ async function selectTargetDialog(title, content, targets, {type = 'one', select
  * @param {string} [options.userId] User the dialog is shown to.
  * @param {string|Array} [options.buttons] Button set for the dialog.
  * @param {string[]} [options.damageTypes] Only offer dice from rolls of these damage types.
- * @returns {Promise<string[]|false>} Keys shaped `rollIndex-termIndex-resultIndex`.
+ * @returns {Promise<string[]|false>} Keys shaped `{index}.terms.{index}.results.{index}`. Function terms can contain other rolls, so the key may be recursive.
  */
 async function selectDie(rolls = [], title, content, {max = 1, userId = game.user.id, buttons = 'okCancel', damageTypes} = {}) {
-    let dice = [];
-    for (let i = 0; i < rolls.length; i++) {
-        let roll = rolls[i];
-        if (damageTypes?.length && !damageTypes.includes(roll.options?.type)) continue;
-        for (let j = 0; j < roll.terms.length; j++) {
-            let term = roll.terms[j];
-            if (term.isDeterministic) continue;
-            let flavor = term.flavor || roll.options?.type || '';
-            let cfg = CONFIG.DND5E.damageTypes[flavor];
-            for (let k = 0; k < term.results.length; k++) {
-                dice.push({
-                    name: i + '-' + j + '-' + k,
+    const dice = [];
+    const collectDice = (r, name = '') => {
+        for (let i = 0; i < r.length; i++) {
+            const roll = r[i];
+            if (damageTypes?.length && !damageTypes.includes(roll.options?.type)) continue;
+            for (let j = 0; j < roll.terms.length; j++) {
+                const term = roll.terms[j];
+                if (term.isDeterministic) continue;
+                if (term.rolls) {
+                    dice.push(...(collectDice(term.rolls, `${name ? name + '-' : ''}${i}-terms-${j}-rolls-`) ?? []));
+                    continue;
+                }
+                const flavor = term.flavor || roll.options?.type || '';
+                const cfg = CONFIG.DND5E.damageTypes[flavor];
+                for (let k = 0; term.results[k]?.active && k < term.results.length; k++) dice.push({
+                    name: `${name}${i}-terms-${j}-results-${k}`,
                     faces: term.faces,
                     result: term.results[k].result,
                     typeLabel: cfg?.label ?? flavor,
@@ -945,13 +954,14 @@ async function selectDie(rolls = [], title, content, {max = 1, userId = game.use
                 });
             }
         }
-    }
+    };
+    collectDice(rolls);
     if (!dice.length) return false;
-    let inputs = [['dice', dice, {totalMax: max}]];
-    let result = await runDialog(userId, title, content, inputs, buttons, {height: 'auto'});
+    const inputs = [['dice', dice, {totalMax: max}]];
+    const result = await runDialog(userId, title, content, inputs, buttons, {height: 'auto'});
     if (!result?.buttons) return false;
     delete result.buttons;
-    return Object.entries(result).filter(([, v]) => v).map(([k]) => k);
+    return Object.entries(result).filter(([, v]) => v).map(([k]) => k.replaceAll('-', '.'));
 }
 export default {
     buttonDialog,

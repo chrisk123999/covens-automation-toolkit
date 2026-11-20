@@ -126,6 +126,7 @@ async function getDocumentsBySlug(packId, slugs) {
  * @param {boolean} [include] False to exclude the listed keys instead.
  * @returns {Record<string, number>}
  */
+// used locally only
 function makeBrowserFilter(list, include = true) {
     return list.reduce((obj, key) => (obj[key] = include ? 1 : -1, obj), {});
 }
