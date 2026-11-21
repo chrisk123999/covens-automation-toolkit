@@ -95,7 +95,7 @@ function checkSaveAbility(wrapped) {
     if (data.dc.calculation in CONFIG.DND5E.abilities) return data.dc.calculation;
     if (data.dc.calculation === 'spellcasting') return this.spellcastingAbility;
     const available = availableAbilities.apply(this, [() => this.item.system.availableAbilities ?? new Set()]);
-    if (!available) return defaultCheckSaveAbility(this.type, data);
+    if (!available?.size) return defaultCheckSaveAbility(this.type, data);
     if (available.size === 1) return available.first();
     return this.actor ? actorUtils.getBestAbility(this.actor, Array.from(available)) : defaultCheckSaveAbility(this.type, data);
 }
