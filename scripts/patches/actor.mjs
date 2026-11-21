@@ -131,6 +131,7 @@ async function skill(wrapped, config, dialog = {}, message = {}) {
     if (roll.options) genericUtils.mergeObject(roll.options, oldOptions);
     if (message.create !== false) {
         messageData ??= {};
+        genericUtils.mergeObject(messageData, {flags: options.flags ?? {}});
         await roll.constructor.buildPost([roll], {event}, {data: messageData, rollMode: roll.options?.rollMode ?? rollMode});
     }
     await skillEvents.post(this, {config, dialog, message, options, skillId, roll});
