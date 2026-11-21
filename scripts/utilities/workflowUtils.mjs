@@ -61,9 +61,7 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
     const defaultConfig = {
         consume: {
             spellSlot,
-            resources: consumeResources ?? Array.from(activity.consumption.targets.entries())
-                .filter(([, target]) => !target.combatOnly || activity.actor.inCombat)
-                .map(([index]) => index)
+            resources: consumeResources
         }
     };
     const defaultOptions = {
@@ -71,6 +69,11 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
         configureDialog: false,
         workflowOptions: fastWorkflowOptions(fast)
     };
+    if (activity.type !== 'cast') {
+        defaultConfig.consume.resources ??= Array.from(activity.consumption.targets.entries())
+            .filter(([, target]) => !target.combatOnly || activity.actor.inCombat)
+            .map(([index]) => index);
+    }
     if (autoDamage) {
         let autoRollDamage = MidiQOL.configSettings().autoRollDamage;
         if (!['always', 'onHit'].includes(autoRollDamage)) autoRollDamage = 'onHit';
