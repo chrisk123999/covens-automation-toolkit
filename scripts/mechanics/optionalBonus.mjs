@@ -1,6 +1,6 @@
-import PhasedDialogApp from '../applications/phased-dialog.mjs';
+import {DialogApp, PhasedDialogApp} from '../applications/_module.mjs';
 import {constants, D20Bonus, DamageBonus, Events} from '../lib/_module.mjs';
-import {dialogUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
+import {dialogUtils, queryUtils, rollUtils, workflowUtils} from '../utilities/_module.mjs';
 
 const phaseLabels = {
     preRoll: 'CAT.OptionalBonus.Phase.PreRoll',
@@ -76,14 +76,33 @@ class BonusSession {
         const lines = [];
         if (rollLabel) lines.push(`<p><b>${_loc(rollLabel)}</b></p>`);
         if (built?.hasOptional) lines.push(_loc('CAT.OptionalBonus.Content'));
-        const choices = await this.#app.showPhase(phaseId, {content: lines.join('') || undefined, inputs: built?.inputs ?? []});
+        const {choices, remote} = await this.#showPhase(phaseId, lines.join('') || undefined, built?.inputs ?? []);
         if (!choices) {
             this.#dismissed = true;
             this.#app = undefined;
             return this.#commit(this.#validate(candidates.filter(b => !b.optional), roll));
         }
-        built?.readInputs(choices);
+        built?.readInputs(choices, {remote});
         return this.#commit(this.#validate(candidates, roll));
+    }
+
+    async #showPhase(phaseId, content, inputs) {
+        const userIds = queryUtils.dialogUserIds(game.user.id);
+        const local = userIds.includes(game.user.id);
+        if (local && userIds.length === 1) return {choices: await this.#app.showPhase(phaseId, {content, inputs}), remote: false};
+        const id = 'cat-dialog-' + foundry.utils.randomID();
+        const remoteIds = userIds.filter(userId => userId !== game.user.id);
+        const remoteInputs = inputs.map(([type, fields, options]) => [type === 'request' ? 'checkbox' : type, fields, options]);
+        const remoteDialog = DialogApp.route(remoteIds, ['CAT.OptionalBonus.Title', content, remoteInputs, 'ok', {id}]).then(choices => ({choices, remote: true}));
+        if (!local) return await remoteDialog;
+        const result = await Promise.race([this.#app.showPhase(phaseId, {content, inputs}).then(choices => ({choices, remote: false})), remoteDialog]);
+        if (result.remote) {
+            await this.#app.close();
+            this.#app = undefined;
+        } else {
+            remoteIds.forEach(userId => DialogApp.closeFor(userId, id));
+        }
+        return result;
     }
 
     #validate(candidates, roll) {

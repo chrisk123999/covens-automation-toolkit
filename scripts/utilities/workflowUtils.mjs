@@ -54,10 +54,10 @@ function isAttackType(workflow, type = 'attack') {
  * @param {boolean} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
- * @param {boolean} [options.autoDamage] Roll damage according to midi's autoRollDamage setting.
+ * @param {boolean} [options.autoDamage] Roll damage by midi's autoRollDamage setting, or on hit when it is off.
  * @returns {Promise<MidiQOL.Workflow|undefined>} Undefined when midi declines the use.
  */
-async function completeActivityUse(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = false, autoDamage} = {}) {
+async function completeActivityUse(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = false, autoDamage = true} = {}) {
     const defaultConfig = {
         consume: {
             spellSlot,
@@ -184,10 +184,10 @@ async function spendScaledCost(item, activityIdentifier, amount) {
  * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
  * @param {boolean} [options.spellSlot] Spend a spell slot.
  * @param {boolean} [options.fast] Skip the attack and damage prompts.
- * @param {boolean} [options.autoDamage] Roll damage according to midi's autoRollDamage setting.
+ * @param {boolean} [options.autoDamage] Roll damage by midi's autoRollDamage setting, or on hit when it is off.
  * @returns {Promise<MidiQOL.Workflow|undefined>} Undefined when midi declines the use.
  */
-async function completeItemUse(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources = true, spellSlot = true, fast = false, autoDamage} = {}) {
+async function completeItemUse(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources = true, spellSlot = true, fast = false, autoDamage = true} = {}) {
     const defaultConfig = {
         consume: {
             resources: consumeResources,

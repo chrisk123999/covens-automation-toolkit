@@ -1,4 +1,5 @@
 import {constants} from '../lib/_module.mjs';
+import {queryUtils} from '../utilities/_module.mjs';
 import CatApp from './cat-app.mjs';
 import PromptTimer from './prompt-timer.mjs';
 const {StringField, NumberField, BooleanField, FilePathField, SetField} = foundry.data.fields;
@@ -24,8 +25,9 @@ export default class DialogApp extends CatApp {
     #context;
     #resolveResults;
     #resultsPromise;
-    #timer = new PromptTimer(this, () => this.close());
+    #timer = new PromptTimer(this, () => this.#expire());
     #timed = true;
+    #timeoutResult;
     constructor(options) {
         let title, content, inputs, buttons, config;
         if (options?.length) [title, content, inputs, buttons, config] = options;
@@ -38,6 +40,7 @@ export default class DialogApp extends CatApp {
         super(init);
         this.#anchor = config?.anchor;
         this.#timed = config?.timer !== false;
+        this.#timeoutResult = config?.timeoutResult;
         this._armResults();
         if (!options?.length) return;
         this.windowTitle = _loc(title);
@@ -202,6 +205,51 @@ export default class DialogApp extends CatApp {
      * @returns {Promise<object|null>}
      */
     static async dialog(...options) {
+        const userIds = options[4]?.routed ? [game.user.id] : queryUtils.dialogUserIds(game.user.id);
+        if (userIds.length === 1 && userIds[0] === game.user.id) return await DialogApp.#show(options);
+        return await DialogApp.route(userIds, options);
+    }
+
+    /**
+     * Show a dialog to these users. With several, the first answer is used.
+     * @param {string[]} userIds Users shown the dialog.
+     * @param {Array} options Title, content, inputs, buttons and config for {@link DialogApp.dialog}.
+     * @returns {Promise<object|null>}
+     */
+    static async route(userIds, [title, content, inputs, buttons, config]) {
+        const id = config?.id ?? 'cat-dialog-' + foundry.utils.randomID();
+        const routedConfig = {...config, id, routed: true};
+        const showTo = userId => {
+            if (userId === game.user.id) return DialogApp.#show([title, content, inputs, buttons, routedConfig]);
+            return queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config: routedConfig}, 300000);
+        };
+        return await new Promise(resolve => {
+            let settled = false;
+            let failed = 0;
+            for (const userId of userIds) {
+                showTo(userId).then(result => {
+                    if (settled) return;
+                    settled = true;
+                    resolve(result);
+                    for (const otherId of userIds) if (otherId !== userId) DialogApp.closeFor(otherId, id);
+                }, () => {
+                    if (++failed === userIds.length) resolve(null);
+                });
+            }
+        });
+    }
+
+    /**
+     * Close a dialog by id on one user's client.
+     * @param {string} userId User whose client shows the dialog.
+     * @param {string} id Dialog application id.
+     */
+    static closeFor(userId, id) {
+        if (userId === game.user.id) foundry.applications.instances.get(id)?.close();
+        else queryUtils.query('closeDialog', game.users.get(userId), {id}).catch(() => {});
+    }
+
+    static async #show(options) {
         return new Promise((resolve) => {
             const dialog = new DialogApp(options);
             dialog.addEventListener('close', () => resolve(null), {once: true});
@@ -443,6 +491,7 @@ export default class DialogApp extends CatApp {
                 label: f.label,
                 name: f.name,
                 image: f.options?.image,
+                icon: f.options?.icon,
                 invertColor: f.options?.invertColor,
                 tooltip: f.options?.tooltip,
                 reference: f.options?.reference,
@@ -948,6 +997,28 @@ export default class DialogApp extends CatApp {
         this.setPosition({height: 'auto'});
     }
 
+    #expire() {
+        if (this.#timeoutResult !== undefined && this.submit) this.submit({buttons: this.#timeoutResult});
+        else this.close();
+    }
+
+    #placeFromSetting() {
+        const placement = game.settings.get('cat', 'dialogPosition');
+        if (placement === 'center') return;
+        const {width, height} = this.element.getBoundingClientRect();
+        const sidebarWidth = ui.sidebar?.element?.offsetWidth ?? 0;
+        const column = placement.match(/left|right/i)?.[0].toLowerCase();
+        const row = placement.match(/^(top|bottom)/)?.[0];
+        const left = column === 'left' ? 100 : column === 'right' ? window.innerWidth - sidebarWidth - width - 20 : (window.innerWidth - width) / 2;
+        const top = row === 'top' ? 20 : row === 'bottom' ? window.innerHeight - height - 100 : (window.innerHeight - height) / 2;
+        this.setPosition({left, top});
+    }
+
+    #cascade() {
+        const open = Array.from(foundry.applications.instances.values()).filter(app => app !== this && app instanceof DialogApp && app.rendered).length;
+        if (open) this.setPosition({left: this.position.left + open * 30, top: this.position.top + open * 30});
+    }
+
     // dnd5e fills the tooltip on hover via this placeholder.
     #applyTooltip(element) {
         if ('tooltip' in element.dataset) return;
@@ -965,6 +1036,10 @@ export default class DialogApp extends CatApp {
         if (options.isFirstRender) {
             if (this.#timed) this.#timer.start();
             if (this.#anchor) this.setPosition({left: this.#anchor.x - this.element.offsetWidth / 2, top: this.#anchor.y - 16});
+            else {
+                this.#placeFromSetting();
+                this.#cascade();
+            }
             this.element.addEventListener('cat-resize', () => {
                 this.setPosition({width: 'auto', height: 'auto'});
             });

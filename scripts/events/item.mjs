@@ -1,3 +1,4 @@
+import {ActorMedkit} from '../applications/_module.mjs';
 import {effects, items} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {automationUtils, dataUtils, genericUtils, queryUtils} from '../utilities/_module.mjs';
@@ -8,6 +9,7 @@ async function createItem(item, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (item.compendium) await items.updateHash(item, {create: true});
     if (!item.actor) return;
+    if (item.system.linkedActivity?.item.flags.cat?.automation?.source && !item.flags.cat?.automation?.source) await automationUtils.updateItem(item, {massApply: true});
     await automationUtils.updateScales(item);
     await new Events.ItemEvent(item, constants.itemPasses.created, {options}).run();
 }
@@ -50,9 +52,10 @@ async function updateItem(item, updates, options, userId) {
 }
 async function actorMunched({actor, ddbCharacter}) {
     await new Events.ItemsEvent(actor.items, constants.itemPasses.munched, {ddbCharacter}).run({canOverlap: true});
+    if (game.settings.get('cat', 'ddbiIntegration')) await new ActorMedkit({document: actor}).massApply({prompt: false});
 }
-async function itemMedkit(item) {
-    await new Events.ItemEvent(item, constants.itemPasses.medkit).run();
+async function itemMedkit(item, {massApply = false} = {}) {
+    await new Events.ItemEvent(item, constants.itemPasses.medkit, {massApply}).run();
 }
 async function preUpdateItem(item, updates, options, userId) {
     const equipped = item.system.equipped;

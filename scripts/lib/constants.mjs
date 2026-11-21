@@ -305,9 +305,9 @@ const itemPasses = {
     deleted: 'deleted',
     /** After the item is updated. */
     updated: 'updated',
-    /** Once for a batch of items. CAT does not fire it. */
+    /** Once for a batch of items. */
     bulkUpdated: 'bulkUpdated',
-    /** For each item on an actor imported by D&D Beyond Importer. Receives `ddbCharacter`. */
+    /** For each item on an actor imported by DDBI. */
     munched: 'munched',
     /** After the item is equipped. */
     equipped: 'equipped',
@@ -466,6 +466,7 @@ const miscHookNames = {
     renderCombatTracker: 'renderCombatTracker',
     macroautocomplete: 'macro-autocomplete.ready',
     renderChatMessageHTML: 'renderChatMessageHTML',
+    preCreateChatMessage: 'preCreateChatMessage',
     aaWorkflowStart: 'AutomatedAnimations-WorkflowStart',
     preUseActivity: 'dnd5e.preUseActivity'
 };
@@ -546,9 +547,11 @@ function getItemKeepPaths({spell = false} = {}) {
         'system.hd',
         'system.levels',
         'system.materials',
+        'system.price',
         'system.quantity',
         'system.source',
         'system.sourceItem',
+        'system.weight',
         'system.prepared',
         'system.method',
         'flags.core.sourceId',

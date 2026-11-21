@@ -57,6 +57,28 @@
                     "Other": "Other"
                 }
             },
+            "DataIssues": {
+                "Name": "Inspect Data Issues",
+                "Button": "Inspect",
+                "Hint": "Find automated items whose data no longer matches their automation.",
+                "None": "No data issues found",
+                "ConfirmTitle": "Repair automated items?",
+                "ConfirmPrompt": "These items no longer match their automation. Re-apply the automation to the ticked items?",
+                "Started": "Repair started.",
+                "Done": "Repair complete.",
+                "Areas": {
+                    "uses": "Uses",
+                    "activities": "Activities",
+                    "consumption": "Consumption",
+                    "effects": "Effects"
+                }
+            },
+            "Scene": {
+                "DisableAuras": {
+                    "Label": "Disable Auras",
+                    "Hint": "Auras do not apply to tokens on this scene."
+                }
+            },
             "Identifier": {
                 "Label": "Document Identifier",
                 "Hint": "Item & Activity identifiers must be modified on the respective document sheet.",
@@ -363,7 +385,9 @@
                     "embeddedMacros": "Embedded",
                     "alternateAttributes": "Doc Props",
                     "placed": "Region",
-                    "animation": "Animation"
+                    "animation": "Animation",
+                    "options": "Options",
+                    "animationOptions": "Animations"
                 },
                 "Kind": {
                     "Item": "Item",
@@ -437,6 +461,7 @@
             "Documents": {
                 "Placeholder": "Paste UUID or drag a document",
                 "Add": "Add document",
+                "Set": "Set document",
                 "InvalidUuid": "No document found for that UUID.",
                 "WrongType": "Expected a {type} document."
             },
@@ -957,9 +982,33 @@
                 "diceTotal": "Dice Total - Excludes Modifiers",
                 "perDie": "Per Die - Each Result"
             },
+            "DialogPosition": {
+                "Name": "Dialog Position",
+                "Hint": "Where CAT dialogs open on your screen. Dialogs tied to a token or a click still open there.",
+                "topLeft": "Top Left",
+                "top": "Top",
+                "topRight": "Top Right",
+                "left": "Left",
+                "center": "Center",
+                "right": "Right",
+                "bottomLeft": "Bottom Left",
+                "bottom": "Bottom",
+                "bottomRight": "Bottom Right"
+            },
             "ManualRollsFulfiller": {
                 "Name": "Who Fulfils Rolls",
                 "Hint": "Who answers players' roll prompts. With Both, the prompt opens for the player and the Gamemaster, and the first answer is used.",
+                "player": "Player",
+                "gm": "Gamemaster",
+                "both": "Both - First Answer Wins"
+            },
+            "NpcCardsFollowDisposition": {
+                "Name": "NPC Chat Cards Follow Disposition",
+                "Hint": "Chat cards from NPC automations post to the Gamemaster only when the token is hostile or secret. Friendly and neutral NPCs post publicly."
+            },
+            "DialogAnswerer": {
+                "Name": "Who Answers Dialogs",
+                "Hint": "Who answers CAT dialogs a player would see, including third-party reactions, optional bonuses and macro prompts. With Both, the dialog opens for the player and the Gamemaster, and the first answer is used. midi-qol's own reaction prompts and manual roll prompts are not affected.",
                 "player": "Player",
                 "gm": "Gamemaster",
                 "both": "Both - First Answer Wins"
@@ -971,6 +1020,10 @@
             "ManualRollsRichContext": {
                 "Name": "Manual Rolls Rich Context",
                 "Hint": "Describe each roll in the prompt, including who rolls it, against whom, which check or save it is, and any DC the user may see, instead of a plain heading."
+            },
+            "DdbiIntegration": {
+                "Name": "DDB Importer Integration",
+                "Hint": "Apply automations from your enabled automation sources to everything DDB Importer imports or munches: characters, monsters, vehicles, spells, items and features. These replace any effects created by DDB Importer."
             },
             "AutomationSources": {
                 "Name": "Automation Sources",
@@ -1422,15 +1475,15 @@
                 "Title": "Export Data",
                 "Strip": "Strip descriptions",
                 "Settings": "Export Settings",
-                "SettingsHint": "Save every CAT setting to a JSON file.",
+                "SettingsHint": "Save the settings of CAT and every module built on it to a JSON file.",
                 "SettingsButton": "Export",
                 "Exported": "CAT settings exported.",
-                "Imported": "Imported {count} CAT settings.",
+                "Imported": "Imported {count} settings.",
                 "ImportSettings": "Import Settings",
-                "ImportSettingsHint": "Overwrite your CAT settings with an exported JSON file.",
+                "ImportSettingsHint": "Overwrite the settings of CAT and every module built on it with an exported JSON file.",
                 "ImportSettingsButton": "Import",
                 "ImportTitle": "Import CAT Settings",
-                "ImportContent": "Overwrite your CAT settings with the imported file?"
+                "ImportContent": "Overwrite the settings of CAT and every module built on it with the imported file?"
             },
             "Report": {
                 "Inactive": "Inactive",

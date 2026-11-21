@@ -127,6 +127,7 @@ const VARS = {
         if (ddb) return classInstance(api, ddb.api.lib.DDBCharacter, 'DDBI character helpers.');
         return variable('object', 'DDBI is not installed!');
     },
+    massApply: () => variable('boolean', 'Applied by mass apply or an import: take defaults instead of prompting.'),
 
     //Aura
     source: (api) => classInstance(api, cls('actor'), 'The actor projecting the aura.'),

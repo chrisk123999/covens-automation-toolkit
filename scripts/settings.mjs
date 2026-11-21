@@ -93,9 +93,31 @@ const settings = {
         },
         onChange: async () => items.registerCompendiums()
     },
+    ddbiIntegration: {
+        type: Boolean,
+        default: true,
+        menu: 'integration'
+    },
     hideNames: {
         type: Boolean,
         default: false,
+        menu: 'interface'
+    },
+    dialogPosition: {
+        type: String,
+        default: 'center',
+        choices: {
+            topLeft: 'CAT.Settings.DialogPosition.topLeft',
+            top: 'CAT.Settings.DialogPosition.top',
+            topRight: 'CAT.Settings.DialogPosition.topRight',
+            left: 'CAT.Settings.DialogPosition.left',
+            center: 'CAT.Settings.DialogPosition.center',
+            right: 'CAT.Settings.DialogPosition.right',
+            bottomLeft: 'CAT.Settings.DialogPosition.bottomLeft',
+            bottom: 'CAT.Settings.DialogPosition.bottom',
+            bottomRight: 'CAT.Settings.DialogPosition.bottomRight'
+        },
+        scope: 'client',
         menu: 'interface'
     },
     hideActivitiesOnActorSheet: {
@@ -240,6 +262,22 @@ const settings = {
         },
         scope: 'world',
         menu: 'manualRolls'
+    },
+    npcCardsFollowDisposition: {
+        type: Boolean,
+        default: true,
+        menu: 'general'
+    },
+    dialogAnswerer: {
+        type: String,
+        default: 'player',
+        choices: {
+            player: 'CAT.Settings.DialogAnswerer.player',
+            gm: 'CAT.Settings.DialogAnswerer.gm',
+            both: 'CAT.Settings.DialogAnswerer.both'
+        },
+        scope: 'world',
+        menu: 'general'
     },
     manualRollsTimer: {
         type: Number,
@@ -486,7 +524,7 @@ function addMenu(key, options) {
         label: 'CAT.Settings.' + key.capitalize() + '.Label',
         hint: 'CAT.Settings.' + key.capitalize() + '.Hint',
         type: createMenu(key),
-        restricted: true
+        restricted: !Object.values(settings).some(setting => setting.menu === key && (setting.scope ?? 'world') !== 'world')
     };
     game.settings.registerMenu('cat', key, genericUtils.mergeObject(defaultOptions, options));
 }

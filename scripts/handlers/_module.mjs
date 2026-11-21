@@ -2,6 +2,7 @@ export {default as activities} from './activities.mjs';
 export {default as actors} from './actors.mjs';
 export {default as aura} from './aura.mjs';
 export {default as backups} from './backups.mjs';
+export {default as chat} from './chat.mjs';
 export {default as combat} from './combat.mjs';
 export {default as conditionResistanceAndVulnerability} from './conditionResistanceAndVulnerability.mjs';
 export {default as contextmenu} from './contextmenu.mjs';

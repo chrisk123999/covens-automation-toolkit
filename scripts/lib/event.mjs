@@ -2,6 +2,23 @@ import {constants, D20Bonus, DamageBonus, Logging, Triggers} from '../lib/_modul
 import * as utils from '../utilities/_module.mjs';
 import {actorUtils, tokenUtils} from '../utilities/_module.mjs';
 class CatEvent {
+    static #running = new Map();
+    static async track(actor, callback) {
+        const uuid = actor?.uuid;
+        if (uuid) CatEvent.#running.set(uuid, (CatEvent.#running.get(uuid) ?? 0) + 1);
+        try {
+            return await callback();
+        } finally {
+            if (uuid) {
+                const count = CatEvent.#running.get(uuid) - 1;
+                if (count) CatEvent.#running.set(uuid, count);
+                else CatEvent.#running.delete(uuid);
+            }
+        }
+    }
+    static isRunning(actor) {
+        return !!actor && CatEvent.#running.has(actor.uuid);
+    }
     constructor(pass) {
         this.pass = pass;
         this.trigger;
@@ -260,11 +277,11 @@ class CatEvent {
             let result;
             if (typeof trigger.macro === 'string') {
                 Logging.addEntry('DEBUG', 'Executing Embedded Macro: ' + trigger.macroName + ' from ' + trigger.name);
-                result = await this.executeScript(trigger.macro, trigger);
+                result = await CatEvent.track(this.actor, () => this.executeScript(trigger.macro, trigger));
             } else {
                 Logging.addEntry('DEBUG', 'Executing Macro: ' + trigger.macroName + ' from ' + trigger.name);
                 try {
-                    result = await trigger.macro(trigger);
+                    result = await CatEvent.track(this.actor, () => trigger.macro(trigger));
                 } catch (error) {
                     Logging.logMacroException(trigger, error);
                 }
@@ -661,13 +678,14 @@ class CombatEvent extends CatEvent {
     }
 }
 class ItemEvent extends CatEvent {
-    constructor(item, pass, {options, updates} = {}) {
+    constructor(item, pass, {options, updates, massApply = false} = {}) {
         super(pass);
         this.name = 'Item';
         this.trigger = Triggers.ItemTrigger;
         this.item = item;
         this.options = options;
         this.updates = updates;
+        this.massApply = massApply;
         this.setContext(this.item.actor);
     }
     get unsortedTriggers() {
@@ -680,7 +698,8 @@ class ItemEvent extends CatEvent {
         return {
             ...super.appendData(data),
             options: this.options,
-            updates: this.updates
+            updates: this.updates,
+            massApply: this.massApply
         };
     }
 }
@@ -702,7 +721,8 @@ class ItemsEvent extends CatEvent {
     appendData(data) {
         return {
             ...super.appendData(data),
-            ddbCharacter: this.ddbCharacter
+            ddbCharacter: this.ddbCharacter,
+            massApply: true
         };
     }
 }
@@ -872,6 +892,7 @@ class CalledEvent extends CatEvent {
     }
 }
 export default {
+    CatEvent,
     WorkflowEvent,
     PreTargetingWorkflowEvent,
     TokenHitWorkflowEvent,

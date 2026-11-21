@@ -15,7 +15,7 @@ function deleteScene(scene) {
     Auras.forgetScene(scene);
 }
 function updateScene(scene, changes) {
-    if ('active' in changes) Auras.resyncScenes([scene]);
+    if ('active' in changes || foundry.utils.hasProperty(changes, 'flags.cat.disableAuras')) Auras.resyncScenes([scene]);
 }
 function combatChanged(combat) {
     Auras.resyncScenes(Auras.getCombatScenes(combat));

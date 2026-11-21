@@ -159,8 +159,8 @@ function bringToFront(app) {
     ui.activeWindow = app;
 }
 /**
- * Centre an application in the viewport.
- * @param {foundry.applications.api.ApplicationV2} app Application to centre. Ignored if it is not rendered.
+ * Center an application in the viewport.
+ * @param {foundry.applications.api.ApplicationV2} app Application to center. Ignored if it is not rendered.
  * @param {object} [options] Additional options.
  * @param {number} [options.width] Fallback width, used before the element has been laid out.
  * @param {number} [options.height] Fallback height, used before the element has been laid out.

@@ -286,7 +286,7 @@ function getCombatScenes(combat) {
     return Array.from(new Set(combat.combatants.map(combatant => combatant.token?.parent).filter(Boolean)));
 }
 function isCountedScene(scene) {
-    if (!scene) return false;
+    if (!scene || scene.flags.cat?.disableAuras) return false;
     const inCombat = game.combats.some(combat => combat.started && getCombatScenes(combat).includes(scene));
     if (game.settings.get('cat', 'auraCombatOnly')) return inCombat;
     return scene.active || scene === state.canvasScene || inCombat;

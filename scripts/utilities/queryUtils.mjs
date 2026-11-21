@@ -58,6 +58,21 @@ function firstOwner(document, useId) {
     return useId ? gmID() : game.users.get(gmID());
 }
 /**
+ * Users who answer a dialog meant for this user.
+ * @param {string} userId User the dialog is meant for.
+ * @returns {string[]} The player, the GM, or both for Both.
+ */
+function dialogUserIds(userId) {
+    const user = game.users.get(userId);
+    const gm = game.users.activeGM;
+    if (!user || user.isGM || !gm) return [userId];
+    switch (game.settings.get('cat', 'dialogAnswerer')) {
+        case 'gm': return [gm.id];
+        case 'both': return [userId, gm.id];
+        default: return [userId];
+    }
+}
+/**
  * Run one of CAT's registered queries on another client.
  * @param {string} name Query name, without the `cat.` prefix.
  * @param {foundry.documents.User} user User whose client runs the query.
@@ -69,6 +84,7 @@ async function query(name, user, queryData, timeout = 750) {
     return await user.query('cat.' + name, queryData, {timeout});
 }
 export default {
+    dialogUserIds,
     gmID,
     isTheGM,
     hasPermission,
