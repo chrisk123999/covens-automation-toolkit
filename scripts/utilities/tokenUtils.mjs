@@ -274,7 +274,7 @@ function heightAboveFloor(token) {
 }
 /**
  * Highlight grid spaces on the canvas.
- * @param {{x: number, y: number}[]} points Centres of the spaces.
+ * @param {{x: number, y: number}[]} points Centers of the spaces.
  * @returns {PIXI.Graphics} The highlight, for the caller to destroy.
  */
 function drawAllowedPoints(points) {
@@ -295,11 +295,11 @@ function drawAllowedPoints(points) {
  * @param {foundry.documents.TokenDocument} token Token the range is measured from.
  * @param {object} [options] Additional options.
  * @param {number} [options.range] Maximum distance in feet.
- * @param {object} [options.centerpoint] Measure from here instead of the token's centre.
+ * @param {object} [options.centerpoint] Measure from here instead of the token's center.
  * @param {object} [options.crosshairsConfig] Crosshair config.
  * @param {boolean} [options.requireSight] Only allow spaces the token can see.
  * @param {boolean} [options.ignoreWalls] Allow spaces that walls block from the token.
- * @param {object[]} [options.allowedPoints] Only allow these token centres, highlighted while aiming.
+ * @param {object[]} [options.allowedPoints] Only allow these token centers, highlighted while aiming.
  * @returns {Promise<object|undefined>} Crosshair result with `level` and `elevation`; undefined if cancelled.
  */
 async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true, ignoreWalls = false, allowedPoints} = {}) {
@@ -370,7 +370,7 @@ async function aimDestinationAs(userId, token, options) {
  * @param {number} [options.followerRange] Crosshair range in feet for a follower that can't keep its position.
  * @param {string} [options.userId] User who aims the destination crosshair. Defaults to the current user.
  * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
- * @param {object[]} [options.allowedPoints] Only allow these token centres when aiming.
+ * @param {object[]} [options.allowedPoints] Only allow these token centers when aiming.
  * @returns {Promise<undefined>}
  */
 async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], followerRange = 10, userId, ignoreWalls = false, allowedPoints} = {}) {
@@ -457,7 +457,7 @@ async function displaceToken(token, {sourceToken, destination, centerpoint, anim
     if (postAnimation) await postAnimation(token, {sourceToken, destination, action});
 }
 /**
- * Swap the positions of two tokens, centring each where the other stood. Always uses {@link MovementAction} displace.
+ * Swap the positions of two tokens, centering each where the other stood. Always uses {@link MovementAction} displace.
  * With an animation, both tokens run the teleport events and the animation's pre and post macros.
  * @param {foundry.documents.TokenDocument} tokenA Token moved to {@link tokenB}'s position.
  * @param {foundry.documents.TokenDocument} tokenB Token moved to {@link tokenA}'s position.
@@ -676,6 +676,7 @@ export default {
     floorBelow,
     heightAboveFloor,
     aimDestination,
+    aimDestinationAs,
     canSense,
     getNonSightModes,
     grapple,

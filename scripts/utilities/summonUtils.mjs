@@ -83,10 +83,11 @@ async function createSummon(ownerActor, sourceActor, {
  * @param {Function} [options.postAnimation] Runs after the token appears.
  * @param {number} [options.alpha] Opacity the token fades in from.
  * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check. Defaults to the owner's token.
+ * @param {string} [options.userId] User who aims the crosshair. Defaults to the current user.
  * @returns {Promise<foundry.documents.TokenDocument|undefined>} Undefined when the crosshair is cancelled.
  */
-async function placeSummon(summon, range, {preAnimation, postAnimation, alpha, token} = {}) {
-    return await constants.summons.placeSummon(summon, range, {preAnimation, postAnimation, alpha, token});
+async function placeSummon(summon, range, {preAnimation, postAnimation, alpha, token, userId} = {}) {
+    return await constants.summons.placeSummon(summon, range, {preAnimation, postAnimation, alpha, token, userId});
 }
 /**
  * Place a summon at a known position, without a crosshair.
@@ -155,10 +156,11 @@ function getSummonsBySource(document) {
  * @param {number} range Feet each crosshair is bounded to.
  * @param {object} [options] Additional options.
  * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check. Defaults to each summon's owner.
+ * @param {string} [options.userId] User who aims the crosshairs. Defaults to the current user.
  * @returns {Promise<foundry.documents.TokenDocument[]|undefined>} The tokens placed before any cancellation.
  */
-function placeSummons(summons, range, {token} = {}) {
-    return constants.summons.placeSummons(summons, range, {token});
+function placeSummons(summons, range, {token, userId} = {}) {
+    return constants.summons.placeSummons(summons, range, {token, userId});
 }
 /**
  * Place every unplaced summon created by this item or activity.

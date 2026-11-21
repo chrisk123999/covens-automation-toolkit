@@ -1,7 +1,7 @@
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import {D20Bonus, DamageBonus} from '../lib/_module.mjs';
 import constants from '../lib/constants.mjs';
-import {automationUtils, distanceUtils, genericUtils, queryUtils, tokenUtils, uiUtils} from './_module.mjs';
+import {actorUtils, automationUtils, distanceUtils, genericUtils, queryUtils, tokenUtils, uiUtils} from './_module.mjs';
 
 /**
  * A token's name for display, replaced with a generic label when names are hidden.
@@ -20,8 +20,8 @@ function getTokenName(token, {hide = game.settings.get('cat', 'hideNames'), coun
 
 const rememberedChoices = new Map();
 /**
- * Show a dialog, routed through a query when {@link userId} is not the current user.
- * @param {string} userId User the dialog is shown to.
+ * Show a dialog to a user, through a query when it is not the current user. {@link DialogApp.dialog} reroutes it by the Who Answers Dialogs setting.
+ * @param {string} userId User the dialog is meant for.
  * @param {string} title Window title.
  * @param {string} content Text shown above the inputs.
  * @param {Array} inputs Input tree consumed by {@link DialogApp}.
@@ -35,7 +35,7 @@ async function runDialog(userId, title, content, inputs, buttons, config) {
 }
 /**
  * {@link runDialog}, queued so this user is not shown two dialogs at once.
- * @param {string} userId User the dialog is shown to.
+ * @param {string} userId User the dialog is meant for.
  * @param {string} title Window title.
  * @param {string} content Text shown above the inputs.
  * @param {Array} inputs Input tree consumed by {@link DialogApp}.
@@ -58,9 +58,10 @@ async function runQueuedDialog(userId, title, content, inputs, buttons, config) 
  * @param {boolean} [options.displayAsRows] Lay the buttons out in rows.
  * @param {string} [options.userId] User the dialog is shown to.
  * @param {'alphabetical'|null} [options.sort] How the entries are ordered.
+ * @param {*} [options.timeoutValue] Value chosen when the prompt timer runs out, instead of dismissing.
  * @returns {Promise<*|false>} The chosen value, or false if dismissed.
  */
-async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sort = null} = {}) {
+async function buttonDialog(title, content, buttons, {displayAsRows = true, userId = game.user.id, sort = null, timeoutValue} = {}) {
     let inputs = [
         ['button', [], {displayAsRows: displayAsRows}]
     ];
@@ -68,8 +69,26 @@ async function buttonDialog(title, content, buttons, {displayAsRows = true, user
     for (let [label, value, options] of buttons) {
         inputs[0][1].push({label: label, name: value, options: options ?? {}});
     }
-    let result = await runDialog(userId, title, content, inputs, undefined, {width: 400});
+    let result = await runDialog(userId, title, content, inputs, undefined, {width: 400, timeoutResult: timeoutValue});
     return result?.buttons ?? false;
+}
+/**
+ * Prompt the actor's owner to pick one of their abilities.
+ * @param {string} title Window title.
+ * @param {string} content Text shown above the buttons.
+ * @param {Actor5e} actor Actor whose abilities are offered.
+ * @param {string[]} abilities Ability keys to offer.
+ * @param {object} [options] Additional options.
+ * @param {string} [options.userId] User shown the dialog.
+ * @returns {Promise<string|false>} The chosen ability key, or false if dismissed.
+ */
+async function abilityDialog(title, content, actor, abilities, {userId = game.user.id} = {}) {
+    const best = actorUtils.getBestAbility(actor, abilities);
+    const buttons = abilities.map(key => {
+        const label = `${CONFIG.DND5E.abilities[key].label} (${dnd5e.utils.formatNumber(actor.system.abilities[key]?.mod ?? 0, {signDisplay: 'always'})})`;
+        return [label, key, {image: CONFIG.DND5E.abilities[key].icon, icon: key === best ? 'fa-solid fa-star' : undefined}];
+    }).sort((a, b) => (b[1] === best) - (a[1] === best));
+    return await buttonDialog(title, content, buttons, {userId, timeoutValue: best});
 }
 /**
  * Offer distance buttons in feet, labelled in the scene's units.
@@ -576,9 +595,20 @@ async function buildBonusInputs(bonuses, {rolls, workflow, damageRolls, spent, c
     if (optional.length) inputs.push(['checkbox', optional, {displayAsRows: true, legend: contextual.length + thirdParty.length > 0 ? 'CAT.OptionalBonus.Optional' : ''}]);
     if (contextual.length) inputs.push(['checkbox', contextual, {displayAsRows: true, legend: 'CAT.OptionalBonus.Contextual'}]);
     if (applied.length) inputs.push(['checkbox', applied, {displayAsRows: true, legend: 'CAT.OptionalBonus.Applied'}]);
-    const readInputs = results => {
+    const readInputs = (results, {remote = false} = {}) => {
         for (let i = 0; i < bonuses.length; i++)
             if (bonuses[i].extraInputs.length) bonuses[i].inputs = results?.['b-' + i]?.inputs ?? {};
+        if (remote) bonuses.forEach((bonus, i) => applyRemoteResult(bonus, results?.['b-' + i]));
+    };
+    const applyRemoteResult = (bonus, result) => {
+        if (!result) return;
+        if (bonus.optional) bonus.active = !!result.active;
+        if (result.scaling) bonus.updateScaling(Number(result.scaling) - 1, workflow, bonuses, rollTotal);
+        if (result.targets) {
+            const ids = new Set(typeof result.targets === 'string' ? (result.targets.startsWith('[') ? JSON.parse(result.targets) : result.targets.split(',')) : result.targets);
+            bonus.targets = bonus.targetOptions.filter(token => ids.has(token.id));
+        }
+        if (result.damageType) bonus.damageType = result.damageType;
     };
     return {inputs, hasOptional: !!(optional.length || thirdParty.length || contextual.some(c => c.options.subinputs.length)), readInputs};
 }
@@ -969,6 +999,7 @@ async function selectDie(rolls = [], title, content, {max = 1, userId = game.use
     return Object.entries(result).filter(([, v]) => v).map(([k]) => k.replaceAll('-', '.'));
 }
 export default {
+    abilityDialog,
     buttonDialog,
     distanceDialog,
     numberDialog,

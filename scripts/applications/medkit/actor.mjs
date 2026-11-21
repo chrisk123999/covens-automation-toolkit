@@ -5,6 +5,8 @@ const {fields} = foundry.data;
 
 export default class ActorMedkit extends MedkitApp {
     static DOCUMENT_TYPE = 'actor';
+    static DATA_CHECK = true;
+
     static DEFAULT_OPTIONS = {
         id: 'medkit-window-actor',
         actions: {

@@ -221,7 +221,7 @@ export default class TroubleshooterApp extends CatApp {
 
     /** @this {TroubleshooterApp} */
     static #exportSettings() {
-        const settings = Object.fromEntries(Troubleshooter.catSettings().map(setting => [setting.key, game.settings.get('cat', setting.key)]));
+        const settings = Object.fromEntries(Troubleshooter.exportableSettings().map(setting => [`${setting.namespace}.${setting.key}`, game.settings.get(setting.namespace, setting.key)]));
         foundry.utils.saveDataToFile(JSON.stringify(settings, null, 2), 'application/json', `cat-settings-${genericUtils.dateStamp()}.json`);
         genericUtils.notify('CAT.Troubleshooter.Export.Exported');
     }
@@ -233,9 +233,10 @@ export default class TroubleshooterApp extends CatApp {
         input.accept = '.json';
         input.addEventListener('change', async () => {
             const data = JSON.parse(await foundry.utils.readTextFromFile(input.files[0]));
-            const entries = Object.entries(data).filter(([key]) => game.settings.settings.has('cat.' + key));
+            const settings = new Map(Troubleshooter.exportableSettings().map(setting => [`${setting.namespace}.${setting.key}`, setting]));
+            const entries = Object.entries(data).map(([id, value]) => [settings.get(id) ?? settings.get('cat.' + id), value]).filter(([setting]) => setting && (game.user.isGM || setting.scope !== 'world'));
             if (!await dialogUtils.confirm('CAT.Troubleshooter.Export.ImportTitle', 'CAT.Troubleshooter.Export.ImportContent', {timer: false})) return;
-            for (const [key, value] of entries) await game.settings.set('cat', key, value);
+            for (const [setting, value] of entries) await game.settings.set(setting.namespace, setting.key, value);
             genericUtils.notify('CAT.Troubleshooter.Export.Imported', {format: {count: entries.length}});
             await foundry.applications.settings.SettingsConfig.reloadConfirm({world: true});
         });

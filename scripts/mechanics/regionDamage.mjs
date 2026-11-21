@@ -1,7 +1,7 @@
 import {constants, Events} from '../lib/_module.mjs';
 import {regionUtils, workflowUtils} from '../utilities/_module.mjs';
 /**
- * The point a workflow's damage comes from: the centre of its placed area, otherwise its token.
+ * The point a workflow's damage comes from: the center of its placed area, otherwise its token.
  * @param {MidiQOL.Workflow} workflow Workflow in progress.
  * @returns {{x: number, y: number}|undefined}
  */

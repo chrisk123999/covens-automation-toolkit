@@ -59,7 +59,7 @@ async function preloadAnimations(animations, {showProgressBar} = {}) {
 function simpleAttack(sourceToken, targetToken, animation, {sound, missed = false} = {}) {
     if (!sequencerCheck()) return;
     /* eslint-disable indent */
-    new Sequence()
+    new Sequence({moduleName: 'cat'})
         .effect()
             .atLocation(sourceToken)
             .stretchTo(targetToken)

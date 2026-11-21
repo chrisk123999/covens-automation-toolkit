@@ -44,6 +44,15 @@ function getMonsterIdentifier(document) {
     return document.actor.type === 'npc' ? getIdentifier(document.actor) : '';
 }
 /**
+ * The feature type used for automation matching. Features on an NPC with a class item match class automations like a PC's.
+ * @param {foundry.abstract.Document} document Document to act on.
+ * @returns {string|undefined}
+ */
+function getMatchFeatType(document) {
+    if (document.actor?.type === 'npc' && document.actor.itemTypes.class.length) return 'class';
+    return document.system?.type?.value;
+}
+/**
  * Get the version of the automation registered on this document.
  * @param {foundry.abstract.Document} document Document to act on.
  * @returns {string|undefined}
@@ -341,6 +350,7 @@ export default {
     getRules,
     getSource,
     getIdentifier,
+    getMatchFeatType,
     getMonsterIdentifier,
     getVersion,
     getSavedCastData,

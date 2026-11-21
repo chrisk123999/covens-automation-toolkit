@@ -194,13 +194,19 @@ function getDuration(activity) {
 }
 
 /**
- * Get the activity's range in feet. Touch ranges use the item's reach.
+ * Get the activity's maximum range in feet. Touch ranges use the item's reach.
  * @param {Activity} activity Activity to read from.
+ * @param {object} [options]
+ * @param {TokenDocument} [options.token] Token measuring from. Defaults to the actor's token in the current scene.
  * @returns {number|undefined}
  */
-function getRange(activity) {
+function getRange(activity, {token} = {}) {
     const {value, units} = activity.range ?? {};
     if (units === 'touch') return itemUtils.getRange(activity.item).reach;
+    if (['ft', 'm'].includes(units)) {
+        const {range, longRange} = MidiQOL.checkActivityRange(activity, token ?? activity.actor, [], false);
+        if (range !== undefined) return distanceUtils.lengthToFeet(longRange || range, units);
+    }
     return distanceUtils.lengthToFeet(value, units);
 }
 /**

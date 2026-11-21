@@ -96,6 +96,7 @@ export default class MedkitApp extends CatApp {
             openCompendiumItem: MedkitApp.#openCompendiumItem,
             openSequencerDb: MedkitApp.#openSequencerDb,
             massApply: MedkitApp.#massApply,
+            checkDataIssues: MedkitApp.#checkDataIssues,
             openTroubleshooter: MedkitApp.#openTroubleshooter
         }
     };
@@ -132,6 +133,8 @@ export default class MedkitApp extends CatApp {
     };
 
     static TABS = {sheet: {tabs: [], initial: undefined}};
+
+    static DATA_CHECK = false;
 
     static KEEP_PATHS = [];
 
@@ -263,8 +266,12 @@ export default class MedkitApp extends CatApp {
 
     async _canMassApply() { return true; }
 
-    /** Run mass apply as if its button were clicked. */
-    async massApply() { return await MedkitApp.#massApply.call(this); }
+    /**
+     * Run mass apply as if its button were clicked.
+     * @param {object} [options]
+     * @param {boolean} [options.prompt] Show the confirmation dialog. Without it, every available or outdated automation is applied from its preferred source.
+     */
+    async massApply({prompt = true} = {}) { return await this.#runMassApply({prompt}); }
 
     async _preparePartContext(partId, context) {
         const partContext = await super._preparePartContext(partId, context);
@@ -316,6 +323,8 @@ export default class MedkitApp extends CatApp {
         Object.assign(context, uiUtils.detachContext(this, options));
         context.embeddedMacros = (this.#flags.embeddedMacros ?? []).map((entry, index) => ({index, name: entry.name ?? '', event: entry.event ?? '', pass: entry.pass ?? ''}));
         if ('automations' in this.constructor.PARTS) context.automationCounts = await this._prepareAutomationCounts();
+        context.dataCheck = this.constructor.DATA_CHECK;
+        if (context.dataCheck) context.hasDataIssues = (await this._findDataIssues()).length > 0;
         if ('macros' in this.constructor.PARTS) context.macroChoices = this._prepareRegisteredMacros().choices;
         if ('generic' in this.constructor.PARTS) {
             const generic = this._prepareGenericFeatures();
@@ -463,6 +472,17 @@ export default class MedkitApp extends CatApp {
                     return {value: uuid, label: doc?.name ?? uuid, img: doc?.img};
                 });
                 break;
+            case 'document': {
+                const doc = value ? fromUuidSync(value) : null;
+                option.isList = true;
+                option.single = true;
+                option.validate = 'uuid';
+                option.documentType = descriptor.documentType ?? '';
+                option.placeholder = 'CAT.MEDKIT.Documents.Placeholder';
+                option.addTooltip = 'CAT.MEDKIT.Documents.Set';
+                option.chip = value ? {value, label: doc?.name ?? value, img: doc?.img} : null;
+                break;
+            }
             case 'selectActivity':
                 option.isCombobox = true;
                 option.allowBlank = true;
@@ -1264,6 +1284,10 @@ export default class MedkitApp extends CatApp {
 
     /** @this {MedkitApp} */
     static async #massApply() {
+        return await this.#runMassApply();
+    }
+
+    async #runMassApply({prompt = true} = {}) {
         if (!await this._canMassApply()) return;
         const rawItems = Array.from(await this._getMassApplyItems() ?? []);
         if (!rawItems.length) return;
@@ -1299,9 +1323,12 @@ export default class MedkitApp extends CatApp {
             if (switchable.length || (bucket && (bucket.reason !== 'current' || bucket.available?.length > 1))) sortedItems.push({item, ...bucket, switchable});
         };
         rawItems.forEach(visit);
-        if (!sortedItems.length) return genericUtils.notify('CAT.MEDKIT.MassApply.NoUpdates', {type: 'warn'});
+        if (!sortedItems.length) {
+            if (prompt) genericUtils.notify('CAT.MEDKIT.MassApply.NoUpdates', {type: 'warn'});
+            return;
+        }
         if (cycleDetected) genericUtils.notify('CAT.MEDKIT.MassApply.CycleWarning', {type: 'warn'});
-        const choices = await this.#massApplyPrompt(sortedItems);
+        const choices = prompt ? await this.#massApplyPrompt(sortedItems) : Object.fromEntries(sortedItems.map(entry => [this.#massApplyID(entry.item), {included: !!entry.reason && entry.reason !== 'current'}]));
         if (!choices) return;
         const applying = sortedItems.filter(entry => choices[this.#massApplyID(entry.item)].included);
         const rules = massApplyRules.includes(choices.switchRules) ? choices.switchRules : undefined;
@@ -1313,9 +1340,9 @@ export default class MedkitApp extends CatApp {
             if (targets.length) {
                 let source = options.source ?? entry.preferred?.source ?? entry.applied?.source;
                 if (!targets.some(automation => automation.source === source)) source = automationUtils.sortByPriority(targets)[0].source;
-                await automationUtils.updateItem(entry.item, {source, rules});
+                await automationUtils.updateItem(entry.item, {source, rules, massApply: true});
             } else {
-                await automationUtils.updateItem(entry.item, {source: options.source ?? entry.preferred?.source});
+                await automationUtils.updateItem(entry.item, {source: options.source ?? entry.preferred?.source, massApply: true});
             }
             done++;
             progress.update({pct: done / applying.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: applying.length, name: entry.item.name})});
@@ -1323,6 +1350,55 @@ export default class MedkitApp extends CatApp {
         progress.update({pct: 1, message: _loc('CAT.MEDKIT.MassApply.Done')});
         this.render();
         await this._afterMassApply();
+    }
+
+    /** @this {MedkitApp} */
+    static async #checkDataIssues() {
+        const entries = await this._findDataIssues();
+        if (!entries.length) return;
+        const data = {};
+        for (const {item, issues} of entries) {
+            const group = item.actor?.uuid ?? 'items';
+            data[group] ??= {name: item.actor?.name, tab: massApplyTabs[item.actor?.type] ?? massApplyTabs.other, inputs: []};
+            data[group].inputs.push({
+                label: item.name,
+                name: this.#massApplyID(item),
+                options: {
+                    isChecked: true,
+                    image: item.img,
+                    tags: [
+                        {label: automationUtils.getSourceName(documentUtils.getSource(item)), id: 'source'},
+                        ...issues.map(issue => ({label: 'CAT.MEDKIT.DataIssues.Areas.' + issue, id: issue, status: 'outdated'}))
+                    ]
+                }
+            });
+        }
+        const inputs = Object.values(data)
+            .map(group => ['checkbox', group.inputs, {displayAsRows: true, legend: group.name, requireSelection: true, tab: group.tab}])
+            .sort((a, b) => massApplyTabOrder.indexOf(a[2].tab) - massApplyTabOrder.indexOf(b[2].tab) || (a[2].legend ?? '').localeCompare(b[2].legend ?? '', game.i18n.lang));
+        const choices = await DialogApp.dialog('CAT.MEDKIT.DataIssues.ConfirmTitle', 'CAT.MEDKIT.DataIssues.ConfirmPrompt', inputs, 'okCancel', {timer: false});
+        if (!choices?.buttons) return;
+        const repairing = entries.filter(({item}) => choices[this.#massApplyID(item)]);
+        if (!repairing.length) return;
+        const progress = genericUtils.notify('CAT.MEDKIT.DataIssues.Started', {progress: true});
+        let done = 0;
+        for (const {item} of repairing) {
+            await automationUtils.updateItem(item, {source: documentUtils.getSource(item), massApply: true});
+            done++;
+            progress.update({pct: done / repairing.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: repairing.length, name: item.name})});
+        }
+        progress.update({pct: 1, message: _loc('CAT.MEDKIT.DataIssues.Done')});
+        this.render();
+    }
+
+    async _findDataIssues() {
+        const entries = [];
+        for (const item of await this._getMassApplyItems() ?? []) {
+            if (item.flags.cat?.ignoreItem) continue;
+            const issues = await automationUtils.getDataIssues(item);
+            if (issues.length) entries.push({item, issues});
+        }
+        return entries;
     }
 
     #massApplyID(item) { return item.actor ? `${item.actor.id}|${item.id}` : item.id; }
@@ -1501,9 +1577,17 @@ export default class MedkitApp extends CatApp {
             genericUtils.notify('CAT.MEDKIT.Documents.InvalidUuid', {type: 'error'});
             return;
         }
+        if (group.dataset.single) return this.#setSingleDocument(group, entry);
         const current = foundry.utils.getProperty(this.#flags, path) ?? this.#listValues[path] ?? [];
         if (current.includes(entry)) return;
         foundry.utils.setProperty(this.#flags, path, [...current, entry]);
+        this.render();
+    }
+
+    #setSingleDocument(group, uuid) {
+        const type = group.dataset.documentType;
+        if (type && foundry.utils.parseUuid(uuid)?.type !== type) return genericUtils.notify('CAT.MEDKIT.Documents.WrongType', {type: 'warn', format: {type}});
+        foundry.utils.setProperty(this.#flags, group.dataset.flagPath, uuid);
         this.render();
     }
 
@@ -1545,6 +1629,10 @@ export default class MedkitApp extends CatApp {
         const group = target.closest('[data-flag-path]');
         const path = group?.dataset.flagPath;
         if (!path) return;
+        if (group.dataset.single) {
+            foundry.utils.setProperty(this.#flags, path, '');
+            return this.render();
+        }
         const current = foundry.utils.getProperty(this.#flags, path) ?? this.#listValues[path] ?? [];
         foundry.utils.setProperty(this.#flags, path, current.filter(v => v !== target.dataset.value));
         this.render();
@@ -1622,6 +1710,7 @@ export default class MedkitApp extends CatApp {
                 const path = el.dataset.flagPath;
                 if (!path) return;
                 if (!fromUuidSync(uuid)) return genericUtils.notify('CAT.MEDKIT.Documents.InvalidUuid', {type: 'error'});
+                if (el.dataset.single) return this.#setSingleDocument(el, uuid);
                 const current = foundry.utils.getProperty(this.#flags, path) ?? [];
                 if (current.includes(uuid)) return;
                 foundry.utils.setProperty(this.#flags, path, [...current, uuid]);

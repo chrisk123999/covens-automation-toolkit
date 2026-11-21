@@ -13,7 +13,7 @@ function getCurrentAutomation(item) {
     const type = item.type;
     const sourceType = itemUtils.getAdvancementSourceKey(item);
     const monsterIdentifier = documentUtils.getMonsterIdentifier(item);
-    const featType = item.system?.type?.value;
+    const featType = documentUtils.getMatchFeatType(item);
     if (!identifier || !rules) return;
     if (!source) {
         const allAutomations = constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, featType, monsterIdentifier, sourceType});
@@ -111,7 +111,7 @@ function getAvailableAutomations(item, {excludeSources = [], rules = documentUti
     const identifier = documentUtils.getIdentifier(item);
     const type = item.type;
     const sourceType = itemUtils.getAdvancementSourceKey(item);
-    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, featType: item.system?.type?.value, excludeSources, sourceType, monsterIdentifier: documentUtils.getMonsterIdentifier(item)});
+    return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, featType: documentUtils.getMatchFeatType(item), excludeSources, sourceType, monsterIdentifier: documentUtils.getMonsterIdentifier(item)});
 }
 /**
  * One config value for the automation on this document, falling back to the registered default.
@@ -371,6 +371,20 @@ function getCatConfigKinds(document) {
     });
 }
 /**
+ * Which kinds of options an item's applied automation offers that the item has not saved yet.
+ * @param {ClientDocument} document Document to act on.
+ * @returns {string[]} `options` and/or `animationOptions`.
+ */
+function getOfferedConfigKinds(document) {
+    if (document.documentName !== 'Item') return [];
+    const configs = Object.values(getCurrentAutomation(document)?.config ?? {});
+    const isAnimation = config => config.type === 'selectAnimation' || config.category === 'animations';
+    const kinds = [];
+    if (!document.flags.cat?.config && configs.some(config => !isAnimation(config))) kinds.push('options');
+    if (configs.some(isAnimation)) kinds.push('animationOptions');
+    return kinds;
+}
+/**
  * The medkit status of any document, including the spell a cast activity points at.
  * @param {ClientDocument} document Document to act on.
  * @returns {Promise<number>} A {@link constants.automationStatus} value.
@@ -406,7 +420,7 @@ async function getAutomationTree(document) {
         const children = await getAutomationTree(child);
         const status = await getAnyAutomationStatus(child);
         const automated = status >= constants.automationStatus.OUTDATED;
-        const kinds = getCatConfigKinds(child);
+        const kinds = [...getCatConfigKinds(child), ...getOfferedConfigKinds(child)];
         if (!automated && !kinds.length && !children.length) continue;
         branches.push({
             uuid: child.uuid,
@@ -447,6 +461,18 @@ function isReplaced(item) {
     return item.system.linkedActivity?.spell?.uuid !== item._stats.compendiumSource;
 }
 /**
+ * Whether an image is a system or DDBI placeholder that an automation's own image may replace.
+ * @param {string} img Image path.
+ * @returns {boolean}
+ */
+function isDefaultImage(img) {
+    if (!img || img === Item.DEFAULT_ICON || Object.values(CONFIG.DND5E.defaultArtwork.Item).includes(img)) return true;
+    if (!game.modules.get('ddb-importer')?.active) return false;
+    const storage = game.settings.get('ddb-importer', 'persistent-storage-location').replace(/^\[.+?\]\s*/, '').replace(/^\/|\/$/g, '');
+    const path = '/' + decodeURIComponent(img);
+    return ['ddb/item/', 'ddb/loot/', 'spell/school/'].some(folder => path.includes('/' + storage + '/' + folder));
+}
+/**
  * Apply an automation to an item, replacing it with the source document.
  * @param {Item5e} item Item to act on.
  * @param {object} [options] Additional options.
@@ -454,14 +480,15 @@ function isReplaced(item) {
  * @param {string} [options.rules] Apply the automation for this rules version instead of the item's own. Needs `source`.
  * @param {boolean} [options.skipEvent] Do not fire the medkit item event.
  * @param {boolean} [options.openSheet] Render the item sheet afterwards.
+ * @param {boolean} [options.massApply] Tell medkit macros to take defaults instead of prompting.
  */
-async function updateItem(item, {source, rules = documentUtils.getRules(item), skipEvent, openSheet} = {}) {
+async function updateItem(item, {source, rules = documentUtils.getRules(item), skipEvent, openSheet, massApply = false} = {}) {
     if (isReplaced(item)) return;
     let automation;
     const identifier = documentUtils.getIdentifier(item);
     if (source) {
         const sourceType = itemUtils.getAdvancementSourceKey(item);
-        automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier: documentUtils.getMonsterIdentifier(item), type: item.type, featType: item.system?.type?.value, sourceType});
+        automation = constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier: documentUtils.getMonsterIdentifier(item), type: item.type, featType: documentUtils.getMatchFeatType(item), sourceType});
     } else {
         automation = getAppliedOrPreferredAutomation(item);
     }
@@ -487,8 +514,8 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
     genericUtils.setProperty(documentData, 'flags.cat.automation.version', automation.version);
     delete documentData.flags.cat.automation.sourceType;
     delete documentData.flags.cat.automation.aliases;
-    const defaultImages = Object.values(CONFIG.DND5E.defaultArtwork.Item);
-    if (!defaultImages.includes(oldDocumentData.img)) {
+    delete documentData.flags.cat.automation.monsterIdentifier;
+    if (!isDefaultImage(oldDocumentData.img)) {
         documentData.effects.filter(effect => effect.img === documentData.img).forEach(effect => effect.img = oldDocumentData.img);
         if (documentData.system.activities) Object.values(documentData.system.activities).filter(activity => activity.img === documentData.img).forEach(activity => activity.img = oldDocumentData.img);
         documentData.img = oldDocumentData.img;
@@ -510,7 +537,7 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
     const actor = item.actor;
     await documentUtils.update(item, documentData, {recursive: false, diff: false});
     if (actor) await updateScales(item, {automation});
-    if (!skipEvent && actor) await itemEvents.itemMedkit(item);
+    if (!skipEvent && actor) await itemEvents.itemMedkit(item, {massApply});
     if (openSheet) await item.sheet.render(true);
 }
 /**
@@ -608,6 +635,37 @@ async function updateScales(item, {automation} = {}) {
         }
     });
     if (updates.length) await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
+}
+/**
+ * Automation-relevant data where this item no longer matches its applied automation's source.
+ * @param {Item5e} item Item to act on.
+ * @returns {Promise<string[]>} Drifted areas: `uses`, `activities`, `consumption` and `effects`.
+ */
+async function getDataIssues(item) {
+    const automation = getCurrentAutomation(item);
+    if (!automation || isSelfAutomation(item, {automation})) return [];
+    const sourceDocument = await fromUuid(automation.uuid);
+    if (!sourceDocument) return [];
+    const itemData = item.toObject();
+    const sourceData = sourceDocument.toObject();
+    const usesOf = uses => ({max: uses?.max ?? '', recovery: (uses?.recovery ?? []).map(({period, type, formula}) => ({period, type, formula: formula ?? ''}))});
+    const changesOf = effect => (effect.changes ?? effect.system?.changes ?? []).map(({_id, ...change}) => change);
+    const issues = new Set();
+    if (!constants.getItemKeepPaths({spell: item.type === 'spell'}).includes('system.uses') && !foundry.utils.equals(usesOf(itemData.system.uses), usesOf(sourceData.system.uses))) issues.add('uses');
+    for (const [id, sourceActivity] of Object.entries(sourceData.system.activities ?? {})) {
+        const activity = itemData.system.activities?.[id];
+        if (!activity || activity.type !== sourceActivity.type) {
+            issues.add('activities');
+            continue;
+        }
+        if (!foundry.utils.equals(usesOf(activity.uses), usesOf(sourceActivity.uses))) issues.add('uses');
+        if (!foundry.utils.equals(activity.consumption ?? {}, sourceActivity.consumption ?? {})) issues.add('consumption');
+    }
+    for (const sourceEffect of sourceData.effects) {
+        const effect = itemData.effects.find(effect => effect._id === sourceEffect._id);
+        if (!effect || !foundry.utils.equals(changesOf(effect), changesOf(sourceEffect))) issues.add('effects');
+    }
+    return Array.from(issues);
 }
 /**
  * Small non-cryptographic string hash, used to tell whether an embedded automation has been edited.
@@ -769,6 +827,7 @@ export default {
     sortByPriority,
     updateItem,
     updateScales,
+    getDataIssues,
     getDocumentHash,
     setDocumentHash,
     getStoredHash,

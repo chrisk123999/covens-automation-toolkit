@@ -61,7 +61,8 @@ export class RegisteredTroubleshooterChecks {
         return true;
     }
 }
-function catSettings() {
-    return [...game.settings.settings.values()].filter(setting => setting.namespace === 'cat' && setting.menu);
+function exportableSettings() {
+    const namespaces = new Set(['cat', ...game.modules.filter(module => module.active && module.relationships.requires?.some(dependency => dependency.id === 'cat')).map(module => module.id)]);
+    return [...game.settings.settings.values()].filter(setting => namespaces.has(setting.namespace) && ['world', 'client', 'user'].includes(setting.scope));
 }
-export default {RegisteredTroubleshooterChecks, SECTIONS, catSettings};
+export default {RegisteredTroubleshooterChecks, SECTIONS, exportableSettings};

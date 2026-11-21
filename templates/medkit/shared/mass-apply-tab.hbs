@@ -16,5 +16,20 @@
             <i class="fa-solid fa-download"></i>
             {{localize "CAT.MEDKIT.MassApply.Button"}}
         </button>
+        {{#if auraField}}
+            {{formGroup auraField name="flags.cat.disableAuras" value=disableAuras hint=(localize "CAT.MEDKIT.Scene.DisableAuras.Hint") rootId=@root.rootId}}
+        {{/if}}
+        {{#if dataCheck}}
+            <div class="form-group">
+                <label>{{localize "CAT.MEDKIT.DataIssues.Name"}}</label>
+                <div class="form-fields" {{#unless hasDataIssues}}data-tooltip="{{localize 'CAT.MEDKIT.DataIssues.None'}}"{{/unless}}>
+                    <button type="button" data-action="checkDataIssues" {{#unless hasDataIssues}}disabled{{/unless}}>
+                        <i class="fa-solid fa-file-circle-exclamation"></i>
+                        {{localize "CAT.MEDKIT.DataIssues.Button"}}
+                    </button>
+                </div>
+                <p class="hint">{{localize "CAT.MEDKIT.DataIssues.Hint"}}</p>
+            </div>
+        {{/if}}
     </fieldset>
 </section>

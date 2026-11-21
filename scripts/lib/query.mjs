@@ -88,6 +88,9 @@ async function manualRoll({roll: rollData, label, info = [], damage = false, id,
     await resolver.close();
     return results;
 }
+async function closeDialog({id}) {
+    await foundry.applications.instances.get(id)?.close();
+}
 async function manualRollCancel({id}) {
     await CONFIG.Dice.fulfillment.methods.cat?.resolver.active.get(id)?.close();
 }
@@ -155,10 +158,10 @@ async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, c
     const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, spellSlot, fast});
     return workflow?.getSafeMacroData();
 }
-async function aimDestination({uuid, range, centerpoint, requireSight, ignoreWalls, allowedPoints}) {
+async function aimDestination({uuid, range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints}) {
     const token = await fromUuid(uuid);
     if (!token) return;
-    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, requireSight, ignoreWalls, allowedPoints});
+    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints});
     if (!destination) return;
     return {x: destination.x, y: destination.y, elevation: destination.elevation, level: destination.level, cancelled: destination.cancelled};
 }
@@ -178,6 +181,7 @@ function registerQueries() {
         createActor,
         createFolder,
         manualRoll,
+        closeDialog,
         manualRollCancel,
         manualRollPause,
         modifyBatch,

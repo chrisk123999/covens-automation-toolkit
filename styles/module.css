@@ -902,13 +902,13 @@ cat-multi-combobox {
             background: var(--cat-bg-input);
 
             > .time {
+                font-variant-numeric: tabular-nums;
                 display: inline-flex;
                 align-items: center;
                 padding: 0 0.375rem;
                 color: var(--timer-color);
-                font-size: var(--font-size-12);
                 font-weight: 600;
-                font-variant-numeric: tabular-nums;
+                font-size: var(--font-size-12);
             }
 
             > button {
@@ -940,8 +940,8 @@ cat-multi-combobox {
             }
 
             > .track {
-                position: absolute;
                 z-index: 1;
+                position: absolute;
                 right: 0;
                 bottom: -2px;
                 left: 0;
@@ -1792,7 +1792,7 @@ cat-multi-combobox {
         min-width: 420px;
         max-height: 75vh;
 
-        :is(.doc-list li, .embedded-list li, .summons legend, fieldset > table td, .document-map-row) > button,
+        :is(.doc-list li, .doc-chip, .embedded-list li, .summons legend, fieldset > table td, .document-map-row) > button,
         .row > button.remove {
             flex: 0 0 auto;
             justify-content: center;
@@ -2264,6 +2264,25 @@ cat-multi-combobox {
 
             > span.unlink {
                 flex: 0 0 1.5rem;
+            }
+        }
+
+        .documents > .form-fields > .doc-chip {
+            flex: 1 1 0;
+            min-width: 0;
+
+            > span {
+                flex: 1 1 0;
+            }
+
+            > button {
+                align-self: center;
+                height: 1.5rem;
+                min-height: 0;
+
+                &:hover {
+                    color: var(--cat-status-red);
+                }
             }
         }
 
@@ -3029,10 +3048,10 @@ cat-multi-combobox {
     padding: 0.25rem 0.75rem;
     border: 1px solid rgb(255 80 80);
     border-radius: 1rem;
-    background: rgb(160 20 20 / 85%);
-    color: white;
+    color: rgb(255 255 255);
     font-size: var(--font-size-12);
     pointer-events: all;
+    background: rgb(160 20 20 / 85%);
 }
 
 @keyframes cat-timer-pulse {

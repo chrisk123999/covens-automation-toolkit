@@ -123,25 +123,25 @@
                     {{> "modules/cat/templates/medkit/shared/option-field.hbs" this}}
                 {{/each}}
                 {{#each subLists}}
-                <div class="summon-items" data-flag-path="{{base}}">
-                    {{#each entries}}
-                        <fieldset data-section="summon-item">
-                            <legend>
-                                <span>{{legend}}</span>
-                                <button type="button" data-action="removeSummonItem" data-index="{{index}}"
-                                    data-tooltip="{{localize 'COMMON.Delete'}}">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </legend>
-                            {{#each fields}}
-                                {{> "modules/cat/templates/medkit/shared/option-field.hbs" this}}
-                            {{/each}}
-                        </fieldset>
-                    {{/each}}
-                    <button type="button" data-action="addSummonItem">
-                        <i class="fa-solid fa-plus"></i> {{localize addLabel}}
-                    </button>
-                </div>
+                    <div class="summon-items" data-flag-path="{{base}}">
+                        {{#each entries}}
+                            <fieldset data-section="summon-item">
+                                <legend>
+                                    <span>{{legend}}</span>
+                                    <button type="button" data-action="removeSummonItem" data-index="{{index}}"
+                                        data-tooltip="{{localize 'COMMON.Delete'}}">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </legend>
+                                {{#each fields}}
+                                    {{> "modules/cat/templates/medkit/shared/option-field.hbs" this}}
+                                {{/each}}
+                            </fieldset>
+                        {{/each}}
+                        <button type="button" data-action="addSummonItem">
+                            <i class="fa-solid fa-plus"></i> {{localize addLabel}}
+                        </button>
+                    </div>
                 {{/each}}
             </fieldset>
         {{/each}}
@@ -173,7 +173,8 @@
                     </button>
                 {{else}}
                     <input type="text" name="{{../name}}.{{index}}.uuid" value="{{uuid}}"
-                        class="{{#if invalid}}invalid{{/if}}" placeholder="{{localize 'CAT.MEDKIT.Documents.Placeholder'}}">
+                        class="{{#if invalid}}invalid{{/if}}"
+                        placeholder="{{localize 'CAT.MEDKIT.Documents.Placeholder'}}">
                     <span class="unlink"></span>
                 {{/if}}
                 {{#if ../showCount}}
@@ -191,13 +192,25 @@
         </button>
     </div>
 {{else if isList}}
-    <div class="form-group documents" data-flag-path="{{configPath}}" data-validate="{{validate}}">
+    <div class="form-group documents" data-flag-path="{{configPath}}" data-validate="{{validate}}" {{#if single}}
+        data-single="1" data-document-type="{{documentType}}" {{/if}}>
         <label for="cat-medkit-opt-{{key}}">{{label}}</label>
         <div class="form-fields">
-            <input id="cat-medkit-opt-{{key}}" type="text" placeholder="{{localize placeholder}}">
-            <button type="button" data-action="addListEntry" data-tooltip="{{localize addTooltip}}">
-                <i class="fa-solid fa-plus"></i>
-            </button>
+            {{#if chip}}
+                <span class="doc-chip">
+                    {{#if chip.img}}<img src="{{chip.img}}">{{/if}}
+                    <span>{{chip.label}}</span>
+                    <button type="button" data-action="removeListEntry" data-value="{{chip.value}}"
+                        data-tooltip="{{localize 'COMMON.Delete'}}">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </span>
+            {{else}}
+                <input id="cat-medkit-opt-{{key}}" type="text" placeholder="{{localize placeholder}}">
+                <button type="button" data-action="addListEntry" data-tooltip="{{localize addTooltip}}">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            {{/if}}
         </div>
         {{#if hint}}
             <p class="hint">{{hint}}</p>

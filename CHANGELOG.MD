@@ -1,3 +1,21 @@
+# 0.1.11 Release:
+## Update Notes:
+- New DDB Importer Integration setting, on by default. CAT mass applies automations to characters imported with DDB Importer. Compendium munching support is coming soon.
+- New Who Answers Dialogs setting routes player dialogs to the Player, the Gamemaster or Both.
+- New Dialog Position client setting picks one of nine screen positions.
+- New NPC Chat Cards Follow Disposition setting, on by default. Automation chat cards from hostile or secret NPCs post to the Gamemaster only.
+- New Inspect Data Issues option in the actor and scene CatKits finds and re-applies automated items that no longer match their automation.
+- New Disable Auras option in the scene CatKit.
+- Mass apply takes defaults instead of prompting.
+- Settings export and import cover every module that depends on CAT.
+- Features on an NPC with a class item match class feature automations.
+- `workflowUtils.completeActivityUse` and `completeItemUse` roll damage by default.
+- `activityUtils.getRange` measures through midi-qol, so range bonuses apply.
+- New `document` configuration type and `dialogUtils.abilityDialog`.
+## Bug Fixes:
+- Summon placement and removal run their animation callbacks.
+- Monster-specific automations no longer match items without an NPC owner.
+- A spell created by dnd5e for an automated item's cast activity receives its automation.
 # 0.1.10 Release:
 ## Update Notes:
 - New Base Weapon restriction for alternate attributes matches the attacking weapon's base item.
@@ -116,7 +134,7 @@
 - Patch dnd5e 6.0.x bug, removed in 6.1.0: Activities remember their range, activation, duration and target after their chat card is created.
 - Pushed and pulled tokens stop short of a space another token occupies.
 ## API Update Notes:
-- `tokenUtils.teleportToken` and `tokenUtils.aimDestination` take `allowedPoints`, a list of token centres the destination must match.
+- `tokenUtils.teleportToken` and `tokenUtils.aimDestination` take `allowedPoints`, a list of token centers the destination must match.
 - `compendiumUtils.getDocumentByName` and `automationUtils.getCompendiumDocumentByName` take an optional `rules` option, and only match documents with those rules.
 - New automation config type: `documentMap`. Each row is a name linked to a document, with an optional count. Set `documentType` to limit drops, and `count: true` to show the count.
 

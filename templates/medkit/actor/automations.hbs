@@ -19,6 +19,18 @@
         </button>
         {{formGroup fields.name name="flags.cat.identifier" value=identifierOverride hint=(localize "CAT.MEDKIT.Actor.Name.Hint") rootId=@root.rootId}}
         {{formGroup fields.ignoreActor name="flags.cat.ignoreActor" value=ignoreActor hint=(localize "CAT.MEDKIT.Actor.IgnoreActor.Hint") rootId=@root.rootId}}
+        {{#if dataCheck}}
+            <div class="form-group">
+                <label>{{localize "CAT.MEDKIT.DataIssues.Name"}}</label>
+                <div class="form-fields" {{#unless hasDataIssues}}data-tooltip="{{localize 'CAT.MEDKIT.DataIssues.None'}}"{{/unless}}>
+                    <button type="button" data-action="checkDataIssues" {{#unless hasDataIssues}}disabled{{/unless}}>
+                        <i class="fa-solid fa-file-circle-exclamation"></i>
+                        {{localize "CAT.MEDKIT.DataIssues.Button"}}
+                    </button>
+                </div>
+                <p class="hint">{{localize "CAT.MEDKIT.DataIssues.Hint"}}</p>
+            </div>
+        {{/if}}
     </fieldset>
     {{#if automationTree.rows.length}}
         <fieldset data-section="automation-tree">

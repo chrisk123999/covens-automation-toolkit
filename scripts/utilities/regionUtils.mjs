@@ -372,7 +372,7 @@ function splitSegments(segments, maxLength) {
     });
 }
 /**
- * Move every creature a path cuts through out of the path's area, to whichever side of the nearest segment its centre is on.
+ * Move every creature a path cuts through out of the path's area, to whichever side of the nearest segment its center is on.
  * @param {foundry.documents.Scene} scene Scene the path is on.
  * @param {WallPath} path Path to clear.
  * @param {number} thickness Path thickness in scene units.
@@ -511,7 +511,7 @@ function isSpellWarded(token, item, castLevel, sourceToken) {
     return token.parent.regions.some(region => region.flags.cat?.spellWard >= level && token.testInsideRegion(region) && !sourceToken?.testInsideRegion(region));
 }
 /**
- * Place a light at a region's centre that is deleted with the region.
+ * Place a light at a region's center that is deleted with the region.
  * @param {foundry.documents.RegionDocument} region Region the light belongs to.
  * @param {object} [config] Light config, with radii in feet.
  * @param {number} [config.bright] Bright radius in feet.

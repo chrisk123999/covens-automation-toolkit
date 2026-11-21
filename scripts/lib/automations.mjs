@@ -180,7 +180,7 @@ export class RegisteredAutomations {
      * @param {'all'|'2014'|'2024'} [options.rules='all']   The ruleset of the automation
      * @param {string} [options.source='all']               The source of the automation
      * @param {boolean} [options.multiple=false]            Whether to return all matching automations or only one
-     * @param {string} [options.monsterIdentifier]          Match using a monster identifier as well
+     * @param {string} [options.monsterIdentifier]          Match using a monster identifier as well. Monster-specific automations never match without it
      * @param {string} [options.type]                       The item type to get automation(s) for
      * @param {string} [options.sourceType]                 A key representing the advancement source for the item, if any, e.g. 'class:cleric'
      * @param {string[]} [options.excludeSources]           Which sources to exclude from consideration, if any
@@ -192,7 +192,7 @@ export class RegisteredAutomations {
             if (rules !== 'all' && automation.rules !== 'all' && automation.rules !== rules) return false;
             if (source !== 'all' && automation.source !== source) return false;
             if (excludeSources.includes(automation.source)) return false;
-            if (monsterIdentifier !== undefined && automation.monsterIdentifier && automation.monsterIdentifier !== monsterIdentifier) return false;
+            if (automation.monsterIdentifier && automation.monsterIdentifier !== monsterIdentifier) return false;
             if (type && type !== automation.type) return false;
             if (monsterIdentifier && featType !== 'class' && automation.featType === 'class') return false;
             if (sourceType && automation.sourceType && automation.sourceType !== sourceType) return false;
@@ -269,7 +269,7 @@ export class RegisteredAutomations {
             source: documentUtils.getSource(document),
             sourceType: itemUtils.getAdvancementSourceKey(document),
             monsterIdentifier: documentUtils.getMonsterIdentifier(document),
-            featType: document.system?.type?.value
+            featType: documentUtils.getMatchFeatType(document)
         });
         return automation?.config?.[key]?.default;
     }
@@ -298,6 +298,7 @@ export class RegisteredAutomations {
                 rules: documentUtils.getRules(document, {documentType}),
                 sourceType: itemUtils.getAdvancementSourceKey(document),
                 aliases: document.flags?.cat?.automation?.aliases,
+                monsterIdentifier: document.flags?.cat?.automation?.monsterIdentifier,
                 version: documentUtils.getVersion(document) || '0',
                 uuid: document.uuid,
                 type: document.type,
@@ -306,6 +307,7 @@ export class RegisteredAutomations {
                 source
             };
             const data = infoFetcherCallback ? genericUtils.mergeObject(defaults, infoFetcherCallback(document, genericUtils.duplicate(defaults))) : defaults;
+            if (!(data.type in (CONFIG[documentType]?.dataModels ?? {}))) return false;
             return this.registerAutomation(data);
         });
         Logging.groupEnd();

@@ -43,7 +43,7 @@ function horizontalReach(origin, range, elevation) {
 /**
  * Draw a faded copy of a token whose level is not being viewed.
  * @param {foundry.documents.TokenDocument} token Token to copy.
- * @param {{x: number, y: number}} center Centre of the copy.
+ * @param {{x: number, y: number}} center Center of the copy.
  * @returns {Promise<PIXI.Sprite|undefined>}
  */
 async function drawGhost(token, center) {
@@ -61,7 +61,7 @@ async function drawGhost(token, center) {
 }
 /**
  * Draw the range boundary.
- * @param {{x: number, y: number}} center Centre of the boundary.
+ * @param {{x: number, y: number}} center Center of the boundary.
  * @param {number} radius Range in scene units.
  * @returns {PIXI.Graphics}
  */
@@ -79,7 +79,7 @@ function drawRange(center, radius) {
  * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check, and the default icon.
  * @param {number} [options.maxRange] Feet. Without one, the crosshair is unbounded and placed freely.
  * @param {object} [options.crosshairsConfig] Passed to {@link Crosshairs.showCrosshairs}, with `size` in feet.
- * @param {object} [options.centerpoint] Measure from here instead of the token's centre, skipping width compensation.
+ * @param {object} [options.centerpoint] Measure from here instead of the token's center, skipping width compensation.
  * @param {boolean} [options.drawBoundries] Draw the range boundary.
  * @param {boolean} [options.checkOverlap] Reject a placement overlapping another token.
  * @param {object} [options.customCallbacks] Merged over the internal crosshair callbacks.
