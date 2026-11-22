@@ -1,3 +1,7 @@
+/**
+ * Token measurement, vision, light, forced movement and grapples. Distances in and out of these functions are in feet.
+ * @module
+ */
 import {grapple as grappleHandler} from '../handlers/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {actorUtils, crosshairUtils, dialogUtils, distanceUtils, queryUtils} from './_module.mjs';
@@ -9,21 +13,29 @@ import {actorUtils, crosshairUtils, dialogUtils, distanceUtils, queryUtils} from
 /** @import {Crosshairs} from '../lib/_module.mjs' */
 
 /**
- * Get the cast data stashed on this token.
- * @param {foundry.documents.TokenDocument} token Token to read from.
- * @returns {object|undefined}
+ * Read the cast data CAT stored in the token's `flags.cat.castData`.
+ * @param {foundry.documents.TokenDocument} token  Token to read from.
+ * @returns {object|undefined}                     Undefined when nothing is stored.
+ * @example
+ * const castData = tokenUtils.getSavedCastData(token);
+ * const castLevel = castData?.castLevel ?? 1;
  */
 function getSavedCastData(token) {
     return token.flags.cat?.castData;
 }
 /**
- * Measure between two tokens, accounting for their size.
- * @param {foundry.documents.TokenDocument} token Token to read from.
- * @param {foundry.documents.TokenDocument} target Token measured to.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.wallsBlock] Return -1 when a wall lies between them.
- * @param {boolean} [options.checkCover] Include cover in the measurement.
- * @returns {number} Feet, -1 when walls block, or Infinity when the tokens can't be measured, such as on different scenes or levels.
+ * Measure the distance between two tokens in feet through midi-qol, accounting for their size. The result is rounded to
+ * two decimals.
+ * @param {foundry.documents.TokenDocument} token   Token measured from.
+ * @param {foundry.documents.TokenDocument} target  Token measured to.
+ * @param {object} [options]                        Additional options.
+ * @param {boolean} [options.wallsBlock]            Return `-1` when a wall lies between them.
+ * @param {boolean} [options.checkCover]            Pass cover to midi-qol's measurement.
+ * @returns {number}                                Distance in feet, `-1` when walls block, or `Infinity` when the
+ *                                                  tokens can't be measured, such as on different scenes or levels.
+ * @example
+ * const distance = tokenUtils.getDistance(token, target, {wallsBlock: true});
+ * if (distance < 0 || distance > 30) return;
  */
 function getDistance(token, target, {wallsBlock, checkCover} = {}) {
     const measure = MidiQOL.measureTokens(token, target, {wallsBlock, includeCover: checkCover});
@@ -31,27 +43,35 @@ function getDistance(token, target, {wallsBlock, checkCover} = {}) {
     return distanceUtils.toFeet(token.parent, measure.distance).toNearest(0.01);
 }
 /**
- * Whether a target is within a range of this token, counted in whole grid spaces on gridded scenes.
- * @param {foundry.documents.TokenDocument} token Token measured from.
- * @param {foundry.documents.TokenDocument} target Token measured to.
- * @param {number} range Range in feet.
- * @param {object} [options] Passed to {@link getDistance}.
- * @param {boolean} [options.wallsBlock] Out of range when a wall lies between them.
- * @param {boolean} [options.checkCover] Include cover in the measurement.
+ * Whether a target is within a range of a token. Measures with {@link getDistance} and compares with
+ * {@link distanceUtils.isWithinRange}, so the range is rounded to whole grid spaces on gridded scenes. Tokens that
+ * can't be measured are out of range.
+ * @param {foundry.documents.TokenDocument} token   Token measured from.
+ * @param {foundry.documents.TokenDocument} target  Token measured to.
+ * @param {number} range                            Range in feet.
+ * @param {object} [options]                        Passed to {@link getDistance}.
+ * @param {boolean} [options.wallsBlock]            Out of range when a wall lies between them.
+ * @param {boolean} [options.checkCover]            Pass cover to midi-qol's measurement.
  * @returns {boolean}
+ * @example
+ * if (!tokenUtils.isWithinDistance(token, target, 5)) return;
  */
 function isWithinDistance(token, target, range, {wallsBlock, checkCover} = {}) {
     const distance = getDistance(token, target, {wallsBlock, checkCover});
     return distance >= 0 && distanceUtils.isWithinRange(token.parent, distance, range);
 }
 /**
- * Get the target's cover from the source, taking the greater of its cover condition and its calculated cover.
- * @param {foundry.documents.TokenDocument} sourceToken Token acting.
- * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
- * @param {object} [options] Additional options.
- * @param {Activity} [options.activity] Used to ignore cover the activity is configured to bypass.
- * @param {boolean} [options.displayName] Return a localized label rather than the numeric bonus.
- * @returns {number|string}
+ * Get the target's cover against the source as an AC bonus. Takes the greater of the target's cover status and
+ * midi-qol's calculated cover. Total cover is `999`.
+ * @param {foundry.documents.TokenDocument} sourceToken  Token acting.
+ * @param {foundry.documents.TokenDocument} targetToken  Token being acted on.
+ * @param {object} [options]                             Additional options.
+ * @param {Activity} [options.activity]                  Passed to midi-qol so cover the activity ignores is skipped.
+ * @param {boolean} [options.displayName]                Return a localized label rather than the bonus.
+ * @returns {number|string}                              The bonus, such as `2`, `5` or `999`, or the localized label.
+ * @example
+ * const cover = tokenUtils.checkCover(token, target, {activity});
+ * if (cover >= 999) return;
  */
 function checkCover(sourceToken, targetToken, {activity, displayName} = {}) {
     // TODO replace the following with MidiQOL.getCoverBonus when that becomes available
@@ -65,16 +85,18 @@ function checkCover(sourceToken, targetToken, {activity, displayName} = {}) {
         5: 'DND5E.CoverThreeQuarters',
         999: 'DND5E.CoverTotal'
     };
-    return _loc('CAT.Common.Cover', {amount: _loc(names[cover]), cover: _loc('DND5E.Cover')});
+    return _loc('CAT.Common.Cover', {amount: names[cover] ? _loc(names[cover]) : '+' + cover, cover: _loc('DND5E.Cover')});
 }
 /**
- * Whether two tokens are hostile to one another.
- * @param {foundry.documents.TokenDocument} source Token whose disposition is compared.
- * @param {foundry.documents.TokenDocument} target Token measured to.
- * @param {object} [options] Additional options.
- * @param {number} [options.dispositionA] Override the source's disposition.
- * @param {number} [options.dispositionB] Override the target's disposition.
+ * Whether two tokens are on opposite sides. Neutral tokens count as friendly, and secret tokens count as hostile.
+ * @param {foundry.documents.TokenDocument} source  First token.
+ * @param {foundry.documents.TokenDocument} target  Second token.
+ * @param {object} [options]                        Additional options.
+ * @param {number} [options.dispositionA]           Use this disposition for `source`.
+ * @param {number} [options.dispositionB]           Use this disposition for `target`.
  * @returns {boolean}
+ * @example
+ * const enemies = tokenUtils.findNearby(token, 10).filter(nearby => tokenUtils.isEnemy(token, nearby));
  */
 function isEnemy(source, target, {dispositionA, dispositionB} = {}) {
     dispositionA ??= source.disposition;
@@ -82,9 +104,14 @@ function isEnemy(source, target, {dispositionA, dispositionB} = {}) {
     return (dispositionA >= 0 && dispositionB < 0) || (dispositionA < 0 && dispositionB >= 0);
 }
 /**
- * Snapshot this token's combat position, for stamping an effect to a particular turn.
- * @param {foundry.documents.TokenDocument} token Token to read from.
+ * Snapshot the round and turn of the combat the token is in. Every field but `inCombat` is null when the token has no
+ * combatant.
+ * @param {foundry.documents.TokenDocument} token  Token to read from.
  * @returns {{inCombat: boolean, combatId: string|null, currentRound: number|null, currentTurn: number|null, currentCombatantId: string|null}}
+ *                                                 `currentCombatantId` is the combatant whose turn it is, not
+ *                                                 necessarily the token's.
+ * @example
+ * genericUtils.setProperty(effectData, 'flags.cat.combatData', tokenUtils.getCombatData(token));
  */
 function getCombatData(token) {
     const combat = token.combatant?.combat;
@@ -97,14 +124,19 @@ function getCombatData(token) {
     };
 }
 /**
- * Find tokens within range of this one, excluding hidden tokens.
- * @param {foundry.documents.TokenDocument} token Token to read from.
- * @param {number} range Range in feet, counted in whole grid spaces on gridded scenes.
- * @param {object} [options] Additional options.
- * @param {'all'|'ally'|'neutral'|'enemy'} [options.disposition] Dispositions relative to the scene, not to {@link token}.
- * @param {boolean} [options.includeIncapacitated] Include tokens that are incapacitated.
- * @param {boolean} [options.includeToken] Include {@link token} itself.
+ * Find tokens with actors within range of a token through midi-qol. Searches the tokens on the viewed canvas, skips
+ * tokens behind walls and drops hidden tokens. The range is rounded to whole grid spaces on gridded scenes.
+ * @param {foundry.documents.TokenDocument} token   Token measured from.
+ * @param {number} range                            Range in feet.
+ * @param {object} [options]                        Additional options.
+ * @param {'all'|'ally'|'neutral'|'enemy'} [options.disposition]
+ *                                                  Disposition relative to `token`, so `enemy` finds hostile tokens for
+ *                                                  a friendly `token`. Defaults to `all`.
+ * @param {boolean} [options.includeIncapacitated]  Include incapacitated tokens. Defaults to true.
+ * @param {boolean} [options.includeToken]          Include `token` itself. Defaults to false.
  * @returns {foundry.documents.TokenDocument[]}
+ * @example
+ * const enemies = tokenUtils.findNearby(token, 30, {disposition: 'enemy', includeIncapacitated: false});
  */
 function findNearby(token, range, {disposition = 'all', includeIncapacitated = true, includeToken = false} = {}) {
     const dispositions = {
@@ -117,9 +149,9 @@ function findNearby(token, range, {disposition = 'all', includeIncapacitated = t
 }
 /**
  * Move a token along a path, delegating to a GM when the user lacks permission.
- * @param {foundry.documents.TokenDocument} token Token to read from.
- * @param {object[]} waypoints Positions to move through, in order.
- * @param {object} [options] Passed to {@link foundry.documents.TokenDocument#move}.
+ * @param {foundry.documents.TokenDocument} token  Token to read from.
+ * @param {object[]} waypoints                     Positions to move through, in order.
+ * @param {object} [options]                       Passed to {@link foundry.documents.TokenDocument#move}.
  * @returns {Promise<void>}
  */
 async function moveToken(token, waypoints, options = {}) {
@@ -141,10 +173,10 @@ async function moveToken(token, waypoints, options = {}) {
 }
 /**
  * Waypoint fields for a destination elevation and level.
- * @param {foundry.documents.TokenDocument} token Token being moved.
- * @param {object} [options] Additional options.
- * @param {number} [options.elevation] Destination elevation.
- * @param {string} [options.level] Destination Level id.
+ * @param {foundry.documents.TokenDocument} token  Token being moved.
+ * @param {object} [options]                       Additional options.
+ * @param {number} [options.elevation]             Destination elevation.
+ * @param {string} [options.level]                 Destination Level id.
  * @returns {{elevation?: number, level?: string}}
  */
 function heightAndLevel(token, {elevation, level} = {}) {
@@ -158,9 +190,9 @@ function heightAndLevel(token, {elevation, level} = {}) {
 }
 /**
  * A token's vision source, built temporarily if core has none.
- * @param {foundry.documents.TokenDocument} token Token looking.
- * @param {{x: number, y: number}} [origin] Point to build the source at.
- * @returns {{source?: PointVisionSource, release: Function}} Call `release` when done.
+ * @param {foundry.documents.TokenDocument} token              Token looking.
+ * @param {Point} [origin]                                     Point to build the source at.
+ * @returns {{source?: PointVisionSource, release: Function}}  Call `release` when done.
  */
 function getVisionSource(token, origin) {
     const placeable = token.object;
@@ -172,13 +204,18 @@ function getVisionSource(token, origin) {
     return {source, release: () => source.destroy()};
 }
 /**
- * Whether a token can see a point.
- * @param {foundry.documents.TokenDocument} token Token looking.
- * @param {{x: number, y: number, elevation?: number}} point Point being looked at.
- * @param {object} [options] Additional options.
- * @param {string} [options.level] Level id of the point.
- * @param {PointVisionSource} [options.source] Vision source to test with.
+ * Whether a token can see a point through basic sight or light perception. Returns true when the scene has token vision
+ * off or the token has no sight.
+ * @param {foundry.documents.TokenDocument} token  Token looking.
+ * @param {Point|ElevatedPoint} point              Point being looked at, in canvas pixels. Elevation is optional.
+ * @param {object} [options]                       Additional options.
+ * @param {string} [options.level]                 Level id of the point.
+ * @param {PointVisionSource} [options.source]     Vision source to test with. Defaults to the token's own, built
+ *                                                 temporarily when core has none.
  * @returns {boolean}
+ * @example
+ * const center = target.getCenterPoint();
+ * if (!tokenUtils.canSeePoint(token, center, {level: target.level})) return;
  */
 function canSeePoint(token, point, {level, source} = {}) {
     if (!token.parent?.tokenVision) return true;
@@ -203,7 +240,7 @@ function canSeePoint(token, point, {level, source} = {}) {
 }
 /**
  * The level with the lowest bottom elevation in a scene.
- * @param {foundry.documents.Scene} scene Scene to search.
+ * @param {foundry.documents.Scene} scene  Scene to search.
  * @returns {Level|undefined}
  */
 function lowestLevel(scene) {
@@ -211,33 +248,44 @@ function lowestLevel(scene) {
 }
 /**
  * Elevation of the highest surface containing a point.
- * @param {object[]} surfaces Region surfaces to test.
- * @param {{x: number, y: number}} point Point to test.
- * @returns {number|undefined} Undefined if no surface contains the point.
+ * @param {object[]} surfaces   Region surfaces to test.
+ * @param {Point} point         Point to test.
+ * @returns {number|undefined}  Undefined if no surface contains the point.
  */
 function highestSurfaceAt(surfaces, point) {
     const under = surfaces.filter(surface => surface.region.polygonTree.testPoint(point));
     return under.length ? Math.max(...under.map(surface => surface.elevation)) : undefined;
 }
 /**
- * Floors on other levels within a token's range.
- * @param {foundry.documents.TokenDocument} token Token moving.
- * @param {number} range Range in feet.
- * @returns {Map<string, {level: Level, surfaces: object[], ground?: number}>} Keyed by level id.
+ * Find the floors on other levels that a token could reach within a range of its center. The token's own level is
+ * skipped. The lowest level also reports its ground elevation when that is in range. Without a range, every level and
+ * floor counts as reachable.
+ * @param {foundry.documents.TokenDocument} token  Token moving.
+ * @param {number} [range]                         Range in feet.
+ * @param {object} [options]                       Additional options.
+ * @param {ElevatedPoint} [options.origin]         Measure from here instead of the token's center.
+ * @returns {Map<string, {level: Level, surfaces: object[], ground?: number}>}
+ *                                                 Keyed by level id. Empty when no other level is in reach.
+ * @example
+ * const reachable = tokenUtils.reachableSurfaces(token, 30);
+ * if (!reachable.size) return;
  */
-function reachableSurfaces(token, range) {
-    const origin = token.getCenterPoint();
-    const pixels = canvas.grid.size / canvas.grid.distance;
-    const halfToken = token.width * canvas.grid.size / 2;
+function reachableSurfaces(token, range, {origin} = {}) {
+    const scene = token.parent;
+    origin ??= token.getCenterPoint();
+    const pixels = scene.grid.size / scene.grid.distance;
+    const halfToken = token.width * scene.grid.size / 2;
+    const reachAt = elevation => range ? crosshairUtils.horizontalReach(origin, range, elevation, scene) : Infinity;
     const reachable = new Map();
-    const lowest = lowestLevel(token.parent);
-    for (const level of token.parent.levels) {
+    const lowest = lowestLevel(scene);
+    for (const level of scene.levels) {
         if (level.id === token.level) continue;
         const ground = level === lowest ? level.elevation.bottom ?? 0 : undefined;
-        if (ground !== undefined && crosshairUtils.horizontalReach(origin, range, ground) >= 0) reachable.set(level.id, {level, surfaces: [], ground});
-        for (const surface of token.parent.getSurfaces({type: 'move', level})) {
-            const reach = crosshairUtils.horizontalReach(origin, range, surface.elevation);
-            if (reach < 0 || !surface.region.polygonTree.testPoint(origin, (distanceUtils.convertDistance(token.parent, reach) * pixels) + halfToken)) continue;
+        if (ground !== undefined && reachAt(ground) >= 0) reachable.set(level.id, {level, surfaces: [], ground});
+        for (const surface of scene.getSurfaces({type: 'move', level})) {
+            const reach = reachAt(surface.elevation);
+            if (reach < 0) continue;
+            if (reach !== Infinity && !surface.region.polygonTree.testPoint(origin, (distanceUtils.convertDistance(scene, reach) * pixels) + halfToken)) continue;
             if (!reachable.has(level.id)) reachable.set(level.id, {level, surfaces: []});
             reachable.get(level.id).surfaces.push(surface);
         }
@@ -245,9 +293,14 @@ function reachableSurfaces(token, range) {
     return reachable;
 }
 /**
- * The floor a token would land on if it fell straight down from its center.
- * @param {foundry.documents.TokenDocument} token Token falling.
- * @returns {{elevation: number, level: string}}
+ * Find the floor a token would land on if it fell straight down from its center. Falls back to the bottom of the
+ * scene's lowest level, or `0` on a scene with no levels.
+ * @param {foundry.documents.TokenDocument} token  Token falling.
+ * @returns {{elevation: number, level: string}}   Elevation in scene units and the id of the level the floor belongs
+ *                                                 to.
+ * @example
+ * const {elevation, level} = tokenUtils.floorBelow(token);
+ * await token.move([{x: token.x, y: token.y, elevation, level, action: 'displace'}]);
  */
 function floorBelow(token) {
     const scene = token.parent;
@@ -265,17 +318,19 @@ function floorBelow(token) {
     return floor ?? {elevation: ground, level: lowest?.id ?? token.level};
 }
 /**
- * Get the token's height above the floor below it in feet.
- * @param {foundry.documents.TokenDocument} token Token to measure.
- * @returns {number}
+ * Get a token's height above the floor below it, found with {@link floorBelow}.
+ * @param {foundry.documents.TokenDocument} token  Token to measure.
+ * @returns {number}                               Height in feet.
+ * @example
+ * const fallDistance = tokenUtils.heightAboveFloor(token);
  */
 function heightAboveFloor(token) {
     return distanceUtils.toFeet(token.parent, token.elevation - floorBelow(token).elevation);
 }
 /**
  * Highlight grid spaces on the canvas.
- * @param {{x: number, y: number}[]} points Centers of the spaces.
- * @returns {PIXI.Graphics} The highlight, for the caller to destroy.
+ * @param {Point[]} points   Centers of the spaces.
+ * @returns {PIXI.Graphics}  The highlight, for the caller to destroy.
  */
 function drawAllowedPoints(points) {
     const graphics = new PIXI.Graphics();
@@ -291,20 +346,26 @@ function drawAllowedPoints(points) {
     return graphics;
 }
 /**
- * Aim a destination, offering other levels with a floor in range.
- * @param {foundry.documents.TokenDocument} token Token the range is measured from.
- * @param {object} [options] Additional options.
- * @param {number} [options.range] Maximum distance in feet.
- * @param {object} [options.centerpoint] Measure from here instead of the token's center.
- * @param {object} [options.crosshairsConfig] Crosshair config.
- * @param {boolean} [options.requireSight] Only allow spaces the token can see.
- * @param {boolean} [options.ignoreWalls] Allow spaces that walls block from the token.
- * @param {object[]} [options.allowedPoints] Only allow these token centers, highlighted while aiming.
- * @returns {Promise<object|undefined>} Crosshair result with `level` and `elevation`; undefined if cancelled.
+ * Prompt the current user with a crosshair to pick a destination for a token. When floors on other levels are in range,
+ * a dialog first asks which level to aim on and the canvas switches to it. The view returns to the starting level
+ * afterward.
+ * @param {foundry.documents.TokenDocument} token  Token being moved.
+ * @param {object} [options]                       Additional options.
+ * @param {number} [options.range]                 Maximum distance in feet.
+ * @param {Point} [options.centerpoint]            Measure the crosshair range from here instead of the token's center.
+ * @param {object} [options.crosshairsConfig]      Passed to {@link crosshairUtils.aimCrosshair}.
+ * @param {boolean} [options.requireSight]         Only allow spaces the token can see. Defaults to true.
+ * @param {boolean} [options.ignoreWalls]          Allow spaces that walls block from the token. Defaults to false.
+ * @param {Point[]} [options.allowedPoints]        Only allow these token centers, highlighted while aiming.
+ * @returns {Promise<object|undefined>}            Crosshair result with rounded `x` and `y`, `elevation` and `level`.
+ *                                                 Undefined if cancelled.
+ * @example
+ * const destination = await tokenUtils.aimDestination(token, {range: 30});
+ * if (!destination) return;
  */
 async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true, ignoreWalls = false, allowedPoints} = {}) {
     const startView = canvas.level?.id;
-    const reachable = reachableSurfaces(token, range);
+    const reachable = reachableSurfaces(token, range, {origin: centerpoint ? {elevation: token.elevation, ...centerpoint} : undefined});
     let targetLevel = token.level;
     if (reachable.size) {
         const ownLevel = token.parent.levels.get(token.level);
@@ -345,33 +406,48 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
     }
 }
 /**
- * Prompt a destination crosshair on another user's client, or locally when the user is the current one.
- * @param {string} [userId] User who aims the crosshair.
- * @param {foundry.documents.TokenDocument} token The token being moved.
- * @param {object} [options] Options passed to {@link aimDestination}.
- * @returns {Promise<object|undefined>}
+ * Run {@link aimDestination} on another user's client through a query, or locally when `userId` is empty or the current
+ * user. The query waits up to five minutes.
+ * @param {string} [userId]                        Id of the user who aims the crosshair.
+ * @param {foundry.documents.TokenDocument} token  Token being moved.
+ * @param {object} [options]                       Passed to {@link aimDestination}.
+ * @returns {Promise<object|undefined>}            Crosshair result, or undefined if cancelled.
+ * @example
+ * const userId = queryUtils.firstOwner(target, true);
+ * const destination = await tokenUtils.aimDestinationAs(userId, target, {range: 10});
  */
 async function aimDestinationAs(userId, token, options) {
     if (!userId || userId === game.user.id) return await aimDestination(token, options);
     return await queryUtils.query('aimDestination', game.users.get(userId), {uuid: token.uuid, ...options}, 300000);
 }
 /**
- * Teleport a token to a chosen position. Always uses {@link MovementAction} displace.
- * @param {foundry.documents.TokenDocument} token The token document to teleport.
- * @param {object} [options] Additional options.
- * @param {Crosshairs} [options.destination] Data for crosshair result (see {@link Crosshairs.prototype.toObject}). A new crosshair is prompted if {@link destination} is undefined.
- * @param {object} [options.centerpoint] If {@link destination} is not provided, the crosshair range will be measured from this point rather than from {@link token}.
- * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
- * @param {number} [options.range] Maximum distance in feet.
- * @param {number} [options.elevation] Destination elevation.
- * @param {string} [options.level] Destination Level id.
- * @param {boolean} [options.requireSight] Only allow spaces the token can see.
- * @param {foundry.documents.TokenDocument[]} [options.followers] Tokens teleported along with this one.
- * @param {number} [options.followerRange] Crosshair range in feet for a follower that can't keep its position.
- * @param {string} [options.userId] User who aims the destination crosshair. Defaults to the current user.
- * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
- * @param {object[]} [options.allowedPoints] Only allow these token centers when aiming.
+ * Teleport a token with the `displace` movement action, prompting a destination crosshair through
+ * {@link aimDestinationAs} when none is given. Runs the `aimTeleport`, `preTeleport` and `postTeleport` movement
+ * passes, and a truthy result from the first two cancels the teleport. Each follower keeps its offset from the token
+ * unless a wall or the token's sight blocks that space, in which case it gets its own crosshair.
+ * @param {foundry.documents.TokenDocument} token        Token to teleport.
+ * @param {object} [options]                             Additional options.
+ * @param {Crosshairs} [options.destination]             Crosshair result to teleport to (see
+ *                                                       `Crosshairs.prototype.toObject`). Skips the crosshair prompt.
+ * @param {Point} [options.centerpoint]                  Measure the crosshair range from here instead of from `token`.
+ * @param {Animations['Animation']} [options.animation]  Animation data (see `Animations.Animation`).
+ * @param {object} [options.options]                     Passed to the animation's pre and post macros.
+ * @param {number} [options.range]                       Maximum distance in feet. Defaults to 30.
+ * @param {number} [options.elevation]                   Destination elevation. Defaults to the crosshair's.
+ * @param {string} [options.level]                       Destination Level id. Defaults to the crosshair's.
+ * @param {boolean} [options.requireSight]               Only allow spaces the token can see. Defaults to true.
+ * @param {foundry.documents.TokenDocument[]} [options.followers]
+ *                                                       Tokens teleported along with this one.
+ * @param {number} [options.followerRange]               Crosshair range in feet for a follower that can't keep its
+ *                                                       offset. Defaults to 10.
+ * @param {string} [options.userId]                      Id of the user who aims the crosshair. Defaults to the current
+ *                                                       user.
+ * @param {boolean} [options.ignoreWalls]                Allow destinations that walls block from the token. Defaults to
+ *                                                       false.
+ * @param {Point[]} [options.allowedPoints]              Only allow these token centers when aiming.
  * @returns {Promise<undefined>}
+ * @example
+ * await tokenUtils.teleportToken(workflow.token.document, {range: 30, requireSight: false, ignoreWalls: true});
  */
 async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], followerRange = 10, userId, ignoreWalls = false, allowedPoints} = {}) {
     if (!destination) {
@@ -419,20 +495,27 @@ async function teleportToken(token, {destination, centerpoint, animation, option
     for (const follower of blocked) await teleportToken(follower, {animation, options, centerpoint: leaderCenter, range: followerRange, requireSight, ignoreWalls, userId});
 }
 /**
- * Move a token to a chosen position.
- * @param {foundry.documents.TokenDocument} token The token document to move.
- * @param {object} [options] Additional options.
- * @param {Crosshairs} [options.destination] Data for crosshair result (see {@link Crosshairs.prototype.toObject}). A new crosshair is prompted if {@link destination} is undefined.
- * @param {object} [options.centerpoint] If {@link destination} is not provided, the crosshair range will be measured from this point rather than from {@link token}.
- * @param {Animations['Animation']} [options.animation] Animation data (see {@link Animations.Animation}).
- * @param {foundry.documents.TokenDocument} [options.sourceToken] Origin of the movement.
- * @param {MovementAction} [options.action] See {@link MovementAction}.
- * @param {number} [options.range] Maximum distance in feet.
- * @param {number} [options.elevation] Destination elevation.
- * @param {string} [options.level] Destination Level id.
- * @param {boolean} [options.requireSight] Only allow spaces the token can see.
- * @param {string} [options.userId] User who aims the destination crosshair. Defaults to the current user.
+ * Force a token to a new position, prompting a destination crosshair through {@link aimDestinationAs} when none is
+ * given. Runs the `displace` movement pass, and a truthy result cancels the move. Walls still block the movement.
+ * @param {foundry.documents.TokenDocument} token        Token to move.
+ * @param {object} [options]                             Additional options.
+ * @param {Crosshairs} [options.destination]             Crosshair result or top-left point to move to (see
+ *                                                       `Crosshairs.prototype.toObject`). Skips the crosshair prompt.
+ * @param {Point} [options.centerpoint]                  Measure the crosshair range from here instead of from `token`.
+ * @param {Animations['Animation']} [options.animation]  Animation data (see `Animations.Animation`).
+ * @param {foundry.documents.TokenDocument} [options.sourceToken]
+ *                                                       Token causing the movement.
+ * @param {MovementAction} [options.action]              Movement action. Defaults to `catForce`, which does not spend
+ *                                                       movement.
+ * @param {number} [options.range]                       Maximum crosshair distance in feet. Defaults to 5.
+ * @param {number} [options.elevation]                   Destination elevation. Defaults to the crosshair's.
+ * @param {string} [options.level]                       Destination Level id. Defaults to the crosshair's.
+ * @param {boolean} [options.requireSight]               Only allow spaces the token can see. Defaults to false.
+ * @param {string} [options.userId]                      Id of the user who aims the crosshair. Defaults to the current
+ *                                                       user.
  * @returns {Promise<undefined>}
+ * @example
+ * await tokenUtils.displaceToken(target, {sourceToken: token, range: 5});
  */
 async function displaceToken(token, {sourceToken, destination, centerpoint, animation, range = 5, action = 'catForce', elevation, level, requireSight = false, userId} = {}) {
     destination ??= await aimDestinationAs(userId, token, {range, centerpoint, requireSight});
@@ -457,15 +540,20 @@ async function displaceToken(token, {sourceToken, destination, centerpoint, anim
     if (postAnimation) await postAnimation(token, {sourceToken, destination, action});
 }
 /**
- * Swap the positions of two tokens, centering each where the other stood. Always uses {@link MovementAction} displace.
- * With an animation, both tokens run the teleport events and the animation's pre and post macros.
- * @param {foundry.documents.TokenDocument} tokenA Token moved to {@link tokenB}'s position.
- * @param {foundry.documents.TokenDocument} tokenB Token moved to {@link tokenA}'s position.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.animate] False moves both tokens without animating.
- * @param {Animations['Animation']} [options.animation] Teleport animation data (see {@link Animations.Animation}).
- * @param {object} [options.options] Options passed to the animation macros.
+ * Swap the positions of two tokens with the `displace` movement action, centering each where the other stood. Each
+ * token also takes the other's elevation and level. With an `animation`, both tokens run the `preTeleport` and
+ * `postTeleport` movement passes and the animation's pre and post macros, and a truthy `preTeleport` result cancels the
+ * swap.
+ * @param {foundry.documents.TokenDocument} tokenA       Token moved to `tokenB`'s position.
+ * @param {foundry.documents.TokenDocument} tokenB       Token moved to `tokenA`'s position.
+ * @param {object} [options]                             Additional options.
+ * @param {boolean} [options.animate]                    False moves both tokens without the core movement animation.
+ *                                                       Defaults to true.
+ * @param {Animations['Animation']} [options.animation]  Teleport animation data (see `Animations.Animation`).
+ * @param {object} [options.options]                     Passed to the animation's pre and post macros.
  * @returns {Promise<void>}
+ * @example
+ * await tokenUtils.swapTokens(token, target);
  */
 async function swapTokens(tokenA, tokenB, {animate = true, animation, options = {}} = {}) {
     const spaceAt = (token, other) => {
@@ -488,8 +576,8 @@ async function swapTokens(tokenA, tokenB, {animate = true, animation, options = 
 }
 /**
  * Whether another visible token overlaps the space a token would take at a position.
- * @param {foundry.documents.TokenDocument} token The token that would move.
- * @param {{x: number, y: number}} position Top-left position to test.
+ * @param {foundry.documents.TokenDocument} token  The token that would move.
+ * @param {Point} position                         Top-left position to test.
  * @returns {boolean}
  */
 function isOccupied(token, {x, y}) {
@@ -498,14 +586,23 @@ function isOccupied(token, {x, y}) {
     return token.parent.tokens.some(other => other !== token && !other.hidden && rect.intersects(new PIXI.Rectangle(other.x, other.y, other.width * size, other.height * size)));
 }
 /**
- * Push a token in a given direction.
- * @param {foundry.documents.TokenDocument} token The token document to push.
- * @param {object} options Additional options.
- * @param {foundry.canvas.geometry.Ray} [options.ray] Direction for the push. If not provided, {@link sourceToken} is used to create a ray directly away from {@link token}.
- * @param {foundry.documents.TokenDocument} [options.sourceToken] Origin of the push. Must be provided if {@link ray} is undefined.
- * @param {MovementAction} [options.action] See {@link MovementAction}.
- * @param {number} [options.distance=5] Push distance in feet, rounded to whole grid spaces with at least one.
+ * Push a token in a straight line, or pull it with a negative distance. Runs the `slide` movement pass first: a `0`
+ * result cancels the push and other numeric results are added to the distance in feet. The token stops at the farthest
+ * space along the line that no other visible token occupies, and walls still block the movement.
+ * @param {foundry.documents.TokenDocument} token      Token to push.
+ * @param {object} [options]                           Additional options.
+ * @param {foundry.canvas.geometry.Ray} [options.ray]  Direction of the push. Takes priority over `sourceToken`.
+ * @param {foundry.documents.TokenDocument} [options.sourceToken]
+ *                                                     Token pushing, used to push directly away from its center.
+ *                                                     Nothing happens when neither `ray` nor `sourceToken` is given.
+ * @param {MovementAction} [options.action]            Movement action. Defaults to `catForce`, which does not spend
+ *                                                     movement.
+ * @param {number} [options.distance]                  Push distance in feet, rounded to whole grid spaces with at least
+ *                                                     one. Defaults to 5.
  * @returns {Promise<undefined>}
+ * @example
+ * await tokenUtils.slideToken(target, {sourceToken: token, distance: 10});
+ * await tokenUtils.slideToken(target, {sourceToken: token, distance: -10}); // pull 10 ft toward token
  */
 async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catForce'} = {}) {
     const results = await new Events.MovementEvent(token, constants.movementPasses.slide, {sourceToken, range: distance, ray, action}).run({multiResult: true});
@@ -552,17 +649,21 @@ async function slideToken(token, {sourceToken, distance = 5, ray, action = 'catF
     });
 }
 /**
- * Whether this token can see the target, by any means.
- * @param {foundry.documents.TokenDocument} sourceToken Token acting.
- * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
+ * Whether a token can see the target, using midi-qol's `canSee`.
+ * @param {foundry.documents.TokenDocument} sourceToken  Token looking.
+ * @param {foundry.documents.TokenDocument} targetToken  Token being looked at.
  * @returns {boolean}
+ * @example
+ * if (!tokenUtils.canSee(token, target)) return;
  */
 function canSee(sourceToken, targetToken) {
     return MidiQOL.canSee(sourceToken, targetToken);
 }
 /**
- * Ids of every detection mode that does not rely on sight.
+ * List the ids of every configured detection mode whose type is not sight.
  * @returns {string[]}
+ * @example
+ * const sensed = tokenUtils.canSense(token, target, tokenUtils.getNonSightModes());
  */
 function getNonSightModes() {
     const detectionModes = CONFIG.Canvas.detectionModes;
@@ -570,11 +671,15 @@ function getNonSightModes() {
     return Object.keys(detectionModes).filter(id => detectionModes[id].type !== sightType);
 }
 /**
- * Can this token perceive the target through the given detection modes?
- * @param {foundry.documents.TokenDocument} sourceToken Token acting.
- * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
- * @param {string[]} [senseModes] Detection mode ids to test, or `['all']` for any.
+ * Whether a token can perceive the target through any of the given detection modes, using midi-qol's `canSenseModes`.
+ * An empty list returns false.
+ * @param {foundry.documents.TokenDocument} sourceToken  Token perceiving.
+ * @param {foundry.documents.TokenDocument} targetToken  Token being perceived.
+ * @param {string[]} [senseModes]                        Detection mode ids to test, or `['all']` for any mode. Defaults
+ *                                                       to `['all']`.
  * @returns {boolean}
+ * @example
+ * if (!tokenUtils.canSense(token, target, ['blindsight', 'seeInvisibility'])) return;
  */
 function canSense(sourceToken, targetToken, senseModes = ['all']) {
     if (!senseModes.length) return false;
@@ -583,45 +688,66 @@ function canSense(sourceToken, targetToken, senseModes = ['all']) {
     return modes.some(mode => senseModes.includes(mode));
 }
 /**
- * Run a grapple attempt between two tokens, applying the condition on success.
- * @param {foundry.documents.TokenDocument} sourceToken Token acting.
- * @param {foundry.documents.TokenDocument} targetToken Token being acted on.
- * @param {object} [options] Additional options.
- * @param {dnd5e.dataModels.activity.BaseActivityData} [options.activity] The initiating activity. Provides effect icons, name, rules, and roll DC.
- * @param {number} [options.flatDC] Escape DC. If undefined, instead uses the DC from the save on {@link activity}, or prompts {@link sourceToken} for a skill check.
- * @param {'2024'|'2014'} [options.rules] 2014 for skill checks or 2024 for saving throws. If undefined, uses the rules from {@link activity} or defaults to 2014.
- * @param {boolean} [options.contest] Roll dice before applying effects.
- * @param {boolean} [options.checkSize] Enforce size limits.
- * @param {string[]} [options.conditions] Extra conditions applied with the grapple.
- * @param {number} [options.bonus] Added to {@link sourceToken}'s skill check total when no DC is given.
+ * Attempt to grapple the target. On success, both tokens get linked grappling and grappled effects that are removed
+ * together, and the target gets an escape item. Fails with a warning when the target is immune to grappled or, with
+ * `checkSize`, too large. Runs the `preGrapple` and `postGrapple` grapple passes.
+ * @param {foundry.documents.TokenDocument} sourceToken  Token grappling.
+ * @param {foundry.documents.TokenDocument} targetToken  Token being grappled.
+ * @param {object} [options]                             Additional options.
+ * @param {dnd5e.dataModels.activity.BaseActivityData} [options.activity]
+ *                                                       Initiating activity. Provides the effect icon, rules, reach and
+ *                                                       default DC.
+ * @param {number} [options.flatDC]                      Escape DC. Defaults to the save DC on `activity`. Without
+ *                                                       either, `sourceToken` rolls Athletics to set it.
+ * @param {'2024'|'2014'} [options.rules]                Rules version for the effects and roll. Defaults to the rules
+ *                                                       of `activity`'s item, or `2014` without an activity.
+ * @param {boolean} [options.contest]                    Roll the target's save or check before applying effects. False
+ *                                                       applies them directly. Defaults to true.
+ * @param {boolean} [options.checkSize]                  Enforce the size limit with {@link grappleShoveSizeCheck}.
+ *                                                       Defaults to true.
+ * @param {string[]} [options.conditions]                Extra conditions applied to the target with the grapple.
+ * @param {number} [options.bonus]                       Added to `sourceToken`'s Athletics total when it sets the DC.
+ * @returns {Promise<void>}
+ * @example
+ * await tokenUtils.grapple(workflow.token.document, target, {activity: workflow.activity});
  */
 async function grapple(sourceToken, targetToken, {activity, flatDC, rules, contest = true, checkSize = true, conditions = [], bonus = 0} = {}) {
     return await grappleHandler.grapple(sourceToken, targetToken, {activity, flatDC, rules, contest, checkSize, conditions, bonus});
 }
 /**
- * Get the tokens this token is currently grappling.
- * @param {foundry.documents.TokenDocument} token Grappling token.
- * @returns {foundry.documents.TokenDocument[]}
+ * Get the tokens on the same scene that a token is grappling, read from its `grappleSource` effects.
+ * @param {foundry.documents.TokenDocument} token  Grappling token.
+ * @returns {foundry.documents.TokenDocument[]}    Empty when the token has no actor or grapples nothing.
+ * @example
+ * const grappled = tokenUtils.getGrappled(token);
+ * if (!grappled.length) return;
  */
 function getGrappled(token) {
     if (!token.actor) return [];
     return actorUtils.getEffectByIdentifier(token.actor, 'grappleSource', {multiple: true}).map(effect => token.parent.tokens.get(effect.flags.cat?.grapple?.tokenId)).filter(Boolean);
 }
 /**
- * Whether the target is small enough to be grappled or shoved by this token.
- * @param {foundry.documents.TokenDocument} sourceToken Token acting.
- * @param {foundry.documents.TokenDocument[]} targetToken Token being acted on.
- * @param {'grapple'|'shove-push'|'shove-prone'} [identifier] Used to check condition immunities and change the warning message.
- * @param {boolean} [warning] False hides warnings from a failed size requirement.
+ * Whether a token can grapple or shove the target. The target must be no more than one size larger, after size bonuses
+ * from the `sizeCheck` grapple pass. A target immune to grappled or prone fails the matching check.
+ * @param {foundry.documents.TokenDocument} sourceToken        Token grappling or shoving.
+ * @param {foundry.documents.TokenDocument} targetToken        Token being grappled or shoved.
+ * @param {'grapple'|'shove-push'|'shove-prone'} [identifier]  Picks the condition immunity to check and the warning
+ *                                                             message. Defaults to `grapple`.
+ * @param {boolean} [warning]                                  False hides the warning on failure. Defaults to true.
  * @returns {Promise<boolean>}
+ * @example
+ * if (!await tokenUtils.grappleShoveSizeCheck(token, target, 'shove-prone')) return;
  */
 async function grappleShoveSizeCheck(sourceToken, targetToken, identifier = 'grapple', warning = true) {
     return await grappleHandler.sizeCheck(sourceToken, targetToken, identifier, warning);
 }
 /**
- * Get the ambient light level at this token's position.
- * @param {foundry.documents.TokenDocument} token Token to read from.
+ * Get the light level at a token's center on the viewed canvas. Darkness sources make it dark, global illumination
+ * within its darkness range makes it bright, and otherwise active light sources decide.
+ * @param {foundry.documents.TokenDocument} token  Token to read from.
  * @returns {'bright'|'dim'|'dark'}
+ * @example
+ * if (tokenUtils.getLightLevel(token) === 'bright') return;
  */
 function getLightLevel(token) {
     const point = token.getMovementOrigin();
@@ -638,10 +764,13 @@ function getLightLevel(token) {
     return inBright ? 'bright' : 'dim';
 }
 /**
- * Get the movement spent by this token since the start of the current turn in combat.
- * @param {foundry.documents.TokenDocument} token
- * @param {boolean} [getRemaining] Return spent movement subtracted from max speed.
- * @returns {number} Feet.
+ * Get the movement cost of a token's movement history. Core clears that history at the start of each combat turn.
+ * @param {foundry.documents.TokenDocument} token  Token to check.
+ * @param {boolean} [getRemaining]                 Return the actor's highest speed minus the movement spent, never
+ *                                                 below `0`. Defaults to false.
+ * @returns {number}                               Distance in feet.
+ * @example
+ * const remaining = tokenUtils.movementSpent(token, true);
  */
 function movementSpent(token, getRemaining = false) {
     const max = actorUtils.getSpeed(token.actor, 'max');
@@ -649,10 +778,12 @@ function movementSpent(token, getRemaining = false) {
     return getRemaining ? Math.max(max - spent, 0) : spent;
 }
 /**
- * Measure the movement cost of a path for a token in feet.
- * @param {foundry.documents.TokenDocument} token Token that moves.
- * @param {object[]} waypoints Points along the path.
- * @returns {number}
+ * Measure the movement cost of a path for a token with core's `measureMovementPath`.
+ * @param {foundry.documents.TokenDocument} token  Token that moves.
+ * @param {Point[]} waypoints                      Points along the path, in canvas pixels.
+ * @returns {number}                               Cost in feet, or `0` when the path can't be measured.
+ * @example
+ * const cost = tokenUtils.measureMovement(token, [{x: token.x, y: token.y}, destination]);
  */
 function measureMovement(token, waypoints) {
     return distanceUtils.toFeet(token.parent, token.measureMovementPath(waypoints)?.cost ?? 0);

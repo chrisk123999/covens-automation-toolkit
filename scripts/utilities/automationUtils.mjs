@@ -1,10 +1,20 @@
+/**
+ * Automations applied to items: status, config values, source priority and applying an automation. Also covers generic
+ * macro config, animation selections stored in config, and called events.
+ * @module
+ */
 import {itemEvents} from '../events/_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import {animationUtils, compendiumUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
 /**
- * The registered automation currently applied to this item, matched on its identifier, rules and source. With no source flagged, only an embedded macro automation belonging to this item matches.
- * @param {Item5e} item Item to act on.
+ * The registered automation applied to an item, matched on its identifier, rules and flagged source. With no source
+ * flagged, only an automation whose own document is this item matches. Returns undefined when the item has no
+ * identifier or rules.
+ * @param {Item5e} item  Item to look up.
  * @returns {Automation|undefined}
+ * @example
+ * const automation = automationUtils.getCurrentAutomation(item);
+ * if (automation) console.log(automation.source, automation.version);
  */
 function getCurrentAutomation(item) {
     const identifier = documentUtils.getIdentifier(item);
@@ -22,19 +32,26 @@ function getCurrentAutomation(item) {
     return constants.automations.getAutomationByIdentifier(identifier, {rules, source, monsterIdentifier, type, featType, sourceType});
 }
 /**
- * Whether this document is a registered automation rather than one an automation was applied to.
- * @param {Item5e} item Item to act on.
- * @param {object} [options] Additional options.
- * @param {Automation} [options.automation] Already-resolved automation, to save a registry scan.
+ * Whether the item is the registered automation's own source document, rather than a copy an automation was applied to.
+ * @param {Item5e} item                      Item to check.
+ * @param {object} [options]                 Additional options.
+ * @param {Automation} [options.automation]  Already-resolved automation. Defaults to {@link getCurrentAutomation}.
  * @returns {boolean}
+ * @example
+ * if (automationUtils.isSelfAutomation(item)) return;
  */
 function isSelfAutomation(item, {automation = getCurrentAutomation(item)} = {}) {
     return automation?.uuid === item.uuid;
 }
 /**
- * Automation status of an item, the lowest across an actor's items, or configurable for anything else carrying CAT config.
- * @param {ClientDocument} document Document to act on.
- * @returns {number} A {@link constants.automationStatus} value.
+ * Automation status of a document. Items report their own status and actors the lowest across their items. Any other
+ * document carrying CAT config is `CONFIGURABLE`, a scene otherwise reports the lowest across its token actors, and
+ * everything else is `UNAVAILABLE`.
+ * @param {ClientDocument} document  Document to check.
+ * @returns {number}                 A `constants.automationStatus` value.
+ * @example
+ * const status = automationUtils.getAutomationStatus(item);
+ * if (status === constants.automationStatus.OUTDATED) await automationUtils.updateItem(item);
  */
 function getAutomationStatus(document) {
     if (document.documentName === 'Item') return getItemAutomationStatus(document);
@@ -44,18 +61,22 @@ function getAutomationStatus(document) {
     return constants.automationStatus.UNAVAILABLE;
 }
 /**
- * The lowest automation status across this actor's items, ignoring items with nothing to automate.
- * @param {Actor5e} actor Actor to act on.
- * @returns {number} A {@link constants.automationStatus} value, or -2 when no item qualifies.
+ * The lowest automation status across an actor's items, ignoring items that are `UNAVAILABLE`.
+ * @param {Actor5e} actor  Actor to check.
+ * @returns {number}       A `constants.automationStatus` value. `UNAVAILABLE` when no item qualifies.
+ * @example
+ * const status = automationUtils.getActorAutomationStatus(actor);
  */
 function getActorAutomationStatus(actor) {
     return getLowestStatus(actor.items, getItemAutomationStatus);
 }
 /**
  * The lowest automation status across these documents, ignoring any with nothing to automate.
- * @param {Iterable<foundry.abstract.Document>} documents Documents to read.
- * @param {function(foundry.abstract.Document): number} getStatus Status getter for one document.
- * @returns {number} A {@link constants.automationStatus} value, or -2 when no document qualifies.
+ * @param {Iterable<foundry.abstract.Document>} documents  Documents to read.
+ * @param {function(foundry.abstract.Document): number} getStatus
+ *                                                         Status getter for one document.
+ * @returns {number}                                       A `constants.automationStatus` value, or -2 when no document
+ *                                                         qualifies.
  */
 function getLowestStatus(documents, getStatus) {
     return documents.reduce((lowest, document) => {
@@ -66,8 +87,8 @@ function getLowestStatus(documents, getStatus) {
 }
 /**
  * Whether this item is automated, and if so whether it is current, configurable or outdated.
- * @param {Item5e} item Item to act on.
- * @returns {number} A {@link constants.automationStatus} value.
+ * @param {Item5e} item  Item to act on.
+ * @returns {number}     A `constants.automationStatus` value.
  */
 function getItemAutomationStatus(item) {
     const automation = getCurrentAutomation(item);
@@ -81,9 +102,14 @@ function getItemAutomationStatus(item) {
     return constants.automationStatus.UNAVAILABLE;
 }
 /**
- * Whether the applied automation is current: a registered automation is compared by version, an embedded one by content hash. True when nothing is applied.
- * @param {Item5e} item Item to act on.
+ * Whether the applied automation is current. A registered automation is compared by version, and an embedded one by
+ * content hash. Returns true when nothing is applied.
+ * @param {Item5e} item                      Item to check.
+ * @param {object} [options]                 Additional options.
+ * @param {Automation} [options.automation]  Automation to compare against. Defaults to {@link getCurrentAutomation}.
  * @returns {boolean}
+ * @example
+ * if (!automationUtils.isUpToDate(item)) await automationUtils.updateItem(item);
  */
 function isUpToDate(item, {automation} = {}) {
     const currentAutomation = automation ?? getCurrentAutomation(item);
@@ -100,12 +126,15 @@ function isUpToDate(item, {automation} = {}) {
     return true;
 }
 /**
- * Every registered automation that could be applied to this item, across all sources.
- * @param {Item5e} item Item to act on.
- * @param {object} [options] Additional options.
- * @param {string[]} [options.excludeSources] Sources to leave out.
- * @param {string} [options.rules] Rules version to look up instead of the item's own.
+ * Every registered automation matching the item's identifier, across all sources and in registration order. Items
+ * without rules match every rules version.
+ * @param {Item5e} item                        Item to look up.
+ * @param {object} [options]                   Additional options.
+ * @param {string[]} [options.excludeSources]  Source ids to leave out.
+ * @param {string} [options.rules]             Rules version to match instead of the item's own.
  * @returns {Automation[]}
+ * @example
+ * const automations = automationUtils.getAvailableAutomations(item, {excludeSources: ['dnd5e']});
  */
 function getAvailableAutomations(item, {excludeSources = [], rules = documentUtils.getRules(item) ?? 'all'} = {}) {
     const identifier = documentUtils.getIdentifier(item);
@@ -114,64 +143,80 @@ function getAvailableAutomations(item, {excludeSources = [], rules = documentUti
     return constants.automations.getAutomationByIdentifier(identifier, {rules, multiple: true, type, featType: documentUtils.getMatchFeatType(item), excludeSources, sourceType, monsterIdentifier: documentUtils.getMonsterIdentifier(item)});
 }
 /**
- * One config value for the automation on this document, falling back to the registered default.
- * @param {foundry.abstract.Document} item Item to act on.
- * @param {string} key Config key.
+ * Read one automation config value from a document. Falls back to the default registered on the matching automation, or
+ * undefined when neither exists.
+ * @param {foundry.abstract.Document} item  Document holding the config, usually an item.
+ * @param {string} key                      Config key.
  * @returns {*}
+ * @example
+ * const formula = automationUtils.getConfigValue(workflow.item, 'formula');
  */
 function getConfigValue(item, key) {
     return constants.automations.getConfigValue(item, key);
 }
 /**
- * One config value for the automation on this document, reading an effect's origin item when the document is an effect.
- * @param {foundry.abstract.Document} document Document to act on.
- * @param {string} key Config key.
+ * {@link getConfigValue} that reads the origin item's config when the document is an active effect. Falls back to the
+ * effect itself when it has no origin item.
+ * @param {foundry.abstract.Document} document  Document holding the config, or an effect whose origin holds it.
+ * @param {string} key                          Config key.
  * @returns {*}
+ * @example
+ * const bonus = automationUtils.getOriginConfigValue(effect, 'bonus');
  */
 function getOriginConfigValue(document, key) {
     const item = document.documentName === 'ActiveEffect' ? effectUtils.getOriginActivitySync(document)?.item ?? document : document;
     return getConfigValue(item, key);
 }
 /**
- * One config value for a generic macro applied to this document, falling back to its default.
- * @param {foundry.abstract.Document} item Item to act on.
- * @param {string} source Module that registered the generic macro.
- * @param {string} identifier Generic macro identifier.
- * @param {string} key Config key.
- * @param {object} [options] Additional options.
- * @param {'2014'|'2024'|'all'} [options.rules] Defaults to the document's own rules.
+ * Read one config value for a generic macro applied to a document. Falls back to the generic macro's registered
+ * default, or undefined when neither exists.
+ * @param {foundry.abstract.Document} item       Document holding the config.
+ * @param {string} source                        Module that registered the generic macro.
+ * @param {string} identifier                    Generic macro identifier.
+ * @param {string} key                           Config key.
+ * @param {object} [options]                     Additional options.
+ * @param {'2014'|'2024'|'all'} [options.rules]  Rules version of the generic macro whose default is used. Defaults to
+ *                                               the document's own.
  * @returns {*}
+ * @example
+ * const range = automationUtils.getGenericConfigValue(item, 'my-module', 'myGeneric', 'range');
  */
 function getGenericConfigValue(item, source, identifier, key, {rules} = {}) {
     return constants.macros.getGenericConfigValue(item, source, identifier, key, {rules});
 }
 /**
- * Store one config value for the automation on this document.
- * @param {foundry.abstract.Document} item Item to act on.
- * @param {string} key Config key.
- * @param {*} value Value to store.
- * @returns {Promise<foundry.abstract.Document>}
+ * Store one automation config value in the document's `flags.cat.config`.
+ * @param {foundry.abstract.Document} item        Document to update.
+ * @param {string} key                            Config key.
+ * @param {*} value                               Value to store.
+ * @returns {Promise<foundry.abstract.Document>}  The updated document.
+ * @example
+ * await automationUtils.setConfigValue(item, 'formula', '2d6');
  */
 async function setConfigValue(item, key, value) {
     return await documentUtils.setFlag(item, 'cat', 'config.' + key, value);
 }
 /**
- * Store one config value for a generic macro applied to this document.
- * @param {foundry.abstract.Document} item Item to act on.
- * @param {string} source Module that registered the generic macro.
- * @param {string} identifier Generic macro identifier.
- * @param {string} key Config key.
- * @param {*} value Value to store.
- * @returns {Promise<foundry.abstract.Document>}
+ * Store one generic macro config value in the document's `flags.cat.genericConfig`.
+ * @param {foundry.abstract.Document} item        Document to update.
+ * @param {string} source                         Module that registered the generic macro.
+ * @param {string} identifier                     Generic macro identifier.
+ * @param {string} key                            Config key.
+ * @param {*} value                               Value to store.
+ * @returns {Promise<foundry.abstract.Document>}  The updated document.
+ * @example
+ * await automationUtils.setGenericConfigValue(item, 'my-module', 'myGeneric', 'range', 60);
  */
 async function setGenericConfigValue(item, source, identifier, key, value) {
     return await documentUtils.setFlag(item, 'cat', 'genericConfig.' + source + '.' + identifier + '.' + key, value);
 }
 /**
  * {@link getConfigValue} for several keys at once.
- * @param {foundry.abstract.Document} item Item to act on.
- * @param {string[]} [keys] Config keys to read.
- * @returns {object} Values keyed by config key.
+ * @param {foundry.abstract.Document} item  Document holding the config.
+ * @param {string[]} [keys]                 Config keys to read.
+ * @returns {object}                        Values keyed by config key.
+ * @example
+ * const {formula, bonus} = automationUtils.getConfigValues(workflow.item, ['formula', 'bonus']);
  */
 function getConfigValues(item, keys = []) {
     const results = {};
@@ -181,25 +226,32 @@ function getConfigValues(item, keys = []) {
     return results;
 }
 /**
- * {@link getGenericConfigValue} for several keys at once.
- * @param {foundry.abstract.Document} item Item to act on.
- * @param {string} source Module that registered the generic macro.
- * @param {string} identifier Generic macro identifier.
- * @param {string[]} [keys] Config keys to read.
- * @returns {object} Values keyed by config key.
+ * {@link getGenericConfigValue} for several keys at once. Defaults are read for the document's own rules unless `rules`
+ * is given.
+ * @param {foundry.abstract.Document} item       Document holding the config.
+ * @param {string} source                        Module that registered the generic macro.
+ * @param {string} identifier                    Generic macro identifier.
+ * @param {string[]} [keys]                      Config keys to read.
+ * @param {object} [options]                     Additional options.
+ * @param {'2014'|'2024'|'all'} [options.rules]  Rules version of the generic macro whose defaults are used.
+ * @returns {object}                             Values keyed by config key.
+ * @example
+ * const config = automationUtils.getGenericConfigValues(item, 'my-module', 'myGeneric', ['range', 'color']);
  */
-function getGenericConfigValues(item, source, identifier, keys = []) {
+function getGenericConfigValues(item, source, identifier, keys = [], {rules} = {}) {
     const results = {};
     keys.forEach(key => {
-        results[key] = getGenericConfigValue(item, source, identifier, key);
+        results[key] = getGenericConfigValue(item, source, identifier, key, {rules});
     });
     return results;
 }
 /**
- * Store several automation config values in one update.
- * @param {foundry.abstract.Document} item Item to act on.
- * @param {object} [values] Values keyed by config key.
- * @returns {Promise<foundry.abstract.Document|undefined>}
+ * Store several automation config values in one document update.
+ * @param {foundry.abstract.Document} item                  Document to update.
+ * @param {object} [values]                                 Values keyed by config key.
+ * @returns {Promise<foundry.abstract.Document|undefined>}  The updated document.
+ * @example
+ * await automationUtils.setConfigValues(item, {formula: '2d6', bonus: 2});
  */
 async function setConfigValues(item, values = {}) {
     const updates = {};
@@ -209,12 +261,14 @@ async function setConfigValues(item, values = {}) {
     return await documentUtils.update(item, updates);
 }
 /**
- * Store several generic macro config values in one update.
- * @param {foundry.abstract.Document} item Item to act on.
- * @param {string} source Module that registered the generic macro.
- * @param {string} identifier Generic macro identifier.
- * @param {object} [values] Values keyed by config key.
- * @returns {Promise<foundry.abstract.Document|undefined>}
+ * Store several generic macro config values in one document update.
+ * @param {foundry.abstract.Document} item                  Document to update.
+ * @param {string} source                                   Module that registered the generic macro.
+ * @param {string} identifier                               Generic macro identifier.
+ * @param {object} [values]                                 Values keyed by config key.
+ * @returns {Promise<foundry.abstract.Document|undefined>}  The updated document.
+ * @example
+ * await automationUtils.setGenericConfigValues(item, 'my-module', 'myGeneric', {range: 60, color: 'blue'});
  */
 async function setGenericConfigValues(item, source, identifier, values = {}) {
     const updates = {};
@@ -225,27 +279,35 @@ async function setGenericConfigValues(item, source, identifier, values = {}) {
     return await documentUtils.update(item, updates);
 }
 /**
- * Every generic macro config stored on this item, keyed by source and then identifier.
- * @param {Item5e} item Item to act on.
- * @returns {object}
+ * Every generic macro config stored on an item, keyed by source and then identifier. Registered defaults are not
+ * included.
+ * @param {Item5e} item  Item to read.
+ * @returns {object}     An empty object when none are stored.
+ * @example
+ * const configs = automationUtils.getAllGenericConfigs(item);
+ * const myConfig = configs['my-module']?.myGeneric;
  */
 function getAllGenericConfigs(item) {
     return item.flags.cat?.genericConfig || {};
 }
 /**
- * Replace every generic macro config on this item.
- * @param {Item5e} item Item to act on.
- * @param {object} configData Keyed by source and then identifier.
- * @returns {Promise<foundry.abstract.Document|undefined>}
+ * Replace every generic macro config on an item in one update.
+ * @param {Item5e} item                                     Item to update.
+ * @param {object} configData                               Config keyed by source and then identifier.
+ * @returns {Promise<foundry.abstract.Document|undefined>}  The updated item.
+ * @example
+ * await automationUtils.setAllGenericConfigs(targetItem, automationUtils.getAllGenericConfigs(item));
  */
 async function setAllGenericConfigs(item, configData) {
     return await documentUtils.update(item, {'flags.cat.genericConfig': configData});
 }
 /**
- * Enabled automation source ids, in the priority order the user configured.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.packsOnly] Only sources that supply a compendium.
+ * Enabled automation source ids from the Automation Sources setting, sorted by the priority the GM configured.
+ * @param {object} [options]             Additional options.
+ * @param {boolean} [options.packsOnly]  Only include sources that supply a compendium.
  * @returns {string[]}
+ * @example
+ * const [preferredSource] = automationUtils.getAutomationSources();
  */
 function getAutomationSources({packsOnly = false} = {}) {
     const settings = game.settings.get('cat', 'automationSources');
@@ -253,38 +315,50 @@ function getAutomationSources({packsOnly = false} = {}) {
     return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
 }
 /**
- * Whether a source supplies plain content rather than automations: the system, official books, or DDBI
- * A single compendium is assumed to contain custom automations.
- * @param {string} source Source id.
+ * Whether a source supplies plain content rather than automations. Content sources are the system, the official
+ * Player's Handbook and Dungeon Master's Guide modules, and DDBI.
+ * @param {string} source  Source id.
  * @returns {boolean}
+ * @example
+ * automationUtils.isContentSource('dnd5e'); // true
+ * automationUtils.isContentSource('chris-premades'); // false
  */
 function isContentSource(source) {
     return constants.contentSources.includes(source);
 }
 /**
- * Whether a source takes part in mass apply, defaulting to off for content sources.
- * @param {string} source Source id.
- * @param {object} [entry] The source's automationSources setting entry.
+ * Whether a source takes part in mass apply. Uses the source's `massApply` setting, which defaults to off for content
+ * sources and on for the rest.
+ * @param {string} source   Source id.
+ * @param {object} [entry]  The source's Automation Sources setting entry. Defaults to the stored one.
  * @returns {boolean}
+ * @example
+ * if (!automationUtils.isMassApplySource(automation.source)) return;
  */
 function isMassApplySource(source, entry = game.settings.get('cat', 'automationSources')[source]) {
     return entry?.massApply ?? !isContentSource(source);
 }
 /**
- * Whether mass apply must never put this source's automation on this item: content sources reset class advancement.
- * @param {Item5e} item Item to act on.
- * @param {string} source Source id.
+ * Whether mass apply must skip this item for a source. True when the item is flagged to be ignored, or when a class or
+ * subclass would be replaced from a content source, since that resets its advancement.
+ * @param {Item5e} item    Item to check.
+ * @param {string} source  Source id.
  * @returns {boolean}
+ * @example
+ * if (automationUtils.isMassApplyBlocked(item, automation.source)) return;
  */
 function isMassApplyBlocked(item, source) {
     return item.flags.cat?.ignoreItem || (['class', 'subclass'].includes(item.type) && isContentSource(source));
 }
 /**
- * Automations mass apply may put on this item.
- * @param {Item5e} item Item to act on.
- * @param {object} [options] Additional options.
- * @param {string} [options.rules] Rules version to look up instead of the item's own.
+ * Automations mass apply may put on an item: {@link getAvailableAutomations} minus sources excluded from mass apply and
+ * sources blocked for this item.
+ * @param {Item5e} item             Item to look up.
+ * @param {object} [options]        Additional options.
+ * @param {string} [options.rules]  Rules version to match instead of the item's own.
  * @returns {Automation[]}
+ * @example
+ * if (automationUtils.getMassApplyAutomations(item).length) await automationUtils.updateItem(item, {massApply: true});
  */
 function getMassApplyAutomations(item, {rules} = {}) {
     const sources = game.settings.get('cat', 'automationSources');
@@ -292,9 +366,12 @@ function getMassApplyAutomations(item, {rules} = {}) {
     return getAvailableAutomations(item, {excludeSources, rules}).filter(automation => !isMassApplyBlocked(item, automation.source));
 }
 /**
- * Display name for an automation source, resolving registered names, compendiums, modules and the system.
- * @param {string} id Automation source id.
- * @returns {string} The id itself when nothing else matches.
+ * Display name for an automation source. Checks registered source names, then compendium titles, module titles and the
+ * system title.
+ * @param {string} id  Automation source id.
+ * @returns {string}   The id itself when nothing matches.
+ * @example
+ * automationUtils.getSourceName(automation.source);
  */
 function getSourceName(id) {
     return constants.automations?.sourceNames?.[id]
@@ -304,11 +381,14 @@ function getSourceName(id) {
         ?? id;
 }
 /**
- * Enabled compendium ids for one kind of source document, in the priority order the user configured.
- * @param {'Monster'|'Item'|'Spell'|'Macro'} type Kind of source document.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.packsOnly] Only sources that supply a compendium.
- * @returns {string[]|undefined} Undefined for an unsupported type.
+ * Enabled source ids for one kind of source document, read from that kind's compendium setting and sorted by the
+ * priority the GM configured.
+ * @param {'Monster'|'Item'|'Spell'|'Macro'} type  Kind of source document.
+ * @param {object} [options]                       Additional options.
+ * @param {boolean} [options.packsOnly]            Only include sources that supply a compendium.
+ * @returns {string[]|undefined}                   Undefined for an unsupported type.
+ * @example
+ * const spellPacks = automationUtils.getSourceDataSources('Spell');
  */
 function getSourceDataSources(type, {packsOnly = false} = {}) {
     const settingKeys = {
@@ -324,17 +404,22 @@ function getSourceDataSources(type, {packsOnly = false} = {}) {
     return entries.sort((a, b) => a[1] - b[1]).map(([key]) => key);
 }
 /**
- * The automation already applied to this item, or the best available one by source priority.
- * @param {Item5e} item Item to act on.
+ * The automation already applied to an item, or else the highest priority available one from {@link sortByPriority}.
+ * @param {Item5e} item  Item to look up.
  * @returns {Automation|undefined}
+ * @example
+ * const automation = automationUtils.getAppliedOrPreferredAutomation(item);
  */
 function getAppliedOrPreferredAutomation(item) {
     return getCurrentAutomation(item) ?? sortByPriority(getAvailableAutomations(item))[0];
 }
 /**
- * Order automations by the configured source priority. Registered sources the setting doesn't list, such as modules, follow in registration order.
- * @param {Automation[]} automations Automations to order.
- * @returns {Automation[]} A new, sorted array.
+ * Sort automations by the priority set in the Automation Sources setting. Automations from sources that are disabled or
+ * not listed keep their input order after the rest.
+ * @param {Automation[]} automations  Automations to sort.
+ * @returns {Automation[]}            A new sorted array. The input is not changed.
+ * @example
+ * const [best] = automationUtils.sortByPriority(automationUtils.getAvailableAutomations(item));
  */
 function sortByPriority(automations) {
     const priority = getAutomationSources();
@@ -346,8 +431,9 @@ function sortByPriority(automations) {
 }
 /**
  * Documents nested under this one that have their own medkit.
- * @param {ClientDocument} document Document to act on.
- * @returns {Array} Child documents, in display order.
+ * @param {ClientDocument} document  Document to act on.
+ * @returns {Array}                  Child documents, in display order.
+ * @internal
  */
 function getMedkitChildren(document) {
     if (!(document instanceof foundry.abstract.Document)) return [];
@@ -360,8 +446,9 @@ function getMedkitChildren(document) {
 }
 /**
  * Which kinds of CAT configuration a document carries.
- * @param {ClientDocument} document Document to act on.
- * @returns {string[]} Flag keys holding content, in declaration order.
+ * @param {ClientDocument} document  Document to act on.
+ * @returns {string[]}               Flag keys holding content, in declaration order.
+ * @internal
  */
 function getCatConfigKinds(document) {
     const flags = document.flags?.cat ?? {};
@@ -372,8 +459,8 @@ function getCatConfigKinds(document) {
 }
 /**
  * Which kinds of options an item's applied automation offers that the item has not saved yet.
- * @param {ClientDocument} document Document to act on.
- * @returns {string[]} `options` and/or `animationOptions`.
+ * @param {ClientDocument} document  Document to act on.
+ * @returns {string[]}               `options` and/or `animationOptions`.
  */
 function getOfferedConfigKinds(document) {
     if (document.documentName !== 'Item') return [];
@@ -385,9 +472,12 @@ function getOfferedConfigKinds(document) {
     return kinds;
 }
 /**
- * The medkit status of any document, including the spell a cast activity points at.
- * @param {ClientDocument} document Document to act on.
- * @returns {Promise<number>} A {@link constants.automationStatus} value.
+ * {@link getAutomationStatus} for any document, including activities. A cast activity reports the status of its spell
+ * from the preferred spell compendium.
+ * @param {ClientDocument} document  Document or activity to check.
+ * @returns {Promise<number>}        A `constants.automationStatus` value.
+ * @example
+ * const status = await automationUtils.getAnyAutomationStatus(activity);
  */
 async function getAnyAutomationStatus(document) {
     if (document.type === 'cast') {
@@ -399,8 +489,9 @@ async function getAnyAutomationStatus(document) {
 }
 /**
  * How many documents nested under this one have a generic automation applied.
- * @param {ClientDocument} document Document to act on.
- * @returns {number} Count of descendants carrying a generic config.
+ * @param {ClientDocument} document  Document to act on.
+ * @returns {number}                 Count of descendants carrying a generic config.
+ * @internal
  */
 function countDescendantGenerics(document) {
     return getMedkitChildren(document).reduce((total, child) => {
@@ -411,8 +502,9 @@ function countDescendantGenerics(document) {
 }
 /**
  * Every medkit-editable document beneath this one, pruned to branches that hold an automation.
- * @param {ClientDocument} document Document to act on.
- * @returns {Promise<Array>} Nested {uuid, documentName, name, status, automated, children} nodes.
+ * @param {ClientDocument} document  Document to act on.
+ * @returns {Promise<Array>}         Nested {uuid, documentName, name, type, status, automated, kinds, children} nodes.
+ * @internal
  */
 async function getAutomationTree(document) {
     const branches = [];
@@ -437,7 +529,7 @@ async function getAutomationTree(document) {
 }
 /**
  * Repoint every cast activity at the same spell in the preferred spell compendium.
- * @param {object} documentData Item data, mutated in place.
+ * @param {object} documentData  Item data, mutated in place.
  */
 async function relinkCastActivities(documentData) {
     for (const activity of Object.values(documentData.system?.activities ?? {})) {
@@ -450,7 +542,7 @@ async function relinkCastActivities(documentData) {
 }
 /**
  * Whether dnd5e already removed or replaced the item.
- * @param {Item5e} item Item to check.
+ * @param {Item5e} item  Item to check.
  * @returns {boolean}
  */
 function isReplaced(item) {
@@ -462,7 +554,7 @@ function isReplaced(item) {
 }
 /**
  * Whether an image is a system or DDBI placeholder that an automation's own image may replace.
- * @param {string} img Image path.
+ * @param {string} img  Image path.
  * @returns {boolean}
  */
 function isDefaultImage(img) {
@@ -473,14 +565,20 @@ function isDefaultImage(img) {
     return ['ddb/item/', 'ddb/loot/', 'spell/school/'].some(folder => path.includes('/' + storage + '/' + folder));
 }
 /**
- * Apply an automation to an item, replacing it with the source document.
- * @param {Item5e} item Item to act on.
- * @param {object} [options] Additional options.
- * @param {string} [options.source] Force a source rather than using the preferred one.
- * @param {string} [options.rules] Apply the automation for this rules version instead of the item's own. Needs `source`.
- * @param {boolean} [options.skipEvent] Do not fire the medkit item event.
- * @param {boolean} [options.openSheet] Render the item sheet afterwards.
- * @param {boolean} [options.massApply] Tell medkit macros to take defaults instead of prompting.
+ * Apply an automation to an item by overwriting the item with the automation's source document. Paths CAT preserves, a
+ * custom image and the description are kept, and the source and version are flagged. On an actor, the automation's
+ * scales are then written with {@link updateScales} and the medkit item event fires. Does nothing when no automation
+ * matches or the item was already replaced.
+ * @param {Item5e} item                  Item to update.
+ * @param {object} [options]             Additional options.
+ * @param {string} [options.source]      Source id to apply instead of the applied or preferred one.
+ * @param {string} [options.rules]       Rules version to apply instead of the item's own. Only used with `source`.
+ * @param {boolean} [options.skipEvent]  Skip the medkit item event.
+ * @param {boolean} [options.openSheet]  Render the item sheet afterwards.
+ * @param {boolean} [options.massApply]  Tell medkit macros to take defaults instead of prompting.
+ * @returns {Promise<void>}
+ * @example
+ * await automationUtils.updateItem(item, {source: 'chris-premades', openSheet: true});
  */
 async function updateItem(item, {source, rules = documentUtils.getRules(item), skipEvent, openSheet, massApply = false} = {}) {
     if (isReplaced(item)) return;
@@ -541,23 +639,29 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
     if (openSheet) await item.sheet.render(true);
 }
 /**
- * One animation config value for an animation chosen through a generic macro's config.
- * @param {foundry.abstract.Document} document Document to act on.
- * @param {string} source Module that registered the generic macro.
- * @param {string} identifier Generic macro identifier.
- * @param {string} settingKey Config key holding the animation selection.
- * @param {string} key Animation config key.
- * @returns {*}
+ * Read one animation config value for an animation selected in a generic macro's config. Checks the document's stored
+ * animation config first, then the animation's registered default.
+ * @param {foundry.abstract.Document} document  Document holding the config.
+ * @param {string} source                       Module that registered the generic macro.
+ * @param {string} identifier                   Generic macro identifier.
+ * @param {string} settingKey                   Config key holding the animation selection.
+ * @param {string} key                          Animation config key.
+ * @returns {*}                                 Undefined when no animation is selected.
+ * @example
+ * const color = automationUtils.getGenericAnimationConfig(item, 'my-module', 'myGeneric', 'animation', 'color');
  */
 function getGenericAnimationConfig(document, source, identifier, settingKey, key) {
     return constants.animations.getGenericAnimationConfig(document, source, identifier, settingKey, key);
 }
 /**
- * One animation config value for an animation chosen through an automation's own config.
- * @param {foundry.abstract.Document} document Document to act on.
- * @param {string} settingKey Config key holding the animation selection.
- * @param {string} key Animation config key.
- * @returns {*} Undefined when no animation is selected.
+ * Read one animation config value for an animation selected in an automation's own config. Checks the document's stored
+ * animation config first, then the animation's registered default.
+ * @param {foundry.abstract.Document} document  Document holding the config.
+ * @param {string} settingKey                   Config key holding the animation selection.
+ * @param {string} key                          Animation config key.
+ * @returns {*}                                 Undefined when no animation is selected.
+ * @example
+ * const color = automationUtils.getAnimationConfig(workflow.item, 'animation', 'color');
  */
 function getAnimationConfig(document, settingKey, key) {
     const animationData = getConfigValue(document, settingKey);
@@ -566,8 +670,8 @@ function getAnimationConfig(document, settingKey, key) {
 }
 /**
  * Whether a scale advancement already on a class or subclass matches the registered one.
- * @param {Scale} registeredScale Scale registered by an automation.
- * @param {object} targetScale Existing ScaleValue advancement.
+ * @param {Scale} registeredScale  Scale registered by an automation.
+ * @param {object} targetScale     Existing ScaleValue advancement.
  * @returns {boolean}
  */
 function scalesMatch(registeredScale, targetScale) {
@@ -584,8 +688,8 @@ function scalesMatch(registeredScale, targetScale) {
 }
 /**
  * The class or subclass on this actor that a scale should be written to.
- * @param {Actor5e} actor Actor to act on.
- * @param {string} identifier Class or subclass identifier.
+ * @param {Actor5e} actor      Actor to act on.
+ * @param {string} identifier  Class or subclass identifier.
  * @returns {Item5e|undefined}
  */
 function resolveScaleHolder(actor, identifier) {
@@ -593,11 +697,16 @@ function resolveScaleHolder(actor, identifier) {
     return actor.classes[identifier] ?? actor.itemTypes.subclass.find(subclass => subclass.identifier === identifier);
 }
 /**
- * Write the scales an automation registers onto the actor's class or subclass, as named by the automation's
- * classIdentifier and subclassIdentifier config. Scales already matching are left alone.
- * @param {Item5e} item Item to act on.
- * @param {object} [options] Additional options.
- * @param {Automation} [options.automation] Defaults to the automation currently applied.
+ * Write the scale advancements an automation registers onto the owning actor's class or subclass. The target comes from
+ * the item's `classIdentifier` and `subclassIdentifier` config values. Scales that already match are left alone, and
+ * all changes go out in one embedded update.
+ * @param {Item5e} item                      Item on an actor.
+ * @param {object} [options]                 Additional options.
+ * @param {Automation} [options.automation]  Automation whose scales are written. Defaults to
+ *                                           {@link getCurrentAutomation}.
+ * @returns {Promise<void>}
+ * @example
+ * await automationUtils.updateScales(item);
  */
 async function updateScales(item, {automation} = {}) {
     automation ??= getCurrentAutomation(item);
@@ -637,9 +746,14 @@ async function updateScales(item, {automation} = {}) {
     if (updates.length) await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
 }
 /**
- * Automation-relevant data where this item no longer matches its applied automation's source.
- * @param {Item5e} item Item to act on.
- * @returns {Promise<string[]>} Drifted areas: `uses`, `activities`, `consumption` and `effects`.
+ * Areas where an item has drifted from its applied automation's source document. Uses are skipped when CAT preserves
+ * them across updates. Returns an empty array when no automation is applied or the item is the automation's own
+ * document.
+ * @param {Item5e} item          Item to compare.
+ * @returns {Promise<string[]>}  Any of `uses`, `activities`, `consumption` and `effects`.
+ * @example
+ * const issues = await automationUtils.getDataIssues(item);
+ * if (issues.length) await automationUtils.updateItem(item);
  */
 async function getDataIssues(item) {
     const automation = getCurrentAutomation(item);
@@ -669,7 +783,7 @@ async function getDataIssues(item) {
 }
 /**
  * Small non-cryptographic string hash, used to tell whether an embedded automation has been edited.
- * @param {string} str String to hash.
+ * @param {string} str  String to hash.
  * @returns {number}
  */
 function simpleHash(str) {
@@ -682,10 +796,11 @@ function simpleHash(str) {
     return hash;
 }
 /**
- * Hash of this document's meaningful data, ignoring ids, sorting, ownership,
- * artwork and any path the medkit preserves across an update.
- * @param {foundry.abstract.Document} document Document to act on.
+ * Hash of this document's meaningful data, ignoring ids, sorting, ownership, artwork and any path the medkit preserves
+ * across an update.
+ * @param {foundry.abstract.Document} document  Document to act on.
  * @returns {number}
+ * @internal
  */
 function getDocumentHash(document) {
     const documentData = document.toObject();
@@ -706,26 +821,31 @@ function getDocumentHash(document) {
 }
 /**
  * Store a document hash so later edits can be detected.
- * @param {foundry.abstract.Document} document Document to act on.
- * @param {number} hash Hash to store.
+ * @param {foundry.abstract.Document} document  Document to act on.
+ * @param {number} hash                         Hash to store.
  * @returns {Promise<foundry.abstract.Document>}
+ * @internal
  */
 async function setDocumentHash(document, hash) {
     return await documentUtils.setFlag(document, 'cat', 'automation.hash', hash);
 }
 /**
  * The hash stored by {@link setDocumentHash}, if any.
- * @param {foundry.abstract.Document} document Document to act on.
+ * @param {foundry.abstract.Document} document  Document to act on.
  * @returns {number|undefined}
+ * @internal
  */
 function getStoredHash(document) {
     return document.flags.cat?.automation?.hash;
 }
 /**
- * Find a source document by identifier, searching the configured compendiums in priority order.
- * @param {string} identifier Identifier to match.
- * @param {'Monster'|'Item'|'Spell'|'Macro'} type Kind of source document.
- * @returns {Promise<foundry.abstract.Document|undefined>}
+ * Find a source document by identifier, searching the compendiums from {@link getSourceDataSources} in priority order.
+ * Returns the first match.
+ * @param {string} identifier                               Identifier to match.
+ * @param {'Monster'|'Item'|'Spell'|'Macro'} type           Kind of source document.
+ * @returns {Promise<foundry.abstract.Document|undefined>}  Undefined when nothing matches or the type is unsupported.
+ * @example
+ * const spell = await automationUtils.getSourceDocumentByIdentifier('fireball', 'Spell');
  */
 async function getSourceDocumentByIdentifier(identifier, type) {
     const sortedPacks = getSourceDataSources(type);
@@ -739,41 +859,55 @@ async function getSourceDocumentByIdentifier(identifier, type) {
     }
 }
 /**
- * Run a called event, letting macros respond to something that is not a workflow.
- * @param {string} pass Called event pass to run.
- * @param {Actor5e} actor Actor to act on.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.multiResult] Collect a result from every macro rather than the first.
- * @param {boolean} [options.canOverlap] Allow several macros with the same name to run.
- * @param {object} [options.data] Passed to the macros.
- * @returns {Promise<*>}
+ * Run a called event on an actor, so macros on the actor can respond to something that is not a workflow. Macros run in
+ * priority order. Without `multiResult`, the first truthy result is returned and the remaining macros are skipped.
+ * @param {string} pass                    Called event pass to run.
+ * @param {Actor5e} actor                  Actor whose macros run.
+ * @param {object} [options]               Additional options.
+ * @param {boolean} [options.multiResult]  Run every macro and collect each truthy result.
+ * @param {boolean} [options.canOverlap]   Let several macros with the same name run.
+ * @param {object} [options.data]          Data passed to the macros as `data`.
+ * @returns {Promise<*>}                   The first truthy result, an array of results with `multiResult`, or
+ *                                         undefined.
+ * @example
+ * const edits = await automationUtils.calledEvent('preCreateRageEffect', workflow.actor, {canOverlap: true, multiResult: true, data: {effectData}});
  */
 async function calledEvent(pass, actor, {multiResult, canOverlap, data} = {}) {
     return new Events.CalledEvent(actor, pass, data).run({canOverlap, multiResult});
 }
 /**
- * {@link calledEvent} for synchronous callers, such as data preparation.
- * @param {string} pass Called event pass to run.
- * @param {Actor5e} actor Actor to act on.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.multiResult] Collect a result from every macro rather than the first.
- * @param {boolean} [options.canOverlap] Allow several macros with the same name to run.
- * @param {object} [options.data] Passed to the macros.
- * @returns {*}
+ * {@link calledEvent} for synchronous callers, such as data preparation. Macros that return promises are not awaited.
+ * @param {string} pass                    Called event pass to run.
+ * @param {Actor5e} actor                  Actor whose macros run.
+ * @param {object} [options]               Additional options.
+ * @param {boolean} [options.multiResult]  Run every macro and collect each truthy result.
+ * @param {boolean} [options.canOverlap]   Let several macros with the same name run.
+ * @param {object} [options.data]          Data passed to the macros as `data`.
+ * @returns {*}                            The first truthy result, an array of results with `multiResult`, or
+ *                                         undefined.
+ * @example
+ * const bonuses = automationUtils.calledEventSync('myPass', actor, {multiResult: true});
  */
 function calledEventSync(pass, actor, {multiResult, canOverlap, data} = {}) {
     return new Events.CalledEvent(actor, pass, data).runSync({canOverlap, multiResult});
 }
 /**
- * The animation selected in a config key, together with its own config values.
- * Pass a source and identifier when the selection lives in a generic macro's config rather than an automation's.
- * @param {foundry.abstract.Document} document Document to act on.
- * @param {string} settingKey Config key holding the animation selection.
- * @param {object} [options] Additional options.
- * @param {string} [options.source] Module that registered the generic macro.
- * @param {string} [options.identifier] Generic macro identifier.
- * @param {'2014'|'2024'|'all'} [options.rules] Rules edition. Defaults to the document's own.
- * @returns {{animation: Animation|undefined, options: object}} Animation is undefined when none is selected.
+ * The animation selected in a config key, with its resolved config values. Pass `source` and `identifier` when the
+ * selection lives in a generic macro's config. Returns no animation when none is selected, CAT Animations defers to
+ * AA/BLFX for the item, Sequencer is unavailable, or a requirement is not met. A missing requirement also shows a
+ * warning.
+ * @param {foundry.abstract.Document} document                   Document holding the config, or an activity.
+ * @param {string} settingKey                                    Config key holding the animation selection.
+ * @param {object} [options]                                     Additional options.
+ * @param {string} [options.source]                              Module that registered the generic macro.
+ * @param {string} [options.identifier]                          Generic macro identifier.
+ * @param {'2014'|'2024'|'all'} [options.rules]                  Rules version of the generic macro. Defaults to the
+ *                                                               document's own.
+ * @returns {{animation: Animation|undefined, options: object}}  Options are keyed by animation config key, and empty
+ *                                                               when there is no animation.
+ * @example
+ * const {animation, options} = automationUtils.getResolvedAnimation(item, 'animation');
+ * if (animation?.macros?.play) animation.macros.play(workflow.token.document, target, options);
  */
 function getResolvedAnimation(document, settingKey, {source, identifier, rules} = {}) {
     const isGeneric = source && identifier;
@@ -782,18 +916,26 @@ function getResolvedAnimation(document, settingKey, {source, identifier, rules} 
     const item = document instanceof Item ? document : document.item;
     if (animationUtils.deferredToAABLFX(item)) return {animation: undefined, options: {}};
     const animation = constants.animations.getAnimation(animationSetting.source, animationSetting.identifier);
-    if (!animation || !animationUtils.sequencerCheck() || !(animation.requirements ?? []).every(requirement => animationUtils.meetsRequirement(requirement))) return {animation: undefined, options: {}};
+    if (!animation || !animationUtils.sequencerCheck()) return {animation: undefined, options: {}};
+    const missing = animation.requirements?.find(requirement => !animationUtils.meetsRequirement(requirement));
+    if (missing) {
+        genericUtils.notify('CAT.Error.NoAnimations', {type: 'warn', format: {module: missing}});
+        return {animation: undefined, options: {}};
+    }
     const options = {};
     if (animation.config) Object.keys(animation.config).forEach(key => options[key] = isGeneric ? getGenericAnimationConfig(document, source, identifier, settingKey, key) : getAnimationConfig(document, settingKey, key));
     return {animation, options};
 }
 /**
- * Find a document by name, searching the configured compendiums for that type in priority order.
- * @param {string} name Document name to match.
- * @param {'monster'|'item'|'spell'|'macro'} type Kind of source document.
- * @param {object} [options] Additional options.
- * @param {string} [options.rules] Only match documents with these rules, '2014' or '2024'.
- * @returns {Promise<foundry.abstract.Document|undefined>}
+ * Find a document by name, searching the enabled compendiums for that type in the priority order the GM configured.
+ * Returns the first match.
+ * @param {string} name                                     Document name to match.
+ * @param {'monster'|'item'|'spell'|'macro'} type           Kind of source document.
+ * @param {object} [options]                                Additional options.
+ * @param {string} [options.rules]                          Only match documents with these rules, `2014` or `2024`.
+ * @returns {Promise<foundry.abstract.Document|undefined>}  Undefined when nothing matches or the type is unsupported.
+ * @example
+ * const wolf = await automationUtils.getCompendiumDocumentByName('Wolf', 'monster', {rules: '2024'});
  */
 async function getCompendiumDocumentByName(name, type, {rules} = {}) {
     if (!['monster', 'item', 'spell', 'macro'].includes(type)) return;

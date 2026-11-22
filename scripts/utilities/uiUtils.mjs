@@ -1,7 +1,14 @@
 /**
- * The sidebar icon for whatever document type a uuid points at, for use when a document has no image.
- * @param {string} value A document uuid.
- * @returns {string|null} Null when the uuid is missing or its type has no icon.
+ * Window placement, dragging and detaching for CAT's application windows, plus html enrichment and popover positioning.
+ * @module
+ */
+/**
+ * The sidebar icon class for the document type a uuid points at, for use when a document has no image. Embedded uuids
+ * use the type of their top-level document.
+ * @param {string} value   A document uuid.
+ * @returns {string|null}  A Font Awesome class string. Null when the uuid is missing or its type has no icon.
+ * @example
+ * uiUtils.fallbackIcon(item.uuid); // CONFIG.Actor.sidebarIcon for an actor's item
  */
 function fallbackIcon(value) {
     if (!value) return null;
@@ -10,10 +17,12 @@ function fallbackIcon(value) {
     return type ? CONFIG[type]?.sidebarIcon : null;
 }
 /**
- * Play an element's closing transition and resolve once it finishes.
- * @param {HTMLElement} element Element to fade. Nothing happens without one.
- * @param {number} [timeout] Milliseconds to wait before resolving anyway, if no transition fires.
+ * Add the `is-closing` class to an element and resolve when its CSS transition ends. Does not remove the element.
+ * @param {HTMLElement} element  Element to fade. Resolves at once without one.
+ * @param {number} [timeout]     Milliseconds to wait before resolving anyway, if no transition fires. Defaults to 250.
  * @returns {Promise<void>}
+ * @example
+ * await uiUtils.fadeOut(this.element);
  */
 async function fadeOut(element, timeout = 250) {
     if (!element) return;
@@ -26,9 +35,13 @@ async function fadeOut(element, timeout = 250) {
 }
 
 /**
- * Restore a window's remembered position.
- * @param {object} options Application options, or the initial options being built.
- * @returns {object|undefined} Stored {left, top, width, height}, if any.
+ * Read a window's remembered position from CAT's Window Positions setting, keyed by the application id. Windows with a
+ * `{id}` placeholder in their id are never remembered.
+ * @param {object} options  Application options, or the initial options being built.
+ * @returns {{left: number, top: number, width: number, height: number}|undefined}
+ *                          Undefined when nothing is stored.
+ * @example
+ * if (uiUtils.storedWindowPosition(this.options)) return;
  */
 function storedWindowPosition(options) {
     const key = windowPositionKey(options);
@@ -36,7 +49,7 @@ function storedWindowPosition(options) {
 }
 /**
  * The key a window's position is stored under, or null when each instance is its own window.
- * @param {object} options Application options.
+ * @param {object} options  Application options.
  * @returns {string|null}
  */
 function windowPositionKey(options) {
@@ -44,8 +57,15 @@ function windowPositionKey(options) {
     return id && !id.includes('{id}') ? id : null;
 }
 /**
- * Restore a remembered position onto a window's initial options, leaving auto-sized axes auto.
- * @param {object} options Initial application options, mutated in place.
+ * Copy a remembered position from {@link storedWindowPosition} onto a window's initial options. Width and height set to
+ * `'auto'` stay auto.
+ * @param {object} options  Initial application options, mutated in place.
+ * @example
+ * _initializeApplicationOptions(options) {
+ *     const initialized = super._initializeApplicationOptions(options);
+ *     uiUtils.applyStoredWindowPosition(initialized);
+ *     return initialized;
+ * }
  */
 function applyStoredWindowPosition(options) {
     const stored = storedWindowPosition(options);
@@ -57,9 +77,10 @@ function applyStoredWindowPosition(options) {
     if (Number.isFinite(stored.height) && position.height !== 'auto') position.height = stored.height;
 }
 /**
- * Remember where a window was left, debounced so a drag writes once.
- * @param {foundry.applications.api.ApplicationV2} app Application to act on.
- * @param {object} position Current application position.
+ * Save a window's position to the Window Positions setting, debounced by half a second so a drag writes once.
+ * @param {foundry.applications.api.ApplicationV2} app  Application to remember.
+ * @param {object} position                             Current application position.
+ * @internal
  */
 const rememberWindowPosition = foundry.utils.debounce((app, position) => {
     const key = windowPositionKey(app.options);
@@ -71,12 +92,19 @@ const rememberWindowPosition = foundry.utils.debounce((app, position) => {
     game.settings.set('cat', 'windowPositions', all);
 }, 500);
 /**
- * Let an application be dragged by an element that is not its header, bound to the app element so re-renders do not re-wire it.
- * @param {foundry.applications.api.ApplicationV2} app Application to make draggable.
- * @param {string} [handleSelector] CSS selector for the drag handle within the app.
- * @param {object} [options] Additional options.
- * @param {string} [options.ignore] CSS selector for descendants that should not start a drag.
- * @param {boolean} [options.resizable] Add a corner grabber that resizes the window.
+ * Let a rendered application be dragged by any element inside it, such as a custom header. Wires the app element once,
+ * so later renders do nothing. Does nothing when the app is not rendered or the handle is missing.
+ * @param {foundry.applications.api.ApplicationV2} app  Application to make draggable.
+ * @param {string} [handleSelector]                     CSS selector for the drag handle within the app. Defaults to the
+ *                                                      app's direct `header` child.
+ * @param {object} [options]                            Additional options.
+ * @param {string} [options.ignore]                     CSS selector for descendants that do not start a drag. Defaults
+ *                                                      to buttons, links, form fields and actions.
+ * @param {boolean} [options.resizable]                 Add a corner grabber that resizes the window. Defaults to true.
+ * @example
+ * _onRender(context, options) {
+ *     uiUtils.enableWindowDrag(this, '.window-title');
+ * }
  */
 function enableWindowDrag(app, handleSelector = ':scope > header', {ignore = 'button, a, input, select, textarea, [data-action], cat-multi-combobox, multi-select, .resize-handle', resizable = true} = {}) {
     const element = app.element;
@@ -99,9 +127,12 @@ function enableWindowDrag(app, handleSelector = ':scope > header', {ignore = 'bu
     };
 }
 /**
- * Detach an application into its own popout, or re-attach it when it is already detached.
- * @param {foundry.applications.api.ApplicationV2} app Application to act on.
- * @returns {Promise<*>}
+ * Detach an application into its own browser window sized to match it, or re-attach it when it is already detached.
+ * Then re-renders the header so the detach button updates.
+ * @param {foundry.applications.api.ApplicationV2} app  Application to detach or attach.
+ * @returns {Promise<*>}                                The header render.
+ * @example
+ * await uiUtils.toggleDetached(app);
  */
 async function toggleDetached(app) {
     if (app.window.windowId) await app.attachWindow();
@@ -120,15 +151,19 @@ async function toggleDetached(app) {
  * The `toggleDetach` action handler every CAT window registers.
  * @this {foundry.applications.api.ApplicationV2}
  * @returns {Promise<*>}
+ * @internal
  */
 function onToggleDetach() {
     return toggleDetached(this);
 }
 /**
- * Whether a window is detached, reading the pending state from the render options first.
- * @param {foundry.applications.api.ApplicationV2} app Application to act on.
- * @param {object} [options] Render options.
+ * Whether a window is detached into its own browser window. A pending attach or detach in the render options wins over
+ * the current state.
+ * @param {foundry.applications.api.ApplicationV2} app  Application to check.
+ * @param {object} [options]                            Render options.
  * @returns {boolean}
+ * @example
+ * const detached = uiUtils.isDetached(this, options);
  */
 function isDetached(app, options) {
     if (options?.window?.attach) return false;
@@ -136,10 +171,12 @@ function isDetached(app, options) {
     return !!app.window.windowId;
 }
 /**
- * Header context for the detach button, so its label and glyph match the window's state.
- * @param {foundry.applications.api.ApplicationV2} app Application to act on.
- * @param {object} [options] Render options.
- * @returns {{detachLabel: string, detachIcon: string}}
+ * Render context for the detach header button, with a label and icon matching {@link isDetached}.
+ * @param {foundry.applications.api.ApplicationV2} app   Application to check.
+ * @param {object} [options]                             Render options.
+ * @returns {{detachLabel: string, detachIcon: string}}  An unlocalized label key and a Font Awesome icon class.
+ * @example
+ * Object.assign(context, uiUtils.detachContext(this, options));
  */
 function detachContext(app, options) {
     const detached = isDetached(app, options);
@@ -149,8 +186,10 @@ function detachContext(app, options) {
     };
 }
 /**
- * Raise an application above the other windows and mark it active.
- * @param {foundry.applications.api.ApplicationV2} app Application to raise. Ignored if it is not rendered.
+ * Raise an application above the other windows and make it `ui.activeWindow`.
+ * @param {foundry.applications.api.ApplicationV2} app  Application to raise. Ignored if it is not rendered.
+ * @example
+ * uiUtils.bringToFront(actor.sheet);
  */
 function bringToFront(app) {
     if (!app.element) return;
@@ -159,11 +198,13 @@ function bringToFront(app) {
     ui.activeWindow = app;
 }
 /**
- * Center an application in the viewport.
- * @param {foundry.applications.api.ApplicationV2} app Application to center. Ignored if it is not rendered.
- * @param {object} [options] Additional options.
- * @param {number} [options.width] Fallback width, used before the element has been laid out.
- * @param {number} [options.height] Fallback height, used before the element has been laid out.
+ * Center an application in the browser window it is shown in.
+ * @param {foundry.applications.api.ApplicationV2} app  Application to center. Ignored if it is not rendered.
+ * @param {object} [options]                            Additional options.
+ * @param {number} [options.width]                      Fallback width, used before the element has been laid out.
+ * @param {number} [options.height]                     Fallback height, used before the element has been laid out.
+ * @example
+ * uiUtils.centerWindow(app, {width: 400, height: 300});
  */
 function centerWindow(app, {width = 0, height = 0} = {}) {
     if (!app.element) return;
@@ -174,28 +215,36 @@ function centerWindow(app, {width = 0, height = 0} = {}) {
 }
 
 /**
- * Resolve the enrichers in a block of html so it can be displayed.
- * @param {string} html A description containing enrichers, inline rolls, and so on.
- * @param {object} [rollData] Data used to replace enrichers within a description.
- * @returns {Promise<string>} Enriched html content.
+ * Enrich html with Foundry's `TextEditor.enrichHTML`, resolving links, inline rolls and system enrichers.
+ * @param {string} html        Html to enrich, such as an item description.
+ * @param {object} [rollData]  Roll data for `@` references in formulas.
+ * @returns {Promise<string>}  Enriched html.
+ * @example
+ * const description = await uiUtils.enrichHTML(item.system.description.value, item.getRollData());
  */
 async function enrichHTML(html, rollData) {
     return await foundry.applications.ux.TextEditor.enrichHTML(html, {rollData});
 }
 /**
- * Evaluate dnd5e's challenge visibility setting.
- * @param {foundry.documents.Actor} [actor] The actor imposing the roll.
+ * Whether the current user may see the DC of a save imposed by this actor, as decided by Midi-QOL's
+ * `shouldDisplaySaveDC`.
+ * @param {foundry.documents.Actor} [actor]  Actor imposing the save.
  * @returns {boolean}
+ * @example
+ * const label = uiUtils.showDC(token.actor) ? 'DC ' + dc : '';
  */
 function showDC(actor) {
     return MidiQOL.shouldDisplaySaveDC(actor);
 }
 /**
- * Keep a popover under its anchor every frame until stopped.
- * @param {HTMLElement} anchor Element to sit under.
- * @param {HTMLElement} popover Element to position.
- * @param {Function} onDetached Called when the anchor leaves the document.
- * @returns {Function} Stops following.
+ * Keep a popover directly under its anchor and the same width, checking every animation frame until stopped. Sets the
+ * popover's `left`, `top` and `width` styles in pixels.
+ * @param {HTMLElement} anchor   Element to sit under.
+ * @param {HTMLElement} popover  Element to position.
+ * @param {Function} onDetached  Called once when the anchor leaves the document, which also stops following.
+ * @returns {Function}           Call to stop following.
+ * @example
+ * const stopFollow = uiUtils.followAnchor(input, list, () => list.remove());
  */
 function followAnchor(anchor, popover, onDetached) {
     const view = anchor.ownerDocument.defaultView;
@@ -215,8 +264,12 @@ function followAnchor(anchor, popover, onDetached) {
     return () => view.cancelAnimationFrame(frame);
 }
 /**
- * Minimize every open window.
- * @returns {Promise<Function>} Restores them.
+ * Minimize every rendered window that is not already minimized, skipping unpositioned ones such as the sidebar.
+ * @returns {Promise<Function>}  Call to restore the windows this minimized.
+ * @example
+ * const restoreWindows = await uiUtils.minimizeWindows();
+ * // Let the player pick a spot on the canvas
+ * await restoreWindows();
  */
 async function minimizeWindows() {
     const windows = [...foundry.applications.instances.values(), ...Object.values(ui.windows)]

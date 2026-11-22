@@ -1,67 +1,94 @@
+/**
+ * Builders for document and effect data before creation, metric conversion, and roll data for formulas.
+ * @module
+ */
 import {effectUtils, genericUtils} from './_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 /**
- * Set document rules in the correct location. Does not perform updates.
- * @param {object | foundry.abstract.Document} documentData Document or document data to write the rules onto.
- * @param {'2024' | '2014'} rules Rules edition to set.
+ * Write a rules edition onto document data, in place, where {@link documentUtils.getRules} reads it:
+ * `system.source.rules` for an item, `flags.cat.automation.rules` otherwise. Nothing is saved.
+ * @param {object | foundry.abstract.Document} documentData  Document or document data to write the rules onto.
+ * @param {'2024' | '2014'} rules                            Rules edition to set.
+ * @param {object} [options]                                 Additional options.
+ * @param {string} [options.documentType]                    Document type of the data, such as `Item`.
+ * @example
+ * dataUtils.setRules(effectData, '2024');
  */
-function setRules(documentData, rules) {
-    genericUtils.setProperty(documentData, 'flags.cat.automation.rules', rules);
+function setRules(documentData, rules, {documentType} = {}) {
+    genericUtils.setProperty(documentData, documentType === 'Item' ? 'system.source.rules' : 'flags.cat.automation.rules', rules);
 }
 /**
- * Set document identifier in the correct location. Does not perform updates.
- * @param {object | foundry.abstract.Document} documentData Document or document data to write the identifier onto.
- * @param {string} identifier Identifier macros will look this document up by.
+ * Write an identifier onto document data, in place, where {@link documentUtils.getIdentifier} reads it:
+ * `system.identifier` for an item, `identifier` for an activity, `flags.cat.identifier` otherwise. Nothing is saved.
+ * @param {object | foundry.abstract.Document} documentData  Document or document data to write the identifier onto.
+ * @param {string} identifier                                Identifier macros will look this document up by.
+ * @param {object} [options]                                 Additional options.
+ * @param {string} [options.documentType]                    Document type of the data, such as `Item` or `Activity`.
+ * @example
+ * dataUtils.setIdentifier(effectData, 'hexed');
  */
-function setIdentifier(documentData, identifier) {
-    genericUtils.setProperty(documentData, 'flags.cat.identifier', identifier);
+function setIdentifier(documentData, identifier, {documentType} = {}) {
+    const path = {Item: 'system.identifier', Activity: 'identifier'}[documentType] ?? 'flags.cat.identifier';
+    genericUtils.setProperty(documentData, path, identifier);
 }
 /**
  * @typedef {object} MacroEntry
- * @property {string} identifier
- * @property {string} rules
- * @property {string} source
+ * @property {string} identifier  Identifier of the registered macro.
+ * @property {string} rules       Rules edition of the registered macro.
+ * @property {string} source      Module id that registered the macro.
  */
 /**
  * @typedef {object} MacroGroup
- * @property {string} type
- * @property {MacroEntry[]} macros
+ * @property {string} type          Macro pass type the entries are stored under, such as `effect`.
+ * @property {MacroEntry[]} macros  Macros of this type.
  */
 /**
  * @typedef {object} AnimationEntry
- * @property {string} identifier
- * @property {string} source
+ * @property {string} identifier  Identifier of the registered animation.
+ * @property {string} source      Module id that registered the animation.
  */
 /**
  * @typedef {object} VaeEntry
- * @property {'use'} type
- * @property {string} name
- * @property {string} itemIdentifier
- * @property {string} [activityIdentifier]
+ * @property {'use'} type                   Button action. `use` uses an item or activity.
+ * @property {string} name                  Button label.
+ * @property {string} itemIdentifier        Identifier of the item on the effect's actor to use.
+ * @property {string} [activityIdentifier]  Identifier of the activity to use. The item is used when absent.
  */
 /**
  * @typedef {object} CatEffectData
- * @property {MacroGroup[]} macros Merge the list into existing macros.
- * @property {MacroGroup[]} removeMacros Remove macros that match all provided {@link MacroEntry} properties.
- * @property {AnimationEntry} createAnimation
- * @property {AnimationEntry} deleteAnimation
- * @property {object} createAnimationOptions Options specific to a particular animation, such as color. If absent, defaults are fetched from the registered animation.
- * @property {object} deleteAnimationOptions Options specific to a particular animation, such as color. If absent, defaults are fetched from the registered animation.
- * @property {string[]} specialDuration Deletes effect. Keys registered with DAE, such as midi-qol's `1Attack`, are written to DAE's flag.
- * @property {string[]} disableCondition Disables effect.
- * @property {string[]} unhideActivities
- * @property {boolean} favoriteActivities Also favorite the activities named by {@link unhideActivities}.
- * @property {VaeEntry[]} vae
- * @property {'2014'|'2024'|'all'} rules
- * @property {object} copyConfigs Duplicate macro configurations from another document onto this effect.
- * @property {foundry.abstract.Document} parentEntity A dependent parent for this effect.
- * @property {string} activityUuid The activity this effect came from, so later macros can trace it back.
+ * @property {MacroGroup[]} macros                     Merge the list into existing macros.
+ * @property {MacroGroup[]} removeMacros               Remove macros that match all provided `MacroEntry` properties.
+ * @property {AnimationEntry} createAnimation          Animation played when the effect is created.
+ * @property {AnimationEntry} deleteAnimation          Animation played when the effect is deleted.
+ * @property {object} createAnimationOptions           Options specific to a particular animation, such as color. If
+ *                                                     absent, defaults are fetched from the registered animation.
+ * @property {object} deleteAnimationOptions           Options specific to a particular animation, such as color. If
+ *                                                     absent, defaults are fetched from the registered animation.
+ * @property {string[]} specialDuration                Deletes effect. Keys registered with DAE, such as midi-qol's
+ *                                                     `1Attack`, are written to DAE's flag.
+ * @property {string[]} disableCondition               Disables effect while the actor has one of these statuses or
+ *                                                     equipment types equipped. `combatTurn` disables it outside the
+ *                                                     actor's turn.
+ * @property {string[]} unhideActivities               Identifiers of activities on the origin activity's item, shown
+ *                                                     while the effect exists.
+ * @property {boolean} favoriteActivities              Also favorite the activities named by `unhideActivities`.
+ * @property {VaeEntry[]} vae                          Buttons shown on the effect in Visual Active Effects.
+ * @property {'2014'|'2024'|'all'} rules               Rules edition, written with {@link setRules}.
+ * @property {object} copyConfigs                      Duplicate macro configurations from another document onto this
+ *                                                     effect.
+ * @property {foundry.abstract.Document} parentEntity  A dependent parent for this effect.
+ * @property {string} activityUuid                     The activity this effect came from, so later macros can trace it
+ *                                                     back.
  */
 /**
- * Attach CAT data to an effect before creation.
- * @param {object} effectData Effect data to build on, which is mutated and returned.
- * @param {CatEffectData} [options] CAT effect settings to apply.
- * @returns {object} Modified effectData.
+ * Add CAT flags to effect data before creation, in place. An `origin` already on the data is also written to
+ * `system.origin` with {@link setOrigin}. With the system's metric setting on, movement and sense changes in feet are
+ * converted to meters.
+ * @param {object} effectData        Effect data to build on, which is mutated and returned.
+ * @param {CatEffectData} [options]  CAT effect settings to apply.
+ * @returns {object}                 The same effect data.
+ * @example
+ * dataUtils.buildEffectData(effectData, {rules: '2024', specialDuration: ['turnStart'], parentEntity: concentrationEffect});
  */
 function buildEffectData(effectData, {macros, removeMacros, createAnimation, deleteAnimation, createAnimationOptions = {}, deleteAnimationOptions = {}, rules, specialDuration, disableCondition, vae, unhideActivities, favoriteActivities, copyConfigs, parentEntity, activityUuid} = {}) {
     if (removeMacros?.length) {
@@ -122,7 +149,7 @@ function isMetric() {
 }
 /**
  * Whether a value is a number or a numeric string.
- * @param {*} value Value to test.
+ * @param {*} value  Value to test.
  * @returns {boolean}
  */
 function isPlainNumber(value) {
@@ -130,8 +157,8 @@ function isPlainNumber(value) {
 }
 /**
  * Convert a length in feet to other units, keeping a string a string.
- * @param {number|string} value Length in feet.
- * @param {string} units Units converted to.
+ * @param {number|string} value  Length in feet.
+ * @param {string} units         Units converted to.
  * @returns {number|string}
  */
 function convertValue(value, units) {
@@ -140,9 +167,9 @@ function convertValue(value, units) {
 }
 /**
  * Convert an effect's plain-number length changes from feet, flagging it so it never converts twice.
- * @param {object} effectData Effect data, changed in place.
- * @param {RegExp} keys Change keys to convert.
- * @param {string} units Units converted to.
+ * @param {object} effectData  Effect data, changed in place.
+ * @param {RegExp} keys        Change keys to convert.
+ * @param {string} units       Units converted to.
  */
 function convertEffectLengths(effectData, keys, units) {
     if (effectData.flags?.cat?.metric) return;
@@ -153,9 +180,9 @@ function convertEffectLengths(effectData, keys, units) {
 }
 /**
  * Convert a range or area's plain-number fields from feet and set its units.
- * @param {object} data Range or area data, changed in place.
- * @param {string[]} keys Fields to convert.
- * @param {string} units Units converted to.
+ * @param {object} data    Range or area data, changed in place.
+ * @param {string[]} keys  Fields to convert.
+ * @param {string} units   Units converted to.
  */
 function convertFields(data, keys, units) {
     if (data?.units !== 'ft') return;
@@ -165,9 +192,13 @@ function convertFields(data, keys, units) {
     data.units = units;
 }
 /**
- * Convert an item's ranges, reach, areas and effect lengths to meters when the metric setting is on.
- * @param {object} itemData Item data, changed in place.
- * @returns {object}
+ * Convert item data from feet to meters when the system's metric setting is on. Covers the item's range, reach and
+ * area, each activity's range and area, and movement and sense changes on its effects. Only fields in feet with plain
+ * numbers are converted, and data already flagged as converted is skipped.
+ * @param {object} itemData  Item data, changed in place.
+ * @returns {object}         The same item data.
+ * @example
+ * const itemData = dataUtils.convertItemToMetric(item.toObject());
  */
 function convertItemToMetric(itemData) {
     if (!isMetric() || itemData.flags?.cat?.automation?.metric) return itemData;
@@ -183,10 +214,13 @@ function convertItemToMetric(itemData) {
     return itemData;
 }
 /**
- * Convert an enchantment's range changes from feet to the enchanted item's range units.
- * @param {object} effectData Effect data, changed in place.
- * @param {Item5e} item Item being enchanted.
- * @returns {object}
+ * Convert an enchantment's range and reach changes from feet to the enchanted item's range units. Other effect types,
+ * and items using feet or units that aren't lengths, are left alone.
+ * @param {object} effectData  Effect data, changed in place.
+ * @param {Item5e} item        Item being enchanted.
+ * @returns {object}           The same effect data.
+ * @example
+ * dataUtils.convertToItemUnits(enchantmentData, weapon);
  */
 function convertToItemUnits(effectData, item) {
     const units = item.system.range?.units;
@@ -195,10 +229,13 @@ function convertToItemUnits(effectData, item) {
     return effectData;
 }
 /**
- * Point effect data at its origin, writing dnd5e's `system.origin` to match and replacing any copied from another effect.
- * @param {object} effectData Effect data to write into, which is mutated.
- * @param {string|object} origin The activity, item, effect or actor the effect comes from, or its uuid.
- * @returns {object} The same effect data.
+ * Point effect data at its origin. Writes the system's `system.origin` to match, replacing any copied from another
+ * effect. Conditions only get `origin`.
+ * @param {object} effectData     Effect data to write into, which is mutated.
+ * @param {string|object} origin  The activity, item, effect or actor the effect comes from, or its uuid.
+ * @returns {object}              The same effect data.
+ * @example
+ * dataUtils.setOrigin(effectData, workflow.activity);
  */
 function setOrigin(effectData, origin) {
     if (typeof origin === 'string') origin = fromUuidSync(origin, {strict: false}) ?? origin;
@@ -216,9 +253,13 @@ function setOrigin(effectData, origin) {
 }
 
 /**
- * Coerce a value into an array. Splits comma-separated strings and unwraps any iterable.
- * @param {*} data Value to wrap. Arrays are returned as they are.
+ * Coerce a value into an array. Comma-separated strings are split and trimmed, and any other iterable is spread. Arrays
+ * are returned as they are, and `null` or undefined become an empty array.
+ * @param {*} data  Value to wrap.
  * @returns {Array}
+ * @example
+ * dataUtils.toArray('fire, cold'); // ['fire', 'cold']
+ * dataUtils.toArray(undefined); // []
  */
 function toArray(data) {
     if (data === undefined || data === null) return [];
@@ -231,13 +272,17 @@ function toArray(data) {
     return [data];
 }
 /**
- * Fetch information for evaluating roll formulas.
- * Type `cat.logFormulaData = true` in the console to view the collected data whenever this helper is called.
- * @param {object} options
- * @param {foundry.abstract.Document} [options.document]
- * @param {MidiQOL.Workflow} [options.workflow]
- * @param {foundry.documents.TokenDocument} [options.target]
+ * Build roll data for evaluating formulas, from midi-qol's condition data. An active effect adds itself under
+ * `@effect`, with its origin's roll data under `@effect.source` and its cast data under `@effect.castData`. Set
+ * `cat.logFormulaData = true` in the console to log the data on every call.
+ * @param {object} options                                    Data sources.
+ * @param {foundry.abstract.Document} [options.document]      Active effect, activity, item, actor or token supplying
+ *                                                            roll data.
+ * @param {MidiQOL.Workflow} [options.workflow]               Adds workflow data.
+ * @param {foundry.documents.TokenDocument} [options.target]  Adds target data.
  * @returns {object}
+ * @example
+ * const total = new Roll('1d6 + @mod', dataUtils.getFormulaData({document: activity, workflow})).evaluateSync().total;
  */
 function getFormulaData({document, target, workflow} = {}) {
     const context = {workflow, target};
@@ -270,7 +315,7 @@ function getFormulaData({document, target, workflow} = {}) {
 }
 /**
  * Build midi-qol condition data for a context, adding the effect's source roll data and cast data.
- * @param {object} context Workflow, document, effect and target to build from.
+ * @param {object} context  Workflow, document, effect and target to build from.
  * @returns {object}
  */
 function getData(context) {
@@ -291,17 +336,21 @@ function getData(context) {
 }
 /**
  * Create the system's formula field.
- * @param {object} [options] Field options.
+ * @param {object} [options]  Field options.
  * @returns {dnd5e.dataModels.fields.FormulaField}
+ * @example
+ * const field = dataUtils.formulaField({deterministic: true});
  */
 function formulaField(options) {
     return new dnd5e.dataModels.fields.FormulaField(options);
 }
 /**
- * Validate a value against a formula field, notifying when it does not parse.
- * @param {foundry.data.fields.DataField} field Field to validate against. Non-formula fields always pass.
- * @param {string} value Formula to check.
- * @returns {boolean} Whether the value is valid.
+ * Validate a value against a formula field. An invalid formula shows an error notification.
+ * @param {foundry.data.fields.DataField} field  Field to validate against. Non-formula fields always pass.
+ * @param {string} value                         Formula to check.
+ * @returns {boolean}                            Whether the value is valid.
+ * @example
+ * if (!dataUtils.validateFormula(field, formula)) return;
  */
 function validateFormula(field, value) {
     if (!(field instanceof dnd5e.dataModels.fields.FormulaField) || !field.validate(value)) return true;

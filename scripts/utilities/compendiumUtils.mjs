@@ -1,23 +1,33 @@
+/**
+ * Compendium lookups by identifier, name or slug, and pickers built on CAT's compendium browser. Spell and monster
+ * lookups default to the compendiums enabled in CAT's settings.
+ * @module
+ */
 import {CatCompendiumBrowser} from '../applications/_module.mjs';
 import {automationUtils, genericUtils, itemUtils} from './_module.mjs';
 import {Logging} from '../lib/_module.mjs';
 /**
- * Prompt the compendium browser for a selection of documents.
- * @param {string} tab The browser tab to open, e.g. 'spells' or 'monsters'.
- * @param {object} [options] Additional options.
- * @param {string[]} [options.packIds] Restrict the browser to these compendiums.
- * @param {Function} [options.filterPredicate] Receives each index entry; only entries returning true are offered.
- * @param {object[]} [options.filters] Additional filters, see dnd5e.Filter.
- * @param {object} [options.lockedFilters] Filters the user cannot change.
- * @param {string[]} [options.exceptionIdentifiers] Identifiers offered despite failing other filters.
- * @param {string[]} [options.exceptionUuids] Uuids offered despite failing other filters.
- * @param {number} [options.minAmount] Fewest documents that may be chosen.
- * @param {number} [options.maxAmount] Most documents that may be chosen.
- * @param {string} [options.title] Window title.
- * @param {string} [options.hint] Hint shown above the list.
- * @param {string} [options.icon] Window icon.
- * @param {object} [options.position] Initial window position.
- * @returns {Promise<foundry.abstract.Document[]|undefined>}
+ * Open CAT's compendium browser for the current user to choose documents, and load the chosen ones. Chosen uuids that
+ * no longer resolve are dropped.
+ * @param {string} tab                                        Browser tab to open, such as `'spells'` or `'monsters'`.
+ * @param {object} [options]                                  Additional options.
+ * @param {string[]} [options.packIds]                        Restrict the browser to these compendiums.
+ * @param {Function} [options.filterPredicate]                Receives each index entry. Only entries returning true are
+ *                                                            offered.
+ * @param {object[]} [options.filters]                        Additional filters, see `dnd5e.Filter`.
+ * @param {object} [options.lockedFilters]                    Filters the user cannot change.
+ * @param {string[]} [options.exceptionIdentifiers]           Identifiers offered despite failing other filters.
+ * @param {string[]} [options.exceptionUuids]                 Uuids offered despite failing other filters.
+ * @param {number} [options.minAmount]                        Fewest documents that may be chosen. Defaults to 1.
+ * @param {number} [options.maxAmount]                        Most documents that may be chosen.
+ * @param {string} [options.title]                            Window title.
+ * @param {string} [options.hint]                             Hint shown above the list.
+ * @param {string} [options.icon]                             Window icon.
+ * @param {object} [options.position]                         Initial window position.
+ * @returns {Promise<foundry.abstract.Document[]|undefined>}  The chosen documents. Undefined if nothing is chosen or
+ *                                                            the browser is closed.
+ * @example
+ * const [weapon] = await compendiumUtils.selectFromCompendiumBrowser('equipment', {maxAmount: 1, filterPredicate: entry => entry.type === 'weapon'}) ?? [];
  */
 async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filters, lockedFilters, exceptionIdentifiers, exceptionUuids, minAmount = 1, maxAmount, title, hint, icon, position} = {}) {
     const options = {
@@ -42,16 +52,21 @@ async function selectFromCompendiumBrowser(tab, {packIds, filterPredicate, filte
     return (await Promise.all(Array.from(results).map(uuid => fromUuid(uuid)))).filter(Boolean);
 }
 /**
- * Fetch a compendium document by its system or CAT identifier.
- * @param {string} packId Compendium to search.
- * @param {string} identifier Identifier to match.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.object] Return an object rather than a document.
- * @param {string} [options.description] Set the description.
- * @param {string} [options.translate] A localization key for the document and effect names.
- * @param {number} [options.flatAttack] Set a flat attack bonus.
- * @param {number} [options.flatDC] Set a flat save DC.
+ * Fetch a compendium document by its `system.identifier` or `flags.cat.identifier`, returning the first match in the
+ * index. With `object`, returns its source data with the overrides below applied. The overrides are ignored without
+ * `object`.
+ * @param {string} packId                 Compendium to search.
+ * @param {string} identifier             Identifier to match.
+ * @param {object} [options]              Additional options.
+ * @param {boolean} [options.object]      Return the document's source data instead of the document.
+ * @param {string} [options.description]  Replace the description.
+ * @param {string} [options.translate]    Localization key used as the document name and every effect name.
+ * @param {number} [options.flatAttack]   Give every attack activity this flat attack bonus.
+ * @param {number} [options.flatDC]       Give every save activity this flat DC.
  * @returns {Promise<foundry.abstract.Document|object|undefined>}
+ *                                        Undefined if the compendium or a match is missing.
+ * @example
+ * const itemData = await compendiumUtils.getDocumentByIdentifier('dnd5e.spells', 'fire-bolt', {object: true, flatAttack: 7});
  */
 async function getDocumentByIdentifier(packId, identifier, {object = false, description, translate, flatAttack, flatDC} = {}) {
     const pack = game.packs.get(packId);
@@ -70,7 +85,7 @@ async function getDocumentByIdentifier(packId, identifier, {object = false, desc
             });
         }
         let activities = documentData.system.activities;
-        if (flatAttack) { // I haven't tested these in v14 just copy/pasted
+        if (flatAttack) {
             let activityIds = Object.entries(activities).filter(i => i[1].type === 'attack').map(i => i[0]);
             for (let activityId of activityIds) {
                 genericUtils.setProperty(documentData, 'system.activities.' + activityId + '.attack.flat', true);
@@ -92,12 +107,15 @@ async function getDocumentByIdentifier(packId, identifier, {object = false, desc
     return await fromUuid(found.uuid);
 }
 /**
- * Fetch a compendium document by exact name.
- * @param {string} packId Compendium to search.
- * @param {string} name Document name to match.
- * @param {object} [options] Additional options.
- * @param {string} [options.rules] Only match documents with these rules, '2014' or '2024'. Documents without rules count as 2014.
- * @returns {Promise<foundry.abstract.Document|undefined>}
+ * Fetch a compendium document by exact, case-sensitive name, returning the first match in the index.
+ * @param {string} packId                                   Compendium to search.
+ * @param {string} name                                     Document name to match.
+ * @param {object} [options]                                Additional options.
+ * @param {string} [options.rules]                          Only match documents with these rules, `'2014'` or `'2024'`.
+ *                                                          Documents without rules count as 2014.
+ * @returns {Promise<foundry.abstract.Document|undefined>}  Undefined if the compendium or a match is missing.
+ * @example
+ * const goblin = await compendiumUtils.getDocumentByName('dnd5e.monsters', 'Goblin', {rules: '2014'});
  */
 async function getDocumentByName(packId, name, {rules} = {}) {
     const pack = game.packs.get(packId);
@@ -108,10 +126,13 @@ async function getDocumentByName(packId, name, {rules} = {}) {
     return await fromUuid(found.uuid);
 }
 /**
- * Documents in a compendium whose slugified names match, in the order of the slugs given.
- * @param {string} packId Compendium to search.
- * @param {string[]} slugs Slugified document names to match.
- * @returns {Promise<foundry.abstract.Document[]>} Empty when the compendium is missing.
+ * Fetch the documents in a compendium whose slugified names match, in the order of the slugs given. Slugs with no match
+ * are skipped.
+ * @param {string} packId                           Compendium to search.
+ * @param {string[]} slugs                          Slugified document names to match.
+ * @returns {Promise<foundry.abstract.Document[]>}  Empty when the compendium is missing.
+ * @example
+ * const familiars = await compendiumUtils.getDocumentsBySlug('dnd5e.monsters', ['bat', 'cat', 'owl']);
  */
 async function getDocumentsBySlug(packId, slugs) {
     const pack = game.packs.get(packId);
@@ -122,8 +143,8 @@ async function getDocumentsBySlug(packId, slugs) {
 }
 /**
  * Build a compendium browser filter object from a list of keys.
- * @param {string[]} list Values the filter accepts.
- * @param {boolean} [include] False to exclude the listed keys instead.
+ * @param {string[]} list      Values the filter accepts.
+ * @param {boolean} [include]  False to exclude the listed keys instead.
  * @returns {Record<string, number>}
  */
 // used locally only
@@ -131,9 +152,12 @@ function makeBrowserFilter(list, include = true) {
     return list.reduce((obj, key) => (obj[key] = include ? 1 : -1, obj), {});
 }
 /**
- * Pack ids for an enabled compendium setting, in priority order.
- * @param {string} settingKey A CAT setting holding compendium configuration, e.g. 'spellCompendiums'.
+ * Ids of the compendiums enabled in a CAT compendium setting, lowest priority number first.
+ * @param {string} settingKey  CAT setting holding compendium configuration, such as `'spellCompendiums'` or
+ *                             `'monsterCompendiums'`.
  * @returns {string[]}
+ * @example
+ * const packIds = compendiumUtils.getEnabledCompendiumIds('spellCompendiums');
  */
 function getEnabledCompendiumIds(settingKey) {
     return Object.entries(game.settings.get('cat', settingKey) ?? {})
@@ -142,17 +166,22 @@ function getEnabledCompendiumIds(settingKey) {
         .map(s => s[0]);
 }
 /**
- * Whether an Item compendium holds any spells.
- * @param {CompendiumCollection} pack Item compendium to check.
+ * Whether an Item compendium holds any spells. Reads the index already loaded and does not fetch it.
+ * @param {CompendiumCollection} pack  Item compendium to check.
  * @returns {boolean}
+ * @example
+ * const spellPacks = game.packs.filter(pack => pack.documentName === 'Item' && compendiumUtils.isSpellPack(pack));
  */
 function isSpellPack(pack) {
     return pack.index.some(entry => entry.type === 'spell');
 }
 /**
- * Where a compendium comes from: the package that provides it and its sidebar folder path.
- * @param {CompendiumCollection} pack Compendium to describe.
- * @returns {{source: string, folders: string}} e.g. {source: "Player's Handbook", folders: "Sources / 2024"}.
+ * Where a compendium comes from: the name of the package that provides it, or World, and its sidebar folder path.
+ * @param {CompendiumCollection} pack            Compendium to describe.
+ * @returns {{source: string, folders: string}}  `folders` joins folder names with ` / `, and is empty when the
+ *                                               compendium is not in a folder.
+ * @example
+ * compendiumUtils.getPackOrigin(pack); // {source: "Player's Handbook", folders: 'Sources / 2024'}
  */
 function getPackOrigin(pack) {
     const {packageType, packageName} = pack.metadata;
@@ -161,28 +190,38 @@ function getPackOrigin(pack) {
     return {source, folders};
 }
 /**
- * Single-line picker label for a compendium: its title followed by its origin.
- * @param {CompendiumCollection} pack Compendium to label.
- * @returns {string} e.g. "Monsters (Player's Handbook • Sources / 2024)".
+ * Single-line picker label for a compendium: its title followed by its origin from {@link getPackOrigin}.
+ * @param {CompendiumCollection} pack  Compendium to label.
+ * @returns {string}
+ * @example
+ * compendiumUtils.getPackLabel(pack); // "Monsters (Player's Handbook • Sources / 2024)"
  */
 function getPackLabel(pack) {
     const {source, folders} = getPackOrigin(pack);
     return `${pack.title} (${folders ? `${source} • ${folders}` : source})`;
 }
 /**
- * Open the compendium browser for a choice of spell from the provided classes.
- * @param {string[]} listKeys Class list keys in the form 'type:identifier'. Allowed types are defined in CONFIG.DND5E.spellListTypes.
- * @param {object} [options] Additional options.
- * @param {string} [options.icon] Window icon.
- * @param {string} [options.title] Window title.
- * @param {object[]} [options.filters] Additional filters, see dnd5e.Filter.
- * @param {number} [options.amount] The number of spells that can be chosen.
- * @param {number} [options.minLevel] The minimum spell level offered as an option.
- * @param {number} [options.maxLevel] The maxmium spell level offered as an option.
- * @param {string[]} [options.castTime] Allowed casting times for the spell.
- * @param {string[]} [options.packIds] Pack ids to use instead of the spell compendiums configured in settings.
- * @param {string[]} [options.exceptions] Item identifiers for spells that should be offered despite failing other filters.
- * @returns {Promise<foundry.documents.Item[]|undefined>}
+ * Open the compendium browser for a choice of spells from registered spell lists, locked to those lists and any level
+ * or casting time limits. List keys that are not registered are skipped with a warning. Warns and returns nothing when
+ * no spell compendium is enabled.
+ * @param {string[]} listKeys                              Spell list keys in the form `type:identifier`, such as
+ *                                                         `class:wizard`. Allowed types are defined in
+ *                                                         `CONFIG.DND5E.spellListTypes`.
+ * @param {object} [options]                               Additional options.
+ * @param {string} [options.icon]                          Window icon.
+ * @param {string} [options.title]                         Window title. Defaults to the compendium browser title.
+ * @param {object[]} [options.filters]                     Additional filters, see `dnd5e.Filter`.
+ * @param {number} [options.amount]                        Most spells that can be chosen. Defaults to 1.
+ * @param {number} [options.minLevel]                      Lowest spell level offered.
+ * @param {number} [options.maxLevel]                      Highest spell level offered.
+ * @param {string[]} [options.castTime]                    Activation types offered, such as `action` or `bonus`.
+ * @param {string[]} [options.packIds]                     Compendiums to search instead of the enabled spell
+ *                                                         compendiums.
+ * @param {string[]} [options.exceptions]                  Identifiers of spells offered despite failing other filters.
+ * @returns {Promise<foundry.documents.Item[]|undefined>}  The chosen spells. Undefined if nothing is chosen, the
+ *                                                         browser is closed, or no list key is registered.
+ * @example
+ * const [spell] = await compendiumUtils.selectSpellFromLists(['class:wizard'], {maxLevel: 2, castTime: ['action']}) ?? [];
  */
 async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, castTime, packIds, exceptions, filters, icon, title = 'CAT.CompendiumBrowser.Title'} = {}) {
     if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
@@ -216,23 +255,33 @@ async function selectSpellFromLists(listKeys, {amount = 1, minLevel, maxLevel, c
     return result;
 }
 /**
- * Open the compendium browser for a choice of actor document.
- * @param {object} [options] Additional options.
- * @param {string} [options.icon] Window icon.
- * @param {string} [options.title] Window title.
- * @param {object[]} [options.filters] Additional filters, see dnd5e.Filter.
- * @param {number} [options.amount] The number of actors that can be chosen.
- * @param {number} [options.minCR] The minimum challenge rating offered as an option.
- * @param {number} [options.maxCR] The maxmium challenge rating offered as an option.
- * @param {string[]} [options.creatureTypes] Include provided types. Allowed types are defined in CONFIG.DND5E.creatureTypes.
- * @param {string[]} [options.excludeMovement] Exclude provided types. Allowed types are defined in CONFIG.DND5E.movementTypes.
- * @param {string[]} [options.packIds] Pack ids to use instead of the monster compendiums configured in settings.
- * @param {string[]} [options.exceptions] Uuids for actors that should be offered despite failing other filters.
- * @returns {Promise<foundry.documents.Actor[]|undefined>}
+ * Open the compendium browser's monsters tab for a choice of actors, locked to the given challenge rating, creature
+ * type and movement limits. Warns when no monster compendium is enabled.
+ * @param {object} [options]                                Additional options.
+ * @param {string} [options.icon]                           Window icon.
+ * @param {string} [options.title]                          Window title. Defaults to the compendium browser title.
+ * @param {string} [options.hint]                           Hint shown above the list.
+ * @param {object[]} [options.filters]                      Additional filters, see `dnd5e.Filter`.
+ * @param {number} [options.amount]                         Most actors that can be chosen. Defaults to 1.
+ * @param {number} [options.minCR]                          Lowest challenge rating offered.
+ * @param {number} [options.maxCR]                          Highest challenge rating offered.
+ * @param {string[]} [options.creatureTypes]                Creature types offered, from `CONFIG.DND5E.creatureTypes`.
+ * @param {string[]} [options.excludeMovement]              Movement types that rule an actor out, from
+ *                                                          `CONFIG.DND5E.movementTypes`.
+ * @param {string[]} [options.packIds]                      Compendiums to search instead of the enabled monster
+ *                                                          compendiums.
+ * @param {string[]} [options.exceptions]                   Uuids of actors offered despite failing other filters.
+ * @returns {Promise<foundry.documents.Actor[]|undefined>}  The chosen actors. Undefined if nothing is chosen or the
+ *                                                          browser is closed.
+ * @example
+ * const [beast] = await compendiumUtils.selectActor({creatureTypes: ['beast'], maxCR: 1, excludeMovement: ['fly']}) ?? [];
  */
 async function selectActor({amount = 1, minCR, maxCR, creatureTypes, excludeMovement, packIds, exceptions, filters, icon, hint, title = 'CAT.CompendiumBrowser.Title'} = {}) {
     if (!packIds?.length) packIds = getEnabledCompendiumIds('monsterCompendiums');
-    if (!packIds.length) return genericUtils.notify('CAT.Error.NoMonsterCompendiums', {type: 'warn'});
+    if (!packIds.length) {
+        genericUtils.notify('CAT.Error.NoMonsterCompendiums', {type: 'warn'});
+        return;
+    }
     const lockedFilters = {};
     if (Number.isNumeric(minCR)) genericUtils.setProperty(lockedFilters, 'additional.cr.min', minCR);
     if (Number.isNumeric(maxCR)) genericUtils.setProperty(lockedFilters, 'additional.cr.max', maxCR);
@@ -251,14 +300,20 @@ async function selectActor({amount = 1, minCR, maxCR, creatureTypes, excludeMove
     return result;
 }
 /**
- * Filter the monster compendiums by CR, creature type, subtype and name without opening the compendium browser.
- * @param {object} [options] Additional options.
- * @param {string[]} [options.packIds] Pack ids to use instead of the monster compendiums configured in settings.
- * @param {number} [options.maxCR] Highest challenge rating kept.
- * @param {string[]} [options.creatureTypes] Creature types kept.
- * @param {string[]} [options.creatureSubtypes] Creature subtypes kept, matched case-insensitively against the subtype text.
- * @param {string[]} [options.names] Actor names kept.
- * @returns {Promise<object[]>} Index entries, one per actor name, sorted by CR then name.
+ * Filter the NPCs in the monster compendiums by challenge rating, creature type, subtype and name without opening the
+ * compendium browser. When several compendiums hold an actor with the same name, the first in priority order wins.
+ * @param {object} [options]                     Additional options.
+ * @param {string[]} [options.packIds]           Compendiums to search instead of the enabled monster compendiums.
+ * @param {number} [options.maxCR]               Highest challenge rating kept. Actors without one are dropped.
+ * @param {string[]} [options.creatureTypes]     Creature types kept.
+ * @param {string[]} [options.creatureSubtypes]  Creature subtypes kept, matched case-insensitively as part of the
+ *                                               subtype text.
+ * @param {string[]} [options.names]             Actor names kept, matched case-insensitively.
+ * @returns {Promise<object[]>}                  Index entries, one per actor name, sorted by challenge rating then
+ *                                               name.
+ * @example
+ * const entries = await compendiumUtils.getFilteredActors({maxCR: 0.25, creatureTypes: ['beast']});
+ * const actor = await fromUuid(entries[0].uuid);
  */
 async function getFilteredActors({packIds, maxCR, creatureTypes, creatureSubtypes, names} = {}) {
     if (!packIds?.length) packIds = getEnabledCompendiumIds('monsterCompendiums');
@@ -281,10 +336,13 @@ async function getFilteredActors({packIds, maxCR, creatureTypes, creatureSubtype
     return Array.from(found.values()).sort((a, b) => (a.system?.details?.cr ?? 0) - (b.system?.details?.cr ?? 0) || a.name.localeCompare(b.name));
 }
 /**
- * Find the compendium uuid of a document by its identifier, without loading the document.
- * @param {string} packId Compendium to search.
- * @param {string} identifier Identifier to match.
- * @returns {Promise<string|undefined>}
+ * Find the uuid of a compendium document by its `system.identifier` or `flags.cat.identifier`, without loading the
+ * document.
+ * @param {string} packId                Compendium to search.
+ * @param {string} identifier            Identifier to match.
+ * @returns {Promise<string|undefined>}  Undefined if the compendium or a match is missing.
+ * @example
+ * const uuid = await compendiumUtils.getDocumentUuidByIdentifier('dnd5e.spells', 'fireball');
  */
 async function getDocumentUuidByIdentifier(packId, identifier) {
     const pack = game.packs.get(packId);
@@ -293,11 +351,14 @@ async function getDocumentUuidByIdentifier(packId, identifier) {
     return index.find(i => i.system.identifier === identifier || i.flags.cat?.identifier === identifier)?.uuid;
 }
 /**
- * Find the compendium uuid of a spell by its identifier, searching the configured spell compendiums in priority order.
- * @param {string} identifier Identifier to match.
- * @param {object} [options] Additional options.
- * @param {string[]} [options.packIds] Search these compendiums instead of the configured ones.
- * @returns {Promise<string|undefined>}
+ * Find the uuid of a spell by its identifier, searching the enabled spell compendiums in priority order with
+ * {@link getDocumentUuidByIdentifier}.
+ * @param {string} identifier            Identifier to match.
+ * @param {object} [options]             Additional options.
+ * @param {string[]} [options.packIds]   Compendiums to search instead of the enabled ones, in order.
+ * @returns {Promise<string|undefined>}  Undefined if no compendium has a match.
+ * @example
+ * const uuid = await compendiumUtils.getSpellUuid('misty-step');
  */
 async function getSpellUuid(identifier, {packIds} = {}) {
     if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
@@ -307,20 +368,28 @@ async function getSpellUuid(identifier, {packIds} = {}) {
     }
 }
 /**
- * Fetch a compendium spell by identifier.
- * @param {string} identifier Identifier to match.
- * @param {object} [options] Additional options.
- * @param {string[]} [options.packIds] Pack ids to search instead of the spell compendiums configured in settings.
- * @param {boolean} [options.object] Return an object rather than a document.
- * @param {foundry.documents.Actor} [options.actor] An actor parent for the spell. Used only when {@link object} is false.
- * @param {string} [options.description] Set the description.
- * @param {string} [options.translate] A localization key for the spell and effect names.
- * @param {number} [options.flatAttack] Set a flat attack bonus.
- * @param {number} [options.flatDC] Set a flat save DC.
+ * Fetch a spell by identifier from the enabled spell compendiums, in priority order. Returns an unsaved synthetic item
+ * built with {@link itemUtils.syntheticItem}, or its source data with `object`. Warns when no spell compendium is
+ * enabled.
+ * @param {string} identifier                        Identifier to match.
+ * @param {object} [options]                         Additional options.
+ * @param {string[]} [options.packIds]               Compendiums to search instead of the enabled spell compendiums.
+ * @param {boolean} [options.object]                 Return the spell's source data instead of an item.
+ * @param {foundry.documents.Actor} [options.actor]  Parent actor for the synthetic item. Ignored with `object`.
+ * @param {string} [options.description]             Replace the description.
+ * @param {string} [options.translate]               Localization key used as the spell name and every effect name.
+ * @param {number} [options.flatAttack]              Give every attack activity this flat attack bonus.
+ * @param {number} [options.flatDC]                  Give every save activity this flat DC.
+ * @returns {Promise<Item5e|object|undefined>}       Undefined when no compendium has the spell.
+ * @example
+ * const spell = await compendiumUtils.getSpell('command', {actor, flatDC: 15});
  */
 async function getSpell(identifier, {packIds, object = false, actor, description, translate, flatAttack, flatDC} = {}) {
     if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
-    if (!packIds.length) return genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
+    if (!packIds.length) {
+        genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
+        return;
+    }
     for (const id of packIds) {
         const spell = await getDocumentByIdentifier(id, identifier, {object: true, description, translate, flatAttack, flatDC});
         if (!spell) continue;

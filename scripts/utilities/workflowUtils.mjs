@@ -1,30 +1,41 @@
+/**
+ * Midi-qol workflows (`MidiQOL.Workflow`): using items and activities through midi, and changing a workflow's targets,
+ * rolls and damage while it runs.
+ * @module
+ */
 import {constants, Logging} from '../lib/_module.mjs';
 import {activityUtils, actorUtils, dialogUtils, distanceUtils, documentUtils, genericUtils, itemUtils, queryUtils, rollUtils} from './_module.mjs';
 /**
  * Midi workflow options that skip the attack and damage prompts.
- * @param {boolean} fast Skip the prompts.
+ * @param {boolean} fast  Skip the prompts.
  * @returns {object}
  */
 function fastWorkflowOptions(fast) {
     return fast ? {fastForwardDamage: true, autoFastAttack: true, autoRollAttack: true} : {};
 }
 /**
- * The activity's action type for the attack mode in play, such as mwak or rsak.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @returns {string|undefined} Undefined when the workflow has no activity.
+ * The activity's action type for the workflow's attack mode, such as `mwak` or `rsak`.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @returns {string|undefined}         Undefined when the workflow has no activity.
+ * @example
+ * if (workflowUtils.getActionType(workflow) !== 'mwak') return;
  */
 function getActionType(workflow) {
     if (!workflow.activity) return;
     return workflow.activity.getActionType(workflow.attackMode);
 }
 /**
- * Whether this workflow is an attack of the given category.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {'attack'|'meleeAttack'|'rangedAttack'|'weaponAttack'|'spellAttack'|'rangedWeaponAttack'|'meleeWeaponAttack'|'rangedSpellAttack'|'meleeSpellAttack'} type Attack category to test for.
+ * Whether the workflow's action type, from {@link getActionType}, falls in an attack category. False when the workflow
+ * has no activity or the category is unknown.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @param {'attack'|'meleeAttack'|'rangedAttack'|'weaponAttack'|'spellAttack'|'rangedWeaponAttack'|'meleeWeaponAttack'|'rangedSpellAttack'|'meleeSpellAttack'} [type]
+ *                                     Attack category to test for. Defaults to `attack`, which matches any attack.
  * @returns {boolean}
+ * @example
+ * if (!workflowUtils.isAttackType(workflow, 'meleeWeaponAttack')) return;
  */
 function isAttackType(workflow, type = 'attack') {
-    if (!workflow.activity) return;
+    if (!workflow.activity) return false;
     let field;
     switch (type) {
         case 'attack': field = 'attacks'; break;
@@ -36,26 +47,35 @@ function isAttackType(workflow, type = 'attack') {
         case 'meleeWeaponAttack': field = 'meleeWeaponAttacks'; break;
         case 'rangedSpellAttack': field = 'rangedSpellAttacks'; break;
         case 'meleeSpellAttack': field = 'meleeSpellAttacks'; break;
-        default: return;
+        default: return false;
     }
     return constants[field].includes(getActionType(workflow));
 }
 /**
- * Use an activity through midi, rolling as the actor's owner when the current user lacks permission.
- * @param {dnd5e.documents.activity.Activity} activity Activity to use.
- * @param {foundry.documents.TokenDocument[]} [targets] Tokens the use is aimed at.
- * @param {object} [options] Additional options.
- * @param {object} [options.config] Merged over the usage config.
- * @param {object} [options.options] Merged over midi's workflow options.
- * @param {object} [options.dialog] Usage dialog configuration.
- * @param {object} [options.message] Chat message configuration.
- * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
- * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
- * @param {boolean} [options.spellSlot] Spend a spell slot.
- * @param {boolean} [options.fast] Skip the attack and damage prompts.
- * @param {boolean} [options.autoDamage] Roll damage by midi's autoRollDamage setting, or on hit when it is off.
- * @returns {Promise<MidiQOL.Workflow|undefined>} Undefined when midi declines the use.
+ * Use an activity through `MidiQOL.completeActivityUse` without the usage dialog. The roll runs as `userId`, or as the
+ * actor's first active player owner with the GM as fallback. Unless `consumeResources` is given, every consumption
+ * target is spent except combat-only ones outside combat; cast activities skip this default.
+ * @param {dnd5e.documents.activity.Activity} activity   Activity to use.
+ * @param {foundry.documents.TokenDocument[]} [targets]  Tokens the use is aimed at.
+ * @param {object} [options]                             Additional options.
+ * @param {object} [options.config]                      Merged over the usage config.
+ * @param {object} [options.options]                     Merged over midi's options. Its `asUser` is filled in when
+ *                                                       missing.
+ * @param {object} [options.dialog]                      Usage dialog configuration.
+ * @param {object} [options.message]                     Chat message configuration.
+ * @param {string} [options.userId]                      Id of the user the roll runs as.
+ * @param {number} [options.atLevel]                     Spell level to cast at. Ignored when the actor has no
+ *                                                       equivalent slot.
+ * @param {boolean|number[]} [options.consumeResources]  `true` or `false` spends all or none of the activity's
+ *                                                       consumption. An array of indices spends only those consumption
+ *                                                       targets.
+ * @param {boolean} [options.spellSlot]                  Spend a spell slot. Defaults to true.
+ * @param {boolean} [options.fast]                       Skip the attack and damage prompts. Defaults to false.
+ * @param {boolean} [options.autoDamage]                 Roll damage by midi's autoRollDamage setting, or on hit when
+ *                                                       that setting is off. Defaults to true.
+ * @returns {Promise<MidiQOL.Workflow|undefined>}        Undefined when midi declines the use.
+ * @example
+ * const workflow = await workflowUtils.completeActivityUse(activity, [target.document], {consumeResources: false});
  */
 async function completeActivityUse(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = false, autoDamage = true} = {}) {
     const defaultConfig = {
@@ -83,11 +103,7 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
         const spellLabel = actorUtils.getEquivalentSpellSlotName(activity.actor, atLevel);
         if (spellLabel) defaultConfig.spell = {slot: spellLabel};
     }
-    if (userId) {
-        options.asUser ||= userId;
-    } else {
-        options.asUser ||= queryUtils.firstOwner(activity.actor, true);
-    }
+    options = {...options, asUser: options.asUser || userId || queryUtils.firstOwner(activity.actor, true)};
     options = genericUtils.mergeObject(defaultOptions, options);
     config = genericUtils.mergeObject(defaultConfig, config);
     config.midiOptions = options;
@@ -103,42 +119,59 @@ async function completeActivityUse(activity, targets = [], {config = {}, options
     return workflow?.workflow ?? workflow;
 }
 /**
- * {@link completeActivityUse} with the prompts skipped and damage rolled automatically.
- * @param {dnd5e.documents.activity.Activity} activity Activity to use.
- * @param {foundry.documents.TokenDocument[]} [targets] Tokens the use is aimed at.
- * @param {object} [options] Additional options.
- * @param {object} [options.config] Merged over the usage config.
- * @param {object} [options.options] Merged over midi's workflow options.
- * @param {object} [options.dialog] Usage dialog configuration.
- * @param {object} [options.message] Chat message configuration.
- * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
- * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean|number[]} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
- * @param {boolean} [options.spellSlot] Spend a spell slot.
- * @param {boolean} [options.fast] Skip the attack and damage prompts.
- * @returns {Promise<MidiQOL.Workflow|undefined>}
+ * {@link completeActivityUse} with `fast` defaulting to true and `autoDamage` always on.
+ * @param {dnd5e.documents.activity.Activity} activity   Activity to use.
+ * @param {foundry.documents.TokenDocument[]} [targets]  Tokens the use is aimed at.
+ * @param {object} [options]                             Additional options.
+ * @param {object} [options.config]                      Merged over the usage config.
+ * @param {object} [options.options]                     Merged over midi's options.
+ * @param {object} [options.dialog]                      Usage dialog configuration.
+ * @param {object} [options.message]                     Chat message configuration.
+ * @param {string} [options.userId]                      Id of the user the roll runs as. Defaults to the actor's first
+ *                                                       owner.
+ * @param {number} [options.atLevel]                     Spell level to cast at. Ignored when the actor has no
+ *                                                       equivalent slot.
+ * @param {boolean|number[]} [options.consumeResources]  `true` or `false` spends all or none of the activity's
+ *                                                       consumption. An array of indices spends only those consumption
+ *                                                       targets.
+ * @param {boolean} [options.spellSlot]                  Spend a spell slot. Defaults to true.
+ * @param {boolean} [options.fast]                       Skip the attack and damage prompts. Defaults to true.
+ * @returns {Promise<MidiQOL.Workflow|undefined>}        Undefined when midi declines the use.
+ * @example
+ * const activity = itemUtils.getActivityByIdentifier(item, 'explode');
+ * await workflowUtils.syntheticActivityRoll(activity, Array.from(workflow.targets));
  */
 async function syntheticActivityRoll(activity, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = true} = {}) {
     return await completeActivityUse(activity, targets, {config, options, dialog, message, userId, atLevel, consumeResources, spellSlot, fast, autoDamage: true});
 }
 /**
- * {@link syntheticActivityRoll} for activity data that is not on the item, such as a modified copy.
- * @param {object} activityData Activity data to roll, which need not exist on the item.
- * @param {Item5e} item Item the in-memory activity belongs to.
- * @param {foundry.documents.TokenDocument[]} [targets] Tokens the use is aimed at.
- * @param {object} [options] Additional options.
- * @param {object} [options.config] Merged over the usage config.
- * @param {object} [options.options] Merged over midi's workflow options.
- * @param {object} [options.dialog] Usage dialog configuration.
- * @param {object} [options.message] Chat message configuration.
- * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
- * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeResources] `true` spends the resources the activity consumes. An array of indices uses those specific consumption targets only.
- * @param {boolean} [options.spellSlot] Spend a spell slot.
- * @param {boolean} [options.fast] Skip the attack and damage prompts.
+ * {@link syntheticActivityRoll} for activity data that is not saved on the item, such as a modified copy. The activity
+ * is built in memory on `item`. When the rolling user is another client, the roll runs there through a query and the
+ * result's token sets are restored; with `fast` on, the query times out after midi's reaction timeout.
+ * @param {object} activityData                          Activity data to roll.
+ * @param {Item5e} item                                  Item the in-memory activity belongs to.
+ * @param {foundry.documents.TokenDocument[]} [targets]  Tokens the use is aimed at.
+ * @param {object} [options]                             Additional options.
+ * @param {object} [options.config]                      Merged over the usage config.
+ * @param {object} [options.options]                     Merged over midi's options.
+ * @param {object} [options.dialog]                      Usage dialog configuration.
+ * @param {object} [options.message]                     Chat message configuration.
+ * @param {string} [options.userId]                      Id of the user the roll runs as. Defaults to the actor's first
+ *                                                       owner.
+ * @param {number} [options.atLevel]                     Spell level to cast at. Ignored when the actor has no
+ *                                                       equivalent slot.
+ * @param {boolean|number[]} [options.consumeResources]  `true` or `false` spends all or none of the activity's
+ *                                                       consumption. An array of indices spends only those consumption
+ *                                                       targets.
+ * @param {boolean} [options.spellSlot]                  Spend a spell slot. Defaults to true.
+ * @param {boolean} [options.fast]                       Skip the attack and damage prompts. Defaults to true.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
+ * @example
+ * const activityData = activity.toObject();
+ * activityData.damage.parts[0].bonus = '@mod';
+ * await workflowUtils.syntheticActivityDataRoll(activityData, item, [target.document]);
  */
-async function syntheticActivityDataRoll(activityData, item, targets, {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = true} = {}) {
+async function syntheticActivityDataRoll(activityData, item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources, spellSlot = true, fast = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(item.actor);
     if (user && user.id !== game.user.id) {
         return MidiQOL.restoreWorkflowTokenSets(await queryUtils.query('syntheticActivityDataRoll', user, {
@@ -159,33 +192,47 @@ async function syntheticActivityDataRoll(activityData, item, targets, {config = 
     return await syntheticActivityRoll(activity, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeResources, spellSlot, fast});
 }
 /**
- * Spend an activity's consumption at a scaled amount without triggering its parent.
- * @param {Item5e} item Item to use.
- * @param {string} activityIdentifier The hidden cost activity.
- * @param {number} amount Scaling amount the consumption is multiplied by.
+ * Roll a cost activity of an item with its consumption scaled by `amount`, so the cost is spent through midi with no
+ * targets. Shows a warning when the activity is missing.
+ * @param {Item5e} item                Item holding the cost activity.
+ * @param {string} activityIdentifier  Identifier of the cost activity, usually hidden.
+ * @param {number} amount              Scaling amount for the consumption, passed to
+ *                                     {@link activityUtils.getConsumptionModifiedActivityData}.
+ * @returns {Promise<MidiQOL.Workflow|undefined>}
+ * @example
+ * await workflowUtils.spendScaledCost(item, 'spend-dice', diceCount);
  */
 async function spendScaledCost(item, activityIdentifier, amount) {
     const activity = itemUtils.getActivityByIdentifier(item, activityIdentifier);
     const activityData = activity ? activityUtils.getConsumptionModifiedActivityData(activity, amount) : undefined;
-    if (!activityData) return genericUtils.notify('CAT.Error.MissingCostActivity', {type: 'warn'});
+    if (!activityData) {
+        genericUtils.notify('CAT.Error.MissingCostActivity', {type: 'warn'});
+        return;
+    }
     return await syntheticActivityDataRoll(activityData, item, []);
 }
 /**
- * Use an item through midi, rolling as the actor's owner when the current user lacks permission. Sets returned by midi across clients are rebuilt, since they arrive as arrays.
- * @param {Item5e} item Item to use.
- * @param {foundry.documents.TokenDocument[]} [targets] Tokens the use is aimed at.
- * @param {object} [options] Additional options.
- * @param {object} [options.config] Merged over the usage config.
- * @param {object} [options.options] Merged over midi's workflow options.
- * @param {object} [options.dialog] Usage dialog configuration.
- * @param {object} [options.message] Chat message configuration.
- * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
- * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
- * @param {boolean} [options.spellSlot] Spend a spell slot.
- * @param {boolean} [options.fast] Skip the attack and damage prompts.
- * @param {boolean} [options.autoDamage] Roll damage by midi's autoRollDamage setting, or on hit when it is off.
- * @returns {Promise<MidiQOL.Workflow|undefined>} Undefined when midi declines the use.
+ * Use an item through `MidiQOL.completeItemUse` without the usage dialog. The roll runs as `userId`, or as the actor's
+ * first active player owner with the GM as fallback.
+ * @param {Item5e} item                                  Item to use.
+ * @param {foundry.documents.TokenDocument[]} [targets]  Tokens the use is aimed at.
+ * @param {object} [options]                             Additional options.
+ * @param {object} [options.config]                      Merged over the usage config.
+ * @param {object} [options.options]                     Merged over midi's options. Its `asUser` is filled in when
+ *                                                       missing.
+ * @param {object} [options.dialog]                      Usage dialog configuration.
+ * @param {object} [options.message]                     Chat message configuration.
+ * @param {string} [options.userId]                      Id of the user the roll runs as.
+ * @param {number} [options.atLevel]                     Spell level to cast at. Ignored when the actor has no
+ *                                                       equivalent slot.
+ * @param {boolean} [options.consumeResources]           Spend the resources the activity consumes. Defaults to true.
+ * @param {boolean} [options.spellSlot]                  Spend a spell slot. Defaults to true.
+ * @param {boolean} [options.fast]                       Skip the attack and damage prompts. Defaults to false.
+ * @param {boolean} [options.autoDamage]                 Roll damage by midi's autoRollDamage setting, or on hit when
+ *                                                       that setting is off. Defaults to true.
+ * @returns {Promise<MidiQOL.Workflow|undefined>}        Undefined when midi declines the use.
+ * @example
+ * await workflowUtils.completeItemUse(item, [target.document], {consumeResources: false, spellSlot: false});
  */
 async function completeItemUse(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources = true, spellSlot = true, fast = false, autoDamage = true} = {}) {
     const defaultConfig = {
@@ -208,11 +255,7 @@ async function completeItemUse(item, targets = [], {config = {}, options = {}, d
         const spellLabel = actorUtils.getEquivalentSpellSlotName(item.actor, atLevel);
         if (spellLabel) defaultConfig.spell = {slot: spellLabel};
     }
-    if (userId) {
-        options.asUser ||= userId;
-    } else {
-        options.asUser ||= queryUtils.firstOwner(item.actor, true);
-    }
+    options = {...options, asUser: options.asUser || userId || queryUtils.firstOwner(item.actor, true)};
     options = genericUtils.mergeObject(defaultOptions, options);
     config = genericUtils.mergeObject(defaultConfig, config);
     config.midiOptions = options;
@@ -228,40 +271,53 @@ async function completeItemUse(item, targets = [], {config = {}, options = {}, d
     return workflow?.workflow ?? workflow;
 }
 /**
- * {@link completeItemUse} with the prompts skipped and damage rolled automatically.
- * @param {Item5e} item Item to use.
- * @param {foundry.documents.TokenDocument[]} [targets] Tokens the use is aimed at.
- * @param {object} [options] Additional options.
- * @param {object} [options.config] Merged over the usage config.
- * @param {object} [options.options] Merged over midi's workflow options.
- * @param {object} [options.dialog] Usage dialog configuration.
- * @param {object} [options.message] Chat message configuration.
- * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
- * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
- * @param {boolean} [options.spellSlot] Spend a spell slot.
- * @param {boolean} [options.fast] Skip the attack and damage prompts.
- * @returns {Promise<MidiQOL.Workflow|undefined>}
+ * {@link completeItemUse} with `fast` defaulting to true and `autoDamage` always on.
+ * @param {Item5e} item                                  Item to use.
+ * @param {foundry.documents.TokenDocument[]} [targets]  Tokens the use is aimed at.
+ * @param {object} [options]                             Additional options.
+ * @param {object} [options.config]                      Merged over the usage config.
+ * @param {object} [options.options]                     Merged over midi's options.
+ * @param {object} [options.dialog]                      Usage dialog configuration.
+ * @param {object} [options.message]                     Chat message configuration.
+ * @param {string} [options.userId]                      Id of the user the roll runs as. Defaults to the actor's first
+ *                                                       owner.
+ * @param {number} [options.atLevel]                     Spell level to cast at. Ignored when the actor has no
+ *                                                       equivalent slot.
+ * @param {boolean} [options.consumeResources]           Spend the resources the activity consumes. Defaults to true.
+ * @param {boolean} [options.spellSlot]                  Spend a spell slot. Defaults to true.
+ * @param {boolean} [options.fast]                       Skip the attack and damage prompts. Defaults to true.
+ * @returns {Promise<MidiQOL.Workflow|undefined>}        Undefined when midi declines the use.
+ * @example
+ * const workflow = await workflowUtils.syntheticItemRoll(item, [target.document]);
+ * if (!workflow?.failedSaves.size) return;
  */
 async function syntheticItemRoll(item, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources = true, spellSlot = true, fast = true} = {}) {
     return await completeItemUse(item, targets, {config, options, dialog, message, userId, atLevel, consumeResources, spellSlot, fast, autoDamage: true});
 }
 /**
- * {@link syntheticItemRoll} for item data that is not on the actor, such as a compendium copy.
- * @param {object} itemData Item data to roll, which need not exist on the actor.
- * @param {Actor5e} actor Actor the in-memory item belongs to.
- * @param {foundry.documents.TokenDocument[]} [targets] Tokens the use is aimed at.
- * @param {object} [options] Additional options.
- * @param {object} [options.config] Merged over the usage config.
- * @param {object} [options.options] Merged over midi's workflow options.
- * @param {object} [options.dialog] Usage dialog configuration.
- * @param {object} [options.message] Chat message configuration.
- * @param {string} [options.userId] User the roll is performed as. Defaults to the actor's first owner.
- * @param {number} [options.atLevel] Cast at this spell level, if the actor has an equivalent slot.
- * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
- * @param {boolean} [options.spellSlot] Spend a spell slot.
- * @param {boolean} [options.fast] Skip the attack and damage prompts.
+ * {@link syntheticItemRoll} for item data that is not on the actor, such as a compendium copy. The item is built in
+ * memory on `actor` and never created. When the rolling user is another client, the roll runs there through a query and
+ * the result's token sets are restored; with `fast` on, the query times out after midi's reaction timeout.
+ * @param {object} itemData                              Item data to roll.
+ * @param {Actor5e} actor                                Actor the in-memory item belongs to.
+ * @param {foundry.documents.TokenDocument[]} [targets]  Tokens the use is aimed at.
+ * @param {object} [options]                             Additional options.
+ * @param {object} [options.config]                      Merged over the usage config.
+ * @param {object} [options.options]                     Merged over midi's options.
+ * @param {object} [options.dialog]                      Usage dialog configuration.
+ * @param {object} [options.message]                     Chat message configuration.
+ * @param {string} [options.userId]                      Id of the user the roll runs as. Defaults to the actor's first
+ *                                                       owner.
+ * @param {number} [options.atLevel]                     Spell level to cast at. Ignored when the actor has no
+ *                                                       equivalent slot.
+ * @param {boolean} [options.consumeResources]           Spend the resources the activity consumes. Defaults to true.
+ * @param {boolean} [options.spellSlot]                  Spend a spell slot. Defaults to true.
+ * @param {boolean} [options.fast]                       Skip the attack and damage prompts. Defaults to true.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
+ * @example
+ * const itemData = item.toObject();
+ * itemData.name = 'Overcharged ' + item.name;
+ * await workflowUtils.syntheticItemDataRoll(itemData, actor, [target.document]);
  */
 async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}, options = {}, dialog = {}, message = {}, userId, atLevel, consumeResources = true, spellSlot = true, fast = true} = {}) {
     const user = userId ? game.users.get(userId) : queryUtils.firstOwner(actor);
@@ -284,14 +340,20 @@ async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}
     return await syntheticItemRoll(newItem, targets, {config, options, dialog, message, userId: user?.id, atLevel, consumeResources, spellSlot, fast});
 }
 /**
- * {@link syntheticItemRoll} with the item's activation types overridden to special for the use, through a temporary enchantment.
- * @param {Item5e} item Item to use.
- * @param {foundry.documents.TokenDocument[]} targets Tokens the use is aimed at.
- * @param {Item5e} sourceFeature Feature granting the special use. Names the enchantment and is its origin.
- * @param {object} [options] Additional options.
- * @param {dnd5e.documents.activity.Activity} [options.activity] Use this activity of the item rather than the item itself.
- * @param {boolean} [options.consumeResources] Spend the resources the activity consumes.
+ * Use an item with every activation type set to `special`. A temporary enchantment from `sourceFeature` makes the
+ * change and is deleted once the roll finishes. Rolls through {@link syntheticActivityRoll} or
+ * {@link syntheticItemRoll}.
+ * @param {Item5e} item                                Item to use.
+ * @param {foundry.documents.TokenDocument[]} targets  Tokens the use is aimed at.
+ * @param {Item5e} sourceFeature                       Feature granting the special use. Names the enchantment and is
+ *                                                     its origin.
+ * @param {object} [options]                           Additional options.
+ * @param {dnd5e.documents.activity.Activity} [options.activity]
+ *                                                     Use this activity of the item rather than the item itself.
+ * @param {boolean} [options.consumeResources]         Spend the resources the use consumes. Defaults to false.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
+ * @example
+ * await workflowUtils.specialItemUse(weapon, [target.document], item, {activity: weapon.system.activities.contents[0]});
  */
 async function specialItemUse(item, targets, sourceFeature, {activity, consumeResources = false} = {}) {
     const changes = Object.keys(CONFIG.DND5E.activityTypes).map(type => ({
@@ -315,15 +377,18 @@ async function specialItemUse(item, targets, sourceFeature, {activity, consumeRe
 }
 /**
  * Replace a damage item's raw damage entries, keeping only the first value.
- * @param {object} ditem Midi damage item, from workflow.damageList.
- * @param {number} [firstValue] Value for the first entry; the rest are zeroed.
+ * @param {object} ditem         Midi damage item, from workflow.damageList.
+ * @param {number} [firstValue]  Value for the first entry; the rest are zeroed.
  */
 function setRawDamageValues(ditem, firstValue = 0) {
     ditem.damages = ditem.damages.map((entry, index) => ({...entry, value: index ? 0 : firstValue}));
 }
 /**
- * Zero every damage total on a damage item, leaving hit points untouched.
- * @param {object} ditem Midi damage item, from workflow.damageList.
+ * Zero every damage entry on a damage item and recalculate it, so the target takes no damage.
+ * @param {object} ditem  Midi damage item, from `workflow.damageList`.
+ * @example
+ * const ditem = workflow.damageList.find(i => i.actorUuid === actor.uuid);
+ * workflowUtils.negateDamageItemDamage(ditem);
  */
 function negateDamageItemDamage(ditem) {
     ditem.calculatedDamages.forEach(i => i.value = 0);
@@ -331,12 +396,20 @@ function negateDamageItemDamage(ditem) {
     recalculateHP(ditem);
 }
 /**
- * Add or subtract a flat amount of damage on one target, recalculating the resulting hit points. Use in the `damageFlatReductions` or `damagePercentReductions` macro passes.
- * @param {object} ditem Midi damage item, from `workflow.damageList`.
- * @param {number} modificationAmount Negative to reduce damage. Reductions are capped at the damage dealt.
- * @param {object} [options] Additional options.
- * @param {string} [options.type] Damage type of the modification.
- * @param {number|'auto'} [options.multiplier] 'auto' applies the target's immunity, resistance and vulnerability.
+ * Add or subtract a flat amount of damage on one target and recalculate its resulting hit points. Use in the
+ * `damageFlatReductions` or `damagePercentReductions` macro passes. A reduction with no `type` is spread across the
+ * damage types the target actually takes, in order, and never drops below zero.
+ * @param {object} ditem                        Midi damage item, from `workflow.damageList`.
+ * @param {number} modificationAmount           Damage to add. Negative to reduce damage.
+ * @param {object} [options]                    Additional options.
+ * @param {string} [options.type]               Damage type of the modification. Defaults to `none`.
+ * @param {number|'auto'} [options.multiplier]  Multiplier for the modification. `'auto'` applies the target's save
+ *                                              multiplier, immunity, resistance and vulnerability. Defaults to 1.
+ * @example
+ * // Reduce the damage by 3
+ * workflowUtils.modifyDamageAppliedFlat(ditem, -3);
+ * // Add radiant damage, adjusted by the target's defenses
+ * workflowUtils.modifyDamageAppliedFlat(ditem, roll.total, {type: 'radiant', multiplier: 'auto'});
  */
 function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', multiplier = 1} = {}) {
     if (modificationAmount < 0 && type === 'none') {
@@ -360,12 +433,13 @@ function modifyDamageAppliedFlat(ditem, modificationAmount, {type = 'none', mult
     recalculateHP(ditem);
 }
 /**
- * Push a damage entry onto a damage item's calculated and raw damages. Negative non-healing values are capped at the damage dealt.
- * @param {object} ditem Midi damage item, from workflow.damageList.
- * @param {number} damage Damage before the multiplier.
- * @param {string} type Damage type.
- * @param {number|'auto'} multiplier 'auto' applies the target's immunity, resistance and vulnerability.
- * @param {object} [active] Active modifiers record to copy onto the entry.
+ * Push a damage entry onto a damage item's calculated and raw damages. Negative non-healing values are capped at the
+ * damage dealt.
+ * @param {object} ditem              Midi damage item, from workflow.damageList.
+ * @param {number} damage             Damage before the multiplier.
+ * @param {string} type               Damage type.
+ * @param {number|'auto'} multiplier  'auto' applies the target's immunity, resistance and vulnerability.
+ * @param {object} [active]           Active modifiers record to copy onto the entry.
  */
 function addDamageDetail(ditem, damage, type, multiplier, active) {
     active ??= {type: {}};
@@ -398,9 +472,12 @@ function addDamageDetail(ditem, damage, type, multiplier, active) {
     ditem.damages.push({damage, value: damage, type, properties: new Set()});
 }
 /**
- * Refund what a use consumed, from the deltas the system recorded on its usage card.
- * @param {MidiQOL.Workflow} workflow Workflow whose use is refunded.
- * @returns {Promise<boolean>} Whether anything was refunded.
+ * Refund what a use consumed, from the deltas the system recorded on its usage card. The deltas are then cleared from
+ * the card so the refund cannot repeat.
+ * @param {MidiQOL.Workflow} workflow  Workflow whose use is refunded.
+ * @returns {Promise<boolean>}         False when the card has no deltas or the workflow has no activity.
+ * @example
+ * if (!workflow.targets.size) await workflowUtils.refundUse(workflow);
  */
 async function refundUse(workflow) {
     const message = workflow.chatCard ?? game.messages.get(workflow.itemCardId);
@@ -411,9 +488,12 @@ async function refundUse(workflow) {
     return true;
 }
 /**
- * Whether this roll is a continuation rather than a fresh use: over time effects, automation-only activities, and spells cast without spending a slot.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
+ * Whether the workflow continues an earlier use rather than starting a fresh one. True for over time rolls,
+ * automation-only activities and spell activities that spend no slot. Always false after {@link setNotSustainedRoll}.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
  * @returns {boolean}
+ * @example
+ * if (workflowUtils.isSustainedRoll(workflow)) return;
  */
 function isSustainedRoll(workflow) {
     if (getWorkflowProperty(workflow, 'allowSustainedRoll')) return false;
@@ -421,17 +501,24 @@ function isSustainedRoll(workflow) {
     return workflow.item?.type === 'spell' && !workflow.activity?.consumption?.spellSlot;
 }
 /**
- * Treat this workflow as the initial cast of a spell.
- * @param {MidiQOL.Workflow} workflow
+ * Mark the workflow as a fresh use, so {@link isSustainedRoll} returns false for it.
+ * @param {MidiQOL.Workflow|object} workflow  Workflow in progress, or an options object for a synthetic roll.
+ * @example
+ * const options = {};
+ * workflowUtils.setNotSustainedRoll(options);
+ * await workflowUtils.syntheticItemRoll(item, [target.document], {options});
  */
 function setNotSustainedRoll(workflow) {
     setWorkflowProperty(workflow, 'allowSustainedRoll', true);
 }
 /**
- * Replace a damage item's total, splitting it across temporary and real hit points.
- * @param {object} ditem Midi damage item, from workflow.damageList.
- * @param {number} damageAmount Replacement damage total.
- * @param {boolean} [adjustRaw] Also overwrite the raw damage detail, which drives the damage card.
+ * Replace the damage a target takes with a single total, then recalculate its resulting hit points and temporary hit
+ * points. The total goes on the first damage entry and every other entry is zeroed.
+ * @param {object} ditem         Midi damage item, from `workflow.damageList`.
+ * @param {number} damageAmount  Replacement damage total.
+ * @param {boolean} [adjustRaw]  Also overwrite the raw damage entries shown on the damage card. Defaults to true.
+ * @example
+ * workflowUtils.setDamageItemDamage(ditem, Math.floor(ditem.totalDamage / 2));
  */
 function setDamageItemDamage(ditem, damageAmount, adjustRaw = true) {
     const entries = ditem.calculatedDamages;
@@ -441,27 +528,36 @@ function setDamageItemDamage(ditem, damageAmount, adjustRaw = true) {
     recalculateHP(ditem);
 }
 /**
- * Stash a value on the workflow under CAT's namespace, for reading in a later pass.
- * @param {MidiQOL.Workflow|object} workflow The workflow, or an options object for a synthetic roll.
- * @param {string} path Dot path below workflowOptions.cat.
- * @param {*} value Value to stash, or damage to apply.
+ * Store a value on the workflow at `workflowOptions.cat.<path>`, for reading in a later pass with
+ * {@link getWorkflowProperty}. Passing an options object for a synthetic roll carries the value into that roll's
+ * workflow.
+ * @param {MidiQOL.Workflow|object} workflow  Workflow in progress, or an options object for a synthetic roll.
+ * @param {string} path                       Dot path below `workflowOptions.cat`.
+ * @param {*} value                           Value to store.
+ * @example
+ * workflowUtils.setWorkflowProperty(workflow, 'divineSmite.used', true);
  */
 function setWorkflowProperty(workflow, path, value) {
     genericUtils.setProperty(workflow, 'workflowOptions.cat.' + path, value);
 }
 /**
- * Read a value stashed by {@link setWorkflowProperty}.
- * @param {MidiQOL.Workflow|object} workflow Workflow in progress.
- * @param {string} path Dot path below workflowOptions.cat.
- * @returns {*}
+ * Read a value stored by {@link setWorkflowProperty}.
+ * @param {MidiQOL.Workflow|object} workflow  Workflow in progress, or a roll config carrying `workflowOptions`.
+ * @param {string} path                       Dot path below `workflowOptions.cat`.
+ * @returns {*}                               Undefined when nothing is stored at the path.
+ * @example
+ * if (workflowUtils.getWorkflowProperty(workflow, 'divineSmite.used')) return;
  */
 function getWorkflowProperty(workflow, path) {
     return genericUtils.getProperty(workflow, 'workflowOptions.cat.' + path);
 }
 /**
- * Mark the workflow with conditions that may be applied programmatically. Used for condition resistance and vulnerability.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {string|string[]} conditions Condition ids to flag.
+ * Flag conditions a macro may apply during the workflow. CAT reads the flags for condition resistance and
+ * vulnerability. Adds to any conditions already flagged.
+ * @param {MidiQOL.Workflow|object} workflow  Workflow in progress, or an options object for a synthetic roll.
+ * @param {string|string[]} conditions        Condition ids to flag.
+ * @example
+ * workflowUtils.addMacroConditions(workflow, ['prone', 'restrained']);
  */
 function addMacroConditions(workflow, conditions) {
     const existing = getMacroConditions(workflow);
@@ -470,17 +566,24 @@ function addMacroConditions(workflow, conditions) {
     setWorkflowProperty(workflow, 'conditions', Array.from(existing));
 }
 /**
- * Conditions flagged by {@link addMacroConditions} as applied programmatically.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @returns {Set<string>}
+ * Conditions flagged by {@link addMacroConditions}.
+ * @param {MidiQOL.Workflow|object} workflow  Workflow in progress, or a roll config carrying `workflowOptions`.
+ * @returns {Set<string>}                     Condition ids. Empty when none are flagged.
+ * @example
+ * if (workflowUtils.getMacroConditions(workflow).has('frightened')) return;
  */
 function getMacroConditions(workflow) {
     return new Set(getWorkflowProperty(workflow, 'conditions') ?? []);
 }
 /**
- * The activity, item and actor that forced this saving throw, read from the save config.
- * @param {object} config Save roll config.
- * @returns {{activity: Activity|undefined, item: Item5e, actor: foundry.documents.Actor}|undefined} Undefined when no source actor is found.
+ * The activity, item and actor that requested a saving throw, read from the save roll config. Checks CAT's stored
+ * activity, then midi's workflow, then midi's save activity and item uuids.
+ * @param {object} config  Save roll config.
+ * @returns {{activity: Activity|undefined, item: Item5e, actor: foundry.documents.Actor}|undefined}
+ *                         Undefined when no source actor is found.
+ * @example
+ * const source = workflowUtils.getSaveSource(config);
+ * if (source?.item.type !== 'spell') return;
  */
 function getSaveSource(config) {
     const {workflowId, saveItemUuid, saveActivityUuid} = config.midiOptions ?? {};
@@ -491,9 +594,12 @@ function getSaveSource(config) {
     return {activity, item, actor};
 }
 /**
- * The tokens an activity is about to target, read in a pre-targeting pass: midi-qol's requested targets, else the user's targets.
- * @param {object} config Activity use config.
- * @returns {TokenDocument[]}
+ * The tokens an activity is about to target, for use in a pre-targeting pass. Returns midi's requested `targetUuids`
+ * when the config has any, otherwise the current user's targets.
+ * @param {object} config                        Activity use config.
+ * @returns {foundry.documents.TokenDocument[]}  Uuids that no longer resolve are dropped.
+ * @example
+ * const targets = workflowUtils.getPreTargetingTargets(config);
  */
 function getPreTargetingTargets(config) {
     const targetUuids = config?.midiOptions?.targetUuids;
@@ -501,22 +607,28 @@ function getPreTargetingTargets(config) {
     return Array.from(game.user.targets, token => token.document);
 }
 /**
- * The activity a roll was requested by, from CAT's workflow data or midi-qol's save request.
- * @param {object} config Roll configuration.
- * @returns {Promise<Activity|undefined>}
+ * The activity that requested a roll, loaded by uuid from CAT's stored `activityUuid` or midi's `saveActivityUuid`.
+ * @param {object} config                  Roll configuration.
+ * @returns {Promise<Activity|undefined>}  Undefined when the config holds neither uuid.
+ * @example
+ * const activity = await workflowUtils.getConfigActivity(config);
  */
 async function getConfigActivity(config) {
     const uuid = getWorkflowProperty(config, 'activityUuid') ?? config.midiOptions?.saveActivityUuid;
     if (uuid) return await fromUuid(uuid);
 }
 /**
- * Append an extra damage roll to a workflow after its damage has been rolled.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {string|number} formula Formula to roll.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.ignoreCrit] Do not double the dice on a critical hit.
- * @param {string} [options.damageType] Defaults to the workflow's own damage type.
- * @param {string} [options.source] What granted this damage, shown as attribution on manual rolls.
+ * Roll an extra damage roll and append it to the workflow's damage rolls. Use after the workflow's damage has been
+ * rolled. On a critical hit the formula is made critical with {@link rollUtils.getCriticalFormula} unless `ignoreCrit`
+ * is set.
+ * @param {MidiQOL.Workflow} workflow     Workflow in progress.
+ * @param {string|number} formula         Formula to roll, using the activity's roll data.
+ * @param {object} [options]              Additional options.
+ * @param {boolean} [options.ignoreCrit]  Skip the critical formula on a critical hit.
+ * @param {string} [options.damageType]   Damage type of the roll. Defaults to the workflow's default damage type.
+ * @param {string} [options.source]       What granted this damage, shown as attribution on manual rolls.
+ * @example
+ * await workflowUtils.bonusDamage(workflow, '2d8', {damageType: 'radiant', source: item.name});
  */
 async function bonusDamage(workflow, formula, {ignoreCrit = false, damageType = workflow.defaultDamageType, source} = {}) {
     formula = String(formula);
@@ -526,27 +638,38 @@ async function bonusDamage(workflow, formula, {ignoreCrit = false, damageType = 
     await workflow.setDamageRolls(workflow.damageRolls);
 }
 /**
- * Every damage type present across these rolls.
- * @param {foundry.dice.Roll[]} damageRolls Rolls to read the types from.
+ * Every damage type across a set of damage rolls, read from each roll's `options.type`.
+ * @param {foundry.dice.Roll[]} damageRolls  Rolls to read the types from.
  * @returns {Set<string>}
+ * @example
+ * if (!workflowUtils.getDamageTypes(workflow.damageRolls).has('fire')) return;
  */
 function getDamageTypes(damageRolls) {
     return new Set(damageRolls.map(i => i.options.type));
 }
 /**
- * The level this was cast at, falling back to the item's base level.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @returns {number|undefined} Undefined when no cast data is available.
+ * The spell level the workflow's item was cast at, from the workflow's cast data or the item's saved cast data. Returns
+ * the higher of the cast level and the base level.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @returns {number|undefined}         Undefined when no cast data or cast level is available.
+ * @example
+ * const extraDice = workflowUtils.getCastLevel(workflow) - 1;
  */
 function getCastLevel(workflow) {
     const castData = workflow.castData ?? itemUtils.getSavedCastData(workflow.item);
     if (!castData) return;
-    return Math.max(castData.castLevel ?? -1, castData.baseLevel ?? -1);
+    const level = Math.max(castData.castLevel ?? -1, castData.baseLevel ?? -1);
+    return level < 0 ? undefined : level;
 }
 /**
- * Get midi-qol's measured range for the workflow in feet.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @returns {number|undefined}
+ * The workflow's range in feet, converted from midi's `rangeDetails.range` using the activity's range units. Touch
+ * activities return the item's reach.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @returns {number|undefined}         Range in feet. Midi's value is returned unconverted when the workflow has no
+ *                                     activity, and undefined when midi measured no range.
+ * @example
+ * const range = workflowUtils.getRange(workflow);
+ * const nearby = tokenUtils.findNearby(workflow.token.document, range, {disposition: 'enemy'});
  */
 function getRange(workflow) {
     const range = workflow.rangeDetails?.range;
@@ -560,35 +683,50 @@ function getRange(workflow) {
     return dnd5e.utils.convertLength(range, units, {to: 'ft', legacy: false}).value;
 }
 /**
- * Swap the workflow's item for a modified copy, in memory.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {Item5e} item Replacement item, holding an activity with the current activity's id.
+ * Swap the workflow's item for a modified copy in memory. The workflow's activity is replaced with the copy's activity
+ * of the same id.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @param {Item5e} item                Replacement item, holding an activity with the current activity's id.
+ * @example
+ * const clone = workflow.item.clone({'system.properties': ['mgc']}, {keepId: true});
+ * workflowUtils.setItem(workflow, clone);
  */
 function setItem(workflow, item) {
     workflow.item = item;
     workflow.activity = item.system.activities.get(workflow.activity.id);
 }
 /**
- * Swap the workflow's activity for a modified copy, by cloning its item in memory.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {object} activityData Replacement data for the activity currently in use.
+ * Swap the workflow's activity for a modified copy. The item is cloned in memory with the new activity data and passed
+ * to {@link setItem}.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @param {object} activityData        Replacement data for the activity in use.
+ * @example
+ * const activityData = workflow.activity.toObject();
+ * activityData.damage.parts[0].types = ['force'];
+ * workflowUtils.setActivity(workflow, activityData);
  */
 function setActivity(workflow, activityData) {
     setItem(workflow, workflow.item.clone({['system.activities.' + workflow.activity.id]: activityData}, {keepId: true}));
 }
 /**
- * Add a term to the workflow's attack roll.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {string|number} formula Formula to roll.
+ * Add a formula to the workflow's attack roll after it has been rolled, through {@link rollUtils.addToRoll}. Any dice
+ * in the formula are rolled.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @param {string|number} formula      Formula to add, using the activity's roll data.
+ * @example
+ * await workflowUtils.bonusAttack(workflow, '1d4');
  */
 async function bonusAttack(workflow, formula) {
     let roll = await rollUtils.addToRoll(workflow.attackRoll, formula, {rollData: workflow.activity.getRollData()});
     await workflow.setAttackRoll(roll);
 }
 /**
- * Add a part to the workflow's attack roll formula before it is rolled.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {string|number} formula Formula to add, such as '-1d4'.
+ * Queue a part for the workflow's attack roll formula, applied when the attack is rolled. Use before the attack roll;
+ * {@link bonusAttack} changes a roll already made.
+ * @param {MidiQOL.Workflow|object} workflow  Workflow in progress, or an options object for a synthetic roll.
+ * @param {string|number} formula             Formula to add, such as `'-1d4'`.
+ * @example
+ * workflowUtils.addAttackRollPart(workflow, '-1d4');
  */
 function addAttackRollPart(workflow, formula) {
     const parts = getWorkflowProperty(workflow, 'attackRollParts') ?? [];
@@ -596,10 +734,14 @@ function addAttackRollPart(workflow, formula) {
     setWorkflowProperty(workflow, 'attackRollParts', parts);
 }
 /**
- * Reroll the chosen damage dice of a workflow in place and post the new results.
- * @param {MidiQOL.Workflow} workflow Workflow whose damage rolls change.
- * @param {string[]} selection Die keys from dialogUtils.selectDie.
- * @param {Item5e} document Item that supplies roll data and names the reroll.
+ * Reroll chosen damage dice of the workflow in place and post the new results to chat. Each chosen die keeps its new
+ * result. Manual rolls are resolved through {@link rollUtils.resolveManualRolls}.
+ * @param {MidiQOL.Workflow} workflow  Workflow whose damage rolls change.
+ * @param {string[]} selection         Die keys from {@link dialogUtils.selectDie}. Keys that don't resolve are skipped.
+ * @param {Item5e} document            Item that supplies roll data and names the reroll.
+ * @example
+ * const selection = await dialogUtils.selectDie(workflow.damageRolls, item.name, 'Reroll which dice?', {max: 2});
+ * if (selection) await workflowUtils.rerollDamageDice(workflow, selection, item);
  */
 async function rerollDamageDice(workflow, selection, document) {
     const rollData = document.getRollData();
@@ -638,13 +780,16 @@ async function rerollDamageDice(workflow, selection, document) {
     await workflow.setDamageRolls(workflow.damageRolls);
 }
 /**
- * Roll the workflow's damage rolls a second time and keep one set.
- * @param {MidiQOL.Workflow} workflow Workflow whose damage rolls change.
- * @param {Item5e} document Item that names the reroll.
- * @param {object} [options] Additional options.
- * @param {'higher'|''} [options.keep] Keep the higher total, or ask which to keep.
- * @param {number} [options.count] Only reroll this many rolls from the start of the damage rolls.
- * @returns {Promise<boolean>} True when the second set was kept.
+ * Roll the workflow's damage rolls a second time and keep one set. With `keep` empty, the current user picks a set in a
+ * dialog. The discarded dice stay on the kept rolls, marked as discarded.
+ * @param {MidiQOL.Workflow} workflow   Workflow whose damage rolls change.
+ * @param {Item5e} document             Item that names the reroll and the dialog.
+ * @param {object} [options]            Additional options.
+ * @param {'higher'|''} [options.keep]  `'higher'` keeps the higher total without asking. Defaults to `''`.
+ * @param {number} [options.count]      Only reroll this many rolls from the start of the damage rolls. Defaults to all.
+ * @returns {Promise<boolean>}          True when the second set was kept. False when the rolls have no dice.
+ * @example
+ * await workflowUtils.rerollKeepDamage(workflow, item, {keep: 'higher'});
  */
 async function rerollKeepDamage(workflow, document, {keep = '', count} = {}) {
     const originals = workflow.damageRolls?.slice(0, count ?? workflow.damageRolls.length) ?? [];
@@ -673,9 +818,12 @@ async function rerollKeepDamage(workflow, document, {keep = '', count} = {}) {
     return useSecond;
 }
 /**
- * Remove one source of disadvantage midi added to the workflow's attack roll, such as 'range' or 'nearbyFoe'.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {string} source Midi's source key.
+ * Remove one source of disadvantage midi added to the workflow's attack roll, such as `range` or `nearbyFoe`. Does
+ * nothing when that source is not present. Use before the attack is rolled.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @param {string} source              Midi's attribution key for the source.
+ * @example
+ * workflowUtils.removeAttackDisadvantage(workflow, 'nearbyFoe');
  */
 function removeAttackDisadvantage(workflow, source) {
     const tracker = workflow.tracker;
@@ -686,10 +834,13 @@ function removeAttackDisadvantage(workflow, source) {
     disadvantage.restore({...disadvantage.get, count: disadvantage.count - 1});
 }
 /**
- * Raise a target's AC against the workflow's attack roll only. Use before midi checks hits.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {Actor5e} actor Targeted actor.
- * @param {number} amount AC to add.
+ * Raise a target's AC against the workflow's attack only, by editing the AC stored on the usage card's targets in
+ * memory. Use before midi checks hits. Does nothing when the card has no AC for that actor.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @param {Actor5e} actor              Targeted actor.
+ * @param {number} amount              AC to add. Negative to lower it.
+ * @example
+ * workflowUtils.addTargetAC(workflow, target.actor, 5);
  */
 function addTargetAC(workflow, actor, amount) {
     const descriptors = workflow.chatCard?.toObject().system.targets;
@@ -700,24 +851,32 @@ function addTargetAC(workflow, actor, amount) {
     workflow.targetDescriptors = descriptors;
 }
 /**
- * Lower the critical threshold of the workflow's attack roll before it is rolled.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {number} [amount=1] How far to lower the threshold.
+ * Lower the critical threshold of the workflow's attack roll. Use before the attack is rolled. Repeated calls stack.
+ * @param {MidiQOL.Workflow|object} workflow  Workflow in progress, or an options object for a synthetic roll.
+ * @param {number} [amount]                   How far to lower the threshold. Defaults to 1.
+ * @example
+ * // Crit on 19 or 20
+ * workflowUtils.expandAttackCriticalRange(workflow);
  */
 function expandAttackCriticalRange(workflow, amount = 1) {
     setWorkflowProperty(workflow, 'attackCriticalRange', (getWorkflowProperty(workflow, 'attackCriticalRange') ?? 0) + amount);
 }
 /**
- * Apply an already-evaluated roll as damage from a source token, with its own chat card.
- * @param {foundry.documents.TokenDocument} sourceToken Token dealing the damage.
- * @param {foundry.dice.Roll} damageRoll Evaluated roll to apply.
- * @param {string} damageType Damage type to apply it as.
- * @param {foundry.documents.TokenDocument[]} targets Tokens the use is aimed at.
- * @param {object} [options] Additional options.
- * @param {string} [options.flavor] Flavour text for the chat card.
- * @param {string} [options.itemCardUuid] 'new' posts a fresh card.
- * @param {Item5e} [options.sourceItem] Names and illustrates the card.
+ * Apply an evaluated roll as damage from a token through a midi `DamageOnlyWorkflow`, outside any item use.
+ * @param {foundry.documents.TokenDocument} sourceToken  Token dealing the damage.
+ * @param {foundry.dice.Roll} damageRoll                 Evaluated roll to apply. Its total is the damage.
+ * @param {string} damageType                            Damage type to apply it as.
+ * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} targets
+ *                                                       Tokens taking the damage.
+ * @param {object} [options]                             Additional options.
+ * @param {string} [options.flavor]                      Flavor text for the chat card.
+ * @param {string} [options.itemCardUuid]                Chat card to add the damage to. Defaults to `'new'`, which
+ *                                                       posts a fresh card.
+ * @param {Item5e} [options.sourceItem]                  Item whose name, image and type the card shows.
  * @returns {MidiQOL.DamageOnlyWorkflow}
+ * @example
+ * const roll = await new CONFIG.Dice.DamageRoll('2d6', {}, {type: 'fire'}).evaluate();
+ * workflowUtils.applyWorkflowDamage(token, roll, 'fire', [target.document], {sourceItem: item});
  */
 function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flavor, itemCardUuid = 'new', sourceItem} = {}) {
     let itemData = {};
@@ -731,32 +890,42 @@ function applyWorkflowDamage(sourceToken, damageRoll, damageType, targets, {flav
     return new MidiQOL.DamageOnlyWorkflow(sourceToken.actor, sourceToken.object, damageRoll.total, damageType, Array.from(targets), damageRoll, {flavor, itemCardUuid, itemData});
 }
 /**
- * Hit points and temporary hit points the workflow's damage actually removed.
- * @param {MidiQOL.Workflow} workflow Workflow whose damage has been applied.
- * @param {Token} [token] Only count damage to this token's actor.
- * @returns {number}
+ * Hit points and temporary hit points the workflow's damage removed, summed across its damage list. Healing counts as
+ * zero.
+ * @param {MidiQOL.Workflow} workflow                Workflow whose damage has been applied.
+ * @param {foundry.documents.TokenDocument} [token]  Only count damage to this token's actor.
+ * @returns {number}                                 `0` when the workflow has no damage list.
+ * @example
+ * const dealt = workflowUtils.getDamageDealt(workflow, target.document);
  */
 function getDamageDealt(workflow, token) {
     const entries = (workflow.damageList ?? []).filter(entry => !token || entry.actorUuid === token.actor?.uuid);
     return entries.reduce((total, entry) => total + Math.max(0, entry.hpDamage ?? 0) + Math.max(0, entry.tempDamage ?? 0), 0);
 }
 /**
- * Apply damage directly to tokens, without a workflow.
- * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} tokens Tokens taking the damage.
- * @param {number} value Damage to apply.
- * @param {string} damageType Damage type to apply it as.
- * @param {object} [options] Additional options.
- * @param {string[]} [options.properties] Damage properties, such as falling.
- * @returns {Promise<string[]>} ChatMessage uuids
+ * Apply a flat amount of damage to tokens through `MidiQOL.applyTokenDamage`, without a workflow or roll.
+ * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} tokens
+ *                                         Tokens taking the damage.
+ * @param {number} value                   Damage to apply.
+ * @param {string} damageType              Damage type to apply it as.
+ * @param {object} [options]               Additional options.
+ * @param {string[]} [options.properties]  Damage properties, such as `mgc`.
+ * @returns {Promise<string[]>}            ChatMessage uuids.
+ * @example
+ * await workflowUtils.applyDamage([target.document], 10, 'bludgeoning');
  */
 async function applyDamage(tokens, value, damageType, {properties = []} = {}) {
     return await MidiQOL.applyTokenDamage([{value, type: damageType, properties: new Set(properties)}], value, tokens);
 }
 /**
- * Replace the workflow's targets, and the user's own targeting.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} targets Tokens the use is aimed at.
- * @param {string} userId User whose targets are set. Defaults to the current user.
+ * Replace the workflow's targets and set the same tokens as a user's canvas targets. Another user's targets are set on
+ * their client through a query.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @param {foundry.documents.TokenDocument[]|Set<foundry.documents.TokenDocument>} targets
+ *                                     New targets.
+ * @param {string} [userId]            Id of the user whose canvas targets are set. Defaults to the current user.
+ * @example
+ * await workflowUtils.updateTargets(workflow, [target.document]);
  */
 async function updateTargets(workflow, targets, userId = game.user.id) {
     workflow.targets = new Set(targets);
@@ -765,22 +934,31 @@ async function updateTargets(workflow, targets, userId = game.user.id) {
     else await queryUtils.query('updateTargets', game.users.get(userId), {ids});
 }
 /**
- * Drop tokens from the workflow's targets, and from the user's own targeting.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @param {foundry.documents.TokenDocument[]} tokens Tokens to drop.
- * @param {string} userId User whose targets are set. Defaults to the current user.
+ * Drop tokens from the workflow's targets through {@link updateTargets}, which also resets the user's canvas targets.
+ * @param {MidiQOL.Workflow} workflow                 Workflow in progress.
+ * @param {foundry.documents.TokenDocument[]} tokens  Tokens to drop.
+ * @param {string} [userId]                           Id of the user whose canvas targets are set. Defaults to the
+ *                                                    current user.
+ * @example
+ * await workflowUtils.removeTargets(workflow, [workflow.token.document]);
  */
 async function removeTargets(workflow, tokens, userId = game.user.id) {
     await updateTargets(workflow, workflow.targets.difference(new Set(tokens)).documents, userId);
 }
 /**
- * Rewrite a damage item so the target survives on the given hit points.
- * @param {object} ditem Midi damage item, from workflow.damageList.
- * @param {object} [options] Additional options.
- * @param {number} [options.targetHP] Hit points the target is left on.
- * @param {boolean} [options.deathOnly] Only intervene when the damage would kill outright.
- * @param {boolean} [options.killedOutright] Only intervene when the damage would not kill outright.
- * @param {Actor5e} [options.actor] Required by deathOnly and killedOutright.
+ * Rewrite a damage item so the target ends on `targetHP` hit points. A target above `targetHP` also loses all its
+ * temporary hit points. A target below `targetHP` is healed up to it. Killing outright means the damage leaves the
+ * target at or below its negative maximum hit points.
+ * @param {object} ditem                      Midi damage item, from `workflow.damageList`.
+ * @param {object} [options]                  Additional options.
+ * @param {number} [options.targetHP]         Hit points the target is left on. Defaults to 1.
+ * @param {boolean} [options.deathOnly]       Only intervene when the damage would kill outright.
+ * @param {boolean} [options.killedOutright]  Only intervene when the damage would not kill outright.
+ * @param {Actor5e} [options.actor]           Damaged actor. Required by `deathOnly` and `killedOutright`; without it
+ *                                            nothing changes.
+ * @example
+ * if (ditem.newHP > 0) return;
+ * workflowUtils.preventZeroHP(ditem);
  */
 function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutright = false, actor} = {}) {
     if (deathOnly || killedOutright) {
@@ -801,7 +979,7 @@ function preventZeroHP(ditem, {targetHP = 1, deathOnly = false, killedOutright =
 }
 /**
  * Recompute a damage item's totals and resulting hit points from its calculated damages, mirroring midi-qol.
- * @param {object} ditem Midi damage item, from workflow.damageList.
+ * @param {object} ditem  Midi damage item, from workflow.damageList.
  */
 function recalculateHP(ditem) {
     const hp = fromUuidSync(ditem.actorUuid)?.system.attributes.hp;
@@ -827,19 +1005,20 @@ function recalculateHP(ditem) {
 }
 
 /**
- * Grant a target the given modifier for their D20 roll. This is useful: - for passing this information into synthetic item rolls - for setting modifers on particular targets during a workflow
+ * Give one target a modifier on the d20 roll it makes during the workflow, with attribution shown on the chat card.
+ * Pass an options object to carry the modifier into a synthetic roll.
+ * @param {MidiQOL.Workflow|object} options    Workflow in progress, or an options object for a synthetic roll.
+ * @param {'adv'|'dis'|'succeed'|'fail'} type  Modifier to grant.
+ * @param {string} tokenID                     Id of the token the modifier applies to.
+ * @param {string} attributionID               Key for midi's roll attribution.
+ * @param {string} [attributionDisplay]        Localized label shown on the chat card. Defaults to `attributionID`.
  * @example
- * // Modern Blight Spell
+ * // Blight on a plant creature
  * workflowUtils.grantRollModifier(workflow, 'fail', workflow.targets.documents[0].id, 'creature-type', 'Plant Creature');
  * // Grapple an incapacitated target
  * const options = {};
  * workflowUtils.grantRollModifier(options, 'fail', target.id, 'incapacitated', 'Incapacitated');
- * await workflowUtils.syntheticItemRoll(grappleItem, actor, [target], {options});
- * @param {object} options Options object for synthetic item rolls, or MidiQOL Workflow.
- * @param {'adv'|'dis'|'succeed'|'fail'} type Attack category to test for.
- * @param {string} tokenID Token the modifier applies to.
- * @param {string} attributionID Identifier for MidiQOL's roll attribution system.
- * @param {string} [attributionDisplay] Localized label for display on the chat card.
+ * await workflowUtils.syntheticItemRoll(grappleItem, [target], {options});
  */
 function grantRollModifier(options, type, tokenID, attributionID, attributionDisplay = attributionID) {
     const mods = getWorkflowProperty(options, 'rollModifiers') ?? {};
@@ -849,16 +1028,21 @@ function grantRollModifier(options, type, tokenID, attributionID, attributionDis
 }
 /** @typedef {import('../events/workflow.mjs').HitData} HitData */
 /**
- * Change the AC for a target with optional attribution in the chat card.
- * Use within `bonusAC` or `changeHit` macro passes only.
- * @param {MidiQOL.Workflow} workflow
- * @param {HitData} hitData Token hit data provided by the `bonusAC` and `changeHit` macro passes.
- * @param {number} value Added to target AC.
- * @param {object} [attribution]
- * @param {foundry.abstract.Document} [attribution.document] {@link tooltip} and {@link img} are taken from this document unless overrides are provided.
- * @param {string} [attribution.icon] CSS class for a font awesome icon.
- * @param {string} [attribution.img] Filepath for an image icon.
- * @param {string} [attribution.tooltip] Localized string tooltip on the icon.
+ * Change a target's AC against the attack, with an optional icon on the chat card. Use only in the `bonusAC` or
+ * `changeHit` macro passes. No icon is added when no `document`, `icon`, `img` or `tooltip` is given; a tooltip alone
+ * gets a bolt icon.
+ * @param {MidiQOL.Workflow} workflow                         Workflow in progress.
+ * @param {HitData} hitData                                   Hit data for one target, from the `bonusAC` or `changeHit`
+ *                                                            macro pass.
+ * @param {number} value                                      Amount added to the target's AC. Negative to lower it.
+ * @param {object} [attribution]                              Chat card attribution.
+ * @param {foundry.abstract.Document} [attribution.document]  Supplies `img` and a tooltip of its name and the bonus,
+ *                                                            unless those are given.
+ * @param {string} [attribution.icon]                         CSS class of a Font Awesome icon.
+ * @param {string} [attribution.img]                          Image path for the icon.
+ * @param {string} [attribution.tooltip]                      Localized tooltip on the icon.
+ * @example
+ * workflowUtils.bonusAC(workflow, hitData, 5, {document: item});
  */
 function bonusAC(workflow, hitData, value, {document, icon, img, tooltip} = {}) {
     hitData.ac += value;
@@ -877,16 +1061,21 @@ function bonusAC(workflow, hitData, value, {document, icon, img, tooltip} = {}) 
     setWorkflowProperty(workflow, 'acAttributions', attributions);
 }
 /**
- * Change the hit state for a target with optional attribution in the chat card.
- * Use within `bonusAC` or `changeHit` macro passes only.
- * @param {MidiQOL.Workflow} workflow
- * @param {HitData} hitData Token hit data provided by the `bonusAC` and `changeHit` macro passes.
- * @param {boolean} value The hit is set to this value.
- * @param {object} [attribution]
- * @param {foundry.abstract.Document} [attribution.document] {@link tooltip} and {@link img} are taken from this document unless overrides are provided.
- * @param {string} [attribution.icon] CSS class for a font awesome icon.
- * @param {string} [attribution.img] Filepath for an image icon.
- * @param {string} [attribution.tooltip] Localized string tooltip on the icon.
+ * Force the attack to hit or miss a target, with an optional icon on the chat card. Use only in the `bonusAC` or
+ * `changeHit` macro passes. No icon is added when no `document`, `icon`, `img` or `tooltip` is given; a tooltip alone
+ * gets a bolt icon.
+ * @param {MidiQOL.Workflow} workflow                         Workflow in progress.
+ * @param {HitData} hitData                                   Hit data for one target, from the `bonusAC` or `changeHit`
+ *                                                            macro pass.
+ * @param {boolean} value                                     True for a hit, false for a miss.
+ * @param {object} [attribution]                              Chat card attribution.
+ * @param {foundry.abstract.Document} [attribution.document]  Supplies `img` and a tooltip of its name and the result,
+ *                                                            unless those are given.
+ * @param {string} [attribution.icon]                         CSS class of a Font Awesome icon.
+ * @param {string} [attribution.img]                          Image path for the icon.
+ * @param {string} [attribution.tooltip]                      Localized tooltip on the icon.
+ * @example
+ * workflowUtils.changeHit(workflow, hitData, false, {document: item});
  */
 function changeHit(workflow, hitData, value, {document, icon, img, tooltip} = {}) {
     hitData.isHit = value;
@@ -905,9 +1094,13 @@ function changeHit(workflow, hitData, value, {document, icon, img, tooltip} = {}
     setWorkflowProperty(workflow, 'acAttributions', attributions);
 }
 /**
- * How long a spell lasts once scaled by the level it was cast at, capped at a day.
- * @param {MidiQOL.Workflow} workflow Workflow in progress.
- * @returns {number} Duration in seconds.
+ * A spell duration that grows with cast level: one hour per unit at levels 1 and 2, eight hours at levels 3 and 4, and
+ * 24 hours above. The unit count is the item's `system.duration.value`, and the result is capped at 24 hours.
+ * @param {MidiQOL.Workflow} workflow  Workflow in progress.
+ * @returns {number}                   Duration in seconds.
+ * @example
+ * // Cast at level 3 with a duration value of 1
+ * workflowUtils.getScaledDuration(workflow); // 28800
  */
 function getScaledDuration(workflow) {
     const castDurations = {1: 3600, 2: 3600, 3: 28800, 4: 28800};
@@ -915,11 +1108,16 @@ function getScaledDuration(workflow) {
     return Math.min(seconds * workflow.item.system.duration.value, 86400);
 }
 /**
- * Use the item or activity a bonus is configured to roll.
- * @param {RollBonus} bonus Bonus carrying the source document.
- * @param {object} config Generic macro config, supplying rollItem, rollActivity and consume.
- * @param {Token5e[]} [targets] Targets the use is rolled against.
- * @returns {Promise<MidiQOL.Workflow|void>}
+ * Use the item or activity a roll bonus is configured to roll. `config.rollItem` uses the whole item through
+ * {@link completeItemUse}. Otherwise `config.rollActivity` names an activity id on the item, used through
+ * {@link completeActivityUse} with `config.consume` as `consumeResources`.
+ * @param {RollBonus} bonus                        Bonus carrying the source document or activity.
+ * @param {object} config                          Generic macro config, supplying `rollItem`, `rollActivity` and
+ *                                                 `consume`.
+ * @param {Token5e[]} [targets]                    Targets the use is rolled against.
+ * @returns {Promise<MidiQOL.Workflow|undefined>}  The workflow, or undefined when nothing was rolled.
+ * @example
+ * await workflowUtils.rollConfiguredSource(bonus, config, [token]);
  */
 async function rollConfiguredSource(bonus, config, targets = []) {
     const item = bonus.document.documentName === 'Item' ? bonus.document : bonus.activity?.item;
@@ -927,7 +1125,7 @@ async function rollConfiguredSource(bonus, config, targets = []) {
     if (config.rollItem) return await completeItemUse(item, targets);
     if (!config.rollActivity) return;
     const activity = item.system.activities.get(config.rollActivity);
-    if (activity) await completeActivityUse(activity, targets, {consumeResources: config.consume});
+    if (activity) return await completeActivityUse(activity, targets, {consumeResources: config.consume});
 }
 export default {
     getActionType,

@@ -1,3 +1,8 @@
+/**
+ * Region lookups, geometry and path regions. Covers regions placed by activities, path regions with walls and wall
+ * panels, and the region flags CAT reads for visibility and spell wards.
+ * @module
+ */
 import {distanceUtils, documentUtils, effectUtils, summonUtils, tokenUtils} from './_module.mjs';
 import {constants, Events} from '../lib/_module.mjs';
 import regionShapes from '../lib/regionShapes.mjs';
@@ -7,46 +12,67 @@ const wallPresets = {
     clear: {move: CONST.WALL_MOVEMENT_TYPES.NORMAL, sight: CONST.EDGE_SENSE_TYPES.NONE, light: CONST.EDGE_SENSE_TYPES.NONE, sound: CONST.EDGE_SENSE_TYPES.NONE}
 };
 /**
- * The activity that placed this region.
- * @param {foundry.documents.RegionDocument} region Region to resolve the origin of.
- * @returns {dnd5e.documents.activity.Activity|undefined} Undefined when the region was not placed by an activity.
+ * The activity that placed this region, read from the system's `activity` flag. The lookup is synchronous, so an
+ * activity in an unloaded compendium is not found.
+ * @param {foundry.documents.RegionDocument} region        Region to resolve the origin of.
+ * @returns {dnd5e.documents.activity.Activity|undefined}  Undefined when the region was not placed by an activity or
+ *                                                         the activity no longer exists.
+ * @example
+ * const activity = regionUtils.getActivity(region);
+ * const item = activity?.item;
  */
 function getActivity(region) {
     const activityUuid = region.flags.dnd5e?.activity;
     if (activityUuid) return fromUuidSync(activityUuid, {strict: false});
 }
 /**
- * Regions on the scene placed by this item or activity, oldest first.
- * @param {Scene} scene Scene to search.
- * @param {Item5e|dnd5e.dataModels.activity.BaseActivityData} document Item or activity that placed the regions.
- * @returns {foundry.documents.RegionDocument[]}
+ * Regions on a scene placed by this item or activity. Passing an item matches regions placed by any of its activities.
+ * @param {Scene} scene                           Scene to search.
+ * @param {Item5e|dnd5e.dataModels.activity.BaseActivityData} document
+ *                                                Item or activity that placed the regions.
+ * @returns {foundry.documents.RegionDocument[]}  Empty when none are found.
+ * @example
+ * const regions = regionUtils.getPlacedRegions(canvas.scene, item);
+ * await documentUtils.deleteEmbeddedDocuments(canvas.scene, 'Region', regions.map(region => region.id));
  */
 function getPlacedRegions(scene, document) {
     return scene.regions.filter(region => region.flags.dnd5e?.activity?.startsWith(document.uuid));
 }
 /**
- * Cast data stamped on this region when it was placed.
- * @param {foundry.documents.RegionDocument} region Region to read the flag from.
- * @returns {{castLevel: number, baseLevel: number, saveDC: number}|undefined} Undefined when nothing was stamped.
+ * Cast data stamped on this region when it was placed, read from the `cat.castData` flag.
+ * @param {foundry.documents.RegionDocument} region  Region to read the flag from.
+ * @returns {{castLevel: number, baseLevel: number, saveDC: number}|undefined}
+ *                                                   Undefined when nothing was stamped.
+ * @example
+ * const {castLevel, saveDC} = regionUtils.getCastData(region) ?? {};
  */
 function getCastData(region) {
     return region.flags.cat?.castData;
 }
 /**
- * Whether a ray crosses this region's boundary.
- * @param {foundry.documents.RegionDocument} region Region to test against.
- * @param {{A: {x: number, y: number}, B: {x: number, y: number}}} ray Ray with start and end points.
+ * Whether a ray crosses this region's boundary. A ray that starts and ends inside the region without touching an edge
+ * returns false. Elevation and levels are ignored.
+ * @param {foundry.documents.RegionDocument} region  Region to test against.
+ * @param {object} ray                               Ray with start and end points.
+ * @param {Point} ray.A                              Start point in canvas pixels.
+ * @param {Point} ray.B                              End point in canvas pixels.
  * @returns {boolean}
+ * @example
+ * if (regionUtils.rayIntersectsRegion(region, {A: token.object.center, B: target.object.center})) return;
  */
 function rayIntersectsRegion(region, ray) {
     return getIntersections(region, ray.A, ray.B, true);
 }
 /**
- * Whether the line between two tokens crosses this region.
- * @param {foundry.documents.RegionDocument} region Region to test against.
- * @param {foundry.documents.TokenDocument} sourceToken Token the line starts from.
- * @param {foundry.documents.TokenDocument} targetToken Token the line ends at.
+ * Whether the line between two tokens passes through this region, including a line that lies wholly inside it. The line
+ * runs between the tokens' movement origins and accounts for their elevations. Returns false when the region is on
+ * neither token's level.
+ * @param {foundry.documents.RegionDocument} region      Region to test against.
+ * @param {foundry.documents.TokenDocument} sourceToken  Token the line starts from.
+ * @param {foundry.documents.TokenDocument} targetToken  Token the line ends at.
  * @returns {boolean}
+ * @example
+ * const blocked = canvas.scene.regions.some(region => regionUtils.isObscured(region) && regionUtils.isBetweenTokens(region, token, target));
  */
 function isBetweenTokens(region, sourceToken, targetToken) {
     if (!region.includedInLevel(sourceToken._source.level) && !region.includedInLevel(targetToken._source.level)) return false;
@@ -55,12 +81,16 @@ function isBetweenTokens(region, sourceToken, targetToken) {
     return region.segmentizeMovementPath([origin, destination], [{x: 0, y: 0}]).length > 0;
 }
 /**
- * Every point where the segment AB crosses this region's boundary.
- * @param {foundry.documents.RegionDocument} region Region to test against.
- * @param {{x: number, y: number}} A Start of the segment, in canvas pixels.
- * @param {{x: number, y: number}} B End of the segment, in canvas pixels.
- * @param {boolean} [boolOnly] Stop at the first crossing and return a boolean instead.
- * @returns {{x: number, y: number}[]|boolean} Intersection points, or whether any exists.
+ * Every point where the segment AB crosses this region's boundary, tested against each of the region's polygons.
+ * Elevation and levels are ignored.
+ * @param {foundry.documents.RegionDocument} region  Region to test against.
+ * @param {Point} A                                  Start of the segment, in canvas pixels.
+ * @param {Point} B                                  End of the segment, in canvas pixels.
+ * @param {boolean} [boolOnly]                       Stop at the first crossing and return a boolean instead.
+ * @returns {Point[]|boolean}                        Intersection points in canvas pixels, or whether any exists. Empty
+ *                                                   when the segment never crosses an edge.
+ * @example
+ * const points = regionUtils.getIntersections(region, token.object.center, target.object.center);
  */
 function getIntersections(region, A, B, boolOnly = false) {
     const totalIntersections = [];
@@ -91,34 +121,43 @@ function getIntersections(region, A, B, boolOnly = false) {
     return totalIntersections;
 }
 /**
- * True when the two regions overlap.
- * @param {foundry.documents.RegionDocument} region
- * @param {foundry.documents.RegionDocument} otherRegion
+ * Whether the two regions' shapes overlap on the canvas, using {@link intersection}. Elevation and levels are ignored.
+ * @param {foundry.documents.RegionDocument} region       Region to check.
+ * @param {foundry.documents.RegionDocument} otherRegion  Region to compare against.
  * @returns {boolean}
+ * @example
+ * const overlapping = canvas.scene.regions.filter(other => other !== region && regionUtils.hasOverlap(region, other));
  */
 function hasOverlap(region, otherRegion) {
     return regionShapes.intersection(region, otherRegion)?.length > 0;
 }
 /**
- * Whether this region blocks sight of the creatures inside it.
- * @param {foundry.documents.RegionDocument} region Region to read the flag from.
- * @returns {boolean|undefined} Undefined when the region carries no visibility flag.
+ * Whether this region is flagged as heavily obscured, read from `cat.visibility.obscured`.
+ * @param {foundry.documents.RegionDocument} region  Region to read the flag from.
+ * @returns {boolean|undefined}                      Undefined when the region carries no visibility flag.
+ * @example
+ * const obscured = canvas.scene.regions.filter(region => regionUtils.isObscured(region));
  */
 function isObscured(region) {
     return region.flags.cat?.visibility?.obscured;
 }
 /**
- * Whether this region counts as magical darkness.
- * @param {foundry.documents.RegionDocument} region Region to read the flag from.
- * @returns {boolean|undefined} Undefined when the region carries no visibility flag.
+ * Whether this region counts as magical darkness, read from `cat.visibility.magicalDarkness`.
+ * @param {foundry.documents.RegionDocument} region  Region to read the flag from.
+ * @returns {boolean|undefined}                      Undefined when the region carries no visibility flag.
+ * @example
+ * if (regionUtils.isMagicalDarkness(region)) return;
  */
 function isMagicalDarkness(region) {
     return region.flags.cat?.visibility?.magicalDarkness;
 }
 /**
- * The point a region shape is positioned from, used to measure how far it has moved.
- * @param {object} shape Region shape data. An emanation resolves to its base shape.
- * @returns {{x: number, y: number}} Canvas pixels, defaulting to the origin.
+ * The point a region shape is positioned from, used to measure how far it has moved. Polygons use their first point,
+ * emanations use their base shape and other shapes use their `x` and `y`.
+ * @param {object} shape  Region shape data.
+ * @returns {Point}       Canvas pixels. `{x: 0, y: 0}` when no shape is given.
+ * @example
+ * const before = regionUtils.getShapeAnchor(region.shapes[0]);
  */
 function getShapeAnchor(shape) {
     if (!shape) return {x: 0, y: 0};
@@ -129,10 +168,21 @@ function getShapeAnchor(shape) {
     return {x: shape.x ?? 0, y: shape.y ?? 0};
 }
 /**
- * Sort every token on the scene by how this region's movement affected it, sampling along the path so a region swept over a token still counts.
- * @param {foundry.documents.RegionDocument} region Region in its new position.
- * @param {{oldX: number, oldY: number, oldBottom: number, oldTop: number}} locationData Where the region was before it moved.
- * @returns {{entered: Set, exited: Set, through: Set, stayed: Set}} Token documents grouped by what happened to them.
+ * Sort the tokens on the region's scene by how this region's movement affected them. Tokens outside both before and
+ * after are sampled every quarter grid space along the move, so a region swept over a token lands it in `through`.
+ * Tokens without a placeable on the canvas are skipped.
+ * @param {foundry.documents.RegionDocument} region  Region in its new position.
+ * @param {object} locationData                      Where the region was before it moved.
+ * @param {number} locationData.oldX                 Previous anchor x in canvas pixels, from {@link getShapeAnchor}.
+ * @param {number} locationData.oldY                 Previous anchor y in canvas pixels, from {@link getShapeAnchor}.
+ * @param {number} locationData.oldBottom            Previous bottom elevation in scene units.
+ * @param {number} [locationData.oldTop]             Previous top elevation in scene units. Unused: the vertical offset
+ *                                                   comes from `oldBottom`.
+ * @returns {{entered: Set, exited: Set, through: Set, stayed: Set}}
+ *                                                   Token documents grouped by what happened to them. A token the
+ *                                                   region never touched is in no set.
+ * @example
+ * const {entered, exited} = regionUtils.getRegionMovementTokens(region, locationData);
  */
 function getRegionMovementTokens(region, locationData) {
     const results = {
@@ -188,9 +238,13 @@ function getRegionMovementTokens(region, locationData) {
     return results;
 }
 /**
- * The circle this region covers.
- * @param {foundry.documents.RegionDocument} region Region to read.
- * @returns {{x: number, y: number, radius: number}} Pixel values.
+ * The circle this region covers. A region reshaped by {@link spreadAroundCorners} returns its original circle. Any
+ * other region returns the center of its bounds with half the longer side as the radius.
+ * @param {foundry.documents.RegionDocument} region   Region to read.
+ * @returns {{x: number, y: number, radius: number}}  Center and radius in canvas pixels.
+ * @example
+ * const {x, y, radius} = regionUtils.getArea(region);
+ * const radiusFt = distanceUtils.toFeet(canvas.scene, radius / canvas.scene.dimensions.distancePixels);
  */
 function getArea(region) {
     const spread = region.flags.cat?.spreadAroundCorners;
@@ -199,12 +253,21 @@ function getArea(region) {
     return {x: center.x, y: center.y, radius: Math.max(width, height) / 2};
 }
 /**
- * Reshape a circular region so it spreads around wall corners. Token-attached regions are skipped.
- * @param {foundry.documents.RegionDocument} region Region to reshape.
- * @param {object} [options] Additional options.
- * @param {number} [options.depth] How many corners the area may turn.
- * @param {{x: number, y: number, radius: number}} [options.area] Circle to spread from instead of the region's own shape, such as when the area moves.
+ * Reshape a circular region into polygons that spread around the corners of walls that block movement. Each corner the
+ * area reaches starts a new circle with the radius left over. The region's restriction is turned off and the original
+ * circle is stored for {@link getArea}. Regions attached to a token, regions that aren't circles and regions off the
+ * viewed scene are left alone. When `area` is given for one of those, the region is reset to that circle instead.
+ * @param {foundry.documents.RegionDocument} region  Region to reshape.
+ * @param {object} [options]                         Additional options.
+ * @param {number} [options.depth]                   How many corners the area may turn. Defaults to 2.
+ * @param {object} [options.area]                    Circle to spread from instead of the region's own shape, such as
+ *                                                   when the area moves.
+ * @param {number} options.area.x                    Center x in canvas pixels.
+ * @param {number} options.area.y                    Center y in canvas pixels.
+ * @param {number} options.area.radius               Radius in canvas pixels.
  * @returns {Promise<void>}
+ * @example
+ * await regionUtils.spreadAroundCorners(region);
  */
 async function spreadAroundCorners(region, {depth = 2, area} = {}) {
     const shape = area ? {type: 'circle', ...area} : region.shapes[0];
@@ -251,12 +314,16 @@ async function spreadAroundCorners(region, {depth = 2, area} = {}) {
     });
 }
 /**
- * Tokens on a scene whose footprint a path crosses or touches.
- * @param {foundry.documents.Scene} scene Scene to search.
- * @param {WallPath} path Path to test.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.visibleOnly] Only tokens the current user can see.
- * @returns {foundry.canvas.placeables.Token[]}
+ * Tokens on a scene whose footprint a path's line crosses or lies inside. The footprint is shrunk by 1 px on each side,
+ * so a path along a token's edge does not count. Only tokens with an actor and a placeable on the canvas are checked.
+ * @param {foundry.documents.Scene} scene        Scene to search.
+ * @param {WallPath} path                        Path to test, in canvas pixels.
+ * @param {object} [options]                     Additional options.
+ * @param {boolean} [options.visibleOnly]        Only tokens the current user can see.
+ * @returns {foundry.canvas.placeables.Token[]}  Token placeables, not documents.
+ * @example
+ * const path = await crosshairUtils.drawPath({token, maxRange: 120});
+ * const crossed = regionUtils.tokensOnPath(canvas.scene, path, {visibleOnly: true});
  */
 function tokensOnPath(scene, path, {visibleOnly = false} = {}) {
     const pairs = regionShapes.pathSegments(path);
@@ -267,19 +334,31 @@ function tokensOnPath(scene, path, {visibleOnly = false} = {}) {
     });
 }
 /**
- * Create a region along a path, with optional side region and walls. Everything else is deleted with the path region.
- * @param {foundry.documents.Scene} scene Scene to create on.
- * @param {WallPath & {side?: 'left'|'right'|'inside'|'outside'}} path Result of `crosshairUtils.drawPath`.
- * @param {object} options Additional options.
- * @param {number} options.thickness Path thickness in feet.
- * @param {number} [options.height] Path and side region height in feet.
- * @param {object} [options.regionData] Path region data, without shapes.
- * @param {number} [options.sideDepth] Side region depth in feet.
- * @param {object} [options.sideData] Side region data, without shapes. Omit for no side region.
- * @param {'opaque'|'solid'|'clear'|object} [options.walls] Wall data without coordinates, or a preset. `opaque` blocks sight, `clear` blocks movement, `solid` blocks both.
- * @param {boolean} [options.push] Push creatures out of the path.
- * @param {number} [options.sectionLength] Maximum wall section length in feet.
- * @returns {Promise<{region?: foundry.documents.RegionDocument, side?: foundry.documents.RegionDocument, flats?: foundry.documents.RegionDocument[]}>} `flats` has one surface region per flat panel.
+ * Create a region along a path, with an optional side region, walls and one surface region per flat panel in
+ * `path.flats`. The side region and flat panels depend on the path region, and CAT deletes the walls when the path
+ * region is deleted. With `height`, both regions span from the path region's bottom elevation up by that height. The
+ * path and its settings are stored on the region for {@link reshapePathRegion} and {@link addWallPanels}.
+ * @param {foundry.documents.Scene} scene                    Scene to create on.
+ * @param {WallPath & {side?: 'left'|'right'|'inside'|'outside'}} path
+ *                                                           Result of {@link crosshairUtils.drawPath}.
+ * @param {object} options                                   Additional options.
+ * @param {number} options.thickness                         Path thickness in feet.
+ * @param {number} [options.height]                          Path and side region height in feet.
+ * @param {object} [options.regionData]                      Path region data, without shapes.
+ * @param {number} [options.sideDepth]                       Side region depth in feet.
+ * @param {object} [options.sideData]                        Side region data, without shapes. Omit for no side region.
+ *                                                           Also skipped when the path has no `side` or no `points`.
+ * @param {'opaque'|'solid'|'clear'|object} [options.walls]  Wall data without coordinates, or a preset. `opaque` blocks
+ *                                                           sight, `clear` blocks movement, `solid` blocks both.
+ * @param {boolean} [options.push]                           Push creatures out of the path before it is created, with
+ *                                                           {@link tokenUtils.slideToken}.
+ * @param {number} [options.sectionLength]                   Maximum wall section length in feet.
+ * @returns {Promise<{region?: foundry.documents.RegionDocument, side?: foundry.documents.RegionDocument, flats?: foundry.documents.RegionDocument[]}>}
+ *                                                           An empty object when the path region could not be created.
+ * @example
+ * const path = await crosshairUtils.drawPath({token, maxRange: 120, maxLength: 60});
+ * if (!path) return;
+ * const {region} = await regionUtils.createPathRegions(canvas.scene, path, {thickness: 1, height: 20, regionData: {name: item.name}, walls: 'solid'});
  */
 async function createPathRegions(scene, path, {thickness, height, regionData = {}, sideDepth, sideData, walls, push, sectionLength} = {}) {
     const pixels = scene.dimensions.distancePixels;
@@ -318,8 +397,8 @@ async function createPathRegions(scene, path, {thickness, height, regionData = {
 }
 /**
  * Create the walls along a path region, split into its configured section length.
- * @param {foundry.documents.RegionDocument} region Path region.
- * @param {WallPath} path Path to wall.
+ * @param {foundry.documents.RegionDocument} region  Path region.
+ * @param {WallPath} path                            Path to wall.
  * @returns {Promise<foundry.documents.WallDocument[]>}
  */
 function createPathWalls(region, path) {
@@ -333,7 +412,7 @@ function createPathWalls(region, path) {
 }
 /**
  * Walls belonging to a path region.
- * @param {foundry.documents.RegionDocument} region Path region.
+ * @param {foundry.documents.RegionDocument} region  Path region.
  * @returns {foundry.documents.WallDocument[]}
  */
 function getPathWalls(region) {
@@ -341,7 +420,7 @@ function getPathWalls(region) {
 }
 /**
  * Flat panel regions belonging to a path region.
- * @param {foundry.documents.RegionDocument} region Path region.
+ * @param {foundry.documents.RegionDocument} region  Path region.
  * @returns {foundry.documents.RegionDocument[]}
  */
 function getFlatPanels(region) {
@@ -349,17 +428,17 @@ function getFlatPanels(region) {
 }
 /**
  * A wall's endpoints as points.
- * @param {foundry.documents.WallDocument} wall Wall to read.
- * @returns {{x: number, y: number}[]}
+ * @param {foundry.documents.WallDocument} wall  Wall to read.
+ * @returns {Point[]}
  */
 function wallSegment(wall) {
     return [{x: wall.c[0], y: wall.c[1]}, {x: wall.c[2], y: wall.c[3]}];
 }
 /**
  * Split segments into pieces no longer than the given length.
- * @param {{x: number, y: number}[][]} segments Segments to split.
- * @param {number} [maxLength] Maximum piece length in pixels; segments are returned unchanged without it.
- * @returns {{x: number, y: number}[][]}
+ * @param {Point[][]} segments  Segments to split.
+ * @param {number} [maxLength]  Maximum piece length in pixels; segments are returned unchanged without it.
+ * @returns {Point[][]}
  */
 function splitSegments(segments, maxLength) {
     if (!maxLength) return segments;
@@ -372,10 +451,11 @@ function splitSegments(segments, maxLength) {
     });
 }
 /**
- * Move every creature a path cuts through out of the path's area, to whichever side of the nearest segment its center is on.
- * @param {foundry.documents.Scene} scene Scene the path is on.
- * @param {WallPath} path Path to clear.
- * @param {number} thickness Path thickness in scene units.
+ * Move every creature a path cuts through out of the path's area, to whichever side of the nearest segment its center
+ * is on.
+ * @param {foundry.documents.Scene} scene  Scene the path is on.
+ * @param {WallPath} path                  Path to clear.
+ * @param {number} thickness               Path thickness in scene units.
  * @returns {Promise<void>}
  */
 async function pushOffPath(scene, path, thickness) {
@@ -392,15 +472,23 @@ async function pushOffPath(scene, path, thickness) {
 }
 /**
  * Give each wall segment of a path region a panel token, so the panels can be attacked and destroyed one at a time.
- * Flat panels made by {@link createPathRegions} get one too. When a panel token drops to 0 hit points, its wall segment or flat region is removed, the region shrinks to the remaining panels and the region's `panelBroken` pass runs.
- * @param {foundry.documents.RegionDocument} region Path region made by {@link createPathRegions} with walls.
- * @param {object} options Additional options.
- * @param {Actor5e} options.owner Actor the panels belong to, usually the caster.
- * @param {Actor5e} options.sourceActor Actor each panel token is copied from.
- * @param {object} [options.updates] Merged over each panel actor's data, such as hit points, armor class and damage traits.
- * @param {foundry.abstract.Document} [options.parent] Document the panels depend on, such as a concentration effect.
- * @param {foundry.abstract.Document} [options.sourceDocument] Item or activity that made the wall.
- * @returns {Promise<foundry.documents.TokenDocument[]>}
+ * Flat panels made by {@link createPathRegions} get one too. Each panel is a summon created with
+ * {@link summonUtils.createSummon} and placed at the middle of its segment or flat panel. When a panel actor drops to 0
+ * hit points, CAT calls {@link breakWallPanel}.
+ * @param {foundry.documents.RegionDocument} region             Path region made by {@link createPathRegions} with
+ *                                                              walls.
+ * @param {object} options                                      Additional options.
+ * @param {Actor5e} options.owner                               Actor the panels belong to, usually the caster.
+ * @param {Actor5e} options.sourceActor                         Actor each panel token is copied from.
+ * @param {object} [options.updates]                            Merged over each panel actor's data, such as hit points,
+ *                                                              armor class and damage traits. A `name` here also
+ *                                                              renames the panel tokens.
+ * @param {foundry.abstract.Document} [options.parent]          Document the panels depend on, such as a concentration
+ *                                                              effect.
+ * @param {foundry.abstract.Document} [options.sourceDocument]  Item or activity that made the wall.
+ * @returns {Promise<foundry.documents.TokenDocument[]>}        The panel tokens that were placed.
+ * @example
+ * const panels = await regionUtils.addWallPanels(region, {owner: actor, sourceActor: panelActor, updates: {system: {attributes: {hp: {value: 30, max: 30}}}}, sourceDocument: item});
  */
 async function addWallPanels(region, {owner, sourceActor, updates = {}, parent, sourceDocument} = {}) {
     const scene = region.parent;
@@ -423,9 +511,13 @@ async function addWallPanels(region, {owner, sourceActor, updates = {}, parent, 
     return tokens.filter(Boolean);
 }
 /**
- * Remove a destroyed wall panel: its wall segment or flat region and its token go, the region shrinks to the remaining panels and its `panelBroken` pass runs.
- * @param {Actor5e} actor Panel actor at 0 hit points.
+ * Remove a destroyed wall panel made by {@link addWallPanels}. The panel summon is deleted along with its wall segment
+ * or flat region, and the path region's `panelBroken` pass runs. A broken wall segment also shrinks the path region to
+ * the remaining walls. The path region is deleted once no walls or flat panels are left.
+ * @param {Actor5e} actor  Panel actor at 0 hit points.
  * @returns {Promise<void>}
+ * @example
+ * await regionUtils.breakWallPanel(target.actor);
  */
 async function breakWallPanel(actor) {
     const panel = actor.flags.cat?.wallPanel;
@@ -438,7 +530,9 @@ async function breakWallPanel(actor) {
     if (flat) {
         const flatData = flat.flags.cat.flatPanel;
         await documentUtils.deleteDocument(flat);
-        return new Events.RegionEvent([region], constants.regionPasses.panelBroken, {options: {flat: flatData}}).run();
+        await new Events.RegionEvent([region], constants.regionPasses.panelBroken, {options: {flat: flatData}}).run();
+        if (!getPathWalls(region).length && !getFlatPanels(region).length) return documentUtils.deleteDocument(region);
+        return;
     }
     const wall = scene.walls.get(panel.wall);
     const segment = wall ? wallSegment(wall) : undefined;
@@ -450,10 +544,14 @@ async function breakWallPanel(actor) {
     await documentUtils.update(region, {shapes: regionShapes.pathBand({segments: remaining}, thickness)});
 }
 /**
- * Give a path region made by {@link createPathRegions} a new path: its shapes follow the new path and its Wall documents are rebuilt along it.
- * @param {foundry.documents.RegionDocument} region Path region to reshape.
- * @param {WallPath} path New path.
+ * Give a path region made by {@link createPathRegions} a new path. Its shapes follow the new path at the stored
+ * thickness, and its walls are deleted and rebuilt along it when it has any. A side region is not reshaped.
+ * @param {foundry.documents.RegionDocument} region  Path region to reshape.
+ * @param {WallPath} path                            New path, in canvas pixels.
  * @returns {Promise<void>}
+ * @example
+ * const path = await crosshairUtils.drawPath({token, maxRange: 120});
+ * if (path) await regionUtils.reshapePathRegion(region, path);
  */
 async function reshapePathRegion(region, path) {
     const {pathThickness = 1, pathWalls} = region.flags.cat ?? {};
@@ -463,20 +561,27 @@ async function reshapePathRegion(region, path) {
     await createPathWalls(region, path);
 }
 /**
- * Delete the Wall documents {@link createPathRegions} made for a region.
- * @param {foundry.documents.RegionDocument} region Path region being deleted.
+ * Delete the walls {@link createPathRegions} made for a region. CAT already calls this when a path region is deleted.
+ * @param {foundry.documents.RegionDocument} region  Path region.
  * @returns {Promise<void>}
+ * @example
+ * await regionUtils.deletePathWalls(region);
  */
 async function deletePathWalls(region) {
     const ids = getPathWalls(region).map(wall => wall.id);
     if (ids.length) await documentUtils.deleteEmbeddedDocuments(region.parent, 'Wall', ids);
 }
 /**
- * Remove a region after a number of rounds, by tying it to a timer effect on the activity's actor.
- * @param {dnd5e.documents.activity.Activity} activity Activity that placed the region; names the timer and owns it.
- * @param {foundry.documents.RegionDocument} region Region to remove.
- * @param {number} [rounds] Rounds before removal, ending at the end of the actor's turn. Defaults to the activity's duration.
- * @returns {Promise<ActiveEffect|undefined>} The timer effect.
+ * Remove a region after a number of rounds. A timer effect named after the activity's item is created on the activity's
+ * actor, and the region depends on it.
+ * @param {dnd5e.documents.activity.Activity} activity  Activity that placed the region.
+ * @param {foundry.documents.RegionDocument} region     Region to remove.
+ * @param {number} [rounds]                             Rounds before removal, with `targetEnd` expiry. Defaults to the
+ *                                                      activity's duration value, or 1 when that isn't a number.
+ * @returns {Promise<ActiveEffect|undefined>}           The timer effect. Undefined when it could not be created.
+ * @example
+ * const [region] = regionUtils.getPlacedRegions(canvas.scene, activity);
+ * await regionUtils.addRegionTimer(activity, region, 1);
  */
 async function addRegionTimer(activity, region, rounds = Number(activity.duration.value) || 1) {
     const effectData = documentUtils.getBaseEffectData(activity, {
@@ -490,20 +595,25 @@ async function addRegionTimer(activity, region, rounds = Number(activity.duratio
     return effect;
 }
 /**
- * Whether this region is a spell ward.
- * @param {foundry.documents.RegionDocument} region Region to check.
+ * Whether this region is a spell ward, meaning it carries a `cat.spellWard` flag.
+ * @param {foundry.documents.RegionDocument} region  Region to check.
  * @returns {boolean}
+ * @example
+ * const wards = canvas.scene.regions.filter(region => regionUtils.isSpellWard(region));
  */
 function isSpellWard(region) {
     return region.flags.cat?.spellWard !== undefined;
 }
 /**
- * Whether a ward region the token stands in blocks a spell cast from outside it.
- * @param {TokenDocument} token Token the spell would affect.
- * @param {Item5e} [item] Item behind the effect.
- * @param {number} [castLevel] Level the spell was cast at.
- * @param {TokenDocument} [sourceToken] The caster's token.
+ * Whether a spell ward region the token stands in blocks a spell. A ward blocks spells of its stored level or lower,
+ * and only when the caster's token is outside it. Items that aren't spells return false.
+ * @param {TokenDocument} token          Token the spell would affect.
+ * @param {Item5e} [item]                Item behind the effect.
+ * @param {number} [castLevel]           Level the spell was cast at. Defaults to the spell's own level.
+ * @param {TokenDocument} [sourceToken]  The caster's token. Without one the caster counts as outside every ward.
  * @returns {boolean}
+ * @example
+ * if (regionUtils.isSpellWarded(target, item, castLevel, token)) return;
  */
 function isSpellWarded(token, item, castLevel, sourceToken) {
     if (item?.type !== 'spell' || !token?.parent) return false;
@@ -511,12 +621,17 @@ function isSpellWarded(token, item, castLevel, sourceToken) {
     return token.parent.regions.some(region => region.flags.cat?.spellWard >= level && token.testInsideRegion(region) && !sourceToken?.testInsideRegion(region));
 }
 /**
- * Place a light at a region's center that is deleted with the region.
- * @param {foundry.documents.RegionDocument} region Region the light belongs to.
- * @param {object} [config] Light config, with radii in feet.
- * @param {number} [config.bright] Bright radius in feet.
- * @param {number} [config.dim] Dim radius in feet. Defaults to the region's radius.
+ * Place a light at the center of the region's area from {@link getArea}. The light depends on the region, so it is
+ * deleted with it.
+ * @param {foundry.documents.RegionDocument} region  Region the light belongs to.
+ * @param {object} [config]                          Light config, with radii in feet. Other keys are passed to the
+ *                                                   light's `config` as they are.
+ * @param {number} [config.bright]                   Bright radius in feet. Defaults to 0.
+ * @param {number} [config.dim]                      Dim radius in feet. Defaults to the region's radius.
  * @returns {Promise<foundry.documents.AmbientLightDocument|undefined>}
+ *                                                   Undefined when the light could not be created.
+ * @example
+ * await regionUtils.createRegionLight(region, {bright: 20, dim: 40, color: '#ffaa00'});
  */
 async function createRegionLight(region, {bright, dim, ...config} = {}) {
     const scene = region.parent;

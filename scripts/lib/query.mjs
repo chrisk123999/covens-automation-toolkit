@@ -136,7 +136,7 @@ async function addFavorites({actorUuid, entityUuids}) {
 async function removeFavorites({actorUuid, entityUuids}) {
     const actor = await fromUuid(actorUuid);
     if (!actor?.system.removeFavorite) return;
-    const entities = await Promise.all(entityUuids.map(i => fromUuid(i)).filter(Boolean));
+    const entities = (await Promise.all(entityUuids.map(i => fromUuid(i)))).filter(Boolean);
     for (const i of entities) {
         const type = i.documentName;
         if (type === 'Item') {

@@ -36,9 +36,9 @@ function outerPath(points) {
 }
 /**
  * @typedef {object} WallPath
- * @property {{x: number, y: number}[]} [points] Connected points in canvas pixels.
- * @property {boolean} [closed] Whether the last point joins back to the first.
- * @property {[{x: number, y: number}, {x: number, y: number}][]} [segments] Separate segments, used instead of points for panel walls that may branch.
+ * @property {Point[]} [points]             Connected points in canvas pixels.
+ * @property {boolean} [closed]             Whether the last point joins back to the first.
+ * @property {[Point, Point][]} [segments]  Separate segments, used instead of points for panel walls that may branch.
  */
 function bandPaths(path, thickness) {
     if (path.segments) return offset(path.segments.map(toPath), thickness / 2, ClipperLib.EndType.etOpenSquare, ClipperLib.JoinType.jtMiter);
@@ -46,18 +46,27 @@ function bandPaths(path, thickness) {
     return offset([toPath(path.points)], thickness / 2, endType, ClipperLib.JoinType.jtMiter);
 }
 /**
- * Thicken a path into region polygon shapes.
- * @param {WallPath} path Path to thicken.
- * @param {number} thickness Total thickness in canvas pixels.
+ * Thicken a path into region polygon shapes, with `thickness / 2` on each side of the line. Paths given as `points` get
+ * flat ends, and paths given as `segments` get square ends that extend past each endpoint.
+ * @param {WallPath} path     Path to thicken, in canvas pixels.
+ * @param {number} thickness  Total thickness in canvas pixels.
  * @returns {{type: 'polygon', points: number[], hole: boolean}[]}
+ *                            Region shape data.
+ * @example
+ * const shapes = regionUtils.pathBand(path, distanceUtils.toPixels(canvas.scene, 5));
+ * await documentUtils.update(region, {shapes});
  */
 function pathBand(path, thickness) {
     return toShapes(bandPaths(path, thickness));
 }
 /**
- * The segments of a path as point pairs, including the closing segment of a closed path.
- * @param {WallPath} path Path to split.
- * @returns {[{x: number, y: number}, {x: number, y: number}][]}
+ * The segments of a path as point pairs, including the closing segment of a closed path with more than two points. A
+ * path given as `segments` returns them as they are.
+ * @param {WallPath} path       Path to split.
+ * @returns {[Point, Point][]}  Segments in canvas pixels.
+ * @example
+ * const segments = regionUtils.pathSegments({points: [{x: 0, y: 0}, {x: 100, y: 0}, {x: 100, y: 100}], closed: true});
+ * segments.length; // 3
  */
 function pathSegments(path) {
     if (path.segments) return path.segments;
@@ -67,10 +76,14 @@ function pathSegments(path) {
     return pairs;
 }
 /**
- * Whether a point lies in polygon shapes, counting points on an edge as inside and honouring holes.
- * @param {{type: 'polygon', points: number[], hole: boolean}[]} shapes Shapes from {@link pathBand} or {@link sideBand}, or region polygon shape data.
- * @param {{x: number, y: number}} point Point in canvas pixels.
+ * Whether a point lies in polygon shapes. A point on an outer edge counts as inside, and a point strictly inside a hole
+ * counts as outside.
+ * @param {{type: 'polygon', points: number[], hole: boolean}[]} shapes
+ *                       Shapes from {@link regionUtils.pathBand} or `sideBand`, or region shape data.
+ * @param {Point} point  Point in canvas pixels.
  * @returns {boolean}
+ * @example
+ * const inside = regionUtils.containsPoint(region.shapes, token.object.center);
  */
 function containsPoint(shapes, point) {
     const target = {X: Math.round(point.x * SCALE), Y: Math.round(point.y * SCALE)};
@@ -79,9 +92,9 @@ function containsPoint(shapes, point) {
 }
 /**
  * The segment nearest a point.
- * @param {{x: number, y: number}} point Point in canvas pixels.
- * @param {[{x: number, y: number}, {x: number, y: number}][]} segments Segments to search.
- * @returns {{distance: number, closest: {x: number, y: number}, a: {x: number, y: number}, b: {x: number, y: number}}|undefined}
+ * @param {Point} point                Point in canvas pixels.
+ * @param {[Point, Point][]} segments  Segments to search.
+ * @returns {{distance: number, closest: Point, a: Point, b: Point}|undefined}
  */
 function nearestSegment(point, segments) {
     let best;
@@ -105,14 +118,15 @@ function wedge(center, from, to, radius) {
     return points;
 }
 /**
- * The band of a given depth on one side of a path.
- * Open paths take `left` or `right`, relative to the drawing direction. Closed paths take `inside` or `outside`.
- * @param {{x: number, y: number}[]} points Path points in canvas pixels.
- * @param {boolean} closed Whether the last point joins back to the first.
- * @param {'left'|'right'|'inside'|'outside'} side Side the band lies on.
- * @param {number} depth Band depth in canvas pixels.
- * @param {object} [options] Additional options.
- * @param {number} [options.gap] Thickness in canvas pixels of a strip along the path left out of the band, so the band does not overlap the path's own area.
+ * The band of a given depth on one side of a path. Open paths take `left` or `right`, relative to the drawing
+ * direction. Closed paths take `inside` or `outside`.
+ * @param {Point[]} points                          Path points in canvas pixels.
+ * @param {boolean} closed                          Whether the last point joins back to the first.
+ * @param {'left'|'right'|'inside'|'outside'} side  Side the band lies on.
+ * @param {number} depth                            Band depth in canvas pixels.
+ * @param {object} [options]                        Additional options.
+ * @param {number} [options.gap]                    Thickness in canvas pixels of a strip along the path left out of the
+ *                                                  band, so the band does not overlap the path's own area.
  * @returns {{type: 'polygon', points: number[], hole: boolean}[]}
  */
 function sideBand(points, closed, side, depth, {gap = 0} = {}) {
@@ -141,19 +155,24 @@ function sideBand(points, closed, side, depth, {gap = 0} = {}) {
     return toShapes(paths);
 }
 /**
- * Cut one set of polygon shapes out of another.
- * @param {{type: 'polygon', points: number[], hole: boolean}[]} shapes Shapes to cut from.
- * @param {{type: 'polygon', points: number[], hole: boolean}[]} cut Shapes to remove.
- * @returns {{type: 'polygon', points: number[], hole: boolean}[]}
+ * Cut one set of polygon shapes out of another. The result can include hole polygons.
+ * @param {{type: 'polygon', points: number[], hole: boolean}[]} shapes Shapes to cut from, in canvas pixels.
+ * @param {{type: 'polygon', points: number[], hole: boolean}[]} cut Shapes to remove, in canvas pixels.
+ * @returns {{type: 'polygon', points: number[], hole: boolean}[]} Region shape data. Empty when nothing is left.
+ * @example
+ * const shapes = regionUtils.subtractShapes(region.shapes, regionUtils.pathBand(path, 50));
+ * await documentUtils.update(region, {shapes});
  */
 function subtractShapes(shapes, cut) {
     return toShapes(combine(shapes.map(shapeToPath), cut.map(shapeToPath), ClipperLib.ClipType.ctDifference));
 }
 /**
- * Shorten a connected path by a length, removing it from the end.
- * @param {{x: number, y: number}[]} points Path points in canvas pixels.
- * @param {number} length Length to remove in canvas pixels.
- * @returns {{x: number, y: number}[]} Remaining points; fewer than two when nothing is left.
+ * Shorten a connected path by a length, removing it from the end. The input array is not changed.
+ * @param {Point[]} points  Path points in canvas pixels.
+ * @param {number} length   Length to remove in canvas pixels.
+ * @returns {Point[]}       Remaining points. Empty when less than one segment is left.
+ * @example
+ * regionUtils.trimPath([{x: 0, y: 0}, {x: 100, y: 0}], 40); // [{x: 0, y: 0}, {x: 60, y: 0}]
  */
 function trimPath(points, length) {
     const result = points.map(point => ({...point}));
@@ -172,10 +191,15 @@ function trimPath(points, length) {
 }
 
 /**
- * Returns a path for the overlapping area of both regions.
- * @param {foundry.documents.RegionDocument} region
- * @param {foundry.documents.RegionDocument} otherRegion
- * @returns {{x: number, y: number}[]}
+ * The area where two regions' shapes overlap on the canvas. Elevation and levels are ignored.
+ * @param {foundry.documents.RegionDocument} region       Region to check.
+ * @param {foundry.documents.RegionDocument} otherRegion  Region to compare against.
+ * @returns {{X: number, Y: number}[][]}                  ClipperLib paths, with coordinates in canvas pixels multiplied
+ *                                                        by 100. Empty when the regions don't overlap or either has no
+ *                                                        shapes.
+ * @example
+ * const overlap = regionUtils.intersection(region, otherRegion);
+ * if (!overlap.length) return;
  */
 function intersection(region, otherRegion) {
     const pathA = region.shapes?.flatMap(shapeToPath);

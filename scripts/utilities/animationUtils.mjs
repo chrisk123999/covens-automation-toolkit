@@ -1,3 +1,8 @@
+/**
+ * Registered animation lookups, simple Sequencer effects and checks for animation modules. Covers Sequencer, JB2A,
+ * Animated Spell Effects: Cartoon, AA and BLFX.
+ * @module
+ */
 import {ColorMatrix, constants} from '../lib/_module.mjs';
 import {genericUtils} from './_module.mjs';
 const minSequencerVersion = '3.6.0';
@@ -10,13 +15,18 @@ const requirementMap = {
 };
 
 /**
- * Look up a registered animation, treating 'none' as unset.
- * @param {object} reference Animation selection.
- * @param {string} reference.source Module that registered the animation.
- * @param {string} reference.identifier Animation identifier.
- * @param {object} [options]
- * @param {Item5e} [options.item] Item the animation belongs to, skipped when CAT Animations defers to AA/BLFX for it.
- * @returns {object|undefined}
+ * Look up a registered animation from a config selection. Returns undefined when the selection is empty or `none`,
+ * {@link sequencerCheck} fails, or CAT Animations defers to AA/BLFX for the item. Also returns undefined, with a
+ * warning, when a requirement of the animation is not met.
+ * @param {object} reference             Animation selection, as stored in config.
+ * @param {string} reference.source      Module that registered the animation.
+ * @param {string} reference.identifier  Animation identifier.
+ * @param {object} [options]             Additional options.
+ * @param {Item5e} [options.item]        Item the animation plays for, checked with {@link deferredToAABLFX}.
+ * @returns {object|undefined}           The registered animation.
+ * @example
+ * const animation = animationUtils.getAnimation(automationUtils.getConfigValue(item, 'animation'), {item});
+ * if (animation?.macros?.play) await animation.macros.play(token.document, target);
  */
 function getAnimation({source, identifier}, {item} = {}) {
     if (!source || !identifier || source === 'none' || identifier === 'none') return;
@@ -30,31 +40,41 @@ function getAnimation({source, identifier}, {item} = {}) {
     return result;
 }
 /**
- * Whether an animation requirement is met: a known asset tier or an active module.
- * @param {string} requirement Requirement key or module id.
+ * Whether an animation requirement is met. `jb2a_patreon` needs the JB2A Patreon module, `JB2A_DnD5e` accepts either
+ * JB2A module, and any other value must be an active module id.
+ * @param {string} requirement  Requirement key or module id.
  * @returns {boolean}
+ * @example
+ * animationUtils.meetsRequirement('JB2A_DnD5e'); // true with free or Patreon JB2A active
  */
 function meetsRequirement(requirement) {
     return requirementMap[requirement]?.() ?? !!game.modules.get(requirement)?.active;
 }
 /**
- * Preload animation files for all clients.
- * @param {string[]} animations Sequencer database paths to preload.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.showProgressBar] Show Sequencer’s preload progress bar.
- * @returns {Promise<boolean>}
+ * Preload animation files on every connected client through Sequencer's preloader. Does nothing when
+ * {@link sequencerCheck} fails.
+ * @param {string[]} animations                Sequencer database paths or file paths to preload.
+ * @param {object} [options]                   Additional options.
+ * @param {boolean} [options.showProgressBar]  Show Sequencer's preload progress bar.
+ * @returns {Promise<boolean|undefined>}       Sequencer's preload result, or undefined when Sequencer is unavailable.
+ * @example
+ * await animationUtils.preloadAnimations(['jb2a.fireball.explosion.orange']);
  */
 async function preloadAnimations(animations, {showProgressBar} = {}) {
+    if (!sequencerCheck()) return;
     return await Sequencer.Preloader.preloadForClients(animations, showProgressBar);
 }
 /**
- * Play a ranged attack effect stretched from one token to another.
- * @param {foundry.documents.TokenDocument} sourceToken Token making the attack.
- * @param {foundry.documents.TokenDocument} targetToken Token being attacked.
- * @param {string} animation Sequencer database path or file path.
- * @param {object} [options] Additional options.
- * @param {string} [options.sound] Sound file played with the animation.
- * @param {boolean} [options.missed] Play the miss variant.
+ * Play an effect stretched from one token to another, with an optional sound. Does nothing when {@link sequencerCheck}
+ * fails. The sequence is not awaited.
+ * @param {foundry.documents.TokenDocument} sourceToken  Token making the attack.
+ * @param {foundry.documents.TokenDocument} targetToken  Token being attacked.
+ * @param {string} animation                             Sequencer database path or file path.
+ * @param {object} [options]                             Additional options.
+ * @param {string} [options.sound]                       Sound file played with the animation.
+ * @param {boolean} [options.missed]                     Offset the effect so it misses the target.
+ * @example
+ * animationUtils.simpleAttack(workflow.token.document, target.document, 'jb2a.arrow.physical.white', {missed: !workflow.hitTargets.has(target)});
  */
 function simpleAttack(sourceToken, targetToken, animation, {sound, missed = false} = {}) {
     if (!sequencerCheck()) return;
@@ -72,15 +92,20 @@ function simpleAttack(sourceToken, targetToken, animation, {sound, missed = fals
     /* eslint-enable indent */
 }
 /**
- * Build animation config colour options, gating non-free colours behind requirements.
- * @param {Record<string, string>} colorMap Colour keys mapped to their labels.
- * @param {object} [options] Additional options.
- * @param {string[]} [options.freeColors] Colours offered without requirements.
- * @param {string} [options.labelPrefix] Localization prefix the colour labels are appended to.
- * @param {boolean} [options.random] Offer a random colour option.
- * @param {boolean} [options.cycle] Offer a cycling colour option.
- * @param {string[]} [options.requirements] Modules required by the gated colours.
- * @returns {Record<string, object>}
+ * Build the choices for an animation's color config. Colors not in `freeColors` carry `requirements`, as do the
+ * optional random and cycle choices.
+ * @param {Record<string, string>} colorMap  Color keys mapped to their labels.
+ * @param {object} [options]                 Additional options.
+ * @param {string[]} [options.freeColors]    Colors offered without requirements.
+ * @param {string} [options.labelPrefix]     Prefix added to every label, such as a localization key path.
+ * @param {boolean} [options.random]         Add a `random` choice.
+ * @param {boolean} [options.cycle]          Add a `cycle` choice.
+ * @param {string[]} [options.requirements]  Requirements attached to the gated choices.
+ * @returns {Record<string, object>}         Choices keyed by color, each with a `label` and, when gated,
+ *                                           `requirements`.
+ * @example
+ * const options = animationUtils.buildColorOptions({orange: 'Orange', blue: 'Blue'}, {freeColors: ['orange'], random: true, requirements: ['jb2a_patreon']});
+ * // {orange: {label: 'Orange'}, blue: {label: 'Blue', requirements: ['jb2a_patreon']}, random: {label: 'Random', requirements: ['jb2a_patreon']}}
  */
 function buildColorOptions(colorMap, {freeColors = [], labelPrefix = '', random, cycle, requirements = []} = {}) {
     const options = {};
@@ -93,9 +118,12 @@ function buildColorOptions(colorMap, {freeColors = [], labelPrefix = '', random,
     return options;
 }
 /**
- * Credit details for an animation's author.
- * @param {string} [author] Author key, such as 'eskie'.
- * @returns {{name: string, discord?: string, patreon?: string}} The Coven when the author is missing or unknown.
+ * Credit details for an animation author. Known authors are `eskie` and `tyler`.
+ * @param {string} [author]  Author key.
+ * @returns {{name: string, discord?: string, patreon?: string}}
+ *                           `{name: 'The Coven'}` when the author is missing or unknown.
+ * @example
+ * animationUtils.getCredits('eskie').name; // 'Eskie'
  */
 function getCredits(author) {
     const authors = {
@@ -105,8 +133,11 @@ function getCredits(author) {
     return authors[author] ?? {name: 'The Coven'};
 }
 /**
- * Whether animations can play, warning once per session when Sequencer is missing or outdated.
+ * Whether CAT animations can play. False when the Animation Priority setting is `off`, or when Sequencer is missing or
+ * older than 3.6.0. The missing or outdated Sequencer warning shows once per session.
  * @returns {boolean}
+ * @example
+ * if (!animationUtils.sequencerCheck()) return;
  */
 function sequencerCheck() {
     if (game.settings.get('cat', 'animationPriority') === 'off') return false;
@@ -120,8 +151,10 @@ function sequencerCheck() {
     return false;
 }
 /**
- * Which JB2A module is active, preferring patreon.
- * @returns {'patreon'|'free'|false}
+ * Which JB2A module is active, preferring Patreon when both are.
+ * @returns {'patreon'|'free'|false}  False when neither is active.
+ * @example
+ * const path = animationUtils.jb2aCheck() === 'patreon' ? 'jb2a.fireball.explosion.purple' : 'jb2a.fireball.explosion.orange';
  */
 function jb2aCheck() {
     let patreon = game.modules.get('jb2a_patreon')?.active;
@@ -133,20 +166,25 @@ function jb2aCheck() {
 /**
  * Whether Animated Spell Effects: Cartoon is active.
  * @returns {boolean}
+ * @example
+ * if (!animationUtils.aseCheck()) return;
  */
 function aseCheck() {
-    let isActive = game.modules.get('animated-spell-effects-cartoon')?.active;
-    return isActive;
+    return !!game.modules.get('animated-spell-effects-cartoon')?.active;
 }
 /**
- * Colour matrix filter values recolouring an animation, or the default matrix if either key is unknown.
- * @param {string} animation A key of ColorMatrix.animations.
- * @param {string} color A key of ColorMatrix.colors.
- * @returns {object}
+ * Color matrix filter values that recolor a known animation to a known color. Returns the default matrix when either
+ * key is unknown.
+ * @param {string} animation  A key of `ColorMatrix.animations`.
+ * @param {string} color      A key of `ColorMatrix.colors`: a spell school abbreviation such as `evo`, or a damage
+ *                            type.
+ * @returns {{brightness: number, saturate: number, hue: number}}
+ * @example
+ * const matrix = animationUtils.colorMatrix('jb2a.impact.010.orange', 'cold');
+ * new Sequence().effect().file('jb2a.impact.010.orange').atLocation(token).filter('ColorMatrix', matrix).play();
  */
 function colorMatrix(animation, color) {
-    if (!Object.keys(ColorMatrix.animations).includes(animation)) return ColorMatrix.defaultMatrix;
-    if (!Object.keys(ColorMatrix.colors).includes(color)) return ColorMatrix.defaultMatrix;
+    if (!Object.keys(ColorMatrix.animations).includes(animation) || !Object.keys(ColorMatrix.colors).includes(color)) return {...ColorMatrix.defaultMatrix};
     let matrix = {
         brightness: ColorMatrix.colors[color].brightness + 1,
         saturate: ColorMatrix.colors[color].saturate - ColorMatrix.animations[animation].saturate,
@@ -155,9 +193,12 @@ function colorMatrix(animation, color) {
     return matrix;
 }
 /**
- * Whether Automated Animations would animate the item, from its own flags or its Automatic Recognition menus.
- * @param {Item5e} item The item to check.
+ * Whether AA would animate the item. Checks the item's own AA flags first, then the Automatic Recognition menus matched
+ * against the item name. False when AA is inactive.
+ * @param {Item5e} item  Item to check.
  * @returns {boolean}
+ * @example
+ * if (animationUtils.hasAutomatedAnimation(item)) return;
  */
 function hasAutomatedAnimation(item) {
     if (!game.modules.get('autoanimations')?.active) return false;
@@ -174,26 +215,34 @@ function hasAutomatedAnimation(item) {
     });
 }
 /**
- * Whether an active Boss Loot FX module has an animation macro assigned to the item.
- * @param {Item5e} item The item to check.
+ * Whether an active BLFX module has an animation macro assigned to the item.
+ * @param {Item5e} item  Item to check.
  * @returns {boolean}
+ * @example
+ * if (animationUtils.hasBossLootAnimation(item)) return;
  */
 function hasBossLootAnimation(item) {
     return blfxModuleIds.some(id => game.modules.get(id)?.active && Object.values(item.flags[id] ?? {}).some(entry => entry?.command));
 }
 /**
- * Whether CAT Animations defers to AA/BLFX for this item.
- * @param {Item5e} [item] The item to check.
+ * Whether CAT Animations skips the item so AA or BLFX can animate it instead. Only true when the Animation Priority
+ * setting is `module` and AA or BLFX has an animation for the item.
+ * @param {Item5e} [item]  Item to check. False when missing or not an item.
  * @returns {boolean}
+ * @example
+ * if (animationUtils.deferredToAABLFX(workflow.item)) return;
  */
 function deferredToAABLFX(item) {
     if (!item?.system || game.settings.get('cat', 'animationPriority') !== 'module') return false;
     return hasAutomatedAnimation(item) || hasBossLootAnimation(item);
 }
 /**
- * Notices for AA/BLFX animations that still play alongside the item's CAT animation.
- * @param {Item5e} item The item to check.
+ * Localized notices for AA or BLFX animations that still play alongside the item's CAT animation. AA is only reported
+ * when the Animation Priority setting is `both`. Returns an empty array when the setting is `module` or `off`.
+ * @param {Item5e} item  Item to check.
  * @returns {string[]}
+ * @example
+ * const notices = animationUtils.getModuleAnimationNotices(item);
  */
 function getModuleAnimationNotices(item) {
     const priority = game.settings.get('cat', 'animationPriority');

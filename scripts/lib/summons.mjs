@@ -1,5 +1,5 @@
 import {summonEvents} from '../events/_module.mjs';
-import {actorUtils, animationUtils, automationUtils, dialogUtils, documentUtils, folderUtils, genericUtils, itemUtils, queryUtils, tokenUtils} from '../utilities/_module.mjs';
+import {actorUtils, animationUtils, automationUtils, dialogUtils, distanceUtils, documentUtils, folderUtils, genericUtils, itemUtils, queryUtils, tokenUtils} from '../utilities/_module.mjs';
 import {constants} from './_module.mjs';
 export class SummonsManager {
     #summons = new Map();
@@ -262,7 +262,7 @@ export class SummonsManager {
         await documentUtils.createEmbeddedDocuments(combat, 'Combatant', [combatantData]);
     }
     async createSummon(ownerActor, sourceActor, created = game.time.worldTime, options = {}) {
-        const summon = new Summon(ownerActor, sourceActor, created, options);
+        const summon = new Summon(ownerActor, sourceActor, created, {...options, duration: options.duration ? options.duration + 6 : options.duration});
         summon.actor = await this.#prepareSidebarActor(summon, created, options);
         this.#summons.set(summon.actor.id, summon);
         if (summon.parent) await documentUtils.makeDependent(summon.parent, [summon.actor]);
@@ -333,7 +333,7 @@ export class SummonsManager {
         const summonWidth = summon.actor.prototypeToken.width;
         const crosshairsConfig = {
             icon: summonImg,
-            size: (summonWidth * token.scene.dimensions.distance) / 2
+            size: distanceUtils.fromGridSpaces(token.scene, summonWidth) / 2
         };
         const result = await tokenUtils.aimDestinationAs(userId, token, {range, crosshairsConfig});
         if (!result || result.cancelled) return;
@@ -395,6 +395,7 @@ export class SummonsManager {
         if (!summons.length) return;
         const spawnedTokens = [];
         for (const summon of summons) {
+            if (summon.token) continue;
             const resultToken = await this.placeSummon(summon, range, {token, userId});
             if (!resultToken) break;
             spawnedTokens.push(resultToken);
@@ -414,7 +415,6 @@ export class Summon {
         this.actor = actor;
         this.created = created;
         this.duration = duration;
-        if (duration) this.duration += 6;
         this.animation = animation;
         this.parentUuid = parent?.uuid;
         this.sourceDocumentUuid = sourceDocument?.uuid;

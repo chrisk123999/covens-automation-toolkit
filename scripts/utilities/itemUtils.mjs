@@ -1,3 +1,7 @@
+/**
+ * Item lookups, creation, enchantments, hidden activities and CAT description blocks. Ranges come back in feet.
+ * @module
+ */
 /** @import Item5e from "../../dnd5e/module/documents/item.mjs" */
 
 import {constants, Logging} from '../lib/_module.mjs';
@@ -5,18 +9,25 @@ import {activityUtils, actorUtils, distanceUtils, documentUtils, effectUtils, ge
 const activityVisibilityLocks = new Map();
 
 /**
- * Returns the DC of the first Save activity on an item, otherwise the save DC of the appropriate ability on the item, otherwise 10
- * @param {Item5e} item Item to read from.
+ * Get an item's save DC. Uses the DC of its first save activity, then the owner's DC for the item's ability, then the
+ * owner's spell save DC, then `10`.
+ * @param {Item5e} item  Item to read from.
  * @returns {number}
+ * @example
+ * const dc = itemUtils.getSaveDC(item);
  */
 function getSaveDC(item) {
     if (item.hasSave) return item.system.activities.getByType('save')[0].save.dc.value;
     return item.actor?.system?.abilities?.[item.abilityMod]?.dc ?? item?.actor?.system?.attributes?.spell?.dc ?? 10;
 }
 /**
- * Get the cast data stashed on this item, with its current save DC.
- * @param {Item5e} item Item to read from.
- * @returns {{castLevel: number, baseLevel: number, saveDC: number, school: string|undefined}} Levels are -1 when nothing is stashed.
+ * Read the cast data CAT stored in the item's `flags.cat.castData`, with the item's current save DC from
+ * {@link getSaveDC}.
+ * @param {Item5e} item  Item to read from.
+ * @returns {{castLevel: number, baseLevel: number, saveDC: number, school: string|undefined}}
+ *                       Levels are `-1` when nothing is stored.
+ * @example
+ * const {castLevel, saveDC} = itemUtils.getSavedCastData(item);
  */
 function getSavedCastData(item) {
     return {
@@ -27,20 +38,27 @@ function getSavedCastData(item) {
     };
 }
 /**
- * Find one of this item's activities by its identifier, which midi derives from
- * `midiProperties.identifier`, falling back to a slug of the activity name.
- * @param {Item5e} item Item to read from.
- * @param {string} identifier Activity identifier to match.
+ * Find one of an item's activities by its identifier. Midi-qol reads the identifier from `midiProperties.identifier`,
+ * falling back to a slug of the activity name.
+ * @param {Item5e} item        Item to read from.
+ * @param {string} identifier  Activity identifier to match.
  * @returns {Activity|undefined}
+ * @example
+ * const activity = itemUtils.getActivityByIdentifier(item, 'dismiss');
  */
 function getActivityByIdentifier(item, identifier) {
     return item.system.activities.find(activity => activity.identifier === identifier);
 }
 /**
- * Build a prepared, unsaved item owned by an actor, for handing a modified copy to a workflow.
- * @param {object} itemData Item data to build an in-memory item from.
- * @param {foundry.documents.Actor} actor Actor the items belong to.
+ * Build an unsaved item owned by an actor, with its data prepared and active effects applied. Nothing is created in the
+ * world.
+ * @param {object} itemData                Item data to build from.
+ * @param {foundry.documents.Actor} actor  Actor that owns the item.
  * @returns {Item5e}
+ * @example
+ * const itemData = item.toObject();
+ * itemData.system.damage.base.number = 2;
+ * const modifiedItem = itemUtils.syntheticItem(itemData, actor);
  */
 function syntheticItem(itemData, actor) {
     const item = new CONFIG.Item.documentClass(itemData, {parent: actor});
@@ -50,16 +68,24 @@ function syntheticItem(itemData, actor) {
     return item;
 }
 /**
- * Apply an enchantment to an item. The effect data must carry an origin.
- * @param {Item5e} item Item on which to apply effects.
- * @param {object} effectData Coerced to an applied enchantment (`transfer` on, `disabled` off).
- * @param {object} [options] Additional options.
- * @param {object[]} [options.effects] Data for additional effects created on the actor, dependent on the enchantment.
- * @param {object[]} [options.items] Data for additional items created on the actor, dependent on the enchantment.
- * @param {object} [options.effectOptions] Passed to the creation when it goes through a GM.
- * @param {boolean} [options.forceGM] Create through a GM even when the user has permission.
- * @param {boolean} [options.favoriteItems] Add created {@link items} to favorites on the character sheet.
- * @returns {Promise<ActiveEffect|undefined>}
+ * Create an enchantment on an item through {@link effectUtils.createEffects}. `effectData` is modified in place into an
+ * applied enchantment, with `transfer` on and `disabled` off. Logs an error and creates nothing when `effectData` has
+ * no `origin`.
+ * @param {Item5e} item                             Item to enchant.
+ * @param {object} effectData                       Enchantment effect data. Must have an `origin`.
+ * @param {object} [options]                        Additional options.
+ * @param {Array<object|string>} [options.effects]  Rider effects. Objects are created on `item` and deleted with the
+ *                                                  enchantment. Strings are stored as dnd5e enchantment effect riders.
+ * @param {Array<object|string>} [options.items]    Rider items. Objects are created on the item's actor and deleted
+ *                                                  with the enchantment. Strings are stored as dnd5e enchantment item
+ *                                                  riders.
+ * @param {object} [options.effectOptions]          Passed to the enchantment's creation.
+ * @param {boolean} [options.forceGM]               Create through a GM even when the user has permission.
+ * @param {boolean} [options.favoriteItems]         Add created rider items to the actor's favorites.
+ * @returns {Promise<ActiveEffect|undefined>}       The enchantment, or undefined when nothing was created.
+ * @example
+ * const effectData = {name: item.name, img: item.img, origin: item.uuid, system: {changes: [{key: 'name', type: 'override', value: 'Flaming Sword'}]}};
+ * await itemUtils.enchantItem(weapon, effectData);
  */
 async function enchantItem(item, effectData, {effects = [], items = [], effectOptions, forceGM, favoriteItems} = {}) {
     if (!effectData.origin) {
@@ -89,13 +115,16 @@ async function enchantItem(item, effectData, {effects = [], items = [], effectOp
     return enchantment;
 }
 /**
- * Create items on an actor, optionally favoriting them and tying their lifetime to a parent document.
- * @param {foundry.documents.Actor} actor Actor the items belong to.
- * @param {object[]} itemDatas Item data to create.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.favorite] Add the created items to the actor's favorites.
- * @param {foundry.abstract.Document} [options.parentEntity] Delete the created items when this document is deleted.
+ * Create items on an actor through {@link documentUtils.createEmbeddedDocuments}.
+ * @param {foundry.documents.Actor} actor                     Actor to receive the items.
+ * @param {object[]} itemDatas                                Item data to create.
+ * @param {object} [options]                                  Additional options.
+ * @param {boolean} [options.favorite]                        Add the created items to the actor's favorites. Defaults
+ *                                                            to false.
+ * @param {foundry.abstract.Document} [options.parentEntity]  Delete the created items when this document is deleted.
  * @returns {Promise<foundry.documents.Item[]>}
+ * @example
+ * const [created] = await itemUtils.createItems(actor, [itemData], {favorite: true, parentEntity: effect});
  */
 async function createItems(actor, itemDatas, {favorite = false, parentEntity} = {}) {
     const items = await documentUtils.createEmbeddedDocuments(actor, 'Item', itemDatas);
@@ -104,11 +133,14 @@ async function createItems(actor, itemDatas, {favorite = false, parentEntity} = 
     return items;
 }
 /**
- * Every item stored in the world whose flag matches a value: sidebar items, actor items and items on unlinked token deltas.
- * @param {string} scope Flag scope, such as a module id.
- * @param {string} key Dot-separated flag path inside the scope.
- * @param {*} value Value the flag must equal.
+ * Find every item in the world whose flag strictly equals a value. Searches sidebar items, items on world actors and
+ * items added to unlinked tokens. Compendium items are not searched.
+ * @param {string} scope  Flag scope, such as a module id.
+ * @param {string} key    Dot-separated flag path inside the scope.
+ * @param {*} value       Value the flag must equal.
  * @returns {Item5e[]}
+ * @example
+ * const copies = itemUtils.getWorldItemsByFlag('cat', 'sourceUuid', item.uuid);
  */
 function getWorldItemsByFlag(scope, key, value) {
     const matches = flags => genericUtils.getProperty(flags ?? {}, scope + '.' + key) === value;
@@ -118,11 +150,14 @@ function getWorldItemsByFlag(scope, key, value) {
     return items.filter(item => matches(item.flags));
 }
 /**
- * Delete every item in the world whose flag matches a value, delegating to a GM when the user is not one.
- * @param {string} scope Flag scope, such as a module id.
- * @param {string} key Dot-separated flag path inside the scope.
- * @param {*} value Value the flag must equal.
- * @returns {Promise<string[]>} Uuids of the deleted items.
+ * Delete every item found by {@link getWorldItemsByFlag}. Non-GM users route the deletion through a GM query that waits
+ * up to 30 seconds.
+ * @param {string} scope         Flag scope, such as a module id.
+ * @param {string} key           Dot-separated flag path inside the scope.
+ * @param {*} value              Value the flag must equal.
+ * @returns {Promise<string[]>}  Uuids of the deleted items. Empty when the GM query fails.
+ * @example
+ * await itemUtils.deleteWorldItemsByFlag('cat', 'sourceUuid', item.uuid);
  */
 async function deleteWorldItemsByFlag(scope, key, value) {
     if (!game.user.isGM) return await queryUtils.query('deleteItemsByFlag', queryUtils.gmUser(), {scope, key, value}, 30000) ?? [];
@@ -134,13 +169,18 @@ async function deleteWorldItemsByFlag(scope, key, value) {
     return items.map(item => item.uuid);
 }
 /**
- * Reveal activities hidden by `flags.cat.hidden`, through a `catHiddenActivities` enchantment on the item.
- * @param {Item5e} item Item to read from.
- * @param {string[]} identifiers Activity identifiers to act on.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.ids] Treat {@link identifiers} as activity ids rather than identifiers.
- * @param {boolean} [options.favorite] Also add the revealed activities to the actor's favorites.
- * @returns {Promise<ActiveEffect|undefined>} The enchantment holding the overrides.
+ * Reveal activities hidden by `flags.cat.hidden`. The overrides live on one `catHiddenActivities` enchantment on the
+ * item, created through {@link enchantItem} or updated when it exists. Calls for the same item run one at a time.
+ * @param {Item5e} item                        Item with the hidden activities.
+ * @param {string[]} identifiers               Activity identifiers to reveal. Unknown ones are skipped.
+ * @param {object} [options]                   Additional options.
+ * @param {boolean} [options.ids]              Treat `identifiers` as activity ids. Defaults to false.
+ * @param {boolean} [options.favorite]         Also add the revealed activities to the actor's favorites. Defaults to
+ *                                             false.
+ * @returns {Promise<ActiveEffect|undefined>}  The enchantment holding the overrides, or undefined when no activity
+ *                                             matched.
+ * @example
+ * await itemUtils.unhideActivities(item, ['dismiss'], {favorite: true});
  */
 async function unhideActivities(item, identifiers, {ids = false, favorite = false} = {}) {
     const uuid = item.uuid;
@@ -197,13 +237,19 @@ async function unhideActivities(item, identifiers, {ids = false, favorite = fals
     }
 }
 /**
- * Undo {@link unhideActivities}, dropping the whole enchantment once nothing is left revealed.
- * @param {Item5e} item Item to read from.
- * @param {string[]} [identifiers] Activity identifiers to act on.
- * @param {object} [options] Additional options.
- * @param {boolean} [options.all] Re-hide everything, ignoring {@link identifiers}.
- * @param {boolean} [options.favorite] Also drop the re-hidden activities from the actor's favorites.
- * @returns {Promise<void>}
+ * Hide activities revealed by {@link unhideActivities} again. The `catHiddenActivities` enchantment is deleted once
+ * nothing is left revealed. Calls for the same item run one at a time.
+ * @param {Item5e} item                        Item with the revealed activities.
+ * @param {string[]} [identifiers]             Activity identifiers to hide.
+ * @param {object} [options]                   Additional options.
+ * @param {boolean} [options.all]              Delete the enchantment, hiding everything and ignoring `identifiers`.
+ *                                             Defaults to false.
+ * @param {boolean} [options.favorite]         Also remove the hidden activities from the actor's favorites. Ignored
+ *                                             with `all`. Defaults to false.
+ * @returns {Promise<ActiveEffect|undefined>}  The remaining enchantment, or undefined when it was deleted or never
+ *                                             existed.
+ * @example
+ * await itemUtils.rehideActivities(item, ['dismiss'], {favorite: true});
  */
 async function rehideActivities(item, identifiers = [], {all = false, favorite = false} = {}) {
     const uuid = item.uuid;
@@ -242,9 +288,13 @@ async function rehideActivities(item, identifiers = [], {all = false, favorite =
     }
 }
 /**
- * Fetch a key representing the class, race, feat, etc. that granted an item ('type:identifier').
- * @param {Item5e} item Item to read from.
- * @returns {string|undefined}
+ * Get a `type:identifier` key for the item that granted this one, such as `class:wizard`. Reads `system.sourceItem`
+ * first, then the root of the item's advancement origin. Items not on an actor return their
+ * `flags.cat.automation.sourceType` instead.
+ * @param {Item5e} item         Item to read from.
+ * @returns {string|undefined}  Undefined when no source is found.
+ * @example
+ * if (itemUtils.getAdvancementSourceKey(item) !== 'class:wizard') return;
  */
 function getAdvancementSourceKey(item) {
     if (!item.actor) return item.flags.cat?.automation?.sourceType;
@@ -253,11 +303,16 @@ function getAdvancementSourceKey(item) {
     if (rootItem) return `${rootItem.type}:${rootItem.identifier}`;
 }
 /**
- * Fetch the class, race, feat, etc. that granted an item. Works on actor items only.
- * @param {Item5e} item Item to read from.
- * @param {*} [options] Passed through to dnd5e's advancement lookup.
- * @param {boolean} [options.subclass] If true and the advancement source resolves to a subclass, return the base class instead. Default false.
- * @returns {Item5e|undefined}
+ * Get the item on the same actor that granted this one, found from {@link getAdvancementSourceKey}. A subclass source
+ * returns its class unless `subclass` is true.
+ * @param {Item5e} item                 Item to read from.
+ * @param {object} [options]            Additional options.
+ * @param {boolean} [options.subclass]  Return a subclass source as the subclass rather than its class. Defaults to
+ *                                      false.
+ * @returns {Item5e|undefined}          Undefined for items not on an actor or with no source found.
+ * @example
+ * const classItem = itemUtils.getAdvancementSourceItem(item);
+ * const subclassItem = itemUtils.getAdvancementSourceItem(item, {subclass: true});
  */
 function getAdvancementSourceItem(item, {subclass = false} = {}) {
     if (!item.actor) return;
@@ -274,9 +329,12 @@ function getAdvancementSourceItem(item, {subclass = false} = {}) {
     return source;
 }
 /**
- * Whether this item is currently active: equipped, attuned when attunement is required, and with its magic available when it is magical.
- * @param {Item5e} item Item to read from.
- * @returns {boolean} True for items that cannot be equipped at all.
+ * Whether an item is in effect. It must be equipped, attuned when attunement is required, and have its magic available
+ * when it has the magical property.
+ * @param {Item5e} item  Item to read from.
+ * @returns {boolean}    True for item types that can't be equipped.
+ * @example
+ * if (!itemUtils.getEquipmentState(item)) return;
  */
 function getEquipmentState(item) {
     if (item.system.equipped === undefined) return true;
@@ -286,9 +344,12 @@ function getEquipmentState(item) {
     return true;
 }
 /**
- * Get every damage type an item can deal across its attack, damage and save activities, including flavor-declared types.
- * @param {Item5e} item Item to read from.
- * @returns {Set<string>}
+ * Get every damage type in the damage parts of an item's attack, damage and save activities. Includes types written as
+ * roll flavor in a formula, such as `1d6[fire]`.
+ * @param {Item5e} item    Item to read from.
+ * @returns {Set<string>}  Empty for items without activities.
+ * @example
+ * if (itemUtils.getItemDamageTypes(item).has('fire')) return;
  */
 function getItemDamageTypes(item) {
     const activities = Array.from(item.system.activities?.getByTypes('attack', 'damage', 'save') ?? []);
@@ -297,9 +358,11 @@ function getItemDamageTypes(item) {
     return flavorTypes.union(declaredTypes);
 }
 /**
- * Remove CAT's generated description block from an item description.
- * @param {string} html Description html to work on.
- * @returns {string}
+ * Remove CAT's generated `cat-description` blocks from description HTML. Does not update any document.
+ * @param {string} html  Description HTML.
+ * @returns {string}     The HTML without the blocks, or `html` unchanged when it has none.
+ * @example
+ * const description = itemUtils.stripDescriptionBlock(item.system.description.value);
  */
 function stripDescriptionBlock(html) {
     if (!html?.includes('cat-description')) return html;
@@ -309,10 +372,14 @@ function stripDescriptionBlock(html) {
     return wrapper.innerHTML;
 }
 /**
- * Bake an item's damage and save data into bare enrichers so a kept description still resolves after its activities are replaced.
- * @param {string} html Description html to work on.
- * @param {Item5e} item The item the description currently belongs to.
- * @returns {string}
+ * Fill bare `[[/damage]]` and `[[/save]]` enrichers in description HTML with the item's damage parts and save ability
+ * and DC. A kept description then still resolves after the item's activities are replaced. Uses the first activity with
+ * damage parts and the first with a save ability.
+ * @param {string} html  Description HTML.
+ * @param {Item5e} item  Item the description belongs to.
+ * @returns {string}     The updated HTML. Does not update any document.
+ * @example
+ * const description = itemUtils.resolveDescriptionEnrichers(item.system.description.value, item);
  */
 function resolveDescriptionEnrichers(html, item) {
     if (!html?.includes('[[/')) return html;
@@ -340,10 +407,13 @@ function resolveDescriptionEnrichers(html, item) {
     return html;
 }
 /**
- * Replace CAT's generated description block on an item, skipping the update when nothing changed.
- * @param {Item5e} item Item to read from.
- * @param {string} content Empty removes the block.
+ * Replace CAT's generated `cat-description` block at the end of an item's description, then update the item. Skips the
+ * update when nothing changed.
+ * @param {Item5e} item     Item to update.
+ * @param {string} content  HTML for the block. Empty removes the block.
  * @returns {Promise<void>}
+ * @example
+ * await itemUtils.setDescriptionBlock(item, '<p>Automated by CAT.</p>');
  */
 async function setDescriptionBlock(item, content) {
     const current = item.system.description?.value ?? '';
@@ -361,9 +431,9 @@ async function setDescriptionBlock(item, content) {
     await documentUtils.update(item, {'system.description.value': updated});
 }
 /**
- * Collect the ids every activity on this item depends on.
- * @param {Item5e} item Item to read from.
- * @returns {Set<string>}
+ * Collect the dependency ids of every activity on an item from {@link activityUtils.getDependencies}.
+ * @param {Item5e} item    Item to read from.
+ * @returns {Set<string>}  Empty for items without activities.
  */
 function getDependencies(item) {
     const dependencies = new Set();
@@ -372,9 +442,13 @@ function getDependencies(item) {
     return dependencies;
 }
 /**
- * Whether this spell could be cast right now, accounting for preparation, casting method and anything its linked activity would consume.
- * @param {Item5e} item Item to read from.
- * @returns {boolean} False for anything that is not a spell.
+ * Whether the owner could cast a spell right now. Checks preparation, limited uses and an available spell slot of the
+ * spell's level or higher. Spells cast through a linked activity count as innate and check the item uses, activity uses
+ * and materials that activity consumes instead.
+ * @param {Item5e} item  Spell to check.
+ * @returns {boolean}    False for anything that isn't a spell on an actor.
+ * @example
+ * const castable = actor.items.filter(item => itemUtils.canCast(item));
  */
 function canCast(item) {
     if (item.type !== 'spell') return false;
@@ -411,23 +485,33 @@ function canCast(item) {
     return true;
 }
 /**
- * The spell attack bonus this item's owner rolls with, including their ranged spell attack bonus.
- * @param {Item5e} item Item to read from.
- * @returns {number}
+ * Get the spell attack bonus the item's owner rolls with: proficiency, the ability modifier and attack bonuses. Uses
+ * the item's ability, then the actor's spellcasting ability, then Intelligence. Adds the melee spell attack bonus when
+ * the item's first attack is a melee attack, otherwise the ranged one. Undefined for an item without an actor.
+ * @param {Item5e} item  Item on an actor.
+ * @returns {number|undefined}
+ * @example
+ * const attackBonus = itemUtils.getSpellAttackBonus(item);
  */
 function getSpellAttackBonus(item) {
     const actor = item.actor;
+    if (!actor) return;
     const ability = item.system.ability || actor.system.attributes.spellcasting || 'int';
     const rollData = actor.getRollData();
+    const melee = item.system.activities?.find(activity => activity.type === 'attack')?.attack.type.value === 'melee';
     const {bonus} = dnd5e.dataModels.shared.D20RollModificationField.combineFields(actor.system, [
-        `abilities.${ability}.attack.roll`, 'rolls.attack', 'rolls.attack.rsak'
+        `abilities.${ability}.attack.roll`, 'rolls.attack', melee ? 'rolls.attack.msak' : 'rolls.attack.rsak'
     ], {rules: {category: 'attack', actor, item, rollData}});
     return actor.system.attributes.prof + (actor.system.abilities[ability]?.mod ?? 0) + dnd5e.utils.simplifyBonus(bonus, rollData);
 }
 /**
- * Append a bonus to the first damage part of every activity in this item's data, in place.
- * @param {object} itemData Item source data to modify.
- * @param {string|number} bonus Formula appended to each part.
+ * Add a bonus to the first damage part of every activity in item data. Modifies `itemData` in place and does not update
+ * any document.
+ * @param {object} itemData      Item source data, such as from `item.toObject()`.
+ * @param {string|number} bonus  Formula added to each part's existing bonus.
+ * @example
+ * const itemData = item.toObject();
+ * itemUtils.addDamageBonus(itemData, '1d6');
  */
 function addDamageBonus(itemData, bonus) {
     Object.values(itemData.system.activities).forEach(activityData => {
@@ -437,15 +521,19 @@ function addDamageBonus(itemData, bonus) {
     });
 }
 /**
- * Add a copy of a cast activity to an item, casting a chosen spell, removed when its parent effect is deleted.
- * @param {Item5e} item Item that receives the activity.
- * @param {object} activityData Cast activity data to copy.
- * @param {Item5e} spell Spell the activity casts.
- * @param {ActiveEffect} parent Effect the activity depends on.
- * @param {object} [options] Additional options.
- * @param {Actor5e} [options.caster] Actor whose spell attack bonus and save DC the spell uses.
- * @param {object} [options.updates] Merged into the copied activity data.
- * @returns {Promise<Activity|undefined>}
+ * Add a copy of a cast activity to an item, set to cast a chosen spell, then update the item. The copy gets a new id
+ * and no spent uses, is visible, and is removed when `parent` is deleted.
+ * @param {Item5e} item                    Item that receives the activity.
+ * @param {object} activityData            Cast activity data to copy.
+ * @param {Item5e} spell                   Spell the activity casts.
+ * @param {ActiveEffect} parent            Effect the activity depends on.
+ * @param {object} [options]               Additional options.
+ * @param {Actor5e} [options.caster]       Actor whose spell attack bonus and save DC the spell uses.
+ * @param {object} [options.updates]       Merged into the copied activity data.
+ * @returns {Promise<Activity|undefined>}  The new activity.
+ * @example
+ * const activityData = itemUtils.getActivityByIdentifier(item, 'cast').toObject();
+ * await itemUtils.attachCastActivity(item, activityData, spell, effect, {caster: actor});
  */
 async function attachCastActivity(item, activityData, spell, parent, {caster, updates = {}} = {}) {
     const castData = genericUtils.mergeObject(genericUtils.deepClone(activityData), updates);
@@ -464,26 +552,33 @@ async function attachCastActivity(item, activityData, spell, parent, {caster, up
     return item.system.activities.get(castData._id);
 }
 /**
- * Label of a system base weapon.
- * @param {string} key Base weapon key, such as 'longsword'.
- * @returns {string|undefined}
+ * Get the label of a system base weapon.
+ * @param {string} key          Base weapon key, such as `longsword`.
+ * @returns {string|undefined}  Undefined for unknown keys.
+ * @example
+ * const label = itemUtils.getBaseWeaponLabel(item.system.type.baseItem);
  */
 function getBaseWeaponLabel(key) {
     return constants.weaponOptions.find(weapon => weapon.value === key)?.label;
 }
 /**
- * Localized label of a weapon mastery.
- * @param {string} mastery Mastery key.
- * @returns {string}
+ * Get the localized label of a weapon mastery.
+ * @param {string} mastery  Mastery key, such as `topple`.
+ * @returns {string}        The key itself for unknown masteries.
+ * @example
+ * const label = itemUtils.getMasteryLabel(item.system.mastery);
  */
 function getMasteryLabel(mastery) {
     return _loc(CONFIG.DND5E.weaponMasteries[mastery]?.label ?? mastery);
 }
 /**
- * Whether a weapon's wielder can use a mastery with it. Characters need it among the weapon's mastery options.
- * @param {Item5e} item Weapon to check.
- * @param {string} [mastery] Mastery key. Defaults to the weapon's mastery.
+ * Whether a weapon's owner can use a mastery with it. Requires a weapon on an actor with mastery enabled. Characters
+ * need the mastery among the weapon's mastery options, and other actors need it to be the weapon's mastery.
+ * @param {Item5e} item       Weapon to check.
+ * @param {string} [mastery]  Mastery key. Defaults to the weapon's mastery.
  * @returns {boolean}
+ * @example
+ * if (!itemUtils.canUseMastery(workflow.item, 'topple')) return;
  */
 function canUseMastery(item, mastery = item?.system.mastery) {
     if (item?.type !== 'weapon' || !item.actor || !mastery || !actorUtils.isMasteryEnabled(item.actor)) return false;
@@ -491,18 +586,24 @@ function canUseMastery(item, mastery = item?.system.mastery) {
     return !!item.system.masteryOptions?.some(option => option.value === mastery);
 }
 /**
- * Get the item's range, long range and reach in feet.
- * @param {Item5e} item Item to read from.
+ * Get an item's range, long range and reach in feet, converted from the item's range units with
+ * {@link distanceUtils.lengthToFeet}.
+ * @param {Item5e} item  Item to read from.
  * @returns {{value: number|undefined, long: number|undefined, reach: number|undefined}}
+ *                       Each is undefined when empty or when the units aren't a length, such as `touch` or `self`.
+ * @example
+ * const {value, long} = itemUtils.getRange(item);
  */
 function getRange(item) {
     const {value, long, reach, units} = item.system.range ?? {};
     return {value: distanceUtils.lengthToFeet(value, units), long: distanceUtils.lengthToFeet(long, units), reach: distanceUtils.lengthToFeet(reach, units)};
 }
 /**
- * Whether the item counts as magical: a spell or an item with the magical property.
- * @param {Item5e} [item] Item to check.
- * @returns {boolean}
+ * Whether an item counts as magical: a spell, or an item with the magical property.
+ * @param {Item5e} [item]  Item to check.
+ * @returns {boolean}      False when `item` is undefined.
+ * @example
+ * if (itemUtils.isMagical(workflow.item)) return;
  */
 function isMagical(item) {
     return item?.type === 'spell' || !!item?.system.properties?.has('mgc');

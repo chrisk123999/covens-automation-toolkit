@@ -1,3 +1,8 @@
+/**
+ * Crosshair aiming and path drawing on the viewed canvas. Ranges are given in feet and checked against the scene's grid
+ * and diagonal rule.
+ * @module
+ */
 import {Crosshairs, PathCrosshairs} from '../lib/_module.mjs';
 import {distanceUtils, genericUtils, uiUtils} from '../utilities/_module.mjs';
 const getSizeIndex = (token) => {
@@ -12,13 +17,15 @@ const getSizeIndex = (token) => {
 };
 /**
  * Find how far a range reaches horizontally from a point at an elevation, in scene units.
- * @param {{x: number, y: number, elevation: number}} origin Point measured from.
- * @param {number} range Range in scene units.
- * @param {number} elevation Elevation measured to.
- * @returns {number} -1 when the elevation alone is out of range.
+ * @param {ElevatedPoint} origin             Point measured from.
+ * @param {number} range                     Range in scene units.
+ * @param {number} elevation                 Elevation measured to.
+ * @param {foundry.documents.Scene} [scene]  Scene to measure on. Defaults to the viewed scene.
+ * @returns {number}                         -1 when the elevation alone is out of range.
  */
-function reachInSceneUnits(origin, range, elevation) {
-    const measure = offset => canvas.grid.measurePath([origin, {x: origin.x + (offset * canvas.grid.size / canvas.grid.distance), y: origin.y, elevation}]).distance;
+function reachInSceneUnits(origin, range, elevation, scene = canvas.scene) {
+    const grid = scene.grid;
+    const measure = offset => grid.measurePath([origin, {x: origin.x + (offset * grid.size / grid.distance), y: origin.y, elevation}]).distance;
     if (measure(0) > range) return -1;
     let low = 0;
     let high = range;
@@ -30,20 +37,26 @@ function reachInSceneUnits(origin, range, elevation) {
     return low;
 }
 /**
- * Horizontal reach left at an elevation.
- * @param {{x: number, y: number, elevation: number}} origin Origin point.
- * @param {number} range Range in feet.
- * @param {number} elevation Elevation to measure at.
- * @returns {number} Feet, or -1 if out of range.
+ * How far a range reaches horizontally from a point once part of it is spent climbing to another elevation. Measured
+ * with the scene's diagonal rule, so a higher elevation leaves less horizontal reach.
+ * @param {ElevatedPoint} origin             Point measured from, in canvas pixels with elevation in scene units.
+ * @param {number} range                     Range in feet.
+ * @param {number} elevation                 Elevation to measure at, in scene units.
+ * @param {foundry.documents.Scene} [scene]  Scene to measure on. Defaults to the viewed scene.
+ * @returns {number}                         Horizontal reach in feet, or -1 when the height difference alone is out of
+ *                                           range.
+ * @example
+ * const origin = {...token.object.center, elevation: token.elevation};
+ * const reach = crosshairUtils.horizontalReach(origin, 30, token.elevation + 20);
  */
-function horizontalReach(origin, range, elevation) {
-    const reach = reachInSceneUnits(origin, distanceUtils.convertDistance(canvas.scene, range), elevation);
-    return reach < 0 ? reach : distanceUtils.toFeet(canvas.scene, reach);
+function horizontalReach(origin, range, elevation, scene = canvas.scene) {
+    const reach = reachInSceneUnits(origin, distanceUtils.convertDistance(scene, range), elevation, scene);
+    return reach < 0 ? reach : distanceUtils.toFeet(scene, reach);
 }
 /**
  * Draw a faded copy of a token whose level is not being viewed.
- * @param {foundry.documents.TokenDocument} token Token to copy.
- * @param {{x: number, y: number}} center Center of the copy.
+ * @param {foundry.documents.TokenDocument} token  Token to copy.
+ * @param {Point} center                           Center of the copy.
  * @returns {Promise<PIXI.Sprite|undefined>}
  */
 async function drawGhost(token, center) {
@@ -61,8 +74,8 @@ async function drawGhost(token, center) {
 }
 /**
  * Draw the range boundary.
- * @param {{x: number, y: number}} center Center of the boundary.
- * @param {number} radius Range in scene units.
+ * @param {Point} center   Center of the boundary.
+ * @param {number} radius  Range in scene units.
  * @returns {PIXI.Graphics}
  */
 function drawRange(center, radius) {
@@ -74,22 +87,42 @@ function drawRange(center, radius) {
     return drawing;
 }
 /**
- * Show a crosshair, optionally bounded to a range from a token.
- * @param {object} [options] Additional options.
- * @param {foundry.documents.TokenDocument} [options.token] Origin of the range check, and the default icon.
- * @param {number} [options.maxRange] Feet. Without one, the crosshair is unbounded and placed freely.
- * @param {object} [options.crosshairsConfig] Passed to {@link Crosshairs.showCrosshairs}, with `size` in feet.
- * @param {object} [options.centerpoint] Measure from here instead of the token's center, skipping width compensation.
- * @param {boolean} [options.drawBoundries] Draw the range boundary.
- * @param {boolean} [options.checkOverlap] Reject a placement overlapping another token.
- * @param {object} [options.customCallbacks] Merged over the internal crosshair callbacks.
- * @param {boolean} [options.trackDistance] Show the live distance from the origin.
- * @param {number} [options.fudgeDistance] Extra slack in feet, on top of the token's own width compensation.
- * @param {Function[]} [options.validityFunctions] Receive the crosshair and `{x, y, elevation}`; a falsy return blocks the click.
- * @param {Function} [options.getElevation] Returns the destination elevation for the crosshair.
- * @param {number} [options.ringElevation] Elevation the range boundary is drawn at.
- * @param {boolean} [options.ignoreWalls] Allow destinations that walls block from the token.
- * @returns {Promise<object>} The crosshair result with `elevation`, from `getElevation` when given.
+ * Prompt the current user to pick a point with a crosshair, measured from a token. Open windows are minimized while
+ * aiming, and a faded copy of the token is drawn when it is on a level other than the one being viewed. The click is
+ * blocked while the crosshair is out of range, overlaps a token within one size category, is cut off from the token by
+ * a wall that blocks movement, or fails a validity function.
+ * @param {object} options                                 Additional options.
+ * @param {foundry.documents.TokenDocument} options.token  Origin of the range check, and the default icon.
+ * @param {number} [options.maxRange]                      Range in feet, rounded to whole grid spaces. Without one, the
+ *                                                         crosshair is unbounded.
+ * @param {object} [options.crosshairsConfig]              Passed to `Crosshairs.showCrosshairs`, with `size` in feet.
+ *                                                         Defaults to the token's image as the icon and its footprint
+ *                                                         as the size.
+ * @param {Point} [options.centerpoint]                    Measure from here instead of the token's center, skipping the
+ *                                                         token's width compensation.
+ * @param {boolean} [options.drawBoundries]                Draw the range boundary. Defaults to true.
+ * @param {boolean} [options.checkOverlap]                 Block a placement overlapping a token within one size
+ *                                                         category of this one. Defaults to true.
+ * @param {object} [options.customCallbacks]               Merged over the internal crosshair callbacks. Replacing
+ *                                                         `show` drops the range check.
+ * @param {boolean} [options.trackDistance]                Show the live distance from the origin. Defaults to true.
+ * @param {number} [options.fudgeDistance]                 Extra slack in feet, on top of the token's own width
+ *                                                         compensation.
+ * @param {Function[]} [options.validityFunctions]         Each receives the crosshair and `{x, y, elevation}`. A falsy
+ *                                                         return blocks the click.
+ * @param {Function} [options.getElevation]                Receives the crosshair and returns the destination elevation
+ *                                                         in scene units.
+ * @param {number} [options.ringElevation]                 Elevation in scene units the range is measured at when
+ *                                                         `getElevation` is not given. Defaults to the token's
+ *                                                         elevation.
+ * @param {boolean} [options.ignoreWalls]                  Allow destinations that walls block from the token.
+ * @returns {Promise<object>}                              The crosshair result, with `cancelled` set when the user
+ *                                                         cancelled. Its `elevation` comes from `getElevation` when
+ *                                                         given and is the token's elevation otherwise.
+ * @example
+ * const result = await crosshairUtils.aimCrosshair({token, maxRange: 30});
+ * if (result.cancelled) return;
+ * const {x, y} = result;
  */
 async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, drawBoundries = true, checkOverlap = true, customCallbacks, trackDistance = true, fudgeDistance = 0, validityFunctions = [], getElevation, ringElevation, ignoreWalls = false} = {}) {
     const tokenImg = token?.texture?.src;
@@ -170,12 +203,22 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
     }
 }
 /**
- * Draw a path, or place a ring, on the canvas and pick its active side. Open windows are minimized while drawing.
- * Left-click adds a point, Shift skips grid snapping, right-click removes the last point (or cancels), clicking the first point closes the shape, double-click or Enter finishes an open path, Esc cancels. Rings follow the cursor and the mouse wheel changes their diameter.
- * @param {object} config See {@link PathCrosshairs.show}.
- * @param {foundry.documents.TokenDocument} [config.token] Origin of the range check.
- * @param {number} [config.maxRange] Feet every point must stay within, measured from the token. A border shows the range.
- * @returns {Promise<object|null>} Points, closed state, side and ring data, or null when cancelled.
+ * Prompt the current user to draw a path, or place a ring, on the canvas and pick its active side. Open windows are
+ * minimized while drawing. Starting a new drawing cancels one already in progress. Left-click adds a point and Shift
+ * skips grid snapping. Right-click removes the last point, or cancels when there is none. Clicking the first point
+ * closes the shape, and double-click or Enter finishes an open path. Esc cancels. Rings follow the cursor and the mouse
+ * wheel changes their diameter.
+ * @param {object} config                                   See `PathCrosshairs.show`. Lengths there are in feet.
+ * @param {foundry.documents.TokenDocument} [config.token]  Origin of the range check.
+ * @param {number} [config.maxRange]                        Range in feet every point must stay within, measured from
+ *                                                          the token's center. Needs `token`. A border shows the range.
+ *                                                          Replaces any `isValid` and `onValidity` in `config`.
+ * @returns {Promise<object|null>}                          `{points, segments, closed, side, ring}` in canvas pixels,
+ *                                                          or null when cancelled.
+ * @example
+ * const path = await crosshairUtils.drawPath({token, maxRange: 120, maxLength: 60});
+ * if (!path) return;
+ * await regionUtils.createPathRegions(canvas.scene, path, {thickness: 1, walls: 'solid'});
  */
 async function drawPath({token, maxRange, ...config} = {}) {
     let drawing;
