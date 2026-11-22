@@ -6,8 +6,8 @@ function refresh() {
     const marker = document.createElement('button');
     marker.id = markerId;
     marker.type = 'button';
-    marker.innerHTML = `<i class="fas fa-tools"></i> ${_loc('CAT.Devtools.Marker')}`;
-    marker.dataset.tooltip = 'CAT.Devtools.MarkerHint';
+    marker.innerHTML = `<i class="fas fa-tools"></i> ${_loc('CAT.Devtools.Marker.Label')}`;
+    marker.dataset.tooltip = 'CAT.Devtools.Marker.Hint';
     marker.addEventListener('click', () => new (game.settings.menus.get('cat.devtools').type)().render(true));
     document.getElementById('hotbar').before(marker);
 }

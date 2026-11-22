@@ -12,6 +12,7 @@
 - `workflowUtils.completeActivityUse` and `completeItemUse` roll damage by default.
 - `activityUtils.getRange` measures through midi-qol, so range bonuses apply.
 - New `document` configuration type and `dialogUtils.abilityDialog`.
+- The CatKit generic feature picker groups generics by category. Search matches a generic's display name, identifier or category.
 ## Bug Fixes:
 - Summon placement and removal run their animation callbacks.
 - Monster-specific automations no longer match items without an NPC owner.

@@ -14,6 +14,7 @@ export class RegisteredMacros {
             identifier: new fields.StringField({required: true, nullable: false}),
             generic: new fields.BooleanField({required: false, nullable: false}),
             label: new fields.StringField({required: false}),
+            category: new fields.StringField({required: false}),
             ...constants.triggerTypes.reduce((schema, trigger) => (schema[trigger] = makeEventGroup(), schema), {}),
             genericConfig: new fields.ObjectField({required: false, nullable: false}),
             documents: new fields.ArrayField(new fields.StringField({required: true, nullable: false}), {required: false})
@@ -95,12 +96,13 @@ export class RegisteredMacros {
     }
 }
 class FnMacro {
-    constructor(source, identifier, rules, {generic, label, genericConfig, documents, ...triggers} = {}) {
+    constructor(source, identifier, rules, {generic, label, category, genericConfig, documents, ...triggers} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.rules = rules;
         this.generic = generic;
         this.label = label;
+        this.category = category;
         this.genericConfig = genericConfig;
         this.documents = documents;
         this.macros = {};

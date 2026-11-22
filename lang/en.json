@@ -82,7 +82,9 @@
             "Identifier": {
                 "Label": "Document Identifier",
                 "Hint": "Item & Activity identifiers must be modified on the respective document sheet.",
-                "OverrideHint": "Overrides the identifier used to match this document to an automation. Defaults to the slugified name."
+                "Override": {
+                    "Hint": "Overrides the identifier used to match this document to an automation. Defaults to the slugified name."
+                }
             },
             "Source": {
                 "Label": "Automation Source",
@@ -183,7 +185,6 @@
                     "RollModifier": {
                         "Field": "Modifiers",
                         "Hint": "Comma-separated dice modifiers (e.g. x, min1, kh1).",
-                        "Invalid": "At least one modifier is required.",
                         "Label": "Damage Roll Modifiers"
                     }
                 },
@@ -201,17 +202,23 @@
                     "Ability": {
                         "Label": "Abilities",
                         "Hint": "Match spells that use any selected ability.",
-                        "InvertedHint": "Exclude spells that use selected abilities."
+                        "Inverted": {
+                            "Hint": "Exclude spells that use selected abilities."
+                        }
                     },
                     "Armor": {
                         "Label": "Equipped Armor",
                         "Hint": "Any or all selected must be equipped.",
-                        "InvertedHint": "Any or all selected must not be equipped."
+                        "Inverted": {
+                            "Hint": "Any or all selected must not be equipped."
+                        }
                     },
                     "BaseItem": {
                         "Label": "Base Weapon",
                         "Hint": "Match any selected base weapon.",
-                        "InvertedHint": "Exclude selected base weapons."
+                        "Inverted": {
+                            "Hint": "Exclude selected base weapons."
+                        }
                     },
                     "DamagePart": {
                         "Label": "Damage Part",
@@ -224,12 +231,16 @@
                     "DamageType": {
                         "Label": "Damage Type",
                         "Hint": "Match any selected damage type.",
-                        "InvertedHint": "Exclude selected damage types."
+                        "Inverted": {
+                            "Hint": "Exclude selected damage types."
+                        }
                     },
                     "HasActivity": {
                         "Label": "Has Activity",
                         "Hint": "Match any selected activity type.",
-                        "InvertedHint": "Exclude selected activity types."
+                        "Inverted": {
+                            "Hint": "Exclude selected activity types."
+                        }
                     },
                     "Identifier": {
                         "Label": "Target Identifiers",
@@ -238,12 +249,16 @@
                     "Level": {
                         "Label": "Spell Level",
                         "Hint": "Match any selected spell level.",
-                        "InvertedHint": "Exclude selected spell levels."
+                        "Inverted": {
+                            "Hint": "Exclude selected spell levels."
+                        }
                     },
                     "Method": {
                         "Label": "Spell Method",
                         "Hint": "Match any selected spellcasting method.",
-                        "InvertedHint": "Exclude selected spellcasting methods."
+                        "Inverted": {
+                            "Hint": "Exclude selected spellcasting methods."
+                        }
                     },
                     "MinimumBaseRange": {
                         "Label": "Minimum Base Range",
@@ -252,17 +267,23 @@
                     "Property": {
                         "Label": "Properties",
                         "Hint": "Match any or all selected item properties.",
-                        "InvertedHint": "Exclude any or all selected item properties."
+                        "Inverted": {
+                            "Hint": "Exclude any or all selected item properties."
+                        }
                     },
                     "RangeUnits": {
                         "Label": "Range Units",
                         "Hint": "Match any selected units.",
-                        "InvertedHint": "Exclude selected units."
+                        "Inverted": {
+                            "Hint": "Exclude selected units."
+                        }
                     },
                     "School": {
                         "Label": "Spell School",
                         "Hint": "Match any selected spell school.",
-                        "InvertedHint": "Exclude selected spell schools"
+                        "Inverted": {
+                            "Hint": "Exclude selected spell schools"
+                        }
                     },
                     "SourceType": {
                         "Label": "Source Type",
@@ -271,17 +292,23 @@
                     "Type": {
                         "Label": "Item Type",
                         "Hint": "Match any selected item type.",
-                        "InvertedHint": "Exclude selected item types."
+                        "Inverted": {
+                            "Hint": "Exclude selected item types."
+                        }
                     },
                     "Weapon": {
                         "Label": "Equipped Weapons",
                         "Hint": "Any or all selected must be equipped.",
-                        "InvertedHint": "Any or all selected must not be equipped."
+                        "Inverted": {
+                            "Hint": "Any or all selected must not be equipped."
+                        }
                     },
                     "WeaponType": {
                         "Label": "Weapon Type",
                         "Hint": "Match any selected weapon type.",
-                        "InvertedHint": "Exclude selected weapon types."
+                        "Inverted": {
+                            "Hint": "Exclude selected weapon types."
+                        }
                     }
                 }
             },
@@ -392,9 +419,7 @@
                 "Kind": {
                     "Item": "Item",
                     "Activity": "Activity",
-                    "ActiveEffect": "Effect",
-                    "Region": "Region",
-                    "Token": "Token"
+                    "ActiveEffect": "Effect"
                 }
             },
             "Configuration": {
@@ -456,6 +481,15 @@
                 },
                 "animations": {
                     "Label": "Animations"
+                },
+                "conditions": {
+                    "Label": "Conditions"
+                },
+                "rolls": {
+                    "Label": "Rolls"
+                },
+                "uses": {
+                    "Label": "Uses"
                 }
             },
             "Documents": {
@@ -499,25 +533,35 @@
                 "Description": "Description Override",
                 "ItemCompendiumPick": "Select item from compendium",
                 "AddItem": "Add item",
-                "Profile": "Summon Profile",
-                "ProfileHint": "Native summon profile this entry overrides.",
-                "Count": "Count",
-                "CountHint": "Formula for how many are created. Supports @castLevel.",
+                "Profile": {
+                    "Label": "Summon Profile",
+                    "Hint": "Native summon profile this entry overrides."
+                },
+                "Count": {
+                    "Label": "Count",
+                    "Hint": "Formula for how many are created. Supports @castLevel."
+                },
                 "Disposition": "Disposition",
                 "DispositionOwner": "Same as Summoner",
                 "Size": "Size",
-                "Scale": "Token Scale",
-                "ScaleHint": "Formula for the token's image scale. Leave blank to keep the source actor's.",
+                "Scale": {
+                    "Label": "Token Scale",
+                    "Hint": "Formula for the token's image scale. Leave blank to keep the source actor's."
+                },
                 "LockRotation": "Lock Rotation",
                 "Ring": "Token Ring",
                 "Inherit": "Same as Source",
                 "On": "On",
                 "Off": "Off",
                 "DismissAtZero": "Dismiss at 0 HP",
-                "FollowUp": "Follow-Up Activity",
-                "FollowUpHint": "Rolled by this summon instead of the behavior Follow-Up Activity.",
-                "Identifier": "Summon Identifier",
-                "IdentifierHint": "Defaults to the source actor's identifier.",
+                "FollowUp": {
+                    "Label": "Follow-Up Activity",
+                    "Hint": "Rolled by this summon instead of the behavior Follow-Up Activity."
+                },
+                "Identifier": {
+                    "Label": "Summon Identifier",
+                    "Hint": "Defaults to the source actor's identifier."
+                },
                 "AddUpdate": "Add actor update",
                 "Update": "Actor Update",
                 "UpdatePath": "Data Path",
@@ -525,12 +569,18 @@
                 "UpdateMode": "Value Type",
                 "UpdateModeFormula": "Formula",
                 "UpdateModeLiteral": "Literal",
-                "ItemName": "Name Override",
-                "ItemNameHint": "Supports {attacks} for the attack count.",
-                "ItemIdentifier": "Identifier Override",
-                "ItemIdentifierHint": "Replaces the summon's own item with this identifier.",
-                "Attacks": "Attack Count",
-                "AttacksHint": "Formula for the Multiattack count, written into the name.",
+                "ItemName": {
+                    "Label": "Name Override",
+                    "Hint": "Supports {attacks} for the attack count."
+                },
+                "ItemIdentifier": {
+                    "Label": "Identifier Override",
+                    "Hint": "Replaces the summon's own item with this identifier."
+                },
+                "Attacks": {
+                    "Label": "Attack Count",
+                    "Hint": "Formula for the Multiattack count, written into the name."
+                },
                 "DamageNumber": "Damage Dice Count",
                 "DamageBonus": "Damage Bonus",
                 "DamageTypes": "Damage Types",
@@ -538,16 +588,22 @@
                 "HealingBonus": "Healing Bonus",
                 "UsesMaxFormula": "Max Uses Formula",
                 "CompendiumTypes": "Compendium Creature Types",
-                "CompendiumHint": "When any compendium field is set, the creatures are chosen from the monster compendiums instead of the summon actor.",
                 "CompendiumSubtypes": "Compendium Subtypes",
                 "CompendiumNames": "Compendium Names",
                 "CompendiumMaxCR": "Compendium Maximum CR",
-                "CompendiumTiers": "Compendium CR Tiers",
+                "CompendiumTiers": {
+                    "Label": "Compendium CR Tiers",
+                    "Hint": "Choices offered before picking, written as CR|count separated by semicolons. Counts accept formulas."
+                },
                 "CompendiumRandomTier": "Roll for the Tier",
-                "CompendiumTiersHint": "Choices offered before picking, written as CR|count separated by semicolons. Counts accept formulas.",
-                "Weight": "Budget Weight",
-                "WeightHint": "How much of the budget one of these costs. Defaults to 1.",
-                "DamageDenomination": "Damage Die Size"
+                "Weight": {
+                    "Label": "Budget Weight",
+                    "Hint": "How much of the budget one of these costs. Defaults to 1."
+                },
+                "DamageDenomination": "Damage Die Size",
+                "Compendium": {
+                    "Hint": "When any compendium field is set, the creatures are chosen from the monster compendiums instead of the summon actor."
+                }
             },
             "PackFolder": {
                 "Folder": "Folder",
@@ -653,8 +709,10 @@
                     "Field": "Apply effects",
                     "Hint": "Effects from this item applied to tokens inside a region this activity creates.",
                     "None": "This item has no effects to apply.",
-                    "Disposition": "Effect targets",
-                    "DispositionHint": "Which tokens inside the region receive these effects."
+                    "Disposition": {
+                        "Label": "Effect targets",
+                        "Hint": "Which tokens inside the region receive these effects."
+                    }
                 },
                 "Filter": {
                     "Label": "Target Filter",
@@ -672,10 +730,14 @@
                     "Triggers": "Triggers",
                     "Disposition": "Targets",
                     "OncePerTurn": "Once per turn",
-                    "DependentEffects": "Remove on exit",
-                    "DependentEffectsHint": "Effects this activity applies are removed when the creature leaves the region or the region is deleted. The activity does not fire again while the creature still has one.",
-                    "PerDistance": "Per distance",
-                    "PerDistanceHint": "With the Token moves inside trigger, fire once for every this many feet moved inside the region. Leave empty to fire once per move."
+                    "DependentEffects": {
+                        "Label": "Remove on exit",
+                        "Hint": "Effects this activity applies are removed when the creature leaves the region or the region is deleted. The activity does not fire again while the creature still has one."
+                    },
+                    "PerDistance": {
+                        "Label": "Per distance",
+                        "Hint": "With the Token moves inside trigger, fire once for every this many feet moved inside the region. Leave empty to fire once per move."
+                    }
                 },
                 "Triggers": {
                     "created": "Region created",
@@ -793,8 +855,10 @@
             "TargetCantSeeAttacker": "Target Can't See Attacker"
         },
         "Devtools": {
-            "Marker": "CAT Devtools On",
-            "MarkerHint": "Debug logging is enabled. Turn it off before a live session."
+            "Marker": {
+                "Label": "CAT Devtools On",
+                "Hint": "Debug logging is enabled. Turn it off before a live session."
+            }
         },
         "Dialog": {
             "Remember": {
@@ -1033,12 +1097,18 @@
                 "Enable": "Enable",
                 "SourceTag": "Source",
                 "PackTag": "Compendium",
-                "Rank": "Order",
-                "RankHint": "Lower numbers come first.",
-                "Recommended": "Use Recommended",
-                "RecommendedHint": "Personal custom automations first, then automation modules, and official content or SRD last.",
-                "MassApply": "Mass Apply",
-                "MassApplyHint": "Use this source when mass applying.",
+                "Rank": {
+                    "Label": "Order",
+                    "Hint": "Lower numbers come first."
+                },
+                "Recommended": {
+                    "Label": "Use Recommended",
+                    "Hint": "Personal custom automations first, then automation modules, and official content or SRD last."
+                },
+                "MassApply": {
+                    "Label": "Mass Apply",
+                    "Hint": "Use this source when mass applying."
+                },
                 "ContentMassApplyWarning": "Typically used for character building. Mass Apply not recommended."
             },
             "Backups": {
@@ -1474,13 +1544,17 @@
             "Export": {
                 "Title": "Export Data",
                 "Strip": "Strip descriptions",
-                "Settings": "Export Settings",
-                "SettingsHint": "Save the settings of CAT and every module built on it to a JSON file.",
+                "Settings": {
+                    "Label": "Export Settings",
+                    "Hint": "Save the settings of CAT and every module built on it to a JSON file."
+                },
                 "SettingsButton": "Export",
                 "Exported": "CAT settings exported.",
                 "Imported": "Imported {count} settings.",
-                "ImportSettings": "Import Settings",
-                "ImportSettingsHint": "Overwrite the settings of CAT and every module built on it with an exported JSON file.",
+                "ImportSettings": {
+                    "Label": "Import Settings",
+                    "Hint": "Overwrite the settings of CAT and every module built on it with an exported JSON file."
+                },
                 "ImportSettingsButton": "Import",
                 "ImportTitle": "Import CAT Settings",
                 "ImportContent": "Overwrite the settings of CAT and every module built on it with the imported file?"
@@ -1538,8 +1612,10 @@
                 "PreRoll": "Before the Roll",
                 "All": "Any Phase"
             },
-            "Rider": "Rider",
-            "RiderHint": "This choice offers additional effects rather than a bonus to the roll.",
+            "Rider": {
+                "Label": "Rider",
+                "Hint": "This choice offers additional effects rather than a bonus to the roll."
+            },
             "Scaleable": "Scalable",
             "Scaling": "Scaling",
             "Success": "Success",
@@ -1570,86 +1646,160 @@
                 "Miss": "Make Miss"
             },
             "Aura": {
-                "CreatureTypesHint": "Only tokens of these creature types are affected. The source itself is unaffected by this check.",
-                "DispositionsHint": "Which tokens the aura reaches.",
-                "EffectHint": "Effect on this item copied onto every token inside the aura. Write @auraValue in a change value to insert the aura value.",
-                "EnemyEffect": "Enemy Effect",
-                "EnemyEffectHint": "When set, Effect applies to allies and this effect applies to enemies, ignoring Dispositions. All other settings are shared.",
-                "EnterActivity": "Enter Activity",
-                "EnterActivityHint": "Activity rolled on a token when it enters the aura.",
-                "EnterOnCreate": "Enter on Creation",
-                "EnterOnCreateHint": "Tokens already inside the aura when it appears count as entering it.",
-                "ExitActivity": "Exit Activity",
-                "ExitActivityHint": "Activity rolled on a token when it leaves the aura.",
-                "Filter": "Filter",
-                "FilterHint": "Aura filter macro run for every token in range. The aura applies only when it returns true. Embedded filters use the aura event and the filter pass.",
-                "IncludeSelf": "Include Self",
-                "IncludeSelfHint": "The source token is inside its own aura.",
-                "OncePerTurn": "Once Per Turn",
-                "OncePerTurnHint": "Each activity rolls at most once per token per turn.",
-                "Radius": "Radius",
-                "RadiusHint": "Radius in scene distance units. Accepts a formula using the source's roll data.",
-                "SourceDisable": "Source Disabled By",
-                "SourceDisableHint": "The aura is suppressed while the source has any of these statuses.",
-                "SourceStatuses": "Requires Status From Source",
-                "SourceStatusesHint": "Only tokens with one of these statuses applied by the aura source are affected.",
-                "StackHighest": "Highest Value Wins",
-                "StackHighestHint": "When several sources project this aura, the one with the highest value applies. Otherwise the nearest source applies.",
-                "TargetDisable": "Target Disabled By",
-                "TargetDisableHint": "A token with any of these statuses is not affected.",
-                "TurnEndActivity": "Turn End Activity",
-                "TurnEndActivityHint": "Activity rolled on a token that ends its turn inside the aura.",
-                "TurnStartActivity": "Turn Start Activity",
-                "TurnStartActivityHint": "Activity rolled on a token that starts its turn inside the aura.",
-                "Value": "Value Formula",
-                "ValueHint": "Formula evaluated against the source's roll data and inserted as @auraValue.",
-                "Walls": "Blocked by Walls",
-                "WallsHint": "Walls between the source and a token block the aura."
+                "EnemyEffect": {
+                    "Label": "Enemy Effect",
+                    "Hint": "When set, Effect applies to allies and this effect applies to enemies, ignoring Dispositions. All other settings are shared."
+                },
+                "EnterActivity": {
+                    "Label": "Enter Activity",
+                    "Hint": "Activity rolled on a token when it enters the aura."
+                },
+                "EnterOnCreate": {
+                    "Label": "Enter on Creation",
+                    "Hint": "Tokens already inside the aura when it appears count as entering it."
+                },
+                "ExitActivity": {
+                    "Label": "Exit Activity",
+                    "Hint": "Activity rolled on a token when it leaves the aura."
+                },
+                "Filter": {
+                    "Label": "Filter",
+                    "Hint": "Aura filter macro run for every token in range. The aura applies only when it returns true. Embedded filters use the aura event and the filter pass."
+                },
+                "IncludeSelf": {
+                    "Label": "Include Self",
+                    "Hint": "The source token is inside its own aura."
+                },
+                "OncePerTurn": {
+                    "Label": "Once Per Turn",
+                    "Hint": "Each activity rolls at most once per token per turn."
+                },
+                "Radius": {
+                    "Label": "Radius",
+                    "Hint": "Radius in scene distance units. Accepts a formula using the source's roll data."
+                },
+                "SourceDisable": {
+                    "Label": "Source Disabled By",
+                    "Hint": "The aura is suppressed while the source has any of these statuses."
+                },
+                "SourceStatuses": {
+                    "Label": "Requires Status From Source",
+                    "Hint": "Only tokens with one of these statuses applied by the aura source are affected."
+                },
+                "StackHighest": {
+                    "Label": "Highest Value Wins",
+                    "Hint": "When several sources project this aura, the one with the highest value applies. Otherwise the nearest source applies."
+                },
+                "TargetDisable": {
+                    "Label": "Target Disabled By",
+                    "Hint": "A token with any of these statuses is not affected."
+                },
+                "TurnEndActivity": {
+                    "Label": "Turn End Activity",
+                    "Hint": "Activity rolled on a token that ends its turn inside the aura."
+                },
+                "TurnStartActivity": {
+                    "Label": "Turn Start Activity",
+                    "Hint": "Activity rolled on a token that starts its turn inside the aura."
+                },
+                "Value": {
+                    "Label": "Value Formula",
+                    "Hint": "Formula evaluated against the source's roll data and inserted as @auraValue."
+                },
+                "Walls": {
+                    "Label": "Blocked by Walls",
+                    "Hint": "Walls between the source and a token block the aura."
+                },
+                "CreatureTypes": {
+                    "Hint": "Only tokens of these creature types are affected. The source itself is unaffected by this check."
+                },
+                "Effect": {
+                    "Hint": "Effect on this item copied onto every token inside the aura. Write @auraValue in a change value to insert the aura value."
+                },
+                "Dispositions": {
+                    "Hint": "Which tokens the aura reaches."
+                }
             },
             "Summon": {
-                "Activity": "Summon Activity",
-                "ActivityHint": "Activity that creates the summons. When empty, every summon activity on the item does.",
-                "Summons": "Summons",
-                "SummonsHint": "Creatures the activity creates. On a summon activity, link an entry to a profile to override that profile; profiles without an entry use the profile's actor and count.",
-                "Range": "Placement Range",
-                "RangeHint": "Feet from the summoner the summons can be placed. 0 uses the activity's range.",
-                "CommandActivities": "Command Activities",
-                "CommandActivitiesHint": "Activities revealed while this item's summons exist.",
-                "ControlActivity": "Control Activity",
-                "ControlActivityHint": "Activity that opens the character sheet(s) for placed summons.",
+                "Activity": {
+                    "Label": "Summon Activity",
+                    "Hint": "Activity that creates the summons. When empty, every summon activity on the item does."
+                },
+                "Summons": {
+                    "Label": "Summons",
+                    "Hint": "Creatures the activity creates. On a summon activity, link an entry to a profile to override that profile; profiles without an entry use the profile's actor and count."
+                },
+                "Range": {
+                    "Label": "Placement Range",
+                    "Hint": "Feet from the summoner the summons can be placed. 0 uses the activity's range."
+                },
+                "CommandActivities": {
+                    "Label": "Command Activities",
+                    "Hint": "Activities revealed while this item's summons exist."
+                },
+                "ControlActivity": {
+                    "Label": "Control Activity",
+                    "Hint": "Activity that opens the character sheet(s) for placed summons."
+                },
                 "ControlPrompt": "Open character sheets for the selected summons.",
-                "HostileOnParentEnd": "Hostile When Concentration Ends",
-                "HostileOnParentEndHint": "The summons stay when concentration ends and turn hostile instead of being dismissed.",
-                "ReplaceExisting": "Replace Existing",
-                "ReplaceExistingHint": "Dismiss this item's existing summons before creating new ones.",
-                "MaxDistance": "Maximum Distance",
-                "MaxDistanceHint": "Summons farther than this many feet from the summoner are dismissed when either moves. 0 disables it.",
-                "PlaceActivity": "Place Activity",
-                "PlaceActivityHint": "Activity that places this item's summons that are not on the canvas.",
-                "RecallActivity": "Recall Activity",
-                "RecallActivityHint": "Activity that takes this item's summons off the canvas.",
-                "DismissActivity": "Dismiss Activity",
-                "DismissActivityHint": "Activity that dismisses this item's summons.",
-                "MoveActivity": "Move Activity",
-                "MoveActivityHint": "Activity that moves this item's placed summons up to its range.",
-                "Favorite": "Favorite Activities",
-                "FavoriteHint": "Favorite the command activities while the summons exist.",
-                "FollowUpActivity": "Follow-Up Activity",
-                "FollowUpActivityHint": "Activity rolled on a creature picked near each summon, without spending spell slots.",
-                "FollowUpConsume": "Follow-Up Spends Uses",
-                "FollowUpConsumeHint": "The follow-up spends its activity's uses and resources.",
-                "FollowUpTiming": "Follow-Up Timing",
-                "FollowUpTimingHint": "Roll the follow-up after summoning, after moving, or both.",
+                "HostileOnParentEnd": {
+                    "Label": "Hostile When Concentration Ends",
+                    "Hint": "The summons stay when concentration ends and turn hostile instead of being dismissed."
+                },
+                "ReplaceExisting": {
+                    "Label": "Replace Existing",
+                    "Hint": "Dismiss this item's existing summons before creating new ones."
+                },
+                "MaxDistance": {
+                    "Label": "Maximum Distance",
+                    "Hint": "Summons farther than this many feet from the summoner are dismissed when either moves. 0 disables it."
+                },
+                "PlaceActivity": {
+                    "Label": "Place Activity",
+                    "Hint": "Activity that places this item's summons that are not on the canvas."
+                },
+                "RecallActivity": {
+                    "Label": "Recall Activity",
+                    "Hint": "Activity that takes this item's summons off the canvas."
+                },
+                "DismissActivity": {
+                    "Label": "Dismiss Activity",
+                    "Hint": "Activity that dismisses this item's summons."
+                },
+                "MoveActivity": {
+                    "Label": "Move Activity",
+                    "Hint": "Activity that moves this item's placed summons up to its range."
+                },
+                "Favorite": {
+                    "Label": "Favorite Activities",
+                    "Hint": "Favorite the command activities while the summons exist."
+                },
+                "FollowUpActivity": {
+                    "Label": "Follow-Up Activity",
+                    "Hint": "Activity rolled on a creature picked near each summon, without spending spell slots."
+                },
+                "FollowUpConsume": {
+                    "Label": "Follow-Up Spends Uses",
+                    "Hint": "The follow-up spends its activity's uses and resources."
+                },
+                "FollowUpTiming": {
+                    "Label": "Follow-Up Timing",
+                    "Hint": "Roll the follow-up after summoning, after moving, or both."
+                },
                 "FollowUpTimingOptions": {
                     "both": "Both",
                     "create": "After Summoning",
                     "move": "After Moving"
                 },
-                "FollowUpRange": "Follow-Up Range",
-                "FollowUpRangeHint": "Feet from the summon a follow-up target can be picked.",
+                "FollowUpRange": {
+                    "Label": "Follow-Up Range",
+                    "Hint": "Feet from the summon a follow-up target can be picked."
+                },
                 "FollowUpTarget": "Choose a target for the follow-up.",
-                "FollowUpTargets": "Follow-Up Targets",
-                "FollowUpTargetsHint": "Pick one creature near each summon, or roll against every creature in range. All Creatures follows the activity's target type: allies include the summoner, anything else leaves the summoner out.",
+                "FollowUpTargets": {
+                    "Label": "Follow-Up Targets",
+                    "Hint": "Pick one creature near each summon, or roll against every creature in range. All Creatures follows the activity's target type: allies include the summoner, anything else leaves the summoner out."
+                },
                 "FollowUpTargetsOptions": {
                     "one": "One Creature",
                     "all": "All Creatures"
@@ -1663,28 +1813,40 @@
                 "AttackDamageBonus": "Attack Damage Bonus",
                 "SaveDamageBonus": "Save Damage Bonus",
                 "HealingBonus": "Healing Bonus",
-                "NativeHint": "Formula. Overrides the summon activity's value when set. Supports @item.level and @summon.",
-                "MatchAttacks": "Match Attacks",
-                "MatchAttacksHint": "The summon's own attacks use the summoner's attack bonus.",
-                "MatchSaves": "Match Saves",
-                "MatchSavesHint": "The summon's own save DCs use the summoner's save DC.",
-                "MatchProficiency": "Match Proficiency",
-                "MatchProficiencyHint": "The summon uses the summoner's proficiency bonus.",
+                "MatchAttacks": {
+                    "Label": "Match Attacks",
+                    "Hint": "The summon's own attacks use the summoner's attack bonus."
+                },
+                "MatchSaves": {
+                    "Label": "Match Saves",
+                    "Hint": "The summon's own save DCs use the summoner's save DC."
+                },
+                "MatchProficiency": {
+                    "Label": "Match Proficiency",
+                    "Hint": "The summon uses the summoner's proficiency bonus."
+                },
                 "Tier": "{count} × CR {cr} or lower",
                 "TierPrompt": "Choose how many creatures appear.",
                 "Pick": "Choose up to {count} creatures.",
                 "PickOne": "Choose a creature.",
                 "PlaceSummonFirst": "You must place summons from {feature} before using {activity}!",
                 "NoMatching": "No creatures in the monster compendiums match this summon.",
-                "PickMode": "Creature Choice",
-                "PickModeHint": "All creates every entry. One lets the user pick a single entry. Budget lets the user split a budget across the entries, each costing its weight.",
+                "PickMode": {
+                    "Label": "Creature Choice",
+                    "Hint": "All creates every entry. One lets the user pick a single entry. Budget lets the user split a budget across the entries, each costing its weight."
+                },
                 "PickOptions": {
                     "all": "All",
                     "one": "One",
                     "budget": "Budget"
                 },
-                "Budget": "Budget",
-                "BudgetHint": "Formula for the total weight the user can pick when Creature Choice is Budget."
+                "Budget": {
+                    "Label": "Budget",
+                    "Hint": "Formula for the total weight the user can pick when Creature Choice is Budget."
+                },
+                "Native": {
+                    "Hint": "Formula. Overrides the summon activity's value when set. Supports @item.level and @summon."
+                }
             }
         },
         "Backups": {

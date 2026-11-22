@@ -329,6 +329,7 @@ export default class MedkitApp extends CatApp {
         if ('generic' in this.constructor.PARTS) {
             const generic = this._prepareGenericFeatures();
             context.genericChoices = generic.choices;
+            context.genericGroups = generic.groups;
             context.genericSelected = generic.selected;
             context.genericFeatures = generic.features;
         }
@@ -607,8 +608,16 @@ export default class MedkitApp extends CatApp {
         }
         const choices = macros.map(m => {
             const composite = `${m.source}|${m.identifier}`;
-            return {value: composite, label: m.label ?? m.identifier, image: m.img, selected: selected.includes(composite)};
+            return {value: composite, label: m.label ? _loc(m.label) : m.identifier, search: m.identifier, image: m.img, selected: selected.includes(composite), category: m.category ?? ''};
         });
+        const categoryLabel = category => {
+            const key = 'CAT.MEDKIT.Categories.' + category + '.Label';
+            return game.i18n.has(key) ? _loc(key) : category.capitalize();
+        };
+        const grouped = Map.groupBy(choices, choice => choice.category);
+        const groups = [...grouped.entries()]
+            .map(([category, list]) => ({label: category ? categoryLabel(category) : '', choices: list.sort((a, b) => a.label.localeCompare(b.label))}))
+            .sort((a, b) => (!a.label - !b.label) || a.label.localeCompare(b.label));
         const features = selected.map(composite => {
             const [source, identifier] = composite.split('|');
             const macro = macros.find(m => m.source === source && m.identifier === identifier);
@@ -626,9 +635,9 @@ export default class MedkitApp extends CatApp {
                 });
             });
             this.#keepFirstNotice(options);
-            return {id: composite, label: macro?.label ?? identifier, options, groups: this.#groupRepeatedOptions(options)};
+            return {id: composite, label: macro?.label ? _loc(macro.label) : identifier, options, groups: this.#groupRepeatedOptions(options)};
         });
-        return {choices, selected, features};
+        return {choices, groups, selected, features};
     }
 
     #keepFirstNotice(options) {
@@ -680,27 +689,27 @@ export default class MedkitApp extends CatApp {
     #summonEntryFields(entry, base, i, profiles) {
         const toggleOptions = [{value: '', label: 'CAT.MEDKIT.Summons.Inherit'}, {value: 'true', label: 'CAT.MEDKIT.Summons.On'}, {value: 'false', label: 'CAT.MEDKIT.Summons.Off'}];
         const fieldList = [
-            this.#buildOption({key: `summon-count-${i}`, type: 'formula', label: 'CAT.MEDKIT.Summons.Count', hint: 'CAT.MEDKIT.Summons.CountHint'}, {name: `${base}.count`, value: entry.count ?? ''}),
+            this.#buildOption({key: `summon-count-${i}`, type: 'formula', label: 'CAT.MEDKIT.Summons.Count.Label', hint: 'CAT.MEDKIT.Summons.Count.Hint'}, {name: `${base}.count`, value: entry.count ?? ''}),
             this.#buildOption({key: `summon-disposition-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Disposition', options: [
                 {value: '', label: 'CAT.MEDKIT.Summons.DispositionOwner'},
                 ...Object.entries(CONST.TOKEN_DISPOSITIONS).map(([label, value]) => ({value: String(value), label: 'TOKEN.DISPOSITION.' + label}))
             ]}, {name: `${base}.disposition`, value: entry.disposition ?? ''}),
             this.#buildOption({key: `summon-size-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Size', options: [{value: '', label: 'CAT.Config.None'}, ...constants.sizeOptions]}, {name: `${base}.size`, value: entry.size ?? ''}),
-            this.#buildOption({key: `summon-scale-${i}`, type: 'formula', label: 'CAT.MEDKIT.Summons.Scale', hint: 'CAT.MEDKIT.Summons.ScaleHint'}, {name: `${base}.scale`, value: entry.scale ?? ''}),
+            this.#buildOption({key: `summon-scale-${i}`, type: 'formula', label: 'CAT.MEDKIT.Summons.Scale.Label', hint: 'CAT.MEDKIT.Summons.Scale.Hint'}, {name: `${base}.scale`, value: entry.scale ?? ''}),
             this.#buildOption({key: `summon-lock-rotation-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.LockRotation', options: toggleOptions}, {name: `${base}.lockRotation`, value: entry.lockRotation ?? ''}),
             this.#buildOption({key: `summon-ring-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Ring', options: toggleOptions}, {name: `${base}.ring`, value: entry.ring ?? ''}),
-            this.#buildOption({key: `summon-weight-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Weight', hint: 'CAT.MEDKIT.Summons.WeightHint'}, {name: `${base}.weight`, value: entry.weight ?? ''}),
+            this.#buildOption({key: `summon-weight-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Weight.Label', hint: 'CAT.MEDKIT.Summons.Weight.Hint'}, {name: `${base}.weight`, value: entry.weight ?? ''}),
             this.#buildOption({key: `summon-dismiss-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.DismissAtZero'}, {name: `${base}.dismissAtZero`, value: entry.dismissAtZero ?? false}),
-            this.#buildOption({key: `summon-identifier-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Identifier', hint: 'CAT.MEDKIT.Summons.IdentifierHint'}, {name: `${base}.identifier`, value: entry.identifier ?? ''}),
-            this.#buildOption({key: `summon-follow-up-${i}`, type: 'selectActivity', label: 'CAT.MEDKIT.Summons.FollowUp', hint: 'CAT.MEDKIT.Summons.FollowUpHint'}, {name: `${base}.followUpActivityId`, value: entry.followUpActivityId ?? ''}),
-            this.#buildOption({key: `summon-compendium-types-${i}`, type: 'select-many', label: 'CAT.MEDKIT.Summons.CompendiumTypes', hint: 'CAT.MEDKIT.Summons.CompendiumHint', options: constants.creatureTypeOptions}, {name: `${base}.compendium.types`, value: entry.compendium?.types ?? []}),
+            this.#buildOption({key: `summon-identifier-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.Identifier.Label', hint: 'CAT.MEDKIT.Summons.Identifier.Hint'}, {name: `${base}.identifier`, value: entry.identifier ?? ''}),
+            this.#buildOption({key: `summon-follow-up-${i}`, type: 'selectActivity', label: 'CAT.MEDKIT.Summons.FollowUp.Label', hint: 'CAT.MEDKIT.Summons.FollowUp.Hint'}, {name: `${base}.followUpActivityId`, value: entry.followUpActivityId ?? ''}),
+            this.#buildOption({key: `summon-compendium-types-${i}`, type: 'select-many', label: 'CAT.MEDKIT.Summons.CompendiumTypes', hint: 'CAT.MEDKIT.Summons.Compendium.Hint', options: constants.creatureTypeOptions}, {name: `${base}.compendium.types`, value: entry.compendium?.types ?? []}),
             this.#buildOption({key: `summon-compendium-subtypes-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumSubtypes'}, {name: `${base}.compendium.subtypes`, value: entry.compendium?.subtypes ?? ''}),
             this.#buildOption({key: `summon-compendium-names-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumNames'}, {name: `${base}.compendium.names`, value: entry.compendium?.names ?? ''}),
             this.#buildOption({key: `summon-compendium-cr-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumMaxCR'}, {name: `${base}.compendium.maxCR`, value: entry.compendium?.maxCR ?? ''}),
-            this.#buildOption({key: `summon-compendium-tiers-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumTiers', hint: 'CAT.MEDKIT.Summons.CompendiumTiersHint'}, {name: `${base}.compendium.tiers`, value: entry.compendium?.tiers ?? ''}),
+            this.#buildOption({key: `summon-compendium-tiers-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumTiers.Label', hint: 'CAT.MEDKIT.Summons.CompendiumTiers.Hint'}, {name: `${base}.compendium.tiers`, value: entry.compendium?.tiers ?? ''}),
             this.#buildOption({key: `summon-compendium-random-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.CompendiumRandomTier'}, {name: `${base}.compendium.randomTier`, value: entry.compendium?.randomTier ?? false})
         ];
-        if (profiles.length) fieldList.unshift(this.#buildOption({key: `summon-profile-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Profile', hint: 'CAT.MEDKIT.Summons.ProfileHint', options: [{value: '', label: 'CAT.Config.None'}, ...profiles]}, {name: `${base}.profile`, value: entry.profile ?? ''}));
+        if (profiles.length) fieldList.unshift(this.#buildOption({key: `summon-profile-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Profile.Label', hint: 'CAT.MEDKIT.Summons.Profile.Hint', options: [{value: '', label: 'CAT.Config.None'}, ...profiles]}, {name: `${base}.profile`, value: entry.profile ?? ''}));
         return fieldList;
     }
 
@@ -758,9 +767,9 @@ export default class MedkitApp extends CatApp {
                 if (item.usesRecovery === 'recharge') fields.push(this.#buildOption({key: `${base}-recharge-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.RechargeValue'}, {name: `${base}.${j}.usesRechargeFormula`, value: item.usesRechargeFormula ?? '6'}));
                 fields.push(
                     this.#buildOption({key: `${base}-desc-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.Description'}, {name: `${base}.${j}.description`, value: item.description ?? ''}),
-                    this.#buildOption({key: `${base}-name-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.ItemName', hint: 'CAT.MEDKIT.Summons.ItemNameHint'}, {name: `${base}.${j}.name`, value: item.name ?? ''}),
-                    this.#buildOption({key: `${base}-identifier-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.ItemIdentifier', hint: 'CAT.MEDKIT.Summons.ItemIdentifierHint'}, {name: `${base}.${j}.identifier`, value: item.identifier ?? ''}),
-                    this.#buildOption({key: `${base}-attacks-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.Attacks', hint: 'CAT.MEDKIT.Summons.AttacksHint'}, {name: `${base}.${j}.scaling.attacks`, value: item.scaling?.attacks ?? ''}),
+                    this.#buildOption({key: `${base}-name-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.ItemName.Label', hint: 'CAT.MEDKIT.Summons.ItemName.Hint'}, {name: `${base}.${j}.name`, value: item.name ?? ''}),
+                    this.#buildOption({key: `${base}-identifier-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.ItemIdentifier.Label', hint: 'CAT.MEDKIT.Summons.ItemIdentifier.Hint'}, {name: `${base}.${j}.identifier`, value: item.identifier ?? ''}),
+                    this.#buildOption({key: `${base}-attacks-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.Attacks.Label', hint: 'CAT.MEDKIT.Summons.Attacks.Hint'}, {name: `${base}.${j}.scaling.attacks`, value: item.scaling?.attacks ?? ''}),
                     this.#buildOption({key: `${base}-damage-number-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.DamageNumber'}, {name: `${base}.${j}.scaling.damageNumber`, value: item.scaling?.damageNumber ?? ''}),
                     this.#buildOption({key: `${base}-damage-faces-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.DamageDenomination'}, {name: `${base}.${j}.scaling.damageDenomination`, value: item.scaling?.damageDenomination ?? ''}),
                     this.#buildOption({key: `${base}-damage-bonus-${j}`, type: 'text', label: 'CAT.MEDKIT.Summons.DamageBonus'}, {name: `${base}.${j}.scaling.damageBonus`, value: item.scaling?.damageBonus ?? ''}),

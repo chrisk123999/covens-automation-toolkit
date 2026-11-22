@@ -68,38 +68,38 @@ const aura = {
             default: '30',
             type: 'formula',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.Radius',
-            hint: 'CAT.Macros.Aura.RadiusHint'
+            label: 'CAT.Macros.Aura.Radius.Label',
+            hint: 'CAT.Macros.Aura.Radius.Hint'
         },
         dispositions: {
             default: ['ally'],
             type: 'select-many',
             category: 'behavior',
             label: 'CAT.Config.Dispositions',
-            hint: 'CAT.Macros.Aura.DispositionsHint',
+            hint: 'CAT.Macros.Aura.Dispositions.Hint',
             get options() { return constants.dispositionOptions; }
         },
         includeSelf: {
             default: true,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.IncludeSelf',
-            hint: 'CAT.Macros.Aura.IncludeSelfHint'
+            label: 'CAT.Macros.Aura.IncludeSelf.Label',
+            hint: 'CAT.Macros.Aura.IncludeSelf.Hint'
         },
         sourceDisable: {
             default: [],
             type: 'select-many',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.SourceDisable',
-            hint: 'CAT.Macros.Aura.SourceDisableHint',
+            label: 'CAT.Macros.Aura.SourceDisable.Label',
+            hint: 'CAT.Macros.Aura.SourceDisable.Hint',
             get options() { return constants.statusOptions; }
         },
         targetDisable: {
             default: [],
             type: 'select-many',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.TargetDisable',
-            hint: 'CAT.Macros.Aura.TargetDisableHint',
+            label: 'CAT.Macros.Aura.TargetDisable.Label',
+            hint: 'CAT.Macros.Aura.TargetDisable.Hint',
             get options() { return constants.statusOptions; }
         },
         creatureTypes: {
@@ -107,100 +107,100 @@ const aura = {
             type: 'select-many',
             category: 'behavior',
             label: 'CAT.Config.CreatureTypes',
-            hint: 'CAT.Macros.Aura.CreatureTypesHint',
+            hint: 'CAT.Macros.Aura.CreatureTypes.Hint',
             get options() { return constants.creatureTypeOptions; }
         },
         sourceStatuses: {
             default: [],
             type: 'select-many',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.SourceStatuses',
-            hint: 'CAT.Macros.Aura.SourceStatusesHint',
+            label: 'CAT.Macros.Aura.SourceStatuses.Label',
+            hint: 'CAT.Macros.Aura.SourceStatuses.Hint',
             get options() { return constants.statusOptions; }
         },
         walls: {
             default: false,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.Walls',
-            hint: 'CAT.Macros.Aura.WallsHint'
+            label: 'CAT.Macros.Aura.Walls.Label',
+            hint: 'CAT.Macros.Aura.Walls.Hint'
         },
         effect: {
             default: '',
             type: 'selectEffect',
             category: 'behavior',
             label: 'CAT.Config.Effect',
-            hint: 'CAT.Macros.Aura.EffectHint'
+            hint: 'CAT.Macros.Aura.Effect.Hint'
         },
         enemyEffect: {
             default: '',
             type: 'selectEffect',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.EnemyEffect',
-            hint: 'CAT.Macros.Aura.EnemyEffectHint'
+            label: 'CAT.Macros.Aura.EnemyEffect.Label',
+            hint: 'CAT.Macros.Aura.EnemyEffect.Hint'
         },
         value: {
             default: '',
             type: 'formula',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.Value',
-            hint: 'CAT.Macros.Aura.ValueHint'
+            label: 'CAT.Macros.Aura.Value.Label',
+            hint: 'CAT.Macros.Aura.Value.Hint'
         },
         stackHighest: {
             default: false,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.StackHighest',
-            hint: 'CAT.Macros.Aura.StackHighestHint'
+            label: 'CAT.Macros.Aura.StackHighest.Label',
+            hint: 'CAT.Macros.Aura.StackHighest.Hint'
         },
         enterActivity: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.EnterActivity',
-            hint: 'CAT.Macros.Aura.EnterActivityHint'
+            label: 'CAT.Macros.Aura.EnterActivity.Label',
+            hint: 'CAT.Macros.Aura.EnterActivity.Hint'
         },
         exitActivity: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.ExitActivity',
-            hint: 'CAT.Macros.Aura.ExitActivityHint'
+            label: 'CAT.Macros.Aura.ExitActivity.Label',
+            hint: 'CAT.Macros.Aura.ExitActivity.Hint'
         },
         turnStartActivity: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.TurnStartActivity',
-            hint: 'CAT.Macros.Aura.TurnStartActivityHint'
+            label: 'CAT.Macros.Aura.TurnStartActivity.Label',
+            hint: 'CAT.Macros.Aura.TurnStartActivity.Hint'
         },
         turnEndActivity: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.TurnEndActivity',
-            hint: 'CAT.Macros.Aura.TurnEndActivityHint'
+            label: 'CAT.Macros.Aura.TurnEndActivity.Label',
+            hint: 'CAT.Macros.Aura.TurnEndActivity.Hint'
         },
         enterOnCreate: {
             default: true,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.EnterOnCreate',
-            hint: 'CAT.Macros.Aura.EnterOnCreateHint'
+            label: 'CAT.Macros.Aura.EnterOnCreate.Label',
+            hint: 'CAT.Macros.Aura.EnterOnCreate.Hint'
         },
         oncePerTurn: {
             default: false,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.OncePerTurn',
-            hint: 'CAT.Macros.Aura.OncePerTurnHint'
+            label: 'CAT.Macros.Aura.OncePerTurn.Label',
+            hint: 'CAT.Macros.Aura.OncePerTurn.Hint'
         },
         filter: {
             default: '',
             type: 'select',
             category: 'behavior',
-            label: 'CAT.Macros.Aura.Filter',
-            hint: 'CAT.Macros.Aura.FilterHint',
+            label: 'CAT.Macros.Aura.Filter.Label',
+            hint: 'CAT.Macros.Aura.Filter.Hint',
             options: filterOptions
         }
     }

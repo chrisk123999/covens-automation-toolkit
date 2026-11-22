@@ -6,9 +6,13 @@
             <div class="form-group combo">
                 <label for="cat-medkit-generic-select">{{localize "CAT.MEDKIT.Generic.SelectField"}}</label>
                 <cat-multi-combobox input-id="cat-medkit-generic-select" name="flags.cat.genericConfig">
-                    {{#each genericChoices}}
-                        <option value="{{value}}" data-image="{{image}}" {{#if selected}} selected{{/if}}>{{label}}
-                        </option>
+                    {{#each genericGroups}}
+                        <optgroup label="{{label}}">
+                            {{#each choices}}
+                                <option value="{{value}}" data-image="{{image}}" data-search="{{search}}" {{#if selected}} selected{{/if}}>{{label}}
+                                </option>
+                            {{/each}}
+                        </optgroup>
                     {{/each}}
                 </cat-multi-combobox>
             </div>
