@@ -153,6 +153,7 @@ export default class ItemMedkit extends MedkitApp {
 
         const genericData = this._prepareGenericFeatures();
         context.genericChoices = genericData.choices;
+        context.genericGroups = genericData.groups;
         context.genericSelected = genericData.selected;
         context.genericFeatures = genericData.features;
 

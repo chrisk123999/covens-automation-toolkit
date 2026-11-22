@@ -13,8 +13,8 @@ const STATUS = {
 const INFO_SECTIONS = ['modules', 'foundry', 'permissions'];
 const OPTIONS = ['hideTroubleshooterWarnings', 'exportStripDialog'];
 const TRANSFERS = [
-    {action: 'exportSettings', label: 'CAT.Troubleshooter.Export.Settings', hint: 'CAT.Troubleshooter.Export.SettingsHint', button: 'CAT.Troubleshooter.Export.SettingsButton', icon: 'fa-solid fa-file-export'},
-    {action: 'importSettings', label: 'CAT.Troubleshooter.Export.ImportSettings', hint: 'CAT.Troubleshooter.Export.ImportSettingsHint', button: 'CAT.Troubleshooter.Export.ImportSettingsButton', icon: 'fa-solid fa-file-import'}
+    {action: 'exportSettings', label: 'CAT.Troubleshooter.Export.Settings.Label', hint: 'CAT.Troubleshooter.Export.Settings.Hint', button: 'CAT.Troubleshooter.Export.SettingsButton', icon: 'fa-solid fa-file-export'},
+    {action: 'importSettings', label: 'CAT.Troubleshooter.Export.ImportSettings.Label', hint: 'CAT.Troubleshooter.Export.ImportSettings.Hint', button: 'CAT.Troubleshooter.Export.ImportSettingsButton', icon: 'fa-solid fa-file-import'}
 ];
 
 export default class TroubleshooterApp extends CatApp {

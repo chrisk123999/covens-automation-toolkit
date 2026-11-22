@@ -394,214 +394,214 @@ const summon = {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.Activity',
-            hint: 'CAT.Macros.Summon.ActivityHint'
+            label: 'CAT.Macros.Summon.Activity.Label',
+            hint: 'CAT.Macros.Summon.Activity.Hint'
         },
         summons: {
             default: [],
             type: 'selectSummons',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.Summons',
-            hint: 'CAT.Macros.Summon.SummonsHint'
+            label: 'CAT.Macros.Summon.Summons.Label',
+            hint: 'CAT.Macros.Summon.Summons.Hint'
         },
         range: {
             default: 0,
             type: 'number',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.Range',
-            hint: 'CAT.Macros.Summon.RangeHint'
+            label: 'CAT.Macros.Summon.Range.Label',
+            hint: 'CAT.Macros.Summon.Range.Hint'
         },
         acBonus: {
             default: '',
             type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.AcBonus',
-            hint: 'CAT.Macros.Summon.NativeHint'
+            hint: 'CAT.Macros.Summon.Native.Hint'
         },
         hpBonus: {
             default: '',
             type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.HpBonus',
-            hint: 'CAT.Macros.Summon.NativeHint'
+            hint: 'CAT.Macros.Summon.Native.Hint'
         },
         hdBonus: {
             default: '',
             type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.HdBonus',
-            hint: 'CAT.Macros.Summon.NativeHint'
+            hint: 'CAT.Macros.Summon.Native.Hint'
         },
         tempHP: {
             default: '',
             type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.TempHP',
-            hint: 'CAT.Macros.Summon.NativeHint'
+            hint: 'CAT.Macros.Summon.Native.Hint'
         },
         attackDamageBonus: {
             default: '',
             type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.AttackDamageBonus',
-            hint: 'CAT.Macros.Summon.NativeHint'
+            hint: 'CAT.Macros.Summon.Native.Hint'
         },
         saveDamageBonus: {
             default: '',
             type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.SaveDamageBonus',
-            hint: 'CAT.Macros.Summon.NativeHint'
+            hint: 'CAT.Macros.Summon.Native.Hint'
         },
         healingBonus: {
             default: '',
             type: 'formula',
             category: 'homebrew',
             label: 'CAT.Macros.Summon.HealingBonus',
-            hint: 'CAT.Macros.Summon.NativeHint'
+            hint: 'CAT.Macros.Summon.Native.Hint'
         },
         matchAttacks: {
             default: false,
             type: 'checkbox',
             category: 'homebrew',
-            label: 'CAT.Macros.Summon.MatchAttacks',
-            hint: 'CAT.Macros.Summon.MatchAttacksHint'
+            label: 'CAT.Macros.Summon.MatchAttacks.Label',
+            hint: 'CAT.Macros.Summon.MatchAttacks.Hint'
         },
         matchSaves: {
             default: false,
             type: 'checkbox',
             category: 'homebrew',
-            label: 'CAT.Macros.Summon.MatchSaves',
-            hint: 'CAT.Macros.Summon.MatchSavesHint'
+            label: 'CAT.Macros.Summon.MatchSaves.Label',
+            hint: 'CAT.Macros.Summon.MatchSaves.Hint'
         },
         matchProficiency: {
             default: false,
             type: 'checkbox',
             category: 'homebrew',
-            label: 'CAT.Macros.Summon.MatchProficiency',
-            hint: 'CAT.Macros.Summon.MatchProficiencyHint'
+            label: 'CAT.Macros.Summon.MatchProficiency.Label',
+            hint: 'CAT.Macros.Summon.MatchProficiency.Hint'
         },
         pick: {
             default: 'all',
             type: 'select',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.PickMode',
-            hint: 'CAT.Macros.Summon.PickModeHint',
+            label: 'CAT.Macros.Summon.PickMode.Label',
+            hint: 'CAT.Macros.Summon.PickMode.Hint',
             get options() { return selectOptions(['all', 'one', 'budget'], 'CAT.Macros.Summon.PickOptions.'); }
         },
         budget: {
             default: '',
             type: 'text',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.Budget',
-            hint: 'CAT.Macros.Summon.BudgetHint'
+            label: 'CAT.Macros.Summon.Budget.Label',
+            hint: 'CAT.Macros.Summon.Budget.Hint'
         },
         hostileOnParentEnd: {
             default: false,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.HostileOnParentEnd',
-            hint: 'CAT.Macros.Summon.HostileOnParentEndHint'
+            label: 'CAT.Macros.Summon.HostileOnParentEnd.Label',
+            hint: 'CAT.Macros.Summon.HostileOnParentEnd.Hint'
         },
         replaceExisting: {
             default: false,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.ReplaceExisting',
-            hint: 'CAT.Macros.Summon.ReplaceExistingHint'
+            label: 'CAT.Macros.Summon.ReplaceExisting.Label',
+            hint: 'CAT.Macros.Summon.ReplaceExisting.Hint'
         },
         maxDistance: {
             default: 0,
             type: 'number',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.MaxDistance',
-            hint: 'CAT.Macros.Summon.MaxDistanceHint'
+            label: 'CAT.Macros.Summon.MaxDistance.Label',
+            hint: 'CAT.Macros.Summon.MaxDistance.Hint'
         },
         placeActivityId: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.PlaceActivity',
-            hint: 'CAT.Macros.Summon.PlaceActivityHint'
+            label: 'CAT.Macros.Summon.PlaceActivity.Label',
+            hint: 'CAT.Macros.Summon.PlaceActivity.Hint'
         },
         recallActivityId: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.RecallActivity',
-            hint: 'CAT.Macros.Summon.RecallActivityHint'
+            label: 'CAT.Macros.Summon.RecallActivity.Label',
+            hint: 'CAT.Macros.Summon.RecallActivity.Hint'
         },
         dismissActivityId: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.DismissActivity',
-            hint: 'CAT.Macros.Summon.DismissActivityHint'
+            label: 'CAT.Macros.Summon.DismissActivity.Label',
+            hint: 'CAT.Macros.Summon.DismissActivity.Hint'
         },
         moveActivityId: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.MoveActivity',
-            hint: 'CAT.Macros.Summon.MoveActivityHint'
+            label: 'CAT.Macros.Summon.MoveActivity.Label',
+            hint: 'CAT.Macros.Summon.MoveActivity.Hint'
         },
         controlActivityId: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.ControlActivity',
-            hint: 'CAT.Macros.Summon.ControlActivityHint'
+            label: 'CAT.Macros.Summon.ControlActivity.Label',
+            hint: 'CAT.Macros.Summon.ControlActivity.Hint'
         },
         commandActivityIds: {
             default: [],
             type: 'selectActivities',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.CommandActivities',
-            hint: 'CAT.Macros.Summon.CommandActivitiesHint'
+            label: 'CAT.Macros.Summon.CommandActivities.Label',
+            hint: 'CAT.Macros.Summon.CommandActivities.Hint'
         },
         favorite: {
             default: false,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.Favorite',
-            hint: 'CAT.Macros.Summon.FavoriteHint'
+            label: 'CAT.Macros.Summon.Favorite.Label',
+            hint: 'CAT.Macros.Summon.Favorite.Hint'
         },
         followUpActivityId: {
             default: '',
             type: 'selectActivity',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.FollowUpActivity',
-            hint: 'CAT.Macros.Summon.FollowUpActivityHint'
+            label: 'CAT.Macros.Summon.FollowUpActivity.Label',
+            hint: 'CAT.Macros.Summon.FollowUpActivity.Hint'
         },
         followUpTiming: {
             default: 'both',
             type: 'select',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.FollowUpTiming',
-            hint: 'CAT.Macros.Summon.FollowUpTimingHint',
+            label: 'CAT.Macros.Summon.FollowUpTiming.Label',
+            hint: 'CAT.Macros.Summon.FollowUpTiming.Hint',
             get options() { return selectOptions(['both', 'create', 'move'], 'CAT.Macros.Summon.FollowUpTimingOptions.'); }
         },
         followUpTargets: {
             default: 'one',
             type: 'select',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.FollowUpTargets',
-            hint: 'CAT.Macros.Summon.FollowUpTargetsHint',
+            label: 'CAT.Macros.Summon.FollowUpTargets.Label',
+            hint: 'CAT.Macros.Summon.FollowUpTargets.Hint',
             get options() { return selectOptions(['one', 'all'], 'CAT.Macros.Summon.FollowUpTargetsOptions.'); }
         },
         followUpRange: {
             default: 5,
             type: 'number',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.FollowUpRange',
-            hint: 'CAT.Macros.Summon.FollowUpRangeHint'
+            label: 'CAT.Macros.Summon.FollowUpRange.Label',
+            hint: 'CAT.Macros.Summon.FollowUpRange.Hint'
         },
         followUpConsume: {
             default: false,
             type: 'checkbox',
             category: 'behavior',
-            label: 'CAT.Macros.Summon.FollowUpConsume',
-            hint: 'CAT.Macros.Summon.FollowUpConsumeHint'
+            label: 'CAT.Macros.Summon.FollowUpConsume.Label',
+            hint: 'CAT.Macros.Summon.FollowUpConsume.Hint'
         }
     }
 };

@@ -63,7 +63,7 @@ export default class ActivityMedkit extends MedkitApp {
             magicalDarkness: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.MagicalDarkness.Label')}),
             obscured: new fields.BooleanField({label: _loc('CAT.MEDKIT.Region.Obscured.Label')}),
             attachToCaster: new fields.BooleanField({label: _loc('CAT.MEDKIT.Activity.AttachToCaster.Label')}),
-            effectDisposition: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.Effects.Disposition'), required: true, blank: false, initial: 'all', choices: Object.fromEntries(DISPOSITIONS.map(key => [key, _loc(`CAT.MEDKIT.Activity.Disposition.${key}`)]))}),
+            effectDisposition: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.Effects.Disposition.Label'), required: true, blank: false, initial: 'all', choices: Object.fromEntries(DISPOSITIONS.map(key => [key, _loc(`CAT.MEDKIT.Activity.Disposition.${key}`)]))}),
             filter: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.Filter.Label'), choices: Object.fromEntries(aura.filterOptions(null, flags.placed?.region).map(({value, label}) => [value, label]))}),
             spellIdentifier: new fields.StringField({label: _loc('CAT.MEDKIT.Activity.SpellIdentifier.Label')})
         };

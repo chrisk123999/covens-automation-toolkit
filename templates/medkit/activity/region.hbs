@@ -23,7 +23,7 @@
                 </div>
                 <p class="hint">{{localize "CAT.MEDKIT.Activity.Effects.Hint"}}</p>
             </div>
-            {{formGroup fields.effectDisposition name="flags.cat.placed.region.effectDisposition" value=effectDisposition hint=(localize "CAT.MEDKIT.Activity.Effects.DispositionHint") rootId=@root.rootId}}
+            {{formGroup fields.effectDisposition name="flags.cat.placed.region.effectDisposition" value=effectDisposition hint=(localize "CAT.MEDKIT.Activity.Effects.Disposition.Hint") rootId=@root.rootId}}
         {{else}}
             <p class="hint">{{localize "CAT.MEDKIT.Activity.Effects.None"}}</p>
         {{/if}}
@@ -81,10 +81,10 @@
                         data-activity-id="{{row.id}}">{{localize "CAT.MEDKIT.Activity.Activities.OncePerTurn"}}</button>
                     <button type="button" class="ability{{#if row.dependentEffects}} active{{/if}}"
                         data-action="toggleRegionDependentEffects" data-activity-id="{{row.id}}"
-                        data-tooltip="CAT.MEDKIT.Activity.Activities.DependentEffectsHint">{{localize "CAT.MEDKIT.Activity.Activities.DependentEffects"}}</button>
-                    <span class="label">{{localize "CAT.MEDKIT.Activity.Activities.PerDistance"}}</span>
+                        data-tooltip="CAT.MEDKIT.Activity.Activities.DependentEffects.Hint">{{localize "CAT.MEDKIT.Activity.Activities.DependentEffects.Label"}}</button>
+                    <span class="label">{{localize "CAT.MEDKIT.Activity.Activities.PerDistance.Label"}}</span>
                     <input type="number" min="0" step="1" value="{{row.perDistance}}" data-region-field="perDistance"
-                        data-activity-id="{{row.id}}" data-tooltip="CAT.MEDKIT.Activity.Activities.PerDistanceHint">
+                        data-activity-id="{{row.id}}" data-tooltip="CAT.MEDKIT.Activity.Activities.PerDistance.Hint">
                 </div>
             {{/each}}
         {{else}}

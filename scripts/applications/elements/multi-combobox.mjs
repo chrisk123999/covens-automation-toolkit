@@ -40,6 +40,7 @@ export default class CatMultiCombobox extends foundry.applications.elements.Adop
             return {
                 value: o.value,
                 label: o.textContent?.trim() ?? '',
+                search: o.dataset.search?.toLowerCase() ?? '',
                 image: o.dataset.image ?? '',
                 invert: !!o.dataset.invert,
                 tag: o.dataset.tag ?? '',
@@ -109,7 +110,7 @@ export default class CatMultiCombobox extends foundry.applications.elements.Adop
     #renderOptions(filter) {
         const needle = filter.trim().toLowerCase();
         const matches = needle
-            ? this.#options.filter(o => o.label.toLowerCase().includes(needle) || o.group.toLowerCase().includes(needle))
+            ? this.#options.filter(o => o.label.toLowerCase().includes(needle) || o.search.includes(needle) || o.group.toLowerCase().includes(needle))
             : this.#options;
         this.#list.replaceChildren();
         if (!matches.length) {

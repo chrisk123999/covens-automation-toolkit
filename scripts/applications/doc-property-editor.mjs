@@ -83,7 +83,7 @@ export default class DocPropertyEditorApp extends CatApp {
             const inverted = foundry.utils.getProperty(e, invert?.fieldPath);
             const config = {
                 key,
-                hint: _loc(`CAT.MEDKIT.DocProps.Restrictions.${key}.${inverted ? 'Inverted' : ''}Hint`),
+                hint: _loc(`CAT.MEDKIT.DocProps.Restrictions.${key}.${inverted ? 'Inverted.' : ''}Hint`),
                 label: _loc(`CAT.MEDKIT.DocProps.Restrictions.${key}.Label`),
                 valuePath: value.fieldPath,
                 requireAllPath: requireAll?.fieldPath,
@@ -112,7 +112,7 @@ export default class DocPropertyEditorApp extends CatApp {
         if (!restrictionType) return;
         const hint = this.element.querySelector(`#cat-docprop-hint-${restrictionType}`);
         const label = this.element.querySelector(`#cat-docprop-requireAllLabel-${restrictionType}`);
-        if (hint) hint.innerHTML = _loc(`CAT.MEDKIT.DocProps.Restrictions.${restrictionType}.${invert.checked ? 'Inverted' : ''}Hint`);
+        if (hint) hint.innerHTML = _loc(`CAT.MEDKIT.DocProps.Restrictions.${restrictionType}.${invert.checked ? 'Inverted.' : ''}Hint`);
         if (label) label.innerHTML = _loc(`CAT.MEDKIT.DocProps.Restrictions.${invert.checked ? 'ExcludeAll' : 'RequireAll'}`);
     }
 

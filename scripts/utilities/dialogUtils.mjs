@@ -486,7 +486,7 @@ async function buildBonusInputs(bonuses, {rolls, workflow, damageRolls, spent, c
     };
     const formulaTag = bonus => {
         const formula = workflow?.isCritical && bonus instanceof DamageBonus ? DamageBonus.GetCriticalRoll(bonus).formula : bonus.roll.formula;
-        if (formula === '0') return {label: 'CAT.OptionalBonus.Rider', id: 'formula', tooltip: 'CAT.OptionalBonus.RiderHint'};
+        if (formula === '0') return {label: 'CAT.OptionalBonus.Rider.Label', id: 'formula', tooltip: 'CAT.OptionalBonus.Rider.Hint'};
         const type = CONFIG.DND5E.damageTypes[bonus.damageType] ?? CONFIG.DND5E.healingTypes[bonus.damageType];
         return {label: formula, id: 'formula', image: type?.icon, tooltip: type?.label};
     };
