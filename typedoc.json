@@ -10,6 +10,9 @@
     "entryFileName": "API",
     "sidebar": {"autoConfiguration": false},
     "pageTitleTemplates": {"member": "{name}"},
+    "parametersFormat": "table",
+    "useCodeBlocks": true,
+    "expandParameters": true,
     "skipErrorChecking": true,
     "logLevel": "Error"
 }

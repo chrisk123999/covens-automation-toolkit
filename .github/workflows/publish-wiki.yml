@@ -31,6 +31,12 @@ jobs:
       - name: Generate API pages
         run: npx -y -p typedoc@0.28.20 -p typedoc-plugin-markdown@4.14.1 -p typedoc-github-wiki-theme@2.1.1 typedoc
 
+      - name: Drop the Variable. prefix from page names
+        run: |
+          for f in wiki/Variable.*.md; do mv "$f" "wiki/${f#wiki/Variable.}"; done
+          sed -i 's#/wiki/Variable\.#/wiki/#g' wiki/*.md
+          sed -i 's/^## Variables$/## Utilities/' wiki/API.md
+
       - name: Fail if hand-written pages changed
         run: git diff --exit-code --stat -- wiki
 
