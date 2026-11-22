@@ -1,0 +1,15 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": ["scripts/utilities/_module.mjs"],
+    "tsconfig": "tsconfig.docs.json",
+    "plugin": ["typedoc-plugin-markdown", "typedoc-github-wiki-theme"],
+    "out": "wiki",
+    "cleanOutputDir": false,
+    "name": "CAT API",
+    "readme": "none",
+    "entryFileName": "API",
+    "sidebar": {"autoConfiguration": false},
+    "pageTitleTemplates": {"member": "{name}"},
+    "skipErrorChecking": true,
+    "logLevel": "Error"
+}

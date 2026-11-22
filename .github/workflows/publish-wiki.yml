@@ -1,0 +1,37 @@
+name: Publish wiki
+
+on:
+  push:
+    branches: [docs]
+    paths:
+      - wiki/**
+      - scripts/utilities/**
+      - typedoc.json
+      - tsconfig.docs.json
+      - .github/workflows/publish-wiki.yml
+  workflow_dispatch:
+
+concurrency:
+  group: publish-wiki
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish-wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+
+      - name: Generate API pages
+        run: npx -y -p typedoc@0.28.20 -p typedoc-plugin-markdown@4.14.1 -p typedoc-github-wiki-theme@2.1.1 typedoc
+
+      - name: Fail if hand-written pages changed
+        run: git diff --exit-code --stat -- wiki
+
+      - uses: Andrew-Chen-Wang/github-wiki-action@v4
