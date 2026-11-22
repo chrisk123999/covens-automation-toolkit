@@ -5,5 +5,5 @@
         "target": "ES2022",
         "noEmit": true
     },
-    "include": ["scripts/utilities/*.mjs"]
+    "include": ["scripts/utilities/*.mjs", "scripts/lib/regionShapes.mjs", "docs/externals.d.ts"]
 }

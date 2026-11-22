@@ -6,6 +6,8 @@ on:
     paths:
       - wiki/**
       - scripts/utilities/**
+      - scripts/lib/regionShapes.mjs
+      - docs/**
       - typedoc.json
       - tsconfig.docs.json
       - .github/workflows/publish-wiki.yml
@@ -28,14 +30,23 @@ jobs:
         with:
           node-version: 24.x
 
+      - name: Read utils as namespaces (CI checkout only)
+        run: |
+          sed -i 's/^export default {/export {/' scripts/utilities/*Utils.mjs scripts/lib/regionShapes.mjs
+          aliases=$(sed -nE 's/^    (\w+): regionShapes\.\1,$/\1/p' scripts/utilities/regionUtils.mjs | paste -sd, | sed 's/,/, /g')
+          sed -i -E 's/^    (\w+): regionShapes\.\1,$//' scripts/utilities/regionUtils.mjs
+          echo "export {$aliases} from '../lib/regionShapes.mjs';" >> scripts/utilities/regionUtils.mjs
+          sed -i -E 's/export \{default as (\w+)\} from/export * as \1 from/' scripts/utilities/_module.mjs
+
       - name: Generate API pages
         run: npx -y -p typedoc@0.28.20 -p typedoc-plugin-markdown@4.14.1 -p typedoc-github-wiki-theme@2.1.1 typedoc
 
-      - name: Drop the Variable. prefix from page names
+      - name: Drop the Namespace. prefix from page names
         run: |
-          for f in wiki/Variable.*.md; do mv "$f" "wiki/${f#wiki/Variable.}"; done
-          sed -i 's#/wiki/Variable\.#/wiki/#g' wiki/*.md
-          sed -i 's/^## Variables$/## Utilities/' wiki/API.md
+          for f in wiki/Namespace.*.md; do mv "$f" "wiki/${f#wiki/Namespace.}"; done
+          sed -i 's#/wiki/Namespace\.#/wiki/#g' wiki/*.md
+          sed -i -e 's/^## Namespaces$/## Utilities/' -e 's/^| Namespace | Description |$/| Utility | Description |/' wiki/API.md
+          for f in wiki/*Utils.md; do page=$(basename "$f" .md); sed -i "s#](../wiki/\##](../wiki/$page\##g" "$f"; done
 
       - name: Fail if hand-written pages changed
         run: git diff --exit-code --stat -- wiki
