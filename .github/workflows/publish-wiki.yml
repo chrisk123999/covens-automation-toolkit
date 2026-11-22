@@ -48,6 +48,9 @@ jobs:
           sed -i -e 's/^## Namespaces$/## Utilities/' -e 's/^| Namespace | Description |$/| Utility | Description |/' wiki/API.md
           for f in wiki/*Utils.md; do page=$(basename "$f" .md); sed -i "s#](../wiki/\##](../wiki/$page\##g" "$f"; done
 
+      - name: Inline returns and link headings to source
+        run: for f in wiki/*Utils.md; do perl docs/tidy-pages.pl "$f" > "$f.tmp" && mv "$f.tmp" "$f"; done
+
       - name: Fail if hand-written pages changed
         run: git diff --exit-code --stat -- wiki
 

@@ -72,3 +72,9 @@ declare class Crosshairs {}
 interface WallPath {}
 interface HitData {}
 interface EffectDurationData {}
+declare namespace foundry.types {
+    interface Point {x: number; y: number}
+    interface ElevatedPoint extends Point {elevation: number}
+}
+interface Point extends foundry.types.Point {}
+interface ElevatedPoint extends foundry.types.ElevatedPoint {}

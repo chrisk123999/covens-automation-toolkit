@@ -1,4 +1,5 @@
 const foundryApi = 'https://foundryvtt.com/api/v14/classes/';
+const foundryInterfaces = {Point: 'foundry.types.Point', ElevatedPoint: 'foundry.types.ElevatedPoint', 'foundry.types.Point': 'foundry.types.Point', 'foundry.types.ElevatedPoint': 'foundry.types.ElevatedPoint'};
 const dnd5eSource = 'https://github.com/foundryvtt/dnd5e/blob/master/module/';
 const pixiApi = 'https://pixijs.download/v7.x/docs/';
 const mdn = 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/';
@@ -38,6 +39,7 @@ export function load(app) {
         const path = ref.symbolReference?.path?.map(part => part.path) ?? [];
         const name = path.join('.');
         if (!name) return;
+        if (foundryInterfaces[name]) return 'https://foundryvtt.com/api/v14/interfaces/' + foundryInterfaces[name] + '.html';
         if (name.startsWith('foundry.')) return foundryApi + name + '.html';
         if (foundryAliases[name]) return foundryApi + foundryAliases[name] + '.html';
         if (dnd5ePaths[name]) return dnd5eSource + dnd5ePaths[name];
