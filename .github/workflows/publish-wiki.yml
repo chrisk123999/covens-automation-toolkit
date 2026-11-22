@@ -11,6 +11,7 @@ on:
       - typedoc.json
       - tsconfig.docs.json
       - .github/workflows/publish-wiki.yml
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
@@ -25,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: docs
 
       - uses: actions/setup-node@v6
         with:
