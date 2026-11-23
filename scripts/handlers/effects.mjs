@@ -38,7 +38,7 @@ async function removeConditions(effect) {
     if (ids.length) return await documentUtils.deleteEmbeddedDocuments(parent, 'ActiveEffect', ids);
 }
 function applyActiveEffect(actor, change, current, delta, changes) {
-    if (['flags.cat.CR.', 'flags.cat.CV.', 'flags.cat.FR.', 'flags.cat.FV.', 'flags.cat.FF.', 'flags.cat.FI.'].some(key => change.key.startsWith(key))) {
+    if (['flags.cat.CR.', 'flags.cat.CV.', 'flags.cat.SR.', 'flags.cat.SV.', 'flags.cat.FR.', 'flags.cat.FV.', 'flags.cat.FF.', 'flags.cat.FI.'].some(key => change.key.startsWith(key))) {
         const existing = genericUtils.getProperty(actor, change.key);
         const newValue = existing ? String(existing) + ', ' + String(change.value) : String(change.value);
         genericUtils.setProperty(actor, change.key, newValue);
@@ -100,12 +100,14 @@ async function playAnimation(effect, phase) {
     await animation.macros[phase]?.(effect, token, config, animationSource(effect));
 }
 const damagedBy = (relation) => ({workflow, target, ditem}) => ditem?.totalDamage > 0 && (!relation || (workflow.token.document.disposition === target.disposition) === (relation === 'ally'));
-const attackedBy = (source, hit) => async ({workflow, target, origin}) => {
+const attackedBy = (source, outcome) => async ({workflow, target, origin}) => {
     if (!workflow.activity || !workflowUtils.isAttackType(workflow, 'attack')) return false;
-    if (hit && !workflow.hitTargets.has(target)) return false;
+    if (outcome && workflow.hitTargets.has(target) !== (outcome === 'hit')) return false;
     const actor = (await origin())?.item?.actor;
     return !!actor && (workflow.actor.id === actor.id) === source;
 };
+const missedAttackTypes = {mwak: 'meleeWeaponAttack', rwak: 'rangedWeaponAttack', msak: 'meleeSpellAttack', rsak: 'rangedSpellAttack'};
+const missedAttack = ({workflow, suffix}) => workflowUtils.isAttackType(workflow, missedAttackTypes[suffix] ?? 'attack') && workflow.targets.some(target => !workflow.hitTargets.has(target));
 const damagedBySourceSide = includeSource => async ({workflow, ditem, origin}) => {
     if (!(ditem?.totalDamage > 0)) return false;
     const actor = (await origin())?.item?.actor;
@@ -115,10 +117,12 @@ const damagedBySourceSide = includeSource => async ({workflow, ditem, origin}) =
     return !!sourceToken && workflow.token.document.disposition === sourceToken.disposition;
 };
 const specialDurationTriggers = {
-    attackedByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, false)},
-    attackedBySource: {stage: 'attack', side: 'target', test: attackedBy(true, false)},
-    hitByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, true)},
-    hitBySource: {stage: 'attack', side: 'target', test: attackedBy(true, true)},
+    attackedByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false)},
+    attackedBySource: {stage: 'attack', side: 'target', test: attackedBy(true)},
+    hitByAnotherCreature: {stage: 'attack', side: 'target', test: attackedBy(false, 'hit')},
+    hitBySource: {stage: 'attack', side: 'target', test: attackedBy(true, 'hit')},
+    missedBySource: {stage: 'attack', side: 'target', test: attackedBy(true, 'miss')},
+    missedAttack: {stage: 'attack', side: 'actor', test: missedAttack},
     forceSave: {stage: 'save', side: 'actor', test: ({workflow}) => !!workflow.activity?.hasSave && !(workflow.targets.count === 1 && workflow.targets.has(workflow.token))},
     damaged: {stage: 'damage', side: 'target', test: damagedBy()},
     damagedByAlly: {stage: 'damage', side: 'target', test: damagedBy('ally')},
@@ -141,9 +145,10 @@ async function expireBySpecialDuration(actor, side, stage, context) {
         let originActivity;
         const origin = () => originActivity ??= effectUtils.getOriginActivity(effect);
         for (const key of keys) {
-            const trigger = specialDurationTriggers[key];
+            const [base, suffix] = key.split(':');
+            const trigger = specialDurationTriggers[base];
             if (trigger?.stage !== stage || (trigger.side !== side && trigger.side !== 'both')) continue;
-            if (await trigger.test({...context, effect, origin})) return await documentUtils.deleteDocument(effect);
+            if (await trigger.test({...context, effect, origin, suffix})) return await documentUtils.deleteDocument(effect);
         }
     }));
 }

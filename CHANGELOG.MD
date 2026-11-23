@@ -13,10 +13,15 @@
 - `activityUtils.getRange` measures through midi-qol, so range bonuses apply.
 - New `document` configuration type and `dialogUtils.abilityDialog`.
 - The CatKit generic feature picker groups generics by category. Search matches a generic's display name, identifier or category.
+- New effect special durations: Missed by effect source, and Missed Attack (any, or `missedAttack:mwak`, `rwak`, `msak`, `rsak`).
+- New Quick Conditions: Attack Roll Mode and Target Has Effect.
+- New spell school resistance and vulnerability, such as `flags.cat.SR.evo`, in DAE and the actor CatKit.
+- New `flags.cat.grappleShove.sizeBonus` adds sizes to an actor when checking which creatures it can grapple or shove. It and `flags.cat.grappleDrag.freeSizeOffset` are listed in DAE.
 ## Bug Fixes:
 - Summon placement and removal run their animation callbacks.
 - Monster-specific automations no longer match items without an NPC owner.
 - A spell created by dnd5e for an automated item's cast activity receives its automation.
+- Uses cancelled before rolling no longer leave the bonus action or reaction marked as used.
 # 0.1.10 Release:
 ## Update Notes:
 - New Base Weapon restriction for alternate attributes matches the attacking weapon's base item.
