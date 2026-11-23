@@ -108,6 +108,7 @@ export default class QuickConditions extends CatApp {
                 if (condition) {
                     let baseArray = condition.format.split(/\$([a-zA-Z_][a-zA-Z_]*)/).filter(Boolean);
                     let baseStrings = baseArray.filter(i => !Object.keys(condition.data).some(j => j === i));
+                    let textValue = baseStrings.reduce((acc, value) => acc.replace(value, ''), term).replace(/^!/, '').trim();
                     let termValues = new Set(baseStrings.reduce((acc, value) => acc = acc.replace(value, ''), term.replaceAll("'", '"')).split(/(!|\[[^\]]*\]|'[^']*'|"[^"]*"|\d+|<=|>=|===|==|<|>|=)/).filter(Boolean).map(s => s.trim()).filter(Boolean).map(i => this.safeParse(i)));
                     let inputs = [opInput, {
                         id: conditionKey + '-label',
@@ -120,7 +121,7 @@ export default class QuickConditions extends CatApp {
                         let current = baseArray[i];
                         if (Object.keys(condition.data).includes(current)) {
                             let inputData = condition.data[current];
-                            let value = termValues.find(j => inputData.varType(j));
+                            let value = inputData.type === 'text' ? textValue : termValues.find(j => inputData.varType(j));
                             termValues.delete(value);
                             let inputType = typeof inputData.default;
                             if ((value) && (inputType != typeof value)) {

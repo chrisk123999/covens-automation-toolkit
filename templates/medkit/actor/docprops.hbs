@@ -62,6 +62,66 @@
             </div>
         {{/each}}
     </fieldset>
+    <fieldset data-section="school-resistance">
+        <legend>{{localize "CAT.MEDKIT.Actor.SchoolResistance.Label"}}</legend>
+        <div class="form-group">
+            <label for="cat-medkit-actor-sr">{{localize "CAT.MEDKIT.Actor.SchoolResistance.Label"}}</label>
+            <div class="form-fields">
+                <cat-multi-combobox input-id="cat-medkit-actor-sr" name="flags.cat.SR">
+                    {{#each schoolChoicesSR}}
+                        <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
+                    {{/each}}
+                </cat-multi-combobox>
+            </div>
+            <p class="hint">{{localize "CAT.MEDKIT.Actor.SchoolResistance.Hint"}}</p>
+        </div>
+        {{#each srSchoolRows as |row|}}
+            <div class="row">
+                <span class="name">{{row.label}}</span>
+                <button type="button" class="ability{{#if row.all}} active{{/if}}" data-action="toggleSR"
+                    data-condition="{{row.key}}" data-ability="all"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+                {{#each row.abilities as |ab|}}
+                    <button type="button" class="ability{{#if ab.active}} active{{/if}}" data-action="toggleSR"
+                        data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                {{/each}}
+                <button type="button" class="remove" data-action="removeCondition" data-flag-key="SR"
+                    data-condition="{{row.key}}" data-tooltip="{{localize 'COMMON.Delete'}}">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        {{/each}}
+    </fieldset>
+    <fieldset data-section="school-vulnerability">
+        <legend>{{localize "CAT.MEDKIT.Actor.SchoolVulnerability.Label"}}</legend>
+        <div class="form-group">
+            <label for="cat-medkit-actor-sv">{{localize "CAT.MEDKIT.Actor.SchoolVulnerability.Label"}}</label>
+            <div class="form-fields">
+                <cat-multi-combobox input-id="cat-medkit-actor-sv" name="flags.cat.SV">
+                    {{#each schoolChoicesSV}}
+                        <option value="{{value}}" {{#if selected}} selected{{/if}}>{{label}}</option>
+                    {{/each}}
+                </cat-multi-combobox>
+            </div>
+            <p class="hint">{{localize "CAT.MEDKIT.Actor.SchoolVulnerability.Hint"}}</p>
+        </div>
+        {{#each svSchoolRows as |row|}}
+            <div class="row">
+                <span class="name">{{row.label}}</span>
+                <button type="button" class="ability{{#if row.all}} active{{/if}}" data-action="toggleSV"
+                    data-condition="{{row.key}}" data-ability="all"
+                    data-tooltip="{{localize 'CAT.MEDKIT.Actor.Ability.All'}}">{{localize "CAT.MEDKIT.Actor.Ability.All"}}</button>
+                {{#each row.abilities as |ab|}}
+                    <button type="button" class="ability{{#if ab.active}} active{{/if}}" data-action="toggleSV"
+                        data-condition="{{row.key}}" data-ability="{{ab.key}}">{{ab.label}}</button>
+                {{/each}}
+                <button type="button" class="remove" data-action="removeCondition" data-flag-key="SV"
+                    data-condition="{{row.key}}" data-tooltip="{{localize 'COMMON.Delete'}}">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        {{/each}}
+    </fieldset>
     <fieldset data-section="feature-resistance">
         <legend>{{localize "CAT.MEDKIT.Actor.FeatureResistance.Label"}}</legend>
         <p class="hint">{{localize "CAT.MEDKIT.Actor.FeatureResistance.Hint"}}</p>

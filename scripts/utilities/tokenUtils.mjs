@@ -728,7 +728,7 @@ function getGrappled(token) {
 }
 /**
  * Whether a token can grapple or shove the target. The target must be no more than one size larger, after size bonuses
- * from the `sizeCheck` grapple pass. A target immune to grappled or prone fails the matching check.
+ * from the `sizeCheck` grapple pass and the grappler's `flags.cat.grappleShove.sizeBonus`. A target immune to grappled or prone fails the matching check.
  * @param {foundry.documents.TokenDocument} sourceToken        Token grappling or shoving.
  * @param {foundry.documents.TokenDocument} targetToken        Token being grappled or shoved.
  * @param {'grapple'|'shove-push'|'shove-prone'} [identifier]  Picks the condition immunity to check and the warning

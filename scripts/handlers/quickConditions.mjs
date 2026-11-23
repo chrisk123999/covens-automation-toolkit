@@ -207,6 +207,20 @@ class conditions {
     static varType = isVar.string;
     static get options() {return Object?.entries(CONFIG?.DND5E?.conditionTypes ?? {})?.map(([key, value]) => ({name: value.name, value: key}));}
 }
+class rollModes {
+    static default = 'hasAdvantage';
+    static type = 'select';
+    static varType = isVar.string;
+    static options = [
+        {name: 'hasAdvantage', display: 'DND5E.Advantage', value: 'hasAdvantage'},
+        {name: 'hasDisadvantage', display: 'DND5E.Disadvantage', value: 'hasDisadvantage'}
+    ];
+}
+class effectName {
+    static default = 'Effect';
+    static type = 'text';
+    static varType = isVar.string;
+}
 class itemTypes {
     static default = 'spell';
     static type = 'select';
@@ -286,6 +300,18 @@ const constants = new Collection([
         format: '$not$hasCondition(targetUuid, "$conditions")',
         searchKey: 'hasCondition',
         data: {not, conditions}
+    }],
+    ['attackRollMode', {
+        label: 'CAT.QuickConditions.Conditions.attackRollMode',
+        format: '$not$workflow.attackRoll?.$rollModes',
+        searchKey: 'workflow.attackRoll?.',
+        data: {not, rollModes}
+    }],
+    ['hasEffect', {
+        label: 'CAT.QuickConditions.Conditions.hasEffect',
+        format: '$not$fromUuidSync(targetUuid)?.actor?.effects.getName("$effectName")?.active === true',
+        searchKey: '?.actor?.effects.getName(',
+        data: {not, effectName}
     }],
     ['itemType', {
         label: 'CAT.QuickConditions.Conditions.itemType',

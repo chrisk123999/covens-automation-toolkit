@@ -650,6 +650,14 @@
                     "Label": "Condition Vulnerability",
                     "Hint": "Conditions this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
                 },
+                "SchoolResistance": {
+                    "Label": "Spell School Resistance",
+                    "Hint": "Spell schools this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
+                },
+                "SchoolVulnerability": {
+                    "Label": "Spell School Vulnerability",
+                    "Hint": "Spell schools this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
+                },
                 "FeatureFailure": {
                     "Label": "Feature Failure",
                     "Hint": "Activity identifiers on which this actor should auto-fail. Click All for any save, or pick specific abilities to scope it."
@@ -795,6 +803,8 @@
                     "attackedByAnotherCreature": "Attacked by another creature",
                     "hitBySource": "Hit by effect source",
                     "attackedBySource": "Attacked by effect source",
+                    "missedBySource": "Missed by effect source",
+                    "missedAttack": "Any Attack",
                     "moveFinished": "Movement finished",
                     "zeroSpeed": "Speed reduced to zero",
                     "tempHP": "Temporary HP lost",
@@ -807,6 +817,7 @@
                         "Movement": "Movement",
                         "HitPoints": "Hit Points",
                         "Grapple": "Grapple",
+                        "MissedAttack": "Missed Attack",
                         "ConditionAdded": "Condition Added",
                         "ConditionRemoved": "Condition Removed",
                         "Equipped": "Armor Equipped",
@@ -1302,6 +1313,16 @@
             "CI": {
                 "Name": "{condition} Condition Immunity"
             },
+            "SR": {
+                "Category": "CAT Spell School Resistance",
+                "Name": "{school} Spell School Resistance",
+                "Description": "Spell School Resistance to {school}, roll at advantage to save against those spells. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
+            "SV": {
+                "Category": "CAT Spell School Vulnerability",
+                "Name": "{school} Spell School Vulnerability",
+                "Description": "Spell School Vulnerability to {school}, roll at disadvantage to save against those spells. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
             "FeatureRollModes": "CAT Feature Roll Modes",
             "FF": {
                 "Name": "Feature Failure",
@@ -1322,6 +1343,14 @@
             "IgnoreDifficultTerrainTokens": {
                 "Name": "Ignore Difficult Terrain: Other Tokens",
                 "Description": "This actor does not consider other tokens as difficult terrain."
+            },
+            "GrappleShoveSizeBonus": {
+                "Name": "Grapple/Shove Size Bonus",
+                "Description": "Sizes added to this actor's size when checking which creatures it can grapple or shove."
+            },
+            "GrappleDragFreeSizeOffset": {
+                "Name": "Grapple Drag: Free Size Offset",
+                "Description": "Dragging a grappled creature costs no extra movement if the creature is at most this many sizes larger than this actor."
             },
             "Other": "CAT Other"
         },
@@ -1372,7 +1401,9 @@
                 "alignment": "Alignment",
                 "ability": "Ability Score",
                 "hasCondition": "Has Condition",
-                "itemType": "Item Type"
+                "itemType": "Item Type",
+                "attackRollMode": "Attack Roll Mode",
+                "hasEffect": "Target Has Effect"
             }
         },
         "Summons": {

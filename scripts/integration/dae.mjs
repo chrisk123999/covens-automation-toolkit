@@ -2,30 +2,41 @@ import {genericUtils} from '../utilities/_module.mjs';
 const daeBrowserFields = {
     'CAT.CR': new Set(),
     'CAT.CV': new Set(),
+    'CAT.SR': new Set(),
+    'CAT.SV': new Set(),
     'CAT.OTHER': new Set(),
     'CAT.FeatureRollModes': new Set()
 };
-const conditionFlags = ['CR', 'CV'];
+const targetedFlags = [
+    {keys: ['CR', 'CV'], targets: () => Object.entries(CONFIG.DND5E.conditionTypes).map(([key, {name}]) => [key, {condition: name}])},
+    {keys: ['SR', 'SV'], targets: () => Object.entries(CONFIG.DND5E.spellSchools).map(([key, {label}]) => [key, {school: label}])}
+];
 const featureFlags = ['FF', 'FI', 'FR', 'FV'];
+const otherFlags = {
+    'flags.cat.ignoreDifficultTerrain.tokens': {key: 'IgnoreDifficultTerrainTokens'},
+    'flags.cat.grappleShove.sizeBonus': {key: 'GrappleShoveSizeBonus', number: true},
+    'flags.cat.grappleDrag.freeSizeOffset': {key: 'GrappleDragFreeSizeOffset', number: true}
+};
 function catFlag(key, target) {
     return `flags.cat.${key}.${target}`;
 }
 function initFlags() {
-    Object.keys(CONFIG.DND5E.conditionTypes).forEach(condition => {
-        daeBrowserFields['CAT.CR'].add(catFlag('CR', condition));
-        daeBrowserFields['CAT.CV'].add(catFlag('CV', condition));
-    });
+    for (const {keys, targets} of targetedFlags)
+        for (const key of keys)
+            for (const [target] of targets()) daeBrowserFields[`CAT.${key}`].add(catFlag(key, target));
     featureFlags.forEach(f => daeBrowserFields['CAT.FeatureRollModes'].add(catFlag(f, 'identifier')));
-    daeBrowserFields['CAT.OTHER'].add('flags.cat.ignoreDifficultTerrain.tokens');
+    Object.keys(otherFlags).forEach(flag => daeBrowserFields['CAT.OTHER'].add(flag));
 }
 function injectFlags() {
-    for (const conditionRollMode of conditionFlags) {
-        genericUtils.setProperty(game.i18n.translations, `dae.fieldData.fieldCategories.CAT.${conditionRollMode}`, _loc(`CAT.DAE.${conditionRollMode}.Category`));
-        for (const [condition, {name}] of Object.entries(CONFIG.DND5E.conditionTypes)) {
-            DAE.localizationMap[catFlag(conditionRollMode, condition)] = {
-                name: _loc(`CAT.DAE.${conditionRollMode}.Name`, {condition: name}),
-                description: _loc(`CAT.DAE.${conditionRollMode}.Description`, {condition: name})
-            };
+    for (const {keys, targets} of targetedFlags) {
+        for (const key of keys) {
+            genericUtils.setProperty(game.i18n.translations, `dae.fieldData.fieldCategories.CAT.${key}`, _loc(`CAT.DAE.${key}.Category`));
+            for (const [target, data] of targets()) {
+                DAE.localizationMap[catFlag(key, target)] = {
+                    name: _loc(`CAT.DAE.${key}.Name`, data),
+                    description: _loc(`CAT.DAE.${key}.Description`, data)
+                };
+            }
         }
     }
     genericUtils.setProperty(game.i18n.translations, 'dae.fieldData.fieldCategories.CAT.FeatureRollModes', _loc('CAT.DAE.FeatureRollModes'));
@@ -36,10 +47,12 @@ function injectFlags() {
         };
     }
     genericUtils.setProperty(game.i18n.translations, 'dae.fieldData.fieldCategories.CAT.OTHER', _loc('CAT.DAE.Other'));
-    DAE.localizationMap['flags.cat.ignoreDifficultTerrain.tokens'] = {
-        name: _loc('CAT.DAE.IgnoreDifficultTerrainTokens.Name'),
-        description: _loc('CAT.DAE.IgnoreDifficultTerrainTokens.Description')
-    };
+    for (const [flag, {key}] of Object.entries(otherFlags)) {
+        DAE.localizationMap[flag] = {
+            name: _loc(`CAT.DAE.${key}.Name`),
+            description: _loc(`CAT.DAE.${key}.Description`)
+        };
+    }
 }
 function addFlags(fieldData) {
     for (const [category, fields] of Object.entries(daeBrowserFields))
@@ -49,7 +62,7 @@ function addFlags(fieldData) {
 function modifySpecials(specKey, specials) {
     for (const fieldset of Object.values(daeBrowserFields))
         for (const field of fieldset)
-            specials[field] = [new foundry.data.fields.StringField(), 'custom'];
+            specials[field] = otherFlags[field]?.number ? [new foundry.data.fields.NumberField(), ''] : [new foundry.data.fields.StringField(), 'custom'];
 }
 export default {
     initFlags,

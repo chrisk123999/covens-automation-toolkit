@@ -4,7 +4,23 @@ const buttons = {
     '0': 'normal',
     '-1': 'disadvantage'
 };
-export default async function conditionResistanceAndVulnerability(target, workflow, saveDetails) {
+const applyMode = {
+    adv: (tracker, id, label) => tracker.advantage.add(id, label),
+    dis: (tracker, id, label) => tracker.disadvantage.add(id, label),
+    succeed: (tracker, id, label) => tracker.modifiers.succeed(id, label),
+    fail: (tracker, id, label) => tracker.modifiers.fail(id, label)
+};
+const rollModeFlags = [
+    {key: 'CR', id: 'condition-resistance', mode: 'adv', targets: c => c.conditions},
+    {key: 'CV', id: 'condition-vulnerability', mode: 'dis', targets: c => c.conditions},
+    {key: 'SR', id: 'school-resistance', mode: 'adv', targets: c => [c.school]},
+    {key: 'SV', id: 'school-vulnerability', mode: 'dis', targets: c => [c.school]},
+    {key: 'FR', id: 'feature-resistance', mode: 'adv', targets: c => [c.identifier]},
+    {key: 'FV', id: 'feature-vulnerability', mode: 'dis', targets: c => [c.identifier]},
+    {key: 'FI', id: 'feature-immunity', mode: 'succeed', targets: c => [c.identifier]},
+    {key: 'FF', id: 'feature-failure', mode: 'fail', targets: c => [c.identifier]}
+];
+export default async function targetRollModes(target, workflow, saveDetails) {
     if (!target.actor) return;
     let activity = workflow.activity;
     const overTimeEffectUuid = workflow.workflowOptions?.overTimeEffectUuid;
@@ -16,7 +32,7 @@ export default async function conditionResistanceAndVulnerability(target, workfl
         workflowUtils.setWorkflowProperty(workflow, 'activityUuid', activity.uuid);
         workflowUtils.addMacroConditions(workflow, activityUtils.getConditions(activity));
     }
-    const conditions = workflowUtils.getMacroConditions(workflow);
+    const context = {conditions: workflowUtils.getMacroConditions(workflow), identifier: activity?.identifier, school: activity?.item.type === 'spell' ? activity.item.system.school : undefined};
     let abilities = [];
     switch (saveDetails.rollType) {
         case 'check':
@@ -40,15 +56,8 @@ export default async function conditionResistanceAndVulnerability(target, workfl
         let testAbility = ability;
         if (saveDetails.rollType === 'skill') testAbility = checkAbility || target.actor.system.skills[ability].ability;
         if (saveDetails.rollType === 'tool') testAbility = checkAbility || toolAbility || target.actor.system.tools[ability]?.ability || CONFIG.DND5E.tools[ability]?.ability;
-        testFlags(target.actor, conditions, tracker, activity?.identifier, testAbility);
-        for (const entry of otherModifiers) {
-            switch(entry?.type) {
-                case 'adv': tracker.advantage.add(entry?.identifier, entry?.display); break;
-                case 'dis': tracker.disadvantage.add(entry?.identifier, entry?.display); break;
-                case 'succeed': tracker.modifiers.succeed(entry?.identifier, entry?.display); break;
-                case 'fail': tracker.modifiers.fail(entry?.identifier, entry?.display); break;
-            }
-        }
+        applyFlags(target.actor, tracker, testAbility, context);
+        for (const entry of otherModifiers) applyMode[entry?.type]?.(tracker, entry.identifier, entry.display);
         setChoiceTracker(saveDetails, ability, tracker);
     }
 }
@@ -60,22 +69,15 @@ function setChoiceTracker(saveDetails, ability, tracker) {
         defaultButton: buttons[tracker.advantageMode]
     });
 }
-function testFlags(actor, conditions, tracker, identifier, ability) {
-    const labels = {};
-    function testFlag(key, target) {
-        if (!target) return false;
-        const flagData = actor.flags.cat?.[key]?.[target];
-        if (!flagData) return false;
-        const types = String(flagData).toLowerCase().split(',');
-        const result = types.includes('1') || types.includes('true') || types.includes(ability);
-        if (result) labels[key] = _loc(`CAT.DAE.${key}.Name`, {condition: CONFIG.DND5E.conditionTypes[target]?.name});
-        return result;
+function flagMatches(actor, key, target, ability) {
+    const value = target && actor.flags.cat?.[key]?.[target];
+    if (!value) return false;
+    const types = String(value).toLowerCase().split(',').map(type => type.trim());
+    return types.includes('1') || types.includes('true') || types.includes(ability);
+}
+function applyFlags(actor, tracker, ability, context) {
+    for (const {key, id, mode, targets} of rollModeFlags) {
+        const match = [...targets(context)].find(target => flagMatches(actor, key, target, ability));
+        if (match) applyMode[mode](tracker, id, _loc(`CAT.DAE.${key}.Name`, {condition: CONFIG.DND5E.conditionTypes[match]?.name, school: CONFIG.DND5E.spellSchools[match]?.label}));
     }
-    const testConditions = flag => conditions.some(i => testFlag(flag, i));
-    if (testConditions('CR')) tracker.advantage.add('condition-resistance', labels.CR);
-    if (testConditions('CV')) tracker.disadvantage.add('condition-vulnerability', labels.CV);
-    if (testFlag('FR', identifier)) tracker.advantage.add('feature-resistance', labels.FR);
-    if (testFlag('FV', identifier)) tracker.disadvantage.add('feature-vulnerability', labels.FV);
-    if (testFlag('FI', identifier)) tracker.modifiers.succeed('feature-immunity', labels.FI);
-    if (testFlag('FF', identifier)) tracker.modifiers.fail('feature-failure', labels.FF);
 }

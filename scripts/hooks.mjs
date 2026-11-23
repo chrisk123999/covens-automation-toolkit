@@ -1,5 +1,5 @@
 import * as events from './events/_module.mjs';
-import {activities, chat, combat, conditionResistanceAndVulnerability, contextmenu, customMacros, effects, quickConditions, summon, troubleshooter, welcome} from './handlers/_module.mjs';
+import {activities, chat, combat, contextmenu, customMacros, effects, quickConditions, summon, targetRollModes, troubleshooter, welcome} from './handlers/_module.mjs';
 import {animationModules, dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
 import {constants} from './lib/_module.mjs';
 import {dialogUtils, queryUtils} from './utilities/_module.mjs';
@@ -52,7 +52,7 @@ export function readyHooks() {
     Hooks.on(constants.workflowHookNames.preTargetDamageApplication, events.workflowEvents.preTargetDamageApplication);
     Hooks.on(constants.workflowHookNames.rollFinished, events.workflowEvents.rollFinished);
     // Condition Resistance / Vulnerability
-    Hooks.on(constants.workflowHookNames.preTargetSave, conditionResistanceAndVulnerability);
+    Hooks.on(constants.workflowHookNames.preTargetSave, targetRollModes);
     // Rest Events
     Hooks.on(constants.restHookNames.restCompleted, events.restEvents.restCompleted);
     // Item Events
