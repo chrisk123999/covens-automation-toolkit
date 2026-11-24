@@ -95,7 +95,8 @@ export default class DialogApp extends CatApp {
     get footerButtons() {
         const selective = this.#context.inputs.filter(input => input.requireSelection);
         const blockConfirm = (selective.length > 0 && !selective.some(input => input.currentNum > 0))
-            || this.#context.inputs.some(input => input.requireTotal && input.currentSpent < input.totalMax);
+            || this.#context.inputs.some(input => input.requireTotal && input.currentSpent < input.totalMax)
+            || this.#context.inputs.some(input => Number.isFinite(input.totalMax) && input.currentSpent > input.totalMax);
         return this.#context.buttons.map(button => ({...button, action: 'confirm', disabled: blockConfirm && button.name === 'true'}));
     }
 

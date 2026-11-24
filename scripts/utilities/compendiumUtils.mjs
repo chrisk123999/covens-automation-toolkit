@@ -369,11 +369,12 @@ async function getSpellUuid(identifier, {packIds} = {}) {
 }
 /**
  * Fetch a spell by identifier from the enabled spell compendiums, in priority order. Returns an unsaved synthetic item
- * built with {@link itemUtils.syntheticItem}, or its source data with `object`. Warns when no spell compendium is
- * enabled.
+ * built with {@link itemUtils.syntheticItem}, or its source data with `object`. With `rules`, a copy written for that
+ * rules version is preferred over the first match. Warns when no spell compendium is enabled.
  * @param {string} identifier                        Identifier to match.
  * @param {object} [options]                         Additional options.
  * @param {string[]} [options.packIds]               Compendiums to search instead of the enabled spell compendiums.
+ * @param {string} [options.rules]                   Rules version to prefer, `'2014'` or `'2024'`.
  * @param {boolean} [options.object]                 Return the spell's source data instead of an item.
  * @param {foundry.documents.Actor} [options.actor]  Parent actor for the synthetic item. Ignored with `object`.
  * @param {string} [options.description]             Replace the description.
@@ -383,18 +384,26 @@ async function getSpellUuid(identifier, {packIds} = {}) {
  * @returns {Promise<Item5e|object|undefined>}       Undefined when no compendium has the spell.
  * @example
  * const spell = await compendiumUtils.getSpell('command', {actor, flatDC: 15});
+ * const guidance = await compendiumUtils.getSpell('guidance', {object: true, rules: '2014'});
  */
-async function getSpell(identifier, {packIds, object = false, actor, description, translate, flatAttack, flatDC} = {}) {
+async function getSpell(identifier, {packIds, rules, object = false, actor, description, translate, flatAttack, flatDC} = {}) {
     if (!packIds?.length) packIds = getEnabledCompendiumIds('spellCompendiums');
     if (!packIds.length) {
         genericUtils.notify('CAT.Error.NoSpellCompendiums', {type: 'warn'});
         return;
     }
+    let found;
     for (const id of packIds) {
         const spell = await getDocumentByIdentifier(id, identifier, {object: true, description, translate, flatAttack, flatDC});
         if (!spell) continue;
-        return object ? spell : itemUtils.syntheticItem(spell, actor);
+        found ??= spell;
+        if (!rules || spell.system.source?.rules === rules) {
+            found = spell;
+            break;
+        }
     }
+    if (!found) return;
+    return object ? found : itemUtils.syntheticItem(found, actor);
 }
 export default {
     selectFromCompendiumBrowser,

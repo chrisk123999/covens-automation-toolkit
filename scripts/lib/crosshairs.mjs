@@ -223,6 +223,15 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
         }
         return this;
     }
+    moveTo(event) {
+        const center = event.data.getLocalPosition(canvas.regions.preview);
+        const {x, y} = Crosshairs.getSnappedPosition(center, this.resolution);
+        const shapes = foundry.utils.deepClone(this.document.shapes);
+        shapes[0].x = x;
+        shapes[0].y = y;
+        this.document.updateSource({shapes});
+        this.refresh();
+    }
     activatePreviewListeners() {
         return new Promise((resolve, reject) => {
             this.activeHandlers = true;
@@ -233,13 +242,7 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
                 if (this.lockPosition) return;
                 let now = Date.now();
                 if (now - moveTime <= 20) return;
-                const center = event.data.getLocalPosition(canvas.regions.preview);
-                const {x,y} = Crosshairs.getSnappedPosition(center, this.resolution);
-                let shapes = foundry.utils.deepClone(this.document.shapes);
-                shapes[0].x = x;
-                shapes[0].y = y;
-                this.document.updateSource({shapes});
-                this.refresh();
+                this.moveTo(event);
                 moveTime = now;
                 if (now - this.initTime > 1000) {
                     canvas._onDragCanvasPan(event.data.originalEvent);
@@ -248,6 +251,8 @@ export class Crosshairs extends foundry.canvas.placeables.Region {
             this.handlers.lc = event => {
                 if (event.data?.button !== 0) return;
                 event.stopPropagation();
+                if (!this.lockPosition) this.moveTo(event);
+                this.callbacks?.validate?.(this);
                 if (this.valid === false) {
                     genericUtils.notify('CAT.Crosshairs.Invalid', {type: 'warn'});
                     return;

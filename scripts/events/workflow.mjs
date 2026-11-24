@@ -11,10 +11,7 @@ async function preTargeting({activity, token, config, dialog, message}) {
 async function refundAborted(workflow) {
     if (!workflow.aborted || workflowUtils.getWorkflowProperty(workflow, 'keepConsumption')) return;
     await workflow.refundConsumption?.();
-    const usedBefore = workflowUtils.getWorkflowProperty(workflow, 'usedBefore');
-    if (!usedBefore || !workflow.actor) return;
-    if (workflow.itemUsesBonusAction && !usedBefore.bonus && MidiQOL.hasUsedBonusAction(workflow.actor)) await MidiQOL.removeBonusActionUsed(workflow.actor, true);
-    if (workflow.itemUsesReaction && !usedBefore.reaction && MidiQOL.hasUsedReaction(workflow.actor)) await MidiQOL.removeReactionUsed(workflow.actor, true);
+    await workflowUtils.restoreActionEconomy(workflow);
 }
 async function preItemRoll(workflow) {
     if (game.settings.get('cat', 'diceSoNice') && game.modules.get('dice-so-nice')?.active) diceSoNice.preItemRoll(workflow);

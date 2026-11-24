@@ -707,7 +707,8 @@ export default class MedkitApp extends CatApp {
             this.#buildOption({key: `summon-compendium-names-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumNames'}, {name: `${base}.compendium.names`, value: entry.compendium?.names ?? ''}),
             this.#buildOption({key: `summon-compendium-cr-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumMaxCR'}, {name: `${base}.compendium.maxCR`, value: entry.compendium?.maxCR ?? ''}),
             this.#buildOption({key: `summon-compendium-tiers-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumTiers.Label', hint: 'CAT.MEDKIT.Summons.CompendiumTiers.Hint'}, {name: `${base}.compendium.tiers`, value: entry.compendium?.tiers ?? ''}),
-            this.#buildOption({key: `summon-compendium-random-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.CompendiumRandomTier'}, {name: `${base}.compendium.randomTier`, value: entry.compendium?.randomTier ?? false})
+            this.#buildOption({key: `summon-compendium-random-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.CompendiumRandomTier'}, {name: `${base}.compendium.randomTier`, value: entry.compendium?.randomTier ?? false}),
+            this.#buildOption({key: `summon-compendium-owner-picks-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.CompendiumOwnerPicks'}, {name: `${base}.compendium.ownerPicks`, value: entry.compendium?.ownerPicks ?? false})
         ];
         if (profiles.length) fieldList.unshift(this.#buildOption({key: `summon-profile-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Profile.Label', hint: 'CAT.MEDKIT.Summons.Profile.Hint', options: [{value: '', label: 'CAT.Config.None'}, ...profiles]}, {name: `${base}.profile`, value: entry.profile ?? ''}));
         return fieldList;

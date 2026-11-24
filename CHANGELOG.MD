@@ -17,11 +17,22 @@
 - New Quick Conditions: Attack Roll Mode and Target Has Effect.
 - New spell school resistance and vulnerability, such as `flags.cat.SR.evo`, in DAE and the actor CatKit.
 - New `flags.cat.grappleShove.sizeBonus` adds sizes to an actor when checking which creatures it can grapple or shove. It and `flags.cat.grappleDrag.freeSizeOffset` are listed in DAE.
+- `workflowUtils.specialItemUse` accepts `spellSlot` to use a spell without spending a slot.
+- New `workflowUtils.restoreActionEconomy` clears the bonus action or reaction a use marked as spent.
+- The troubleshooter requires midi-qol's Roll Saves Before Damage setting to be off.
+- `tokenUtils.aimDestination`, `aimDestinationAs` and `teleportToken` accept `sightToken` to check sight from another token. Sight replaces the wall check whenever a vision source is used.
+- Summon follow-up targets have a Choose option that lets the user pick from the creatures in range.
+- Compendium summons have an Owner Picks option that sends the creature picker to the summoner's owner.
+- `compendiumUtils.getSpell` accepts `rules` to prefer a spell written for that rules version.
+- Settings menus built on CAT's settings menu ask to reload when a changed setting has `requiresReload`.
 ## Bug Fixes:
 - Summon placement and removal run their animation callbacks.
 - Monster-specific automations no longer match items without an NPC owner.
 - A spell created by dnd5e for an automated item's cast activity receives its automation.
 - Uses cancelled before rolling no longer leave the bonus action or reaction marked as used.
+- Cancelling a summon's creature picker refunds the use, its bonus action or reaction, and ends its concentration.
+- Ally follow-up targets no longer always include the summoner.
+- Dialogs with a selection budget can't be confirmed while over it.
 # 0.1.10 Release:
 ## Update Notes:
 - New Base Weapon restriction for alternate attributes matches the attacking weapon's base item.
