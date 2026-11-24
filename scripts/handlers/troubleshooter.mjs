@@ -40,6 +40,7 @@ const TROUBLESHOOTER = {
             'ConfigSettings.removeButtons': {fix: 'all'},
             'ConfigSettings.autoApplyDamage': {fix: 'yesCard'},
             'ConfigSettings.addChatDamageButtons': {fix: 'none'},
+            'ConfigSettings.savesBeforeDamage': {fix: false},
             'ConfigSettings.optionalRules.conditionRules': {fix: true, also: {optionalRulesEnabled: true}, label: 'midi-qol.ConditionRules.Name', skip: () => game.modules.get('automated-conditions-5e')?.active}
         },
         'core': {

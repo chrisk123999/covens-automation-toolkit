@@ -128,7 +128,9 @@ async function pickCompendiumActors(item, entry, rollData) {
         genericUtils.notify('CAT.Macros.Summon.NoMatching', {type: 'warn'});
         return [];
     }
-    const selection = await dialogUtils.selectDocumentDialog(item.name, _loc('CAT.Macros.Summon.Pick', {count}), documents, {max: count, showCR: true, sort: 'cr', userId: queryUtils.gmID()});
+    const userId = compendium.ownerPicks ? queryUtils.firstOwner(item.actor, true) : queryUtils.gmID();
+    const prompt = _loc('CAT.Macros.Summon.Pick', {count});
+    const selection = await dialogUtils.selectDocumentDialog(item.name, prompt, documents, {max: count, showCR: true, sort: 'cr', userId});
     if (!selection) return [];
     return (await Promise.all(toPicks(selection).map(async pick => ({actor: await fromUuid(pick.document.uuid), count: pick.amount})))).filter(pick => pick.actor);
 }
@@ -188,7 +190,9 @@ async function pickBudget(item, entries, config, rollData) {
         return {id: 'entry' + index, name: _loc(entry.label || entry.name || '') || actor?.name || String(index + 1), img: entry.tokenImg || entry.avatarImg || actor?.img || 'icons/svg/mystery-man.svg'};
     }));
     const weights = Object.fromEntries(entries.map((entry, index) => ['entry' + index, Number(entry.weight) || 1]));
-    const selection = await dialogUtils.selectDocumentDialog(item.name, _loc(config.pick === 'one' ? 'CAT.Macros.Summon.PickOne' : 'CAT.Macros.Summon.Pick', {count: budget}), documents, {max: budget, weights, userId: queryUtils.firstOwner(item.actor, true)});
+    const prompt = _loc(config.pick === 'one' ? 'CAT.Macros.Summon.PickOne' : 'CAT.Macros.Summon.Pick', {count: budget});
+    const userId = queryUtils.firstOwner(item.actor, true);
+    const selection = await dialogUtils.selectDocumentDialog(item.name, prompt, documents, {max: budget, weights, userId});
     if (!selection) return [];
     return toPicks(selection).map(pick => ({...entries[Number(pick.document.id.slice(5))], count: String(pick.amount)}));
 }
@@ -205,14 +209,15 @@ async function create(host, activity, {profileId, options = {}, workflowOptions}
     const summonActivity = getSummonActivity(activity, config);
     const picked = ['budget', 'one'].includes(config.pick) ? await pickBudget(item, entries, config.pick === 'one' ? {...config, budget: '1'} : config, rollData) : entries;
     for (const entry of picked) summons.push(...await createFromEntry(host, activity, entry, {rollData, castData, options, summonActivity, hostileOnParentEnd: config.hostileOnParentEnd, workflowOptions}));
-    if (!summons.length) return;
+    if (!summons.length) return false;
     const commandIds = getCommandIds(config);
     if (commandIds.length) await itemUtils.unhideActivities(item, commandIds, {ids: true, favorite: config.favorite});
     await Promise.all(oldSummons.map(summon => summonUtils.deleteSummon(summon)));
     const token = activity.getUsageToken?.()?.document ?? actorUtils.getFirstToken(item.actor);
-    if (!token) return;
+    if (!token) return true;
     await summonUtils.placeSummons(summons, getRange(activity, config), {token});
     await followUp(host, config, 'create');
+    return true;
 }
 function getRange(activity, config) {
     return config.range || activityUtils.getRange(activity) || 5;
@@ -234,7 +239,7 @@ function getCommandIdentifiers(item, config) {
 function getFollowUpTargets(activity, summon, nearby) {
     const owner = actorUtils.getFirstToken(summon.owner);
     switch (activity.target?.affects?.type) {
-        case 'ally': return [owner, ...nearby].filter(token => token && token.disposition === owner?.disposition && token !== summon.token).filter((token, index, list) => list.indexOf(token) === index);
+        case 'ally': return nearby.filter(token => token.disposition === owner?.disposition && token !== summon.token);
         case 'enemy': return nearby.filter(token => tokenUtils.isEnemy(token, summon.token));
         default: return nearby.filter(token => token.actor !== summon.owner);
     }
@@ -251,6 +256,12 @@ async function followUp(host, config, timing) {
         const scaling = Math.max(0, (actorUtils.getSavedCastData(summon.actor)?.castLevel ?? baseLevel) - baseLevel);
         let targets = [];
         if (config.followUpTargets === 'all') targets = getFollowUpTargets(activity, summon, nearby);
+        else if (config.followUpTargets === 'choose') {
+            const candidates = getFollowUpTargets(activity, summon, nearby);
+            const preselected = Object.fromEntries(candidates.map(token => [token.id, true]));
+            const selection = candidates.length ? await dialogUtils.selectTargetDialog(activity.name, 'CAT.Macros.Summon.FollowUpTargetsChoose', candidates, {skipDeadAndUnconscious: false, type: 'multiple', preselected, userId}) : undefined;
+            targets = selection?.result ?? [];
+        }
         else if (nearby.length) {
             const selection = await dialogUtils.selectTargetDialog(activity.name, 'CAT.Macros.Summon.FollowUpTarget', nearby, {skipDeadAndUnconscious: false, userId});
             if (selection?.result) targets = [selection.result];
@@ -297,7 +308,11 @@ async function rollFinished(workflow) {
     pendingUses.delete(activity.uuid);
     const host = getHost(activity);
     if (host) {
-        if (activity.type !== 'summon' || request) await create(host, activity, {...request, workflowOptions: workflow.workflowOptions});
+        if (activity.type === 'summon' && !request) return;
+        if (await create(host, activity, {...request, workflowOptions: workflow.workflowOptions})) return;
+        await workflowUtils.refundUse(workflow);
+        await workflowUtils.restoreActionEconomy(workflow);
+        await effectUtils.endConcentration(workflow.actor, workflow.item);
         return;
     }
     const commandHost = getCommandHost(activity);
@@ -587,7 +602,7 @@ const summon = {
             category: 'behavior',
             label: 'CAT.Macros.Summon.FollowUpTargets.Label',
             hint: 'CAT.Macros.Summon.FollowUpTargets.Hint',
-            get options() { return selectOptions(['one', 'all'], 'CAT.Macros.Summon.FollowUpTargetsOptions.'); }
+            get options() { return selectOptions(['one', 'all', 'choose'], 'CAT.Macros.Summon.FollowUpTargetsOptions.'); }
         },
         followUpRange: {
             default: 5,

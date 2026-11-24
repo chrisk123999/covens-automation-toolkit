@@ -596,6 +596,7 @@
                     "Hint": "Choices offered before picking, written as CR|count separated by semicolons. Counts accept formulas."
                 },
                 "CompendiumRandomTier": "Roll for the Tier",
+                "CompendiumOwnerPicks": "Owner Picks the Creatures",
                 "Weight": {
                     "Label": "Budget Weight",
                     "Hint": "How much of the budget one of these costs. Defaults to 1."
@@ -1833,8 +1834,10 @@
                 },
                 "FollowUpTargetsOptions": {
                     "one": "One Creature",
-                    "all": "All Creatures"
+                    "all": "All Creatures",
+                    "choose": "Chosen Creatures"
                 },
+                "FollowUpTargetsChoose": "Choose the creatures affected.",
                 "MissingActor": "The summon actor could not be found.",
                 "NoSummons": "No summon creatures are configured.",
                 "AcBonus": "AC Bonus",

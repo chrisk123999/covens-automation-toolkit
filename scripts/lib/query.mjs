@@ -158,10 +158,11 @@ async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, c
     const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, spellSlot, fast});
     return workflow?.getSafeMacroData();
 }
-async function aimDestination({uuid, range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints}) {
+async function aimDestination({uuid, range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints, sightTokenUuid}) {
     const token = await fromUuid(uuid);
     if (!token) return;
-    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints});
+    const sightToken = sightTokenUuid ? await fromUuid(sightTokenUuid) : undefined;
+    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints, sightToken});
     if (!destination) return;
     return {x: destination.x, y: destination.y, elevation: destination.elevation, level: destination.level, cancelled: destination.cancelled};
 }
