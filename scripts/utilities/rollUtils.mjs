@@ -421,10 +421,10 @@ function shouldFastForward(rollType, user = game.user) {
     return user.isGM ? settings.gmAutoFastForward.includes(rollType) : settings.autoFastForward.includes(rollType);
 }
 /**
- * Replace deterministic dice counts with their result, such as `(1+1)d6` to `2d6`. Changes `roll` in place. An
- * evaluated roll is returned unchanged.
+ * Replace deterministic dice counts with their result, such as `(1+1)d6` to `2d6`.
+ * An evaluated roll is returned unchanged.
  * @param {foundry.dice.Roll} roll  An unevaluated roll.
- * @returns {foundry.dice.Roll}     The same roll.
+ * @returns {foundry.dice.Roll}     The roll cloned with a simplified formula.
  * @example
  * rollUtils.simplify(new Roll('(1+1)d6')).formula; // '2d6'
  */
@@ -437,7 +437,8 @@ function simplify(roll) {
         term._formula = String(term._number);
     }
     roll.resetFormula();
-    return roll;
+    const formula = dnd5e.dice.simplifyRollFormula(roll.formula);
+    return new roll.constructor(formula, roll.data, roll.options);
 }
 
 const REPLACE_MODES = {
