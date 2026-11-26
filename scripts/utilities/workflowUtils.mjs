@@ -1141,6 +1141,31 @@ async function rollConfiguredSource(bonus, config, targets = []) {
     const activity = item.system.activities.get(config.rollActivity);
     if (activity) return await completeActivityUse(activity, targets, {consumeResources: config.consume});
 }
+/**
+ * Modify the damage item for a target by granting absorption, resistance, vulnerability, or immunity to the specified damage types.
+ * Use in `damagePercentReductions` macro passes. Applies to the current workflow only. Skipped when a multiplier is already present or would be ignored.
+ * @param {object} ditem Midi damage item.
+ * @param {{type: string, multiplier: 'absorption'|'resistance'|'vulnerability'|'immunity'}[]} damageTypes
+ * @example
+ * workflowUtils.damageMultiplierThisRoll(ditem, [{type: 'fire', multiplier: 'resistance'}]);
+ */
+function damageMultiplier(ditem, damageTypes = []) {
+    const {damageImmunityMultiplier: immunity, damageResistanceMultiplier: resistance, damageVulnerabilityMultiplier: vulnerability} = MidiQOL.configSettings();
+    const multipliers = {absorption: -1, immunity, resistance, vulnerability};
+    const map = damageTypes.reduce((obj, entry) => (obj[entry.type] = {multiplier: entry.multiplier, value: multipliers[entry.multiplier]}, obj), {});
+    let modified = false;
+    for (const d of ditem.calculatedDamages) {
+        const m = map[d.type];
+        if (m === undefined || d.value === 0 || d.potential.type?.[m.multiplier]) continue;
+        if (ditem.options.ignore[m.multiplier]?.has(d.type)) continue;
+        d.active.type ??= {};
+        d.active.multiplier *= m.value;
+        d.active.type[m.multiplier] = true;
+        d.value = Math.floor(d.damage * d.active.multiplier);
+        modified = true;
+    }
+    if (modified) recalculateHP(ditem);
+}
 export default {
     getActionType,
     isAttackType,
@@ -1189,5 +1214,6 @@ export default {
     changeHit,
     getScaledDuration,
     rollConfiguredSource,
-    setNotSustainedRoll
+    setNotSustainedRoll,
+    damageMultiplier
 };
