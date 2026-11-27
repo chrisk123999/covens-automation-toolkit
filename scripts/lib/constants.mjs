@@ -325,6 +325,7 @@ const itemHookNames = {
     deleteItem: 'deleteItem',
     updateItem: 'updateItem',
     munched: 'ddb-importer.characterProcessDataComplete',
+    compendiumMunched: 'ddb-importer.munchComplete',
     preUpdateItem: 'preUpdateItem',
     preCreateItem: 'preCreateItem'
 };

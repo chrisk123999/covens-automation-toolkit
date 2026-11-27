@@ -339,8 +339,8 @@ function isMassApplySource(source, entry = game.settings.get('cat', 'automationS
     return entry?.massApply ?? !isContentSource(source);
 }
 /**
- * Whether mass apply must skip this item for a source. True when the item is flagged to be ignored, or when a class or
- * subclass would be replaced from a content source, since that resets its advancement.
+ * Whether mass apply must skip this item for a source. True when the item is flagged to be ignored in CAT or DDBI, or
+ * when replacing it from a content source would reset its advancements.
  * @param {Item5e} item    Item to check.
  * @param {string} source  Source id.
  * @returns {boolean}
@@ -348,7 +348,9 @@ function isMassApplySource(source, entry = game.settings.get('cat', 'automationS
  * if (automationUtils.isMassApplyBlocked(item, automation.source)) return;
  */
 function isMassApplyBlocked(item, source) {
-    return item.flags.cat?.ignoreItem || (['class', 'subclass'].includes(item.type) && isContentSource(source));
+    if (item.flags.cat?.ignoreItem) return true;
+    if (item.flags.ddbimporter?.ignoreItemForChrisPremades) return true;
+    return ['class', 'subclass'].includes(item.type) && isContentSource(source);
 }
 /**
  * Automations mass apply may put on an item: {@link getAvailableAutomations} minus sources excluded from mass apply and

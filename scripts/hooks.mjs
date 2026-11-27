@@ -1,6 +1,6 @@
 import * as events from './events/_module.mjs';
 import {activities, chat, combat, contextmenu, customMacros, effects, quickConditions, summon, targetRollModes, troubleshooter, welcome} from './handlers/_module.mjs';
-import {animationModules, dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
+import {animationModules, dae, ddbi, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
 import {constants} from './lib/_module.mjs';
 import {dialogUtils, queryUtils} from './utilities/_module.mjs';
 export function readyHooks() {
@@ -57,6 +57,7 @@ export function readyHooks() {
     Hooks.on(constants.restHookNames.restCompleted, events.restEvents.restCompleted);
     // Item Events
     Hooks.on(constants.itemHookNames.munched, events.itemEvents.actorMunched);
+    Hooks.on(constants.itemHookNames.compendiumMunched, ddbi.munched);
     // Effect Events
     Hooks.on(constants.effectHookNames.preCreateActiveEffect, events.effectEvents.preCreateActiveEffect);
     Hooks.on(constants.effectHookNames.preDeleteActiveEffect, events.effectEvents.preDeleteActiveEffect);

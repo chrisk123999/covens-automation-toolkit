@@ -9,6 +9,7 @@ async function updateActor(actor, updates, options, userId) {
     await effects.specialDurationHitPoints(actor, updates);
     await effects.specialDurationZeroSpeed(actor);
     if (updates.system?.attributes?.inspiration === false) await automationUtils.calledEvent('heroicInspirationSpent', actor, {multiResult: true, canOverlap: true});
+    if (updates.system?.tools) await automationUtils.calledEvent('toolsUpdated', actor, {canOverlap: true});
 }
 function preDeleteActor(actor, options, userId) {
     return actors.preDeleteActor(actor, options);

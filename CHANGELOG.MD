@@ -1,6 +1,6 @@
 # 0.1.11 Release:
 ## Update Notes:
-- New DDB Importer Integration setting, on by default. CAT mass applies automations to characters imported with DDB Importer. Compendium munching support is coming soon.
+- New DDB Importer Integration setting. CAT mass applies automations to DDBI character imports and munches.
 - New Who Answers Dialogs setting routes player dialogs to the Player, the Gamemaster or Both.
 - New Dialog Position client setting picks one of nine screen positions.
 - New NPC Chat Cards Follow Disposition setting, on by default. Automation chat cards from hostile or secret NPCs post to the Gamemaster only.
@@ -25,6 +25,9 @@
 - Compendium summons have an Owner Picks option that sends the creature picker to the summoner's owner.
 - `compendiumUtils.getSpell` accepts `rules` to prefer a spell written for that rules version.
 - Settings menus built on CAT's settings menu ask to reload when a changed setting has `requiresReload`.
+- A disable condition entry prefixed with `!` disables the effect while its actor lacks that status.
+- Disable conditions are checked when an item with them is added to an actor.
+- New `toolsUpdated` called event runs when an actor's tool proficiencies change.
 ## Bug Fixes:
 - Summon placement and removal run their animation callbacks.
 - Monster-specific automations no longer match items without an NPC owner.
@@ -33,6 +36,8 @@
 - Cancelling a summon's creature picker refunds the use, its bonus action or reaction, and ends its concentration.
 - Ally follow-up targets no longer always include the summoner.
 - Dialogs with a selection budget can't be confirmed while over it.
+- Crosshair range boundaries no longer stay on the canvas after placing.
+- Effects disabled by equipped armor or shields update when that equipment is added already equipped or deleted.
 # 0.1.10 Release:
 ## Update Notes:
 - New Base Weapon restriction for alternate attributes matches the attacking weapon's base item.

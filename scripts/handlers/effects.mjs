@@ -195,6 +195,7 @@ async function refreshDisableConditions(actor, {token} = {}) {
         const conditions = effect.flags.cat?.disableCondition;
         if (!conditions?.length) continue;
         const shouldDisable = conditions.some(condition => 
+            (condition.startsWith('!') && !actor.statuses.has(condition.slice(1))) ||
             actor.statuses.has(condition) || 
             equippedTypes.has(condition) ||
             (condition === 'combatTurn' && !isCombatTurn(actor, token))
