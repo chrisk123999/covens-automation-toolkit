@@ -28,7 +28,15 @@ function placed(region) {
     }
     const activities = config.activities;
     if (activities) {
-        const activitiesData = activities.map(data => ({uuid: activity.item.system.activities.get(data.id)?.uuid, triggers: data.triggers, disposition: data.disposition, oncePerTurn: data.oncePerTurn, perDistance: data.perDistance, dependentEffects: data.dependentEffects})).filter(i => i.uuid);
+        const activitiesData = activities.map(data => ({
+            uuid: activity.item.system.activities.get(data.id)?.uuid,
+            dependentEffects: data.dependentEffects,
+            excludeCaster: data.excludeCaster,
+            disposition: data.disposition,
+            oncePerTurn: data.oncePerTurn,
+            perDistance: data.perDistance,
+            triggers: data.triggers
+        })).filter(i => i.uuid);
         if (activitiesData.length) sourceUpdates.flags.cat.activities = activitiesData;
     }
     region.updateSource(sourceUpdates);
@@ -44,7 +52,7 @@ async function updateRegionEffects(token, currentRegions = []) {
             if (!effectIds?.length) return [];
             const activity = regionUtils.getActivity(region);
             if (!activity) return [];
-            if (!regionTargetTest(region, activity, region.flags.cat?.effectDisposition)(token)) return [];
+            if (!regionTargetTest(region, activity, {disposition: region.flags.cat?.effectDisposition})(token)) return [];
             const item = activity.item;
             const resolvedEffects = effectIds.map(id => {
                 const sourceEffect = item.effects.get(id);
@@ -186,26 +194,28 @@ function getWinningRegionData(group) {
     const maxDCGroup = group.filter(i => i.castData.saveDC === maxDC);
     return maxDCGroup.find(i => i.castData.castLevel === maxLevel) || group.find(i => i.castData.castLevel === maxLevel);
 }
-function isValidDispositionTarget(sourceActivity, token, targetDisposition) {
-    if (!targetDisposition || targetDisposition === 'all') return true;
+function isValidDispositionTarget(sourceActivity, token, config) {
+    const {disposition, excludeCaster} = config;
+    if (!disposition || disposition === 'all') return true;
     if (!sourceActivity?.actor) return false;
     const actor = sourceActivity.actor;
     const creatorToken = actorUtils.getFirstToken(actor);
+    const isSelf = excludeCaster && actor.uuid === token.actor?.uuid;
     const creatorDisposition = creatorToken?.disposition ?? actor.prototypeToken?.disposition;
     const isEnemy = tokenUtils.isEnemy(creatorToken, token, {dispositionA: creatorDisposition});
-    if (targetDisposition === 'ally' && isEnemy) return false;
-    if (targetDisposition === 'enemy' && !isEnemy) return false;
+    if (disposition === 'ally' && (isEnemy || isSelf)) return false;
+    if (disposition === 'enemy' && !isEnemy) return false;
     return true;
 }
 const filterCaches = new WeakMap();
-function regionTargetTest(region, sourceActivity, disposition) {
+function regionTargetTest(region, sourceActivity, config) {
     const source = sourceActivity?.actor;
     const sourceToken = source ? actorUtils.getFirstToken(source) : undefined;
     const castLevel = regionUtils.getCastData(region)?.castLevel;
     const item = sourceActivity?.item;
     const magical = itemUtils.isMagical(item);
     const sourceSuppressed = magical && !!source?.statuses.has('antimagic');
-    const allowed = token => isValidDispositionTarget(sourceActivity, token, disposition) && !regionUtils.isSpellWarded(token, item, castLevel, sourceToken) && !sourceSuppressed && !(magical && token.actor?.statuses.has('antimagic'));
+    const allowed = token => isValidDispositionTarget(sourceActivity, token, config) && !regionUtils.isSpellWarded(token, item, castLevel, sourceToken) && !sourceSuppressed && !(magical && token.actor?.statuses.has('antimagic'));
     const filter = aura.getFilter(region.flags.cat?.filter);
     if (!filter) return allowed;
     if (!filterCaches.has(region)) filterCaches.set(region, {});
@@ -231,7 +241,7 @@ async function processRegionActivities(token, currentRegions, triggerType, {comb
         let movedDistance;
         for (const actConfig of matchedActivities) {
             const sourceActivity = await fromUuid(actConfig.uuid);
-            if (!regionTargetTest(region, sourceActivity, actConfig.disposition)(token)) continue;
+            if (!regionTargetTest(region, sourceActivity, actConfig)(token)) continue;
             let times = 1;
             if (triggerType === constants.movementPasses.moved) {
                 movedDistance ??= getMovedDistance(token, region, waypoints);
@@ -269,7 +279,7 @@ async function processMovedRegionActivities(region, tokens, triggerType) {
     let requiresStampUpdate = false;
     const entries = await Promise.all(matchedActivities.map(async config => {
         const activity = await fromUuid(config.uuid);
-        return {config, activity, test: regionTargetTest(region, activity, config.disposition), tokens: []};
+        return {config, activity, test: regionTargetTest(region, activity, config), tokens: []};
     }));
     for (const token of tokens) {
         const combatData = tokenUtils.getCombatData(token);
@@ -300,7 +310,7 @@ async function processMovedRegionActivities(region, tokens, triggerType) {
             requiresStampUpdate = true;
         }
     }
-    if (requiresStampUpdate) await region.update({'flags.cat.processedTokens': processedTokens});
+    if (requiresStampUpdate) await documentUtils.update(region, {'flags.cat.processedTokens': processedTokens});
     for (const {config, activity, tokens: batch} of entries) {
         if (batch.length) await runRegionActivity(activity, batch, movingCastData.castLevel, {dependentEffects: config.dependentEffects});
     }

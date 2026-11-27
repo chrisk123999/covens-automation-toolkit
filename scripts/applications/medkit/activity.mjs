@@ -14,6 +14,7 @@ export default class ActivityMedkit extends MedkitApp {
             toggleRegionTrigger: ActivityMedkit.#toggleRegionTrigger,
             setRegionDisposition: ActivityMedkit.#setRegionDisposition,
             toggleRegionOncePerTurn: ActivityMedkit.#toggleRegionOncePerTurn,
+            toggleRegionExcludeCaster: ActivityMedkit.#toggleRegionExcludeCaster,
             toggleRegionDependentEffects: ActivityMedkit.#toggleRegionDependentEffects,
             addRegionBehavior: ActivityMedkit.#addRegionBehavior,
             deleteRegionBehavior: ActivityMedkit.#deleteRegionBehavior
@@ -107,6 +108,7 @@ export default class ActivityMedkit extends MedkitApp {
                 id: entry.id,
                 label: activities?.get(entry.id)?.name ?? entry.id,
                 oncePerTurn: !!entry.oncePerTurn,
+                excludeCaster: !!entry.excludeCaster,
                 dependentEffects: !!entry.dependentEffects,
                 perDistance: entry.perDistance ?? '',
                 triggers: REGION_TRIGGERS.map(key => ({key, label: _loc(`CAT.MEDKIT.Activity.Triggers.${key}`), active: activeTriggers.has(key)})),
@@ -237,5 +239,10 @@ export default class ActivityMedkit extends MedkitApp {
     /** @this {ActivityMedkit} */
     static #toggleRegionDependentEffects(_event, target) {
         this.#mutateRegionActivity(target.dataset.activityId, entry => entry.dependentEffects = !entry.dependentEffects);
+    }
+
+    /** @this {ActivityMedkit} */
+    static #toggleRegionExcludeCaster(_event, target) {
+        this.#mutateRegionActivity(target.dataset.activityId, entry => entry.excludeCaster = !entry.excludeCaster);
     }
 }

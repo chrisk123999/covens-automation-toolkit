@@ -4,6 +4,7 @@ async function create(wrapped, data = [], operation = {}) {
     const filtered = [];
     for (let i = 0; i < data.length; i++) {
         const effectData = data[i];
+        if (effectData.start && effectData.start.time === undefined) effectData.start.time = game.time.worldTime; // possible midi bug for active effect parents to placed regions
         if (await effectEvents.doCreateActiveEffect(effectData, operation)) {
             Logging.addEntry('DEBUG', `Effect creation prevented by doCreate event | Parent UUID: ${operation.parent?.uuid ?? operation.parentUuid} | Effect: ${i + 1} of ${data.length}`);
             continue;

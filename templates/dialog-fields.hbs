@@ -109,8 +109,8 @@
                                 <div class="form-fields">
                                     <input type="hidden" name="{{name}}" value="{{isChecked}}" data-for="{{id}}">
                                     <button type="button" class="btn request {{state.key}}" id="{{id}}"
-                                        data-action="request" {{#if stateReason}} data-tooltip="{{stateReason}}"
-                                        {{/if}}>
+                                        data-action="request" {{#if stateReason}} data-tooltip="{{stateReason}}"{{/if}}
+                                        {{#if locked}} disabled{{/if}}>
                                         {{#if state.icon}}<i class="{{state.icon}}"></i>{{/if}}
                                         <span>{{state.label}}</span>
                                     </button>

@@ -739,6 +739,7 @@
                     "Triggers": "Triggers",
                     "Disposition": "Targets",
                     "OncePerTurn": "Once per turn",
+                    "ExcludeCaster": "Exclude Caster",
                     "DependentEffects": {
                         "Label": "Remove on exit",
                         "Hint": "Effects this activity applies are removed when the creature leaves the region or the region is deleted. The activity does not fire again while the creature still has one."

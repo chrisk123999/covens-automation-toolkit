@@ -79,6 +79,9 @@
                     <button type="button" class="ability{{#if row.oncePerTurn}} active{{/if}}"
                         data-action="toggleRegionOncePerTurn"
                         data-activity-id="{{row.id}}">{{localize "CAT.MEDKIT.Activity.Activities.OncePerTurn"}}</button>
+                    <button type="button" class="ability{{#if row.excludeCaster}} active{{/if}}"
+                        data-action="toggleRegionExcludeCaster"
+                        data-activity-id="{{row.id}}">{{localize "CAT.MEDKIT.Activity.Activities.ExcludeCaster"}}</button>
                     <button type="button" class="ability{{#if row.dependentEffects}} active{{/if}}"
                         data-action="toggleRegionDependentEffects" data-activity-id="{{row.id}}"
                         data-tooltip="CAT.MEDKIT.Activity.Activities.DependentEffects.Hint">{{localize "CAT.MEDKIT.Activity.Activities.DependentEffects.Label"}}</button>
