@@ -1,6 +1,7 @@
 import {documentUtils, effectUtils, itemUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import Logging from './logging.mjs';
+import constants from './constants.mjs';
 async function dialog({title, content, inputs, buttons, config}) {
     return await DialogApp.dialog(title, content, inputs, buttons, config);
 }
@@ -166,6 +167,35 @@ async function aimDestination({uuid, range, centerpoint, crosshairsConfig, requi
     if (!destination) return;
     return {x: destination.x, y: destination.y, elevation: destination.elevation, level: destination.level, cancelled: destination.cancelled};
 }
+async function remoteMacro({identifier, rules, source, macroData}, {timeout, user}) {
+    if (!game.user.hasPermission('MACRO_SCRIPT'))
+        return Logging.addMacroWarning(source, identifier, `User ${game.user.name} (${game.user.id}) does not have permission to execute macros.`);
+    const key = `${source}|${identifier}|${rules}`;
+    Logging.addMacroWarning(source, identifier, `User ${user.name} (${user.id}) called a remote macro on ${game.user.name}'s (${game.user.id}) client. (${key})`);
+    const entry = constants.macros.getFnMacros(source, rules, identifier, 'remote');
+    if (!entry) return Logging.addMacroWarning(source, identifier, `Remote macro not found. (key) ${key}`);
+    const errorData = {macroClass: {source, identifier, rules}, sender: user.id, receiver: game.user.id, scope: macroData};
+    if (entry.macros.length === 1) {
+        let result;
+        const macro = entry.macros[0].macro;
+        Logging.addEntry('DEBUG', `Executing Remote Macro: ${macro.name} from ${key}`);
+        try { result = await macro(macroData); }
+        catch (e) { Logging.logMacroException(errorData, e); }
+        return result;
+    } else {
+        const results = [];
+        entry.macros = entry.macros.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+        for (let i = 0; i < entry.macros.length; i++) {
+            let result;
+            const macro = entry.macros[i].macro;
+            Logging.addEntry('DEBUG', `Executing Remote Macro ${i + 1} of ${entry.macros.length}: ${macro.name} from ${key}`);
+            try { result = await macro(macroData); }
+            catch (e) { Logging.logMacroException(errorData, e); }
+            results.push(result);
+        }
+        return results;
+    }
+}
 function registerQueries() {
     const handlers = {
         aimDestination,
@@ -192,7 +222,8 @@ function registerQueries() {
         removeFavorites,
         syntheticItemDataRoll,
         syntheticActivityDataRoll,
-        macroWarning
+        macroWarning,
+        remoteMacro
     };
     for (const [name, fn] of Object.entries(handlers)) {
         globalThis.CONFIG.queries['cat.' + name] = fn;

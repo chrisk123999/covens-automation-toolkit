@@ -656,6 +656,7 @@ function triggerTypes() {
         if (!type) continue;
         cachedTypes.add(type);
     }
+    cachedTypes.add('remote');
     return cachedTypes;
 }
 export default {

@@ -4,8 +4,8 @@
  * @module
  */
 import {itemEvents} from '../events/_module.mjs';
-import {constants, Events} from '../lib/_module.mjs';
-import {animationUtils, compendiumUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
+import {constants, Events, Logging} from '../lib/_module.mjs';
+import {animationUtils, compendiumUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from './_module.mjs';
 /**
  * The registered automation applied to an item, matched on its identifier, rules and flagged source. With no source
  * flagged, only an automation whose own document is this item matches. Returns undefined when the item has no
@@ -894,6 +894,37 @@ function calledEventSync(pass, actor, {multiResult, canOverlap, data} = {}) {
     return new Events.CalledEvent(actor, pass, data).runSync({canOverlap, multiResult});
 }
 /**
+ * Run a macro on another client. The macro must be registered as a remote macro.
+ * @throws Times out after the number of seconds configured in MidiQOL's reaction timer setting.
+ * @param {string} source             Module id.
+ * @param {string} identifier         Macro identifier.
+ * @param {'2014'|'2024'|'all'} rules
+ * @param {object} macroData          Data provided to the macro scope. Must be serializable.
+ * @param {string} userId
+ * @returns {Promise}                 Return data from the macro, or an array of return data
+ *                                    if the registered macro has many entries.
+ * @example
+ * // register
+ * cat.api.registerFnMacro({
+    identifier: 'buildComplicatedDialog',
+    source: 'chris-premades',
+    rules: 'all',
+    macros: {
+        remote: [{macro: () => console.log('Hello')}]
+    }
+})
+ * // call
+ * const userId = queryUtils.firstOwner(targetActor, true);
+ * const prompt = await automationUtils.remoteMacro('chris-premades', 'buildComplicatedDialog', 'all', userId);
+ */
+async function remoteMacro(source, identifier, rules, macroData, userId) {
+    const user = game.users.get(userId);
+    if (!user) return Logging.addMacroWarning(source, identifier, `Remote macro sent to an unknown user: ${userId}`);
+    if (!game.user.hasPermission('MACRO_SCRIPT'))
+        return Logging.addMacroWarning(source, identifier, `User ${user.name} (${userId}) does not have permission to execute macros.`);
+    return await queryUtils.query('remoteMacro', user, {source, identifier, rules, macroData}, 1000 * MidiQOL.configSettings().reactionTimeout);
+}
+/**
  * The animation selected in a config key, with its resolved config values. Pass `source` and `identifier` when the
  * selection lives in a generic macro's config. Returns no animation when none is selected, CAT Animations defers to
  * AA/BLFX for the item, Sequencer is unavailable, or a requirement is not met. A missing requirement also shows a
@@ -985,6 +1016,7 @@ export default {
     getSourceName,
     calledEvent,
     calledEventSync,
+    remoteMacro,
     getAnimationConfig,
     getResolvedAnimation,
     getCompendiumDocumentByName,
