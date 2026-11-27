@@ -8,8 +8,9 @@ import {activityUtils, actorUtils, automationUtils, dataUtils, effectUtils, gene
 /** @import {CatEffectData} from './dataUtils.mjs' */
 /** @import {EffectDurationData} from '@client/documents/_types.mjs' */
 /**
- * The rules edition this document belongs to. Items read it from `system.source.rules`. Every other document reads it
- * from the CAT automation flag.
+ * The rules edition this document belongs to. Items read it from `system.source.rules`, except DDB Importer items on
+ * an NPC that is not polymorphed, which follow the NPC's stat block. Every other document reads it from the CAT
+ * automation flag.
  * @param {foundry.abstract.Document} document  Document to read from.
  * @param {object} [options]                    Additional options.
  * @param {string} [options.documentType]       Read the rules as if the document were this type. Defaults to the
@@ -19,7 +20,10 @@ import {activityUtils, actorUtils, automationUtils, dataUtils, effectUtils, gene
  * if (documentUtils.getRules(item) === '2014') return;
  */
 function getRules(document, {documentType = document.documentName} = {}) {
-    return documentType === 'Item' ? document.system.source.rules : document.flags.cat?.automation?.rules;
+    if (documentType !== 'Item') return document.flags.cat?.automation?.rules;
+    const actor = document.actor;
+    const monsterRules = actor?.type === 'npc' && !actor.isPolymorphed && document.flags?.ddbimporter ? actor.system.source?.rules : undefined;
+    return monsterRules || document.system.source.rules;
 }
 /**
  * The id of the module that registered this document's automation, read from the CAT automation flag.

@@ -68,7 +68,8 @@ function setIdentifier(documentData, identifier, {documentType} = {}) {
  *                                                     `1Attack`, are written to DAE's flag.
  * @property {string[]} disableCondition               Disables effect while the actor has one of these statuses or
  *                                                     equipment types equipped. `combatTurn` disables it outside the
- *                                                     actor's turn.
+ *                                                     actor's turn. A `!` prefix negates a status, such as
+ *                                                     `!bloodied`. Hit point changes re-check them.
  * @property {string[]} unhideActivities               Identifiers of activities on the origin activity's item, shown
  *                                                     while the effect exists.
  * @property {boolean} favoriteActivities              Also favorite the activities named by `unhideActivities`.
