@@ -92,7 +92,7 @@ Hooks.once('ddb-importer.compendiumCreationComplete', async () => {
     const module = game.modules.get('ddb-importer');
     if (enabledSources.includes('ddb-importer')) {
         await integration.ddbi.registerAutomations(module);
-        await integration.ddbi.registerScales(module);
+        await integration.ddbi.registerScales();
     }
     ddbGate();
 });

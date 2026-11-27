@@ -138,7 +138,6 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         const actualHalf = token.width / 2;
         widthAdjust += canvas.grid.distance * Math.floor(actualHalf);
         if (!fudgeDistance && (widthAdjust !== actualHalf * canvas.grid.distance)) fudgeDistance = canvas.grid.distance / 2;
-        fudgeDistance += widthAdjust;
     }
     centerpoint = centerpoint ?? token.getCenterPoint();
     const origin = {x: centerpoint.x, y: centerpoint.y, elevation: token.elevation};
@@ -170,7 +169,7 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         if (maxRange) crosshairs.label = distance + '/' + rangeLabel;
     };
     const checkDistance = async (crosshairs) => {
-        if (maxRange && drawBoundries) {
+        if (maxRange && drawBoundries && !drawing) {
             const reach = Math.max(reachInSceneUnits(origin, maxRange, ringElevation ?? origin.elevation), 0);
             drawing = drawRange(centerpoint, reach + fudgeDistance + widthAdjust + cellEdge);
         }

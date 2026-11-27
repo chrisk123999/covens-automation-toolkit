@@ -270,8 +270,11 @@ export default class MedkitApp extends CatApp {
      * Run mass apply as if its button were clicked.
      * @param {object} [options]
      * @param {boolean} [options.prompt] Show the confirmation dialog. Without it, every available or outdated automation is applied from its preferred source.
+     * @param {Item5e[]} [options.items] Items to apply to instead of this medkit's own.
      */
-    async massApply({prompt = true} = {}) { return await this.#runMassApply({prompt}); }
+    async massApply({prompt = true, items} = {}) {
+        return await this.#runMassApply({prompt, items});
+    }
 
     async _preparePartContext(partId, context) {
         const partContext = await super._preparePartContext(partId, context);
@@ -1297,9 +1300,9 @@ export default class MedkitApp extends CatApp {
         return await this.#runMassApply();
     }
 
-    async #runMassApply({prompt = true} = {}) {
+    async #runMassApply({prompt = true, items} = {}) {
         if (!await this._canMassApply()) return;
-        const rawItems = Array.from(await this._getMassApplyItems() ?? []);
+        const rawItems = Array.from(items ?? await this._getMassApplyItems() ?? []);
         if (!rawItems.length) return;
         const dependencyMap = new Map();
         rawItems.forEach(item => dependencyMap.set(item.uuid, itemUtils.getDependencies(item)));

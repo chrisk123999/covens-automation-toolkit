@@ -11,12 +11,14 @@ async function createItem(item, options, userId) {
     if (!item.actor) return;
     if (item.system.linkedActivity?.item.flags.cat?.automation?.source && !item.flags.cat?.automation?.source) await automationUtils.updateItem(item, {massApply: true});
     await automationUtils.updateScales(item);
+    if (item.effects.some(effect => effect.flags.cat?.disableCondition?.length) || (item.type === 'equipment' && item.system.equipped)) await effects.refreshDisableConditions(item.actor);
     await new Events.ItemEvent(item, constants.itemPasses.created, {options}).run();
 }
 async function deleteItem(item, options, userId) {
     if (!queryUtils.isTheGM()) return;
     if (item.compendium) await items.updateHash(item, {remove: true});
     if (!item.actor) return;
+    if (item.type === 'equipment' && item.system.equipped) await effects.refreshDisableConditions(item.actor);
     await new Events.ItemEvent(item, constants.itemPasses.deleted, {options}).run();
 }
 async function updateItem(item, updates, options, userId) {

@@ -827,5 +827,6 @@ export default {
     getGrappled,
     grappleShoveSizeCheck,
     movementSpent,
-    measureMovement
+    measureMovement,
+    isOccupied
 };
