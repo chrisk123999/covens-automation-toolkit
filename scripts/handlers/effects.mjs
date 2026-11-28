@@ -97,6 +97,8 @@ async function playAnimation(effect, phase) {
     const animation = animationUtils.getAnimation(animationData, {item});
     if (!animation) return;
     const config = constants.animations.getEffectAnimationConfigs(effect, phase);
+    animationUtils.clearUnavailableSounds(config);
+    if (phase === 'create' && animation.macros.create && !animation.macros.play && !animation.ownSound) animationUtils.playSound(config.sound, {volume: config.soundVolume});
     await animation.macros[phase]?.(effect, token, config, animationSource(effect));
 }
 const damagedBy = (relation) => ({workflow, target, ditem}) => ditem?.totalDamage > 0 && (!relation || (workflow.token.document.disposition === target.disposition) === (relation === 'ally'));

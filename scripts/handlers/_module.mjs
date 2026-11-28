@@ -14,6 +14,7 @@ export {default as manualRolls} from './manualRolls.mjs';
 export {default as movement} from './movement.mjs';
 export {default as quickConditions} from './quickConditions.mjs';
 export {default as regions} from './region.mjs';
+export {default as sounds} from './sounds.mjs';
 export {default as summon} from './summon.mjs';
 export {default as targetRollModes} from './targetRollModes.mjs';
 export {default as tokens} from './tokens.mjs';

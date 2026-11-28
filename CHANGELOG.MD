@@ -29,6 +29,10 @@
 - A disable condition entry prefixed with `!` disables the effect while its actor lacks that status.
 - Disable conditions are checked when an item with them is added to an actor.
 - New `toolsUpdated` called event runs when an actor's tool proficiencies change.
+- New Enable Sound FX client setting, off by default, plays the sounds set on CAT animations and generics for that user.
+- Every registered animation without its own sound option has Sound, Impact Sound and Sound Volume options.
+- Sounds are skipped while CAT Animations is off or defers to AA/BLFX, and when their Sequencer database path is not registered.
+- New `animationUtils.playSound`, `soundAvailable` and `clearUnavailableSounds` play or check a sound file or Sequencer database path.
 ## Bug Fixes:
 - Summon placement and removal run their animation callbacks.
 - Monster-specific automations no longer match items without an NPC owner.

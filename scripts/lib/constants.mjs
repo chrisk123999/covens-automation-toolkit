@@ -659,7 +659,9 @@ function triggerTypes() {
     cachedTypes.add('remote');
     return cachedTypes;
 }
+const soundName = 'catSound';
 export default {
+    soundName,
     /** @type {RegisteredMacros} */
     macros: undefined,
     /** @type {RegisteredAutomations} */

@@ -85,7 +85,7 @@ function simpleAttack(sourceToken, targetToken, animation, {sound, missed = fals
             .stretchTo(targetToken)
             .file(animation)
             .missed(missed)
-        .sound()
+        .sound().name(constants.soundName)
             .playIf(sound)
             .file(sound)
         .play();
@@ -252,6 +252,52 @@ function getModuleAnimationNotices(item) {
     if (hasBossLootAnimation(item)) notices.push(priority === 'cat' ? game.i18n.localize('CAT.Troubleshooter.Report.BLFXOverride') : game.i18n.format('CAT.Troubleshooter.Report.ModuleAnimation', {module: 'BLFX'}));
     return notices;
 }
+/**
+ * Check whether a sound can play on this client. Returns false for an empty value, when {@link sequencerCheck} fails,
+ * and for a Sequencer database path that no active module registers, such as a PSFX path without PSFX or a PSFX
+ * Patreon path with only free PSFX.
+ * @param {string} file  Audio file path or Sequencer database path.
+ * @returns {boolean}    True when the sound can play.
+ * @example
+ * animationUtils.soundAvailable('psfx.impacts.slashing.v1'); // true while PSFX is active
+ * animationUtils.soundAvailable('sounds/dice.wav'); // true
+ */
+function soundAvailable(file) {
+    if (!file || !sequencerCheck()) return false;
+    return file.includes('/') || Sequencer.Database.entryExists(file);
+}
+/**
+ * Play an audio file or Sequencer database path for every connected client. Players with Enable Sound FX turned off
+ * hear nothing.
+ * @param {string} file             Audio file path or Sequencer database path.
+ * @param {object} [options]        Additional options.
+ * @param {number} [options.volume] Volume from 0 to 1. Defaults to 0.8.
+ * @param {number} [options.delay]  Milliseconds before the sound starts. Defaults to 0.
+ * @returns {Promise|undefined}     The `Sequence#play` promise, or undefined when nothing plays.
+ * @example
+ * // A swing, then the hit 400ms later
+ * animationUtils.playSound('psfx.weapon-attacks.sword.v1');
+ * animationUtils.playSound('psfx.impacts.slashing.v1', {delay: 400});
+ */
+function playSound(file, {volume = 0.8, delay = 0} = {}) {
+    if (!soundAvailable(file)) return;
+    return new Sequence().sound().name(constants.soundName).file(file).volume(volume).delay(delay).play();
+}
+/**
+ * Empty the `sound` and `impactSound` values of a resolved animation config that fail {@link soundAvailable}. An
+ * animation that plays these sounds itself then skips them instead of making Sequencer log a missing file.
+ * @param {object} config  Resolved animation config values.
+ * @returns {object}       The same config object.
+ * @example
+ * animationUtils.clearUnavailableSounds({sound: 'psfx.not.installed', impactSound: 'psfx.impacts.slashing.v1', color: 'red'});
+ * // {sound: '', impactSound: 'psfx.impacts.slashing.v1', color: 'red'}
+ */
+function clearUnavailableSounds(config) {
+    ['sound', 'impactSound'].forEach(key => {
+        if (config[key] && !soundAvailable(config[key])) config[key] = '';
+    });
+    return config;
+}
 export default {
     getAnimation,
     preloadAnimations,
@@ -266,5 +312,8 @@ export default {
     hasAutomatedAnimation,
     hasBossLootAnimation,
     getModuleAnimationNotices,
-    deferredToAABLFX
+    deferredToAABLFX,
+    soundAvailable,
+    playSound,
+    clearUnavailableSounds
 };

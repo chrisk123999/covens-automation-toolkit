@@ -1180,6 +1180,10 @@
                 "Name": "Dice So Nice",
                 "Hint": "When enabled, Dice So Nice damage roll animations will be delayed until after all damage roll macros are complete."
             },
+            "SoundEffects": {
+                "Name": "Enable Sound FX",
+                "Hint": "Play the sounds set on CAT animations and generics on this client. Animation settings that stop or defer an animation also stop its sound."
+            },
             "AnimationPriority": {
                 "Name": "CAT Animations",
                 "Hint": "Animations that CPR and other CAT modules put on their items. Override plays the CAT animation and stops Automated Animations and BLFX auto-recognition on that item. Add plays the CAT animation alongside them. Defer skips the CAT animation when either of them animates the item. Off never stops Automated Animations or BLFX. Midi-QOL macros always run.",
@@ -1187,6 +1191,11 @@
                 "Both": "On & Add",
                 "Module": "On & Defer",
                 "Off": "Off"
+            },
+            "Animations": {
+                "Name": "Animations",
+                "Label": "Configure Animations",
+                "Hint": "Settings for CAT animations and sound effects."
             },
             "General": {
                 "Name": "General",
@@ -2050,6 +2059,10 @@
                     "Title": "General",
                     "Content": "General holds module-wide options."
                 },
+                "animations": {
+                    "Title": "Animations",
+                    "Content": "Animations turns CAT animations and their sounds on or off."
+                },
                 "automation": {
                     "Title": "Automation Sources",
                     "Content": "Automation Sources has its own tour."
@@ -2064,7 +2077,7 @@
                 },
                 "integration": {
                     "Title": "Integration",
-                    "Content": "Integration covers Dice So Nice and animation modules."
+                    "Content": "Integration covers DDB Importer and Dice So Nice."
                 },
                 "interface": {
                     "Title": "Interface",
@@ -2096,6 +2109,18 @@
             "NoPush": "Don't push",
             "PushPrompt": "How far to push {target}?",
             "CleavePrompt": "Make a Cleave attack against a second creature?"
+        },
+        "Sound": {
+            "Label": "Sound",
+            "Hint": "Sound played when the animation starts."
+        },
+        "ImpactSound": {
+            "Label": "Impact Sound",
+            "Hint": "Sound played when the animation hits."
+        },
+        "SoundVolume": {
+            "Label": "Sound Volume",
+            "Hint": "Volume of the sound."
         }
     }
 }
