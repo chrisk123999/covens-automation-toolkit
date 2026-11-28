@@ -357,8 +357,9 @@ function drawAllowedPoints(points) {
  * @param {object} [options.crosshairsConfig]                     Passed to {@link crosshairUtils.aimCrosshair}.
  * @param {boolean} [options.requireSight]                        Only allow spaces the token can see. Defaults to true.
  * @param {boolean} [options.ignoreWalls]                         Allow spaces that walls block from the token. Defaults
- *                                                                to false. Sight replaces the wall check whenever a
- *                                                                vision source is used.
+ *                                                                to false. With `requireSight`, sight replaces the wall
+ *                                                                check: the token's vision when it has some and the
+ *                                                                scene uses token vision, otherwise sight-blocking walls.
  * @param {Point[]} [options.allowedPoints]                       Only allow these token centers, highlighted while
  *                                                                aiming.
  * @param {foundry.documents.TokenDocument} [options.sightToken]  Token whose sight decides which spaces are visible.
@@ -387,7 +388,11 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
         return highestSurfaceAt(surfaces, crosshairs.position) ?? ground;
     };
     const vision = requireSight ? getVisionSource(sightToken ?? token) : undefined;
+    const sightOrigin = centerpoint ?? (sightToken ?? token).getCenterPoint();
+    const sightWall = point => requireSight && (!vision?.source || !token.parent.tokenVision)
+        && CONFIG.Canvas.polygonBackends.sight.testCollision(sightOrigin, point, {type: 'sight', mode: 'any', level: token.parent.levels.get(targetLevel)});
     const standable = (_crosshairs, {x, y, elevation}) => elevation !== undefined
+        && !sightWall({x, y})
         && (!vision?.source || canSeePoint(token, {x, y, elevation: elevation + 0.01}, {level: targetLevel, source: vision.source}));
     let highlight;
     try {
@@ -399,7 +404,7 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
             crosshairsConfig,
             maxRange: range,
             validityFunctions: allowedPoints ? [standable, (_crosshairs, {x, y}) => allowedPoints.some(point => Math.hypot(point.x - x, point.y - y) < token.parent.grid.size / 2)] : [standable],
-            ignoreWalls: ignoreWalls || !!vision?.source,
+            ignoreWalls: ignoreWalls || requireSight,
             getElevation: floorAt,
             ringElevation: onOwnLevel ? undefined : Math.min(...surfaces.map(surface => surface.elevation), ground ?? Infinity)
         });
@@ -430,8 +435,9 @@ async function aimDestinationAs(userId, token, options) {
 /**
  * Teleport a token with the `displace` movement action, prompting a destination crosshair through
  * {@link aimDestinationAs} when none is given. Runs the `aimTeleport`, `preTeleport` and `postTeleport` movement
- * passes, and a truthy result from the first two cancels the teleport. Each follower keeps its offset from the token
- * unless a wall or the token's sight blocks that space, in which case it gets its own crosshair.
+ * passes, and a truthy result from the first two cancels the teleport. Walls that only block movement never stop a
+ * teleport. Each follower keeps its offset from the token unless a sight-blocking wall or the token's sight blocks that
+ * space, in which case it gets its own crosshair.
  * @param {foundry.documents.TokenDocument} token                  Token to teleport.
  * @param {object} [options]                                       Additional options.
  * @param {Crosshairs} [options.destination]                       Crosshair result to teleport to (see
@@ -451,8 +457,8 @@ async function aimDestinationAs(userId, token, options) {
  *                                                                 keep its offset. Defaults to 10.
  * @param {string} [options.userId]                                Id of the user who aims the crosshair. Defaults to
  *                                                                 the current user.
- * @param {boolean} [options.ignoreWalls]                          Allow destinations that walls block from the token.
- *                                                                 Defaults to false.
+ * @param {boolean} [options.ignoreWalls]                          Let followers keep their offset through sight-blocking
+ *                                                                 walls. Defaults to false.
  * @param {Point[]} [options.allowedPoints]                        Only allow these token centers when aiming.
  * @param {foundry.documents.TokenDocument} [options.sightToken]   Token whose sight decides which spaces are visible.
  *                                                                 Defaults to `token`.
@@ -464,7 +470,7 @@ async function teleportToken(token, {destination, centerpoint, animation, option
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
-        destination = await aimDestinationAs(userId, token, {range, centerpoint, requireSight, ignoreWalls, allowedPoints, sightToken});
+        destination = await aimDestinationAs(userId, token, {range, centerpoint, requireSight, ignoreWalls: true, allowedPoints, sightToken});
     }
     if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
@@ -480,7 +486,7 @@ async function teleportToken(token, {destination, centerpoint, animation, option
         for (const follower of followers) {
             const followerDestination = {x: follower.x + dx, y: follower.y + dy, elevation: follower.elevation};
             const center = {...follower.getCenterPoint(followerDestination), elevation: follower.elevation};
-            const wallBlocked = !ignoreWalls && CONFIG.Canvas.polygonBackends.move.testCollision(leaderCenter, center, {type: 'move', mode: 'any', level: token.parent.levels.get(destinationLevel)});
+            const wallBlocked = !ignoreWalls && CONFIG.Canvas.polygonBackends.sight.testCollision(leaderCenter, center, {type: 'sight', mode: 'any', level: token.parent.levels.get(destinationLevel)});
             const unseen = vision?.source && !canSeePoint(token, {...center, elevation: center.elevation + 0.01}, {level: destinationLevel, source: vision.source});
             if (wallBlocked || unseen) blocked.push(follower);
             else placed.push([follower, followerDestination]);

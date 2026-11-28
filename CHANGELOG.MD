@@ -38,6 +38,7 @@
 - Dialogs with a selection budget can't be confirmed while over it.
 - Crosshair range boundaries no longer stay on the canvas after placing.
 - Effects disabled by equipped armor or shields update when that equipment is added already equipped or deleted.
+- Teleports ignore walls that only block movement. Requiring sight without token vision checks sight-blocking walls instead.
 # 0.1.10 Release:
 ## Update Notes:
 - New Base Weapon restriction for alternate attributes matches the attacking weapon's base item.
