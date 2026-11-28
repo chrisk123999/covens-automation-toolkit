@@ -1030,6 +1030,7 @@ export default class MedkitApp extends CatApp {
             if (!choice) continue;
             const entry = {source: choice.source, rules: choice.rules, identifier: choice.identifier};
             for (const event of choice.events) {
+                if (event === 'remote') continue;
                 (next[event] ??= []).push(entry);
             }
         }

@@ -198,7 +198,8 @@ async function createEmbeddedDocuments(document, type, updates, options) {
  */
 async function update(document, updates, options) {
     const hasPermission = queryUtils.hasPermission(document, game.user.id);
-    if (hasPermission) {
+    const regionBehavior = document.documentName === 'Region' && 'behaviors' in updates;
+    if (hasPermission && !regionBehavior) {
         return await document.update(updates, options);
     } else {
         const uuid = await queryUtils.query('update', queryUtils.gmUser(), {uuid: document.uuid, updates, options});
