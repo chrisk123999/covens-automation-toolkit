@@ -9,6 +9,7 @@ const {fields} = foundry.data;
 const massApplyTabs = {character: 'CAT.MEDKIT.MassApply.Tabs.Characters', npc: 'CAT.MEDKIT.MassApply.Tabs.NPCs', other: 'CAT.MEDKIT.MassApply.Tabs.Other'};
 const massApplyTabOrder = Object.values(massApplyTabs);
 const massApplyRules = ['2014', '2024'];
+let massApplyQueue = Promise.resolve();
 
 Hooks.once('setup', () => {
     foundry.applications.handlebars.loadTemplates([
@@ -270,8 +271,13 @@ export default class MedkitApp extends CatApp {
      * Run mass apply as if its button were clicked.
      * @param {object} [options]
      * @param {boolean} [options.prompt] Show the confirmation dialog. Without it, every available or outdated automation is applied from its preferred source.
+     * @param {Item5e[]} [options.items] Items to apply to instead of this medkit's own.
      */
-    async massApply({prompt = true} = {}) { return await this.#runMassApply({prompt}); }
+    async massApply({prompt = true, items} = {}) {
+        const run = massApplyQueue.then(() => this.#runMassApply({prompt, items}));
+        massApplyQueue = run.catch(() => {});
+        return await run;
+    }
 
     async _preparePartContext(partId, context) {
         const partContext = await super._preparePartContext(partId, context);
@@ -707,7 +713,8 @@ export default class MedkitApp extends CatApp {
             this.#buildOption({key: `summon-compendium-names-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumNames'}, {name: `${base}.compendium.names`, value: entry.compendium?.names ?? ''}),
             this.#buildOption({key: `summon-compendium-cr-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumMaxCR'}, {name: `${base}.compendium.maxCR`, value: entry.compendium?.maxCR ?? ''}),
             this.#buildOption({key: `summon-compendium-tiers-${i}`, type: 'text', label: 'CAT.MEDKIT.Summons.CompendiumTiers.Label', hint: 'CAT.MEDKIT.Summons.CompendiumTiers.Hint'}, {name: `${base}.compendium.tiers`, value: entry.compendium?.tiers ?? ''}),
-            this.#buildOption({key: `summon-compendium-random-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.CompendiumRandomTier'}, {name: `${base}.compendium.randomTier`, value: entry.compendium?.randomTier ?? false})
+            this.#buildOption({key: `summon-compendium-random-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.CompendiumRandomTier'}, {name: `${base}.compendium.randomTier`, value: entry.compendium?.randomTier ?? false}),
+            this.#buildOption({key: `summon-compendium-owner-picks-${i}`, type: 'checkbox', label: 'CAT.MEDKIT.Summons.CompendiumOwnerPicks'}, {name: `${base}.compendium.ownerPicks`, value: entry.compendium?.ownerPicks ?? false})
         ];
         if (profiles.length) fieldList.unshift(this.#buildOption({key: `summon-profile-${i}`, type: 'select', label: 'CAT.MEDKIT.Summons.Profile.Label', hint: 'CAT.MEDKIT.Summons.Profile.Hint', options: [{value: '', label: 'CAT.Config.None'}, ...profiles]}, {name: `${base}.profile`, value: entry.profile ?? ''}));
         return fieldList;
@@ -1026,6 +1033,7 @@ export default class MedkitApp extends CatApp {
             if (!choice) continue;
             const entry = {source: choice.source, rules: choice.rules, identifier: choice.identifier};
             for (const event of choice.events) {
+                if (event === 'remote') continue;
                 (next[event] ??= []).push(entry);
             }
         }
@@ -1296,9 +1304,9 @@ export default class MedkitApp extends CatApp {
         return await this.#runMassApply();
     }
 
-    async #runMassApply({prompt = true} = {}) {
+    async #runMassApply({prompt = true, items} = {}) {
         if (!await this._canMassApply()) return;
-        const rawItems = Array.from(await this._getMassApplyItems() ?? []);
+        const rawItems = Array.from(items ?? await this._getMassApplyItems() ?? []);
         if (!rawItems.length) return;
         const dependencyMap = new Map();
         rawItems.forEach(item => dependencyMap.set(item.uuid, itemUtils.getDependencies(item)));
@@ -1342,20 +1350,15 @@ export default class MedkitApp extends CatApp {
         const applying = sortedItems.filter(entry => choices[this.#massApplyID(entry.item)].included);
         const rules = massApplyRules.includes(choices.switchRules) ? choices.switchRules : undefined;
         const progress = genericUtils.notify('CAT.MEDKIT.MassApply.Started', {progress: true});
-        let done = 0;
-        for (const entry of applying) {
+        const updates = applying.map(entry => {
             const options = choices[this.#massApplyID(entry.item)];
             const targets = entry.switchable.includes(rules) ? MedkitApp.#rulesAutomations(entry.item, rules) : [];
-            if (targets.length) {
-                let source = options.source ?? entry.preferred?.source ?? entry.applied?.source;
-                if (!targets.some(automation => automation.source === source)) source = automationUtils.sortByPriority(targets)[0].source;
-                await automationUtils.updateItem(entry.item, {source, rules, massApply: true});
-            } else {
-                await automationUtils.updateItem(entry.item, {source: options.source ?? entry.preferred?.source, massApply: true});
-            }
-            done++;
-            progress.update({pct: done / applying.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: applying.length, name: entry.item.name})});
-        }
+            if (!targets.length) return {item: entry.item, source: options.source ?? entry.preferred?.source};
+            let source = options.source ?? entry.preferred?.source ?? entry.applied?.source;
+            if (!targets.some(automation => automation.source === source)) source = automationUtils.sortByPriority(targets)[0].source;
+            return {item: entry.item, source, rules};
+        });
+        await automationUtils.updateItems(updates, {massApply: true, onProgress: MedkitApp.#progressCallback(progress, updates.length)});
         progress.update({pct: 1, message: _loc('CAT.MEDKIT.MassApply.Done')});
         this.render();
         await this._afterMassApply();
@@ -1390,12 +1393,8 @@ export default class MedkitApp extends CatApp {
         const repairing = entries.filter(({item}) => choices[this.#massApplyID(item)]);
         if (!repairing.length) return;
         const progress = genericUtils.notify('CAT.MEDKIT.DataIssues.Started', {progress: true});
-        let done = 0;
-        for (const {item} of repairing) {
-            await automationUtils.updateItem(item, {source: documentUtils.getSource(item), massApply: true});
-            done++;
-            progress.update({pct: done / repairing.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: repairing.length, name: item.name})});
-        }
+        const updates = repairing.map(({item}) => ({item, source: documentUtils.getSource(item)}));
+        await automationUtils.updateItems(updates, {massApply: true, onProgress: MedkitApp.#progressCallback(progress, updates.length)});
         progress.update({pct: 1, message: _loc('CAT.MEDKIT.DataIssues.Done')});
         this.render();
     }
@@ -1408,6 +1407,10 @@ export default class MedkitApp extends CatApp {
             if (issues.length) entries.push({item, issues});
         }
         return entries;
+    }
+
+    static #progressCallback(progress, total) {
+        return (done, item) => progress.update({pct: done / total, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total, name: item.name})});
     }
 
     #massApplyID(item) { return item.actor ? `${item.actor.id}|${item.id}` : item.id; }

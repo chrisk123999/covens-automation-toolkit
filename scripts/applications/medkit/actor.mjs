@@ -12,6 +12,8 @@ export default class ActorMedkit extends MedkitApp {
         actions: {
             toggleCR: ActorMedkit.#toggleCR,
             toggleCV: ActorMedkit.#toggleCV,
+            toggleSR: ActorMedkit.#toggleSR,
+            toggleSV: ActorMedkit.#toggleSV,
             toggleFR: ActorMedkit.#toggleFR,
             toggleFV: ActorMedkit.#toggleFV,
             toggleFI: ActorMedkit.#toggleFI,
@@ -111,6 +113,15 @@ export default class ActorMedkit extends MedkitApp {
             context[`conditionChoices${flagKey}`] = sortedTypes.map(t => ({value: t.key, label: t.label, selected: pickedSet.has(t.key)}));
             context[`${flagKey.toLowerCase()}ConditionRows`] = this.#buildConditionRows(flagKey, picked, sortedTypes);
         }
+        const sortedSchools = Object.entries(CONFIG.DND5E?.spellSchools ?? {})
+            .map(([key, cfg]) => ({key, label: cfg.label ?? key}))
+            .sort((a, b) => a.label.localeCompare(b.label, 'en', {sensitivity: 'base'}));
+        for (const flagKey of ['SR', 'SV']) {
+            const picked = Object.keys(flags[flagKey] ?? {});
+            const pickedSet = new Set(picked);
+            context[`schoolChoices${flagKey}`] = sortedSchools.map(t => ({value: t.key, label: t.label, selected: pickedSet.has(t.key)}));
+            context[`${flagKey.toLowerCase()}SchoolRows`] = this.#buildConditionRows(flagKey, picked, sortedSchools);
+        }
         for (const flagKey of ['FR', 'FV', 'FI', 'FF']) {
             const picked = Object.keys(flags[flagKey] ?? {});
             context[`${flagKey.toLowerCase()}IdentifierRows`] = this.#buildConditionRows(flagKey, picked, sortedTypes);
@@ -120,14 +131,14 @@ export default class ActorMedkit extends MedkitApp {
 
     async _onChangeForm(formConfig, event) {
         const name = event.target?.name ?? event.target?.getAttribute?.('name');
-        if (name === 'flags.cat.CR' || name === 'flags.cat.CV') {
+        if (['flags.cat.CR', 'flags.cat.CV', 'flags.cat.SR', 'flags.cat.SV'].includes(name)) {
             const multi = event.target.closest?.('cat-multi-combobox');
             if (multi) {
                 const raw = multi.querySelector('input[type="hidden"]')?.value ?? '';
                 let arr;
                 try { arr = raw ? JSON.parse(raw) : []; }
                 catch { arr = []; }
-                const flagKey = name === 'flags.cat.CR' ? 'CR' : 'CV';
+                const flagKey = name.split('.').at(-1);
                 const current = this._getFlags()[flagKey] ?? {};
                 const next = {};
                 for (const key of arr) next[key] = current[key] ?? 'true';
@@ -167,6 +178,16 @@ export default class ActorMedkit extends MedkitApp {
     /** @this {ActorMedkit} */
     static #toggleCV(_event, target) {
         this.#mutateCondition('CV', target.dataset.condition, target.dataset.ability);
+    }
+
+    /** @this {ActorMedkit} */
+    static #toggleSR(_event, target) {
+        this.#mutateCondition('SR', target.dataset.condition, target.dataset.ability);
+    }
+
+    /** @this {ActorMedkit} */
+    static #toggleSV(_event, target) {
+        this.#mutateCondition('SV', target.dataset.condition, target.dataset.ability);
     }
 
     /** @this {ActorMedkit} */

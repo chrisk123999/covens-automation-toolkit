@@ -349,21 +349,28 @@ function drawAllowedPoints(points) {
  * Prompt the current user with a crosshair to pick a destination for a token. When floors on other levels are in range,
  * a dialog first asks which level to aim on and the canvas switches to it. The view returns to the starting level
  * afterward.
- * @param {foundry.documents.TokenDocument} token  Token being moved.
- * @param {object} [options]                       Additional options.
- * @param {number} [options.range]                 Maximum distance in feet.
- * @param {Point} [options.centerpoint]            Measure the crosshair range from here instead of the token's center.
- * @param {object} [options.crosshairsConfig]      Passed to {@link crosshairUtils.aimCrosshair}.
- * @param {boolean} [options.requireSight]         Only allow spaces the token can see. Defaults to true.
- * @param {boolean} [options.ignoreWalls]          Allow spaces that walls block from the token. Defaults to false.
- * @param {Point[]} [options.allowedPoints]        Only allow these token centers, highlighted while aiming.
- * @returns {Promise<object|undefined>}            Crosshair result with rounded `x` and `y`, `elevation` and `level`.
- *                                                 Undefined if cancelled.
+ * @param {foundry.documents.TokenDocument} token                 Token being moved.
+ * @param {object} [options]                                      Additional options.
+ * @param {number} [options.range]                                Maximum distance in feet.
+ * @param {Point} [options.centerpoint]                           Measure the crosshair range from here instead of the
+ *                                                                token's center.
+ * @param {object} [options.crosshairsConfig]                     Passed to {@link crosshairUtils.aimCrosshair}.
+ * @param {boolean} [options.requireSight]                        Only allow spaces the token can see. Defaults to true.
+ * @param {boolean} [options.ignoreWalls]                         Allow spaces that walls block from the token. Defaults
+ *                                                                to false. With `requireSight`, sight replaces the wall
+ *                                                                check: the token's vision when it has some and the
+ *                                                                scene uses token vision, otherwise sight-blocking walls.
+ * @param {Point[]} [options.allowedPoints]                       Only allow these token centers, highlighted while
+ *                                                                aiming.
+ * @param {foundry.documents.TokenDocument} [options.sightToken]  Token whose sight decides which spaces are visible.
+ *                                                                Defaults to `token`.
+ * @returns {Promise<object|undefined>}                           Crosshair result with rounded `x` and `y`, `elevation`
+ *                                                                and `level`. Undefined if cancelled.
  * @example
  * const destination = await tokenUtils.aimDestination(token, {range: 30});
  * if (!destination) return;
  */
-async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true, ignoreWalls = false, allowedPoints} = {}) {
+async function aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight = true, ignoreWalls = false, allowedPoints, sightToken} = {}) {
     const startView = canvas.level?.id;
     const reachable = reachableSurfaces(token, range, {origin: centerpoint ? {elevation: token.elevation, ...centerpoint} : undefined});
     let targetLevel = token.level;
@@ -380,8 +387,12 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
         if (onOwnLevel) return token.elevation;
         return highestSurfaceAt(surfaces, crosshairs.position) ?? ground;
     };
-    const vision = requireSight ? getVisionSource(token) : undefined;
+    const vision = requireSight ? getVisionSource(sightToken ?? token) : undefined;
+    const sightOrigin = centerpoint ?? (sightToken ?? token).getCenterPoint();
+    const sightWall = point => requireSight && (!vision?.source || !token.parent.tokenVision)
+        && CONFIG.Canvas.polygonBackends.sight.testCollision(sightOrigin, point, {type: 'sight', mode: 'any', level: token.parent.levels.get(targetLevel)});
     const standable = (_crosshairs, {x, y, elevation}) => elevation !== undefined
+        && !sightWall({x, y})
         && (!vision?.source || canSeePoint(token, {x, y, elevation: elevation + 0.01}, {level: targetLevel, source: vision.source}));
     let highlight;
     try {
@@ -393,7 +404,7 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
             crosshairsConfig,
             maxRange: range,
             validityFunctions: allowedPoints ? [standable, (_crosshairs, {x, y}) => allowedPoints.some(point => Math.hypot(point.x - x, point.y - y) < token.parent.grid.size / 2)] : [standable],
-            ignoreWalls,
+            ignoreWalls: ignoreWalls || requireSight,
             getElevation: floorAt,
             ringElevation: onOwnLevel ? undefined : Math.min(...surfaces.map(surface => surface.elevation), ground ?? Infinity)
         });
@@ -418,42 +429,48 @@ async function aimDestination(token, {range, centerpoint, crosshairsConfig, requ
  */
 async function aimDestinationAs(userId, token, options) {
     if (!userId || userId === game.user.id) return await aimDestination(token, options);
-    return await queryUtils.query('aimDestination', game.users.get(userId), {uuid: token.uuid, ...options}, 300000);
+    const {sightToken, ...rest} = options ?? {};
+    return await queryUtils.query('aimDestination', game.users.get(userId), {uuid: token.uuid, sightTokenUuid: sightToken?.uuid, ...rest}, 300000);
 }
 /**
  * Teleport a token with the `displace` movement action, prompting a destination crosshair through
  * {@link aimDestinationAs} when none is given. Runs the `aimTeleport`, `preTeleport` and `postTeleport` movement
- * passes, and a truthy result from the first two cancels the teleport. Each follower keeps its offset from the token
- * unless a wall or the token's sight blocks that space, in which case it gets its own crosshair.
- * @param {foundry.documents.TokenDocument} token        Token to teleport.
- * @param {object} [options]                             Additional options.
- * @param {Crosshairs} [options.destination]             Crosshair result to teleport to (see
- *                                                       `Crosshairs.prototype.toObject`). Skips the crosshair prompt.
- * @param {Point} [options.centerpoint]                  Measure the crosshair range from here instead of from `token`.
- * @param {Animations['Animation']} [options.animation]  Animation data (see `Animations.Animation`).
- * @param {object} [options.options]                     Passed to the animation's pre and post macros.
- * @param {number} [options.range]                       Maximum distance in feet. Defaults to 30.
- * @param {number} [options.elevation]                   Destination elevation. Defaults to the crosshair's.
- * @param {string} [options.level]                       Destination Level id. Defaults to the crosshair's.
- * @param {boolean} [options.requireSight]               Only allow spaces the token can see. Defaults to true.
- * @param {foundry.documents.TokenDocument[]} [options.followers]
- *                                                       Tokens teleported along with this one.
- * @param {number} [options.followerRange]               Crosshair range in feet for a follower that can't keep its
- *                                                       offset. Defaults to 10.
- * @param {string} [options.userId]                      Id of the user who aims the crosshair. Defaults to the current
- *                                                       user.
- * @param {boolean} [options.ignoreWalls]                Allow destinations that walls block from the token. Defaults to
- *                                                       false.
- * @param {Point[]} [options.allowedPoints]              Only allow these token centers when aiming.
+ * passes, and a truthy result from the first two cancels the teleport. Walls that only block movement never stop a
+ * teleport. Each follower keeps its offset from the token unless a sight-blocking wall or the token's sight blocks that
+ * space, in which case it gets its own crosshair.
+ * @param {foundry.documents.TokenDocument} token                  Token to teleport.
+ * @param {object} [options]                                       Additional options.
+ * @param {Crosshairs} [options.destination]                       Crosshair result to teleport to (see
+ *                                                                 `Crosshairs.prototype.toObject`). Skips the crosshair
+ *                                                                 prompt.
+ * @param {Point} [options.centerpoint]                            Measure the crosshair range from here instead of from
+ *                                                                 `token`.
+ * @param {Animations['Animation']} [options.animation]            Animation data (see `Animations.Animation`).
+ * @param {object} [options.options]                               Passed to the animation's pre and post macros.
+ * @param {number} [options.range]                                 Maximum distance in feet. Defaults to 30.
+ * @param {number} [options.elevation]                             Destination elevation. Defaults to the crosshair's.
+ * @param {string} [options.level]                                 Destination Level id. Defaults to the crosshair's.
+ * @param {boolean} [options.requireSight]                         Only allow spaces the token can see. Defaults to
+ *                                                                 true.
+ * @param {foundry.documents.TokenDocument[]} [options.followers]  Tokens teleported along with this one.
+ * @param {number} [options.followerRange]                         Crosshair range in feet for a follower that can't
+ *                                                                 keep its offset. Defaults to 10.
+ * @param {string} [options.userId]                                Id of the user who aims the crosshair. Defaults to
+ *                                                                 the current user.
+ * @param {boolean} [options.ignoreWalls]                          Let followers keep their offset through sight-blocking
+ *                                                                 walls. Defaults to false.
+ * @param {Point[]} [options.allowedPoints]                        Only allow these token centers when aiming.
+ * @param {foundry.documents.TokenDocument} [options.sightToken]   Token whose sight decides which spaces are visible.
+ *                                                                 Defaults to `token`.
  * @returns {Promise<undefined>}
  * @example
  * await tokenUtils.teleportToken(workflow.token.document, {range: 30, requireSight: false, ignoreWalls: true});
  */
-async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], followerRange = 10, userId, ignoreWalls = false, allowedPoints} = {}) {
+async function teleportToken(token, {destination, centerpoint, animation, options = {}, range = 30, elevation, level, requireSight = true, followers = [], followerRange = 10, userId, ignoreWalls = false, allowedPoints, sightToken} = {}) {
     if (!destination) {
         const result = await new Events.MovementEvent(token, constants.movementPasses.aimTeleport, {range, animation, teleport: true}).run();
         if (result) return;
-        destination = await aimDestinationAs(userId, token, {range, centerpoint, requireSight, ignoreWalls, allowedPoints});
+        destination = await aimDestinationAs(userId, token, {range, centerpoint, requireSight, ignoreWalls: true, allowedPoints, sightToken});
     }
     if (!destination || destination.cancelled) return;
     const result = await new Events.MovementEvent(token, constants.movementPasses.preTeleport, {destination, animation, range, teleport: true}).run();
@@ -469,7 +486,7 @@ async function teleportToken(token, {destination, centerpoint, animation, option
         for (const follower of followers) {
             const followerDestination = {x: follower.x + dx, y: follower.y + dy, elevation: follower.elevation};
             const center = {...follower.getCenterPoint(followerDestination), elevation: follower.elevation};
-            const wallBlocked = !ignoreWalls && CONFIG.Canvas.polygonBackends.move.testCollision(leaderCenter, center, {type: 'move', mode: 'any', level: token.parent.levels.get(destinationLevel)});
+            const wallBlocked = !ignoreWalls && CONFIG.Canvas.polygonBackends.sight.testCollision(leaderCenter, center, {type: 'sight', mode: 'any', level: token.parent.levels.get(destinationLevel)});
             const unseen = vision?.source && !canSeePoint(token, {...center, elevation: center.elevation + 0.01}, {level: destinationLevel, source: vision.source});
             if (wallBlocked || unseen) blocked.push(follower);
             else placed.push([follower, followerDestination]);
@@ -492,27 +509,29 @@ async function teleportToken(token, {destination, centerpoint, animation, option
         await new Events.MovementEvent(token, constants.movementPasses.postTeleport, {destination, animation, teleport: true, action: 'displace'}).run();
     };
     await Promise.all([teleportLeader(), ...placed.map(([follower, destination]) => teleportToken(follower, {animation, options, destination}))]);
-    for (const follower of blocked) await teleportToken(follower, {animation, options, centerpoint: leaderCenter, range: followerRange, requireSight, ignoreWalls, userId});
+    for (const follower of blocked) await teleportToken(follower, {animation, options, centerpoint: leaderCenter, range: followerRange, requireSight, ignoreWalls, userId, sightToken});
 }
 /**
  * Force a token to a new position, prompting a destination crosshair through {@link aimDestinationAs} when none is
  * given. Runs the `displace` movement pass, and a truthy result cancels the move. Walls still block the movement.
- * @param {foundry.documents.TokenDocument} token        Token to move.
- * @param {object} [options]                             Additional options.
- * @param {Crosshairs} [options.destination]             Crosshair result or top-left point to move to (see
- *                                                       `Crosshairs.prototype.toObject`). Skips the crosshair prompt.
- * @param {Point} [options.centerpoint]                  Measure the crosshair range from here instead of from `token`.
- * @param {Animations['Animation']} [options.animation]  Animation data (see `Animations.Animation`).
- * @param {foundry.documents.TokenDocument} [options.sourceToken]
- *                                                       Token causing the movement.
- * @param {MovementAction} [options.action]              Movement action. Defaults to `catForce`, which does not spend
- *                                                       movement.
- * @param {number} [options.range]                       Maximum crosshair distance in feet. Defaults to 5.
- * @param {number} [options.elevation]                   Destination elevation. Defaults to the crosshair's.
- * @param {string} [options.level]                       Destination Level id. Defaults to the crosshair's.
- * @param {boolean} [options.requireSight]               Only allow spaces the token can see. Defaults to false.
- * @param {string} [options.userId]                      Id of the user who aims the crosshair. Defaults to the current
- *                                                       user.
+ * @param {foundry.documents.TokenDocument} token                  Token to move.
+ * @param {object} [options]                                       Additional options.
+ * @param {Crosshairs} [options.destination]                       Crosshair result or top-left point to move to (see
+ *                                                                 `Crosshairs.prototype.toObject`). Skips the crosshair
+ *                                                                 prompt.
+ * @param {Point} [options.centerpoint]                            Measure the crosshair range from here instead of from
+ *                                                                 `token`.
+ * @param {Animations['Animation']} [options.animation]            Animation data (see `Animations.Animation`).
+ * @param {foundry.documents.TokenDocument} [options.sourceToken]  Token causing the movement.
+ * @param {MovementAction} [options.action]                        Movement action. Defaults to `catForce`, which does
+ *                                                                 not spend movement.
+ * @param {number} [options.range]                                 Maximum crosshair distance in feet. Defaults to 5.
+ * @param {number} [options.elevation]                             Destination elevation. Defaults to the crosshair's.
+ * @param {string} [options.level]                                 Destination Level id. Defaults to the crosshair's.
+ * @param {boolean} [options.requireSight]                         Only allow spaces the token can see. Defaults to
+ *                                                                 false.
+ * @param {string} [options.userId]                                Id of the user who aims the crosshair. Defaults to
+ *                                                                 the current user.
  * @returns {Promise<undefined>}
  * @example
  * await tokenUtils.displaceToken(target, {sourceToken: token, range: 5});
@@ -728,7 +747,7 @@ function getGrappled(token) {
 }
 /**
  * Whether a token can grapple or shove the target. The target must be no more than one size larger, after size bonuses
- * from the `sizeCheck` grapple pass. A target immune to grappled or prone fails the matching check.
+ * from the `sizeCheck` grapple pass and the grappler's `flags.cat.grappleShove.sizeBonus`. A target immune to grappled or prone fails the matching check.
  * @param {foundry.documents.TokenDocument} sourceToken        Token grappling or shoving.
  * @param {foundry.documents.TokenDocument} targetToken        Token being grappled or shoved.
  * @param {'grapple'|'shove-push'|'shove-prone'} [identifier]  Picks the condition immunity to check and the warning
@@ -814,5 +833,6 @@ export default {
     getGrappled,
     grappleShoveSizeCheck,
     movementSpent,
-    measureMovement
+    measureMovement,
+    isOccupied
 };

@@ -540,11 +540,12 @@ cat-multi-combobox {
         }
 
         > .title {
-            gap: var(--cat-space-xs);
-            display: flex;
             flex: 1;
-            align-items: center;
+            min-width: 0;
+            overflow: hidden;
             font-weight: 600;
+            white-space: nowrap;
+            text-overflow: ellipsis;
 
             > i {
                 color: var(--cat-text-muted);

@@ -325,6 +325,7 @@ const itemHookNames = {
     deleteItem: 'deleteItem',
     updateItem: 'updateItem',
     munched: 'ddb-importer.characterProcessDataComplete',
+    compendiumMunched: 'ddb-importer.munchComplete',
     preUpdateItem: 'preUpdateItem',
     preCreateItem: 'preCreateItem'
 };
@@ -655,9 +656,12 @@ function triggerTypes() {
         if (!type) continue;
         cachedTypes.add(type);
     }
+    cachedTypes.add('remote');
     return cachedTypes;
 }
+const soundName = 'catSound';
 export default {
+    soundName,
     /** @type {RegisteredMacros} */
     macros: undefined,
     /** @type {RegisteredAutomations} */

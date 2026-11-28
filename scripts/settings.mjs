@@ -160,7 +160,13 @@ const settings = {
             module: 'CAT.Settings.AnimationPriority.Module',
             off: 'CAT.Settings.AnimationPriority.Off'
         },
-        menu: 'integration'
+        menu: 'animations'
+    },
+    soundEffects: {
+        type: Boolean,
+        default: false,
+        scope: 'client',
+        menu: 'animations'
     },
     effectDescriptions: {
         type: Number,
@@ -475,6 +481,9 @@ const menus = {
     },
     general: {
         icon: 'fas fa-gears'
+    },
+    animations: {
+        icon: 'fas fa-film'
     },
     automation: {
         icon: 'fas fa-layer-group'

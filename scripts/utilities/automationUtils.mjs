@@ -4,8 +4,8 @@
  * @module
  */
 import {itemEvents} from '../events/_module.mjs';
-import {constants, Events} from '../lib/_module.mjs';
-import {animationUtils, compendiumUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils} from './_module.mjs';
+import {constants, Events, Logging} from '../lib/_module.mjs';
+import {animationUtils, compendiumUtils, dataUtils, documentUtils, effectUtils, genericUtils, itemUtils, queryUtils} from './_module.mjs';
 /**
  * The registered automation applied to an item, matched on its identifier, rules and flagged source. With no source
  * flagged, only an automation whose own document is this item matches. Returns undefined when the item has no
@@ -339,8 +339,8 @@ function isMassApplySource(source, entry = game.settings.get('cat', 'automationS
     return entry?.massApply ?? !isContentSource(source);
 }
 /**
- * Whether mass apply must skip this item for a source. True when the item is flagged to be ignored, or when a class or
- * subclass would be replaced from a content source, since that resets its advancement.
+ * Whether mass apply must skip this item for a source. True when the item is flagged to be ignored in CAT or DDBI, or
+ * when replacing it from a content source would reset its advancements.
  * @param {Item5e} item    Item to check.
  * @param {string} source  Source id.
  * @returns {boolean}
@@ -348,7 +348,9 @@ function isMassApplySource(source, entry = game.settings.get('cat', 'automationS
  * if (automationUtils.isMassApplyBlocked(item, automation.source)) return;
  */
 function isMassApplyBlocked(item, source) {
-    return item.flags.cat?.ignoreItem || (['class', 'subclass'].includes(item.type) && isContentSource(source));
+    if (item.flags.cat?.ignoreItem) return true;
+    if (item.flags.ddbimporter?.ignoreItemForChrisPremades) return true;
+    return ['class', 'subclass'].includes(item.type) && isContentSource(source);
 }
 /**
  * Automations mass apply may put on an item: {@link getAvailableAutomations} minus sources excluded from mass apply and
@@ -580,7 +582,49 @@ function isDefaultImage(img) {
  * @example
  * await automationUtils.updateItem(item, {source: 'chris-premades', openSheet: true});
  */
-async function updateItem(item, {source, rules = documentUtils.getRules(item), skipEvent, openSheet, massApply = false} = {}) {
+async function updateItem(item, {source, rules, skipEvent, openSheet, massApply = false} = {}) {
+    const updated = await updateItems([{item, source, rules}], {skipEvent, massApply});
+    if (updated.length && openSheet) await item.sheet.render(true);
+}
+/**
+ * Apply automations to several items with one write per actor or compendium instead of one per item. Each entry is
+ * prepared as {@link updateItem} would, then scales are written and medkit item events fire in entry order.
+ * @param {{item: Item5e, source?: string, rules?: string}[]} entries  Items to update, with the source and rules each
+ *                                                                     would pass to {@link updateItem}.
+ * @param {object} [options]                                           Additional options.
+ * @param {boolean} [options.skipEvent]                                Skip the medkit item events.
+ * @param {boolean} [options.massApply]                                Tell medkit macros to take defaults instead of
+ *                                                                     prompting.
+ * @param {Function} [options.onProgress]                              Called with the count done and the item after each
+ *                                                                     item finishes.
+ * @returns {Promise<Item5e[]>}                                        The items an automation was applied to.
+ * @example
+ * await automationUtils.updateItems(actor.items.map(item => ({item})), {massApply: true});
+ */
+async function updateItems(entries, {skipEvent, massApply = false, onProgress} = {}) {
+    const prepared = (await Promise.all(entries.map(async ({item, source, rules = documentUtils.getRules(item)}) => {
+        const result = await prepareItemUpdate(item, {source, rules});
+        return result && {item, ...result};
+    }))).filter(Boolean);
+    const options = {recursive: false, diff: false};
+    for (const [key, group] of Map.groupBy(prepared, entry => entry.item.actor ?? entry.item.pack ?? null)) {
+        const updates = group.map(entry => entry.documentData);
+        if (key instanceof Actor) {
+            await documentUtils.updateEmbeddedDocuments(key, 'Item', updates, options);
+            const scaleUpdates = group.filter(entry => !isReplaced(entry.item)).reduce((all, entry) => collectScaleUpdates(entry.item, entry.automation, all), []);
+            if (scaleUpdates.length) await documentUtils.updateEmbeddedDocuments(key, 'Item', scaleUpdates);
+        } else {
+            await documentUtils.modifyBatch([{action: 'update', documentName: 'Item', pack: key ?? undefined, updates, ...options}]);
+        }
+    }
+    const updated = prepared.map(entry => entry.item);
+    for (const [index, {item}] of entries.entries()) {
+        if (!skipEvent && item.actor && updated.includes(item) && !isReplaced(item)) await itemEvents.itemMedkit(item, {massApply});
+        onProgress?.(index + 1, item);
+    }
+    return updated;
+}
+async function prepareItemUpdate(item, {source, rules}) {
     if (isReplaced(item)) return;
     let automation;
     const identifier = documentUtils.getIdentifier(item);
@@ -603,11 +647,11 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
         if (fieldValue) genericUtils.setProperty(documentData, field, fieldValue);
     });
     if (['2014', '2024'].includes(automation.rules)) genericUtils.setProperty(documentData, 'system.source.rules', automation.rules);
-    const existingDescription = genericUtils.getProperty(documentData, 'system.description.value');
-    if (existingDescription) {
-        const stripped = itemUtils.stripDescriptionBlock(existingDescription);
-        genericUtils.setProperty(documentData, 'system.description.value', game.settings.get('cat', 'fixDescriptionEnrichers') ? itemUtils.resolveDescriptionEnrichers(stripped, item) : stripped);
-    }
+    const description = genericUtils.getProperty(documentData, 'system.description.value') ?? '';
+    const resolved = game.settings.get('cat', 'fixDescriptionEnrichers') ? itemUtils.resolveDescriptionEnrichers(description, item) : description;
+    const sourceBlock = itemUtils.getDescriptionBlock(sourceDocument.system.description?.value);
+    const updatedDescription = sourceBlock ? itemUtils.replaceDescriptionBlock(resolved, sourceBlock) : itemUtils.stripDescriptionBlock(resolved);
+    if (updatedDescription) genericUtils.setProperty(documentData, 'system.description.value', updatedDescription);
     genericUtils.setProperty(documentData, 'flags.cat.automation.source', automation.source);
     genericUtils.setProperty(documentData, 'flags.cat.automation.version', automation.version);
     delete documentData.flags.cat.automation.sourceType;
@@ -632,11 +676,7 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
         }
     }
     await relinkCastActivities(documentData);
-    const actor = item.actor;
-    await documentUtils.update(item, documentData, {recursive: false, diff: false});
-    if (actor) await updateScales(item, {automation});
-    if (!skipEvent && actor) await itemEvents.itemMedkit(item, {massApply});
-    if (openSheet) await item.sheet.render(true);
+    return {automation, documentData};
 }
 /**
  * Read one animation config value for an animation selected in a generic macro's config. Checks the document's stored
@@ -709,13 +749,16 @@ function resolveScaleHolder(actor, identifier) {
  * await automationUtils.updateScales(item);
  */
 async function updateScales(item, {automation} = {}) {
+    const updates = collectScaleUpdates(item, automation);
+    if (updates.length) await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
+}
+function collectScaleUpdates(item, automation, updates = []) {
     automation ??= getCurrentAutomation(item);
-    if (!automation) return;
+    if (!automation) return updates;
     const rules = documentUtils.getRules(item);
     const classIdentifier = getConfigValue(item, 'classIdentifier');
     const subclassIdentifier = getConfigValue(item, 'subclassIdentifier');
-    if (!classIdentifier && !subclassIdentifier) return;
-    const updates = [];
+    if (!classIdentifier && !subclassIdentifier) return updates;
     automation.scales?.forEach(scaleData => {
         let scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: scaleData.source});
         let targetIdentifier = classIdentifier;
@@ -735,7 +778,7 @@ async function updateScales(item, {automation} = {}) {
         advancementData._id = scaleValue?.id ?? advancementKey;
         advancementData.configuration.identifier = scale.identifier;
         classData.system.advancement[advancementKey] = advancementData;
-        const change = {_id: classItem.id, 'system.advancement': classData.system.advancement};
+        const change = {_id: classItem.id, system: {advancement: classData.system.advancement}};
         const currentUpdate = updates.find(i => i._id === classItem.id);
         if (currentUpdate) {
             genericUtils.mergeObject(currentUpdate, change);
@@ -743,7 +786,7 @@ async function updateScales(item, {automation} = {}) {
             updates.push(change);
         }
     });
-    if (updates.length) await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
+    return updates;
 }
 /**
  * Areas where an item has drifted from its applied automation's source document. Uses are skipped when CAT preserves
@@ -892,10 +935,45 @@ function calledEventSync(pass, actor, {multiResult, canOverlap, data} = {}) {
     return new Events.CalledEvent(actor, pass, data).runSync({canOverlap, multiResult});
 }
 /**
+ * Run a macro on another client. The macro must be registered as a remote macro. Its scope gets `signal`, an
+ * AbortSignal that aborts just before the call times out. Pass it as `signal` in dialog configs and `dialogUtils`
+ * options so those dialogs close at that point.
+ * @param {string} source             Module id.
+ * @param {string} identifier         Macro identifier.
+ * @param {'2014'|'2024'|'all'} rules
+ * @param {object} macroData          Data provided to the macro scope. Must be serializable.
+ * @param {string} userId
+ * @returns {Promise}                 Return data from the macro, or an array of return data
+ *                                    if the registered macro has many entries. Undefined when the other client
+ *                                    doesn't answer within MidiQOL's reaction timer.
+ * @example
+ * // register
+ * cat.api.registerFnMacro({
+    identifier: 'buildComplicatedDialog',
+    source: 'chris-premades',
+    rules: 'all',
+    macros: {
+        remote: [{macro: () => console.log('Hello')}]
+    }
+})
+ * // call
+ * const userId = queryUtils.firstOwner(targetActor, true);
+ * const prompt = await automationUtils.remoteMacro('chris-premades', 'buildComplicatedDialog', 'all', {}, userId);
+ */
+async function remoteMacro(source, identifier, rules, macroData, userId) {
+    const user = game.users.get(userId);
+    if (!user) return Logging.addMacroWarning(source, identifier, `Remote macro sent to an unknown user: ${userId}`);
+    try {
+        return await queryUtils.query('remoteMacro', user, {source, identifier, rules, macroData}, 1000 * MidiQOL.configSettings().reactionTimeout);
+    } catch (error) {
+        Logging.addMacroWarning(source, identifier, `Remote macro on ${user.name}'s client failed: ${error.message}`);
+    }
+}
+/**
  * The animation selected in a config key, with its resolved config values. Pass `source` and `identifier` when the
  * selection lives in a generic macro's config. Returns no animation when none is selected, CAT Animations defers to
  * AA/BLFX for the item, Sequencer is unavailable, or a requirement is not met. A missing requirement also shows a
- * warning.
+ * warning. When a Sound is configured, the first animation macro called also plays it.
  * @param {foundry.abstract.Document} document                   Document holding the config, or an activity.
  * @param {string} settingKey                                    Config key holding the animation selection.
  * @param {object} [options]                                     Additional options.
@@ -924,7 +1002,15 @@ function getResolvedAnimation(document, settingKey, {source, identifier, rules} 
     }
     const options = {};
     if (animation.config) Object.keys(animation.config).forEach(key => options[key] = isGeneric ? getGenericAnimationConfig(document, source, identifier, settingKey, key) : getAnimationConfig(document, settingKey, key));
-    return {animation, options};
+    animationUtils.clearUnavailableSounds(options);
+    if (animation.ownSound || !options.sound) return {animation, options};
+    let played = false;
+    const macros = Object.fromEntries(Object.entries(animation.macros).map(([key, macro]) => [key, (...args) => {
+        if (!played) animationUtils.playSound(options.sound, {volume: options.soundVolume});
+        played = true;
+        return macro(...args);
+    }]));
+    return {animation: Object.assign(Object.create(animation), {macros}), options};
 }
 /**
  * Find a document by name, searching the enabled compendiums for that type in the priority order the GM configured.
@@ -968,6 +1054,7 @@ export default {
     getAppliedOrPreferredAutomation,
     sortByPriority,
     updateItem,
+    updateItems,
     updateScales,
     getDataIssues,
     getDocumentHash,
@@ -983,6 +1070,7 @@ export default {
     getSourceName,
     calledEvent,
     calledEventSync,
+    remoteMacro,
     getAnimationConfig,
     getResolvedAnimation,
     getCompendiumDocumentByName,

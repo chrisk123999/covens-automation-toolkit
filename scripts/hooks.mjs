@@ -1,6 +1,6 @@
 import * as events from './events/_module.mjs';
-import {activities, chat, combat, conditionResistanceAndVulnerability, contextmenu, customMacros, effects, quickConditions, summon, troubleshooter, welcome} from './handlers/_module.mjs';
-import {animationModules, dae, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
+import {activities, chat, combat, contextmenu, customMacros, effects, quickConditions, sounds, summon, targetRollModes, troubleshooter, welcome} from './handlers/_module.mjs';
+import {animationModules, dae, ddbi, macroautocomplete, tidy5e, vae} from './integration/_modules.mjs';
 import {constants} from './lib/_module.mjs';
 import {dialogUtils, queryUtils} from './utilities/_module.mjs';
 export function readyHooks() {
@@ -21,6 +21,9 @@ export function readyHooks() {
     Hooks.on(constants.miscHookNames.vaeCreateEffectButtons, vae.createEffectButton);
     Hooks.on(constants.miscHookNames.aaWorkflowStart, animationModules.workflowStart);
     Hooks.on(constants.miscHookNames.preUseActivity, animationModules.preUseActivity);
+    Hooks.on('preCreateSequencerSound', sounds.preCreate);
+    Hooks.on('createSequencerSound', sounds.started);
+    Hooks.on('endedSequencerSound', sounds.ended);
     // Sheet Rendering
     Hooks.on(constants.sheetHookNames.getHeaderControlsActiveEffectConfig, contextmenu.appendHeaderControl);
     Hooks.on(constants.sheetHookNames.getHeaderControlsActivitySheet, contextmenu.appendHeaderControl);
@@ -52,11 +55,12 @@ export function readyHooks() {
     Hooks.on(constants.workflowHookNames.preTargetDamageApplication, events.workflowEvents.preTargetDamageApplication);
     Hooks.on(constants.workflowHookNames.rollFinished, events.workflowEvents.rollFinished);
     // Condition Resistance / Vulnerability
-    Hooks.on(constants.workflowHookNames.preTargetSave, conditionResistanceAndVulnerability);
+    Hooks.on(constants.workflowHookNames.preTargetSave, targetRollModes);
     // Rest Events
     Hooks.on(constants.restHookNames.restCompleted, events.restEvents.restCompleted);
     // Item Events
     Hooks.on(constants.itemHookNames.munched, events.itemEvents.actorMunched);
+    Hooks.on(constants.itemHookNames.compendiumMunched, ddbi.munched);
     // Effect Events
     Hooks.on(constants.effectHookNames.preCreateActiveEffect, events.effectEvents.preCreateActiveEffect);
     Hooks.on(constants.effectHookNames.preDeleteActiveEffect, events.effectEvents.preDeleteActiveEffect);

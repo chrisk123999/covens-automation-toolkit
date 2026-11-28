@@ -47,7 +47,8 @@ const rememberedChoices = new Map();
  */
 async function runDialog(userId, title, content, inputs, buttons, config) {
     if (userId === game.user.id) return await DialogApp.dialog(title, content, inputs, buttons, config);
-    return await queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
+    const remoteConfig = DialogApp.remoteConfig(config, [userId]);
+    return await queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config: remoteConfig}, remoteConfig.timeLimit * 1000);
 }
 /**
  * {@link runDialog}, but queued on the answering client. The dialog waits until that user's earlier queued dialogs are
@@ -62,10 +63,9 @@ async function runDialog(userId, title, content, inputs, buttons, config) {
  *                                  dialog is closed.
  */
 async function runQueuedDialog(userId, title, content, inputs, buttons, config) {
-    if (userId === game.user.id) {
-        return await dialogQueue.showDialog(async (...args) => await DialogApp.dialog(...args), title, content, inputs, buttons, config);
-    }
-    return await queryUtils.query('queuedDialog', game.users.get(userId), {title, content, inputs, buttons, config}, 300000);
+    if (userId === game.user.id) return await dialogQueue.showDialog(async (...args) => await DialogApp.dialog(...args), title, content, inputs, buttons, config);
+    const remoteConfig = DialogApp.remoteConfig(config, [userId]);
+    return await queryUtils.query('queuedDialog', game.users.get(userId), {title, content, inputs, buttons, config: remoteConfig}, remoteConfig.timeLimit * 1000);
 }
 /**
  * Prompt with one button per choice. Clicking a button confirms it immediately.
@@ -886,14 +886,16 @@ async function selectHitDie(actor, title, content, {max = 1, userId = game.user.
  * @param {string} [options.userId]         User the dialog is shown to. Defaults to the current user.
  * @param {string|Array} [options.buttons]  Button set. Defaults to `'yesNo'`.
  * @param {boolean} [options.timer]         Run the prompt timer. Defaults to true.
+ * @param {AbortSignal} [options.signal]    Closes the dialog when aborted. A `deadline` timestamp on it also limits
+ *                                          the prompt timer.
  * @returns {Promise<boolean|null>}         True for Yes, false for No. Null if the dialog is closed or the timer runs
  *                                          out.
  * @example
  * const useSmite = await dialogUtils.confirm(item.name, 'Use Divine Smite?');
  * if (!useSmite) return;
  */
-async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo', timer = true} = {}) {
-    const config = {width: content?.length > 100 ? 600 : undefined, timer};
+async function confirm(title, content, {userId = game.user.id, buttons = 'yesNo', timer = true, signal} = {}) {
+    const config = {width: content?.length > 100 ? 600 : undefined, timer, signal};
     let selection = await runDialog(userId, title, content, [], buttons, config);
     return selection?.buttons;
 }

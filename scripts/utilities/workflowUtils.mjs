@@ -351,11 +351,12 @@ async function syntheticItemDataRoll(itemData, actor, targets = [], {config = {}
  * @param {dnd5e.documents.activity.Activity} [options.activity]
  *                                                     Use this activity of the item rather than the item itself.
  * @param {boolean} [options.consumeResources]         Spend the resources the use consumes. Defaults to false.
+ * @param {boolean} [options.spellSlot]                Spend a spell slot. Defaults to true.
  * @returns {Promise<MidiQOL.Workflow|undefined>}
  * @example
  * await workflowUtils.specialItemUse(weapon, [target.document], item, {activity: weapon.system.activities.contents[0]});
  */
-async function specialItemUse(item, targets, sourceFeature, {activity, consumeResources = false} = {}) {
+async function specialItemUse(item, targets, sourceFeature, {activity, consumeResources = false, spellSlot = true} = {}) {
     const changes = Object.keys(CONFIG.DND5E.activityTypes).map(type => ({
         key: 'activities[' + type + '].activation.type',
         type: 'override',
@@ -371,7 +372,7 @@ async function specialItemUse(item, targets, sourceFeature, {activity, consumeRe
         duration: {value: 1, units: 'seconds'}
     });
     const effect = await itemUtils.enchantItem(item, effectData);
-    const workflow = activity ? await syntheticActivityRoll(item.system.activities.get(activity.id), targets, {consumeResources}) : await syntheticItemRoll(item, targets, {consumeResources});
+    const workflow = activity ? await syntheticActivityRoll(item.system.activities.get(activity.id), targets, {consumeResources, spellSlot}) : await syntheticItemRoll(item, targets, {consumeResources, spellSlot});
     if (effect) await documentUtils.deleteDocument(effect);
     return workflow;
 }
@@ -486,6 +487,19 @@ async function refundUse(workflow) {
     await workflow.activity.refund(deltas);
     await documentUtils.update(message, {'system.deltas': null});
     return true;
+}
+/**
+ * Clear the bonus action or reaction a use marked as spent, when the actor still had it before the use started.
+ * @param {MidiQOL.Workflow} workflow  Workflow whose action economy is restored.
+ * @returns {Promise<void>}
+ * @example
+ * await workflowUtils.restoreActionEconomy(workflow);
+ */
+async function restoreActionEconomy(workflow) {
+    const usedBefore = getWorkflowProperty(workflow, 'usedBefore');
+    if (!usedBefore || !workflow.actor) return;
+    if (workflow.itemUsesBonusAction && !usedBefore.bonus && MidiQOL.hasUsedBonusAction(workflow.actor)) await MidiQOL.removeBonusActionUsed(workflow.actor, true);
+    if (workflow.itemUsesReaction && !usedBefore.reaction && MidiQOL.hasUsedReaction(workflow.actor)) await MidiQOL.removeReactionUsed(workflow.actor, true);
 }
 /**
  * Whether the workflow continues an earlier use rather than starting a fresh one. True for over time rolls,
@@ -1127,6 +1141,31 @@ async function rollConfiguredSource(bonus, config, targets = []) {
     const activity = item.system.activities.get(config.rollActivity);
     if (activity) return await completeActivityUse(activity, targets, {consumeResources: config.consume});
 }
+/**
+ * Modify the damage item for a target by granting absorption, resistance, vulnerability, or immunity to the specified damage types.
+ * Use in `damagePercentReductions` macro passes. Applies to the current workflow only. Skipped when a multiplier is already present or would be ignored.
+ * @param {object} ditem Midi damage item.
+ * @param {{type: string, multiplier: 'absorption'|'resistance'|'vulnerability'|'immunity'}[]} damageTypes
+ * @example
+ * workflowUtils.damageMultiplierThisRoll(ditem, [{type: 'fire', multiplier: 'resistance'}]);
+ */
+function damageMultiplier(ditem, damageTypes = []) {
+    const {damageImmunityMultiplier: immunity, damageResistanceMultiplier: resistance, damageVulnerabilityMultiplier: vulnerability} = MidiQOL.configSettings();
+    const multipliers = {absorption: -1, immunity, resistance, vulnerability};
+    const map = damageTypes.reduce((obj, entry) => (obj[entry.type] = {multiplier: entry.multiplier, value: multipliers[entry.multiplier]}, obj), {});
+    let modified = false;
+    for (const d of ditem.calculatedDamages) {
+        const m = map[d.type];
+        if (m === undefined || d.value === 0 || d.potential.type?.[m.multiplier]) continue;
+        if (ditem.options.ignore[m.multiplier]?.has(d.type)) continue;
+        d.active.type ??= {};
+        d.active.multiplier *= m.value;
+        d.active.type[m.multiplier] = true;
+        d.value = Math.floor(d.damage * d.active.multiplier);
+        modified = true;
+    }
+    if (modified) recalculateHP(ditem);
+}
 export default {
     getActionType,
     isAttackType,
@@ -1143,6 +1182,7 @@ export default {
     setDamageItemDamage,
     isSustainedRoll,
     refundUse,
+    restoreActionEconomy,
     setWorkflowProperty,
     getWorkflowProperty,
     addMacroConditions,
@@ -1174,5 +1214,6 @@ export default {
     changeHit,
     getScaledDuration,
     rollConfiguredSource,
-    setNotSustainedRoll
+    setNotSustainedRoll,
+    damageMultiplier
 };

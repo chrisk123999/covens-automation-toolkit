@@ -138,7 +138,6 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         const actualHalf = token.width / 2;
         widthAdjust += canvas.grid.distance * Math.floor(actualHalf);
         if (!fudgeDistance && (widthAdjust !== actualHalf * canvas.grid.distance)) fudgeDistance = canvas.grid.distance / 2;
-        fudgeDistance += widthAdjust;
     }
     centerpoint = centerpoint ?? token.getCenterPoint();
     const origin = {x: centerpoint.x, y: centerpoint.y, elevation: token.elevation};
@@ -151,34 +150,38 @@ async function aimCrosshair({token, maxRange, crosshairsConfig, centerpoint, dra
         const area = new PIXI.Rectangle(x - (footprint.w / 2) + 1, y - (footprint.h / 2) + 1, footprint.w - 2, footprint.h - 2);
         return canvas.tokens.placeables.some(t => t.document !== token && t.bounds.intersects(area) && Math.abs(tokenSizeIndex - getSizeIndex(t.document)) < 2);
     };
-    const checkDistance = async (crosshairs) => {
-        if (maxRange && drawBoundries) {
-            const reach = Math.max(reachInSceneUnits(origin, maxRange, ringElevation ?? origin.elevation), 0);
-            drawing = drawRange(centerpoint, reach + fudgeDistance + widthAdjust + cellEdge);
-        }
-        let last;
-        while (crosshairs.inFlight) {
-            await genericUtils.sleep(100);
-            if (!crosshairs.inFlight || crosshairs._destroyed) break;
-            const {x, y} = crosshairs.position;
-            if (last?.x === x && last?.y === y) continue;
-            last = {x, y};
-            elevation = getElevation?.(crosshairs);
-            const measured = {x, y, elevation: elevation ?? ringElevation ?? origin.elevation};
-            const distance = Math.max(0, canvas.grid.measurePath([origin, measured]).distance.toNearest(0.1) - widthAdjust - fudgeDistance);
-            const blocked = (maxRange && distance > maxRange)
+    let last;
+    const validate = crosshairs => {
+        const {x, y} = crosshairs.position;
+        if (last?.x === x && last?.y === y) return;
+        last = {x, y};
+        elevation = getElevation?.(crosshairs);
+        const measured = {x, y, elevation: elevation ?? ringElevation ?? origin.elevation};
+        const distance = Math.max(0, canvas.grid.measurePath([origin, measured]).distance.toNearest(0.1) - widthAdjust - fudgeDistance);
+        const blocked = (maxRange && distance > maxRange)
                 || (checkOverlap && isOverlapping(measured))
                 || (level && !ignoreWalls && CONFIG.Canvas.polygonBackends.move.testCollision(token.getCenterPoint(), {x, y}, {type: 'move', mode: 'any', level}))
                 || validityFunctions.some(i => !i(crosshairs, {x, y, elevation}));
-            crosshairs.valid = !blocked;
-            crosshairs.icon = blocked ? 'icons/svg/hazard.svg' : baseIcon;
-            if (drawing) drawing.tint = blocked ? 0xff0000 : 0x32cd32;
-            crosshairs.draw();
-            if (maxRange) crosshairs.label = distance + '/' + rangeLabel;
+        crosshairs.valid = !blocked;
+        crosshairs.icon = blocked ? 'icons/svg/hazard.svg' : baseIcon;
+        if (drawing) drawing.tint = blocked ? 0xff0000 : 0x32cd32;
+        crosshairs.draw();
+        if (maxRange) crosshairs.label = distance + '/' + rangeLabel;
+    };
+    const checkDistance = async (crosshairs) => {
+        if (maxRange && drawBoundries && !drawing) {
+            const reach = Math.max(reachInSceneUnits(origin, maxRange, ringElevation ?? origin.elevation), 0);
+            drawing = drawRange(centerpoint, reach + fudgeDistance + widthAdjust + cellEdge);
+        }
+        while (crosshairs.inFlight) {
+            await genericUtils.sleep(100);
+            if (!crosshairs.inFlight || crosshairs._destroyed) break;
+            validate(crosshairs);
         }
     };
     const callbacks = {
         show: checkDistance,
+        validate,
         ...(customCallbacks ?? {})
     };
     const tokenSize = token ? (token.width * canvas.dimensions.distance) / 2 : undefined;

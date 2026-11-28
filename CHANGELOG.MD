@@ -1,22 +1,50 @@
 # 0.1.11 Release:
 ## Update Notes:
-- New DDB Importer Integration setting, on by default. CAT mass applies automations to characters imported with DDB Importer. Compendium munching support is coming soon.
+- New DDB Importer Integration setting. CAT mass applies automations to DDBI character imports and munches.
 - New Who Answers Dialogs setting routes player dialogs to the Player, the Gamemaster or Both.
 - New Dialog Position client setting picks one of nine screen positions.
 - New NPC Chat Cards Follow Disposition setting, on by default. Automation chat cards from hostile or secret NPCs post to the Gamemaster only.
 - New Inspect Data Issues option in the actor and scene CatKits finds and re-applies automated items that no longer match their automation.
 - New Disable Auras option in the scene CatKit.
 - Mass apply takes defaults instead of prompting.
+- Mass apply writes each actor's items in one update.
 - Settings export and import cover every module that depends on CAT.
 - Features on an NPC with a class item match class feature automations.
 - `workflowUtils.completeActivityUse` and `completeItemUse` roll damage by default.
+- New `automationUtils.remoteMacro` runs a registered remote macro on another client. The macro gets an abort signal that closes its dialogs when the call times out.
 - `activityUtils.getRange` measures through midi-qol, so range bonuses apply.
 - New `document` configuration type and `dialogUtils.abilityDialog`.
 - The CatKit generic feature picker groups generics by category. Search matches a generic's display name, identifier or category.
+- New effect special durations: Missed by effect source, and Missed Attack (any, or `missedAttack:mwak`, `rwak`, `msak`, `rsak`).
+- New Quick Conditions: Attack Roll Mode and Target Has Effect.
+- New spell school resistance and vulnerability, such as `flags.cat.SR.evo`, in DAE and the actor CatKit.
+- New `flags.cat.grappleShove.sizeBonus` adds sizes to an actor when checking which creatures it can grapple or shove. It and `flags.cat.grappleDrag.freeSizeOffset` are listed in DAE.
+- `workflowUtils.specialItemUse` accepts `spellSlot` to use a spell without spending a slot.
+- New `workflowUtils.restoreActionEconomy` clears the bonus action or reaction a use marked as spent.
+- The troubleshooter requires midi-qol's Roll Saves Before Damage setting to be off.
+- `tokenUtils.aimDestination`, `aimDestinationAs` and `teleportToken` accept `sightToken` to check sight from another token. Sight replaces the wall check whenever a vision source is used.
+- Summon follow-up targets have a Choose option that lets the user pick from the creatures in range.
+- Compendium summons have an Owner Picks option that sends the creature picker to the summoner's owner.
+- `compendiumUtils.getSpell` accepts `rules` to prefer a spell written for that rules version.
+- Settings menus built on CAT's settings menu ask to reload when a changed setting has `requiresReload`.
+- A disable condition entry prefixed with `!` disables the effect while its actor lacks that status.
+- Disable conditions are checked when an item with them is added to an actor.
+- New `toolsUpdated` called event runs when an actor's tool proficiencies change.
+- New Enable Sound FX client setting, off by default, plays the sounds set on CAT animations and generics for that user.
+- Every registered animation without its own sound option has Sound, Impact Sound and Sound Volume options.
+- Sounds are skipped while CAT Animations is off or defers to AA/BLFX, and when their Sequencer database path is not registered.
+- New `animationUtils.playSound`, `soundAvailable` and `clearUnavailableSounds` play or check a sound file or Sequencer database path.
 ## Bug Fixes:
 - Summon placement and removal run their animation callbacks.
 - Monster-specific automations no longer match items without an NPC owner.
 - A spell created by dnd5e for an automated item's cast activity receives its automation.
+- Uses cancelled before rolling no longer leave the bonus action or reaction marked as used.
+- Cancelling a summon's creature picker refunds the use, its bonus action or reaction, and ends its concentration.
+- Ally follow-up targets no longer always include the summoner.
+- Dialogs with a selection budget can't be confirmed while over it.
+- Crosshair range boundaries no longer stay on the canvas after placing.
+- Effects disabled by equipped armor or shields update when that equipment is added already equipped or deleted.
+- Teleports ignore walls that only block movement. Requiring sight without token vision checks sight-blocking walls instead.
 # 0.1.10 Release:
 ## Update Notes:
 - New Base Weapon restriction for alternate attributes matches the attacking weapon's base item.

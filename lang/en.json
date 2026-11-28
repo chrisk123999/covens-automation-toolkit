@@ -596,6 +596,7 @@
                     "Hint": "Choices offered before picking, written as CR|count separated by semicolons. Counts accept formulas."
                 },
                 "CompendiumRandomTier": "Roll for the Tier",
+                "CompendiumOwnerPicks": "Owner Picks the Creatures",
                 "Weight": {
                     "Label": "Budget Weight",
                     "Hint": "How much of the budget one of these costs. Defaults to 1."
@@ -649,6 +650,14 @@
                 "ConditionVulnerability": {
                     "Label": "Condition Vulnerability",
                     "Hint": "Conditions this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
+                },
+                "SchoolResistance": {
+                    "Label": "Spell School Resistance",
+                    "Hint": "Spell schools this actor has resistance to. Click All for any save, or pick specific abilities to scope it."
+                },
+                "SchoolVulnerability": {
+                    "Label": "Spell School Vulnerability",
+                    "Hint": "Spell schools this actor has vulnerability to. Click All for any save, or pick specific abilities to scope it."
                 },
                 "FeatureFailure": {
                     "Label": "Feature Failure",
@@ -730,6 +739,7 @@
                     "Triggers": "Triggers",
                     "Disposition": "Targets",
                     "OncePerTurn": "Once per turn",
+                    "ExcludeCaster": "Exclude Caster",
                     "DependentEffects": {
                         "Label": "Remove on exit",
                         "Hint": "Effects this activity applies are removed when the creature leaves the region or the region is deleted. The activity does not fire again while the creature still has one."
@@ -795,6 +805,8 @@
                     "attackedByAnotherCreature": "Attacked by another creature",
                     "hitBySource": "Hit by effect source",
                     "attackedBySource": "Attacked by effect source",
+                    "missedBySource": "Missed by effect source",
+                    "missedAttack": "Any Attack",
                     "moveFinished": "Movement finished",
                     "zeroSpeed": "Speed reduced to zero",
                     "tempHP": "Temporary HP lost",
@@ -807,6 +819,7 @@
                         "Movement": "Movement",
                         "HitPoints": "Hit Points",
                         "Grapple": "Grapple",
+                        "MissedAttack": "Missed Attack",
                         "ConditionAdded": "Condition Added",
                         "ConditionRemoved": "Condition Removed",
                         "Equipped": "Armor Equipped",
@@ -1167,6 +1180,10 @@
                 "Name": "Dice So Nice",
                 "Hint": "When enabled, Dice So Nice damage roll animations will be delayed until after all damage roll macros are complete."
             },
+            "SoundEffects": {
+                "Name": "Enable Sound FX",
+                "Hint": "Play the sounds set on CAT animations and generics on this client. Animation settings that stop or defer an animation also stop its sound."
+            },
             "AnimationPriority": {
                 "Name": "CAT Animations",
                 "Hint": "Animations that CPR and other CAT modules put on their items. Override plays the CAT animation and stops Automated Animations and BLFX auto-recognition on that item. Add plays the CAT animation alongside them. Defer skips the CAT animation when either of them animates the item. Off never stops Automated Animations or BLFX. Midi-QOL macros always run.",
@@ -1174,6 +1191,11 @@
                 "Both": "On & Add",
                 "Module": "On & Defer",
                 "Off": "Off"
+            },
+            "Animations": {
+                "Name": "Animations",
+                "Label": "Configure Animations",
+                "Hint": "Settings for CAT animations and sound effects."
             },
             "General": {
                 "Name": "General",
@@ -1302,6 +1324,16 @@
             "CI": {
                 "Name": "{condition} Condition Immunity"
             },
+            "SR": {
+                "Category": "CAT Spell School Resistance",
+                "Name": "{school} Spell School Resistance",
+                "Description": "Spell School Resistance to {school}, roll at advantage to save against those spells. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
+            "SV": {
+                "Category": "CAT Spell School Vulnerability",
+                "Name": "{school} Spell School Vulnerability",
+                "Description": "Spell School Vulnerability to {school}, roll at disadvantage to save against those spells. Use a value of 1/true for all saves, or a comma-separated list of abilities (e.g. str,dex)."
+            },
             "FeatureRollModes": "CAT Feature Roll Modes",
             "FF": {
                 "Name": "Feature Failure",
@@ -1322,6 +1354,14 @@
             "IgnoreDifficultTerrainTokens": {
                 "Name": "Ignore Difficult Terrain: Other Tokens",
                 "Description": "This actor does not consider other tokens as difficult terrain."
+            },
+            "GrappleShoveSizeBonus": {
+                "Name": "Grapple/Shove Size Bonus",
+                "Description": "Sizes added to this actor's size when checking which creatures it can grapple or shove."
+            },
+            "GrappleDragFreeSizeOffset": {
+                "Name": "Grapple Drag: Free Size Offset",
+                "Description": "Dragging a grappled creature costs no extra movement if the creature is at most this many sizes larger than this actor."
             },
             "Other": "CAT Other"
         },
@@ -1372,7 +1412,9 @@
                 "alignment": "Alignment",
                 "ability": "Ability Score",
                 "hasCondition": "Has Condition",
-                "itemType": "Item Type"
+                "itemType": "Item Type",
+                "attackRollMode": "Attack Roll Mode",
+                "hasEffect": "Target Has Effect"
             }
         },
         "Summons": {
@@ -1802,8 +1844,10 @@
                 },
                 "FollowUpTargetsOptions": {
                     "one": "One Creature",
-                    "all": "All Creatures"
+                    "all": "All Creatures",
+                    "choose": "Chosen Creatures"
                 },
+                "FollowUpTargetsChoose": "Choose the creatures affected.",
                 "MissingActor": "The summon actor could not be found.",
                 "NoSummons": "No summon creatures are configured.",
                 "AcBonus": "AC Bonus",
@@ -2015,6 +2059,10 @@
                     "Title": "General",
                     "Content": "General holds module-wide options."
                 },
+                "animations": {
+                    "Title": "Animations",
+                    "Content": "Animations turns CAT animations and their sounds on or off."
+                },
                 "automation": {
                     "Title": "Automation Sources",
                     "Content": "Automation Sources has its own tour."
@@ -2029,7 +2077,7 @@
                 },
                 "integration": {
                     "Title": "Integration",
-                    "Content": "Integration covers Dice So Nice and animation modules."
+                    "Content": "Integration covers DDB Importer and Dice So Nice."
                 },
                 "interface": {
                     "Title": "Interface",
@@ -2061,6 +2109,18 @@
             "NoPush": "Don't push",
             "PushPrompt": "How far to push {target}?",
             "CleavePrompt": "Make a Cleave attack against a second creature?"
+        },
+        "Sound": {
+            "Label": "Sound",
+            "Hint": "Sound played when the animation starts."
+        },
+        "ImpactSound": {
+            "Label": "Impact Sound",
+            "Hint": "Sound played when the animation hits."
+        },
+        "SoundVolume": {
+            "Label": "Sound Volume",
+            "Hint": "Volume of the sound."
         }
     }
 }

@@ -3,7 +3,7 @@ import {constants} from '../../lib/_module.mjs';
 const {fields} = foundry.data;
 
 const SPECIAL_DURATION_GROUPS = {
-    Workflow: ['endOfWorkflow', 'forceSave', 'dealtDamage', 'damaged', 'damagedByAlly', 'damagedByEnemy', 'damagedBySourceOrAlly', 'damagedBySourceAlly', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource'],
+    Workflow: ['endOfWorkflow', 'forceSave', 'dealtDamage', 'damaged', 'damagedByAlly', 'damagedByEnemy', 'damagedBySourceOrAlly', 'damagedBySourceAlly', 'hitByAnotherCreature', 'attackedByAnotherCreature', 'hitBySource', 'attackedBySource', 'missedBySource'],
     Turn: ['turnStart', 'turnEnd'],
     Movement: ['moveFinished', 'zeroSpeed'],
     HitPoints: ['tempHP', 'tempMaxHP'],
@@ -68,6 +68,7 @@ export default class EffectMedkit extends MedkitApp {
                 label: groupLabel(key),
                 options: sortChoices(list.map(k => ({value: k, label: _loc(`CAT.MEDKIT.Effect.SpecialDurations.${k}`)})))
             })),
+            prefixedGroup('MissedAttack', [{value: 'missedAttack', label: _loc('CAT.MEDKIT.Effect.SpecialDurations.missedAttack')}, ...['mwak', 'rwak', 'msak', 'rsak'].map(type => ({value: 'missedAttack:' + type, label: CONFIG.DND5E.itemActionTypes[type]}))]),
             prefixedGroup('ConditionAdded', statusChoices('')),
             prefixedGroup('ConditionRemoved', statusChoices('Removed')),
             prefixedGroup('Equipped', Object.entries(CONFIG.DND5E.armorTypes).map(([key, label]) => ({value: key, label}))),

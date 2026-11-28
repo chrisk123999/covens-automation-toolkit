@@ -69,12 +69,19 @@ export default class SettingsMenu extends MenuApp {
     submit(target) {
         if (target === 'true') this.#save = true;
     }
-    close(options) {
-        if (this.#save) {
-            this.#menuSettings.forEach(s => {
-                if (s.key in this.data) game.settings.set(this.namespace, s.key, this.data[s.key]);
-            });
+    async close(options) {
+        if (!this.#save) return super.close(options);
+        let requiresClientReload = false;
+        let requiresWorldReload = false;
+        for (const s of this.#menuSettings) {
+            if (!(s.key in this.data)) continue;
+            const priorValue = JSON.stringify(game.settings.get(this.namespace, s.key));
+            await game.settings.set(this.namespace, s.key, this.data[s.key]);
+            if (!s.requiresReload || priorValue === JSON.stringify(game.settings.get(this.namespace, s.key))) continue;
+            if (s.scope === 'world') requiresWorldReload = true;
+            else requiresClientReload = true;
         }
-        super.close(options);
+        await super.close(options);
+        if (requiresClientReload || requiresWorldReload) await foundry.applications.settings.SettingsConfig.reloadConfirm({world: requiresWorldReload});
     }
 }

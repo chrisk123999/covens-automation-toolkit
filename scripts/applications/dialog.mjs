@@ -27,6 +27,7 @@ export default class DialogApp extends CatApp {
     #resultsPromise;
     #timer = new PromptTimer(this, () => this.#expire());
     #timed = true;
+    #timeLimit;
     #timeoutResult;
     constructor(options) {
         let title, content, inputs, buttons, config;
@@ -40,6 +41,7 @@ export default class DialogApp extends CatApp {
         super(init);
         this.#anchor = config?.anchor;
         this.#timed = config?.timer !== false;
+        this.#timeLimit = config?.timeLimit ?? DialogApp.secondsLeft(config?.signal);
         this.#timeoutResult = config?.timeoutResult;
         this._armResults();
         if (!options?.length) return;
@@ -95,7 +97,8 @@ export default class DialogApp extends CatApp {
     get footerButtons() {
         const selective = this.#context.inputs.filter(input => input.requireSelection);
         const blockConfirm = (selective.length > 0 && !selective.some(input => input.currentNum > 0))
-            || this.#context.inputs.some(input => input.requireTotal && input.currentSpent < input.totalMax);
+            || this.#context.inputs.some(input => input.requireTotal && input.currentSpent < input.totalMax)
+            || this.#context.inputs.some(input => Number.isFinite(input.totalMax) && input.currentSpent > input.totalMax);
         return this.#context.buttons.map(button => ({...button, action: 'confirm', disabled: blockConfirm && button.name === 'true'}));
     }
 
@@ -205,6 +208,7 @@ export default class DialogApp extends CatApp {
      * @returns {Promise<object|null>}
      */
     static async dialog(...options) {
+        if (options[4]?.signal?.aborted) return null;
         const userIds = options[4]?.routed ? [game.user.id] : queryUtils.dialogUserIds(game.user.id);
         if (userIds.length === 1 && userIds[0] === game.user.id) return await DialogApp.#show(options);
         return await DialogApp.route(userIds, options);
@@ -217,11 +221,13 @@ export default class DialogApp extends CatApp {
      * @returns {Promise<object|null>}
      */
     static async route(userIds, [title, content, inputs, buttons, config]) {
-        const id = config?.id ?? 'cat-dialog-' + foundry.utils.randomID();
-        const routedConfig = {...config, id, routed: true};
+        if (config?.signal?.aborted) return null;
+        const routedConfig = {...config, id: config?.id ?? 'cat-dialog-' + foundry.utils.randomID(), routed: true};
+        const remoteConfig = DialogApp.remoteConfig(routedConfig, userIds.filter(userId => userId !== game.user.id));
+        const localConfig = {...routedConfig, timeLimit: remoteConfig.timeLimit};
         const showTo = userId => {
-            if (userId === game.user.id) return DialogApp.#show([title, content, inputs, buttons, routedConfig]);
-            return queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config: routedConfig}, 300000);
+            if (userId === game.user.id) return DialogApp.#show([title, content, inputs, buttons, localConfig]);
+            return queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config: remoteConfig}, remoteConfig.timeLimit * 1000);
         };
         return await new Promise(resolve => {
             let settled = false;
@@ -231,12 +237,37 @@ export default class DialogApp extends CatApp {
                     if (settled) return;
                     settled = true;
                     resolve(result);
-                    for (const otherId of userIds) if (otherId !== userId) DialogApp.closeFor(otherId, id);
+                    for (const otherId of userIds) if (otherId !== userId) DialogApp.closeFor(otherId, localConfig.id);
                 }, () => {
                     if (++failed === userIds.length) resolve(null);
                 });
             }
         });
+    }
+
+    /**
+     * Seconds left before an AbortSignal's `deadline` timestamp, at least 1.
+     * @param {AbortSignal} [signal] Signal with a `deadline` in milliseconds.
+     * @returns {number|undefined} Undefined without a deadline.
+     */
+    static secondsLeft(signal) {
+        if (!signal?.deadline) return;
+        return Math.max((signal.deadline - Date.now()) / 1000, 1);
+    }
+
+    /**
+     * Turn a dialog config into one that can be sent to other clients. Aborting the signal closes
+     * the dialog on each of those users' clients.
+     * @param {object} [config] Dialog config, optionally with an AbortSignal as `signal`.
+     * @param {string[]} userIds Users the dialog is sent to.
+     * @returns {object} Config without the signal, with an `id` and a `timeLimit` in seconds.
+     */
+    static remoteConfig(config, userIds) {
+        const {signal, ...rest} = config ?? {};
+        const id = rest.id ?? 'cat-dialog-' + foundry.utils.randomID();
+        signal?.addEventListener('abort', () => userIds.forEach(userId => DialogApp.closeFor(userId, id)), {once: true});
+        const timeLimit = Math.min(rest.timeLimit ?? MidiQOL.configSettings().reactionTimeout, DialogApp.secondsLeft(signal) ?? Infinity);
+        return {...rest, id, timeLimit};
     }
 
     /**
@@ -253,6 +284,7 @@ export default class DialogApp extends CatApp {
         return new Promise((resolve) => {
             const dialog = new DialogApp(options);
             dialog.addEventListener('close', () => resolve(null), {once: true});
+            options[4]?.signal?.addEventListener('abort', () => dialog.close(), {once: true});
             // Inherit detached-window context from the currently active app (so dialogs spawned
             // from a detached popup open in that popup, not the main client).
             const windowId = ui.activeWindow?.window?.windowId;
@@ -885,7 +917,7 @@ export default class DialogApp extends CatApp {
     async _prepareContext(options) {
         if (!this.#context) this.#formatInputs();
         const context = await super._prepareContext(options);
-        return {...this.#context, ...this.#tabContext(), ...context, timer: PromptTimer.enabled && this.#timed};
+        return {...this.#context, ...this.#tabContext(), ...context, timer: (PromptTimer.enabled && this.#timed) || this.#timeLimit > 0};
     }
 
     async _preClose(options) {
@@ -1034,7 +1066,7 @@ export default class DialogApp extends CatApp {
         if (counter && header) header.insertBefore(counter, header.querySelector('[data-action="toggleDetach"]'));
         this.#timer.draw();
         if (options.isFirstRender) {
-            if (this.#timed) this.#timer.start();
+            if (this.#timed || this.#timeLimit > 0) this.#timer.start(this.#timeLimit, this.#timed);
             if (this.#anchor) this.setPosition({left: this.#anchor.x - this.element.offsetWidth / 2, top: this.#anchor.y - 16});
             else {
                 this.#placeFromSetting();

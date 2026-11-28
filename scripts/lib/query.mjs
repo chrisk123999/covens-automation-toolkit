@@ -1,6 +1,7 @@
 import {documentUtils, effectUtils, itemUtils, tokenUtils, workflowUtils} from '../utilities/_module.mjs';
 import DialogApp, {dialogQueue} from '../applications/dialog.mjs';
 import Logging from './logging.mjs';
+import constants from './constants.mjs';
 async function dialog({title, content, inputs, buttons, config}) {
     return await DialogApp.dialog(title, content, inputs, buttons, config);
 }
@@ -158,12 +159,45 @@ async function syntheticActivityDataRoll({activityData, itemUuid, targetUuids, c
     const workflow = await workflowUtils.syntheticActivityDataRoll(activityData, item, targets, {config, options, dialog, message, atLevel, consumeResources, spellSlot, fast});
     return workflow?.getSafeMacroData();
 }
-async function aimDestination({uuid, range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints}) {
+async function aimDestination({uuid, range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints, sightTokenUuid}) {
     const token = await fromUuid(uuid);
     if (!token) return;
-    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints});
+    const sightToken = sightTokenUuid ? await fromUuid(sightTokenUuid) : undefined;
+    const destination = await tokenUtils.aimDestination(token, {range, centerpoint, crosshairsConfig, requireSight, ignoreWalls, allowedPoints, sightToken});
     if (!destination) return;
     return {x: destination.x, y: destination.y, elevation: destination.elevation, level: destination.level, cancelled: destination.cancelled};
+}
+async function remoteMacro({identifier, rules, source, macroData}, {timeout, user}) {
+    let signal;
+    if (timeout) {
+        signal = AbortSignal.timeout(Math.max(timeout - 1000, 0));
+        signal.deadline = Date.now() + timeout - 1000;
+    }
+    const key = `${source}|${identifier}|${rules}`;
+    Logging.addEntry('DEBUG', `User ${user.name} (${user.id}) called a remote macro on ${game.user.name}'s (${game.user.id}) client. (${key})`);
+    const entry = constants.macros.getFnMacros(source, rules, identifier, 'remote');
+    if (!entry) return Logging.addMacroWarning(source, identifier, `Remote macro not found. (key) ${key}`);
+    const errorData = {macroClass: {source, identifier, rules}, sender: user.id, receiver: game.user.id, scope: macroData};
+    if (entry.macros.length === 1) {
+        let result;
+        const macro = entry.macros[0].macro;
+        Logging.addEntry('DEBUG', `Executing Remote Macro: ${macro.name} from ${key}`);
+        try { result = await macro({...macroData, signal}); }
+        catch (e) { Logging.logMacroException(errorData, e); }
+        return result;
+    } else {
+        const results = [];
+        entry.macros = entry.macros.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+        for (let i = 0; i < entry.macros.length; i++) {
+            let result;
+            const macro = entry.macros[i].macro;
+            Logging.addEntry('DEBUG', `Executing Remote Macro ${i + 1} of ${entry.macros.length}: ${macro.name} from ${key}`);
+            try { result = await macro({...macroData, signal}); }
+            catch (e) { Logging.logMacroException(errorData, e); }
+            results.push(result);
+        }
+        return results;
+    }
 }
 function registerQueries() {
     const handlers = {
@@ -191,7 +225,8 @@ function registerQueries() {
         removeFavorites,
         syntheticItemDataRoll,
         syntheticActivityDataRoll,
-        macroWarning
+        macroWarning,
+        remoteMacro
     };
     for (const [name, fn] of Object.entries(handlers)) {
         globalThis.CONFIG.queries['cat.' + name] = fn;

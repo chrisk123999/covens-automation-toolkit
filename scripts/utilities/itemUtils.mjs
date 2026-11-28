@@ -366,10 +366,7 @@ function getItemDamageTypes(item) {
  */
 function stripDescriptionBlock(html) {
     if (!html?.includes('cat-description')) return html;
-    const wrapper = globalThis.document.createElement('div');
-    wrapper.innerHTML = html;
-    wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
-    return wrapper.innerHTML;
+    return replaceDescriptionBlock(html, '');
 }
 /**
  * Fill bare `[[/damage]]` and `[[/save]]` enrichers in description HTML with the item's damage parts and save ability
@@ -417,8 +414,22 @@ function resolveDescriptionEnrichers(html, item) {
  */
 async function setDescriptionBlock(item, content) {
     const current = item.system.description?.value ?? '';
+    const updated = replaceDescriptionBlock(current, content);
+    if (updated === current) return;
+    await documentUtils.update(item, {'system.description.value': updated});
+}
+/**
+ * Replace CAT's generated `cat-description` block at the end of description HTML. Produces the same HTML as
+ * {@link setDescriptionBlock} without updating any document.
+ * @param {string} html     Description HTML.
+ * @param {string} content  HTML for the block. Empty removes the block.
+ * @returns {string}        The updated HTML.
+ * @example
+ * const description = itemUtils.replaceDescriptionBlock(item.system.description.value, '<p>Automated by CAT.</p>');
+ */
+function replaceDescriptionBlock(html, content) {
     const wrapper = globalThis.document.createElement('div');
-    wrapper.innerHTML = current;
+    wrapper.innerHTML = html ?? '';
     wrapper.querySelectorAll(':scope > .cat-description').forEach(block => block.remove());
     if (content) {
         const block = globalThis.document.createElement('div');
@@ -426,9 +437,20 @@ async function setDescriptionBlock(item, content) {
         block.innerHTML = content;
         wrapper.append(block);
     }
-    const updated = wrapper.innerHTML;
-    if (updated === current) return;
-    await documentUtils.update(item, {'system.description.value': updated});
+    return wrapper.innerHTML;
+}
+/**
+ * The content of the first `cat-description` block in description HTML.
+ * @param {string} html  Description HTML.
+ * @returns {string}     The block's inner HTML, or an empty string when there is none.
+ * @example
+ * const notes = itemUtils.getDescriptionBlock(source.system.description.value);
+ */
+function getDescriptionBlock(html) {
+    if (!html?.includes('cat-description')) return '';
+    const wrapper = globalThis.document.createElement('div');
+    wrapper.innerHTML = html;
+    return wrapper.querySelector(':scope > .cat-description')?.innerHTML ?? '';
 }
 /**
  * Collect the dependency ids of every activity on an item from {@link activityUtils.getDependencies}.
@@ -632,6 +654,8 @@ export default {
     stripDescriptionBlock,
     resolveDescriptionEnrichers,
     setDescriptionBlock,
+    replaceDescriptionBlock,
+    getDescriptionBlock,
     getDependencies,
     canCast,
     getSpellAttackBonus,

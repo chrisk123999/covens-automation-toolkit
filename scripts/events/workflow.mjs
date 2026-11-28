@@ -4,12 +4,14 @@ import {constants, Events} from '../lib/_module.mjs';
 import {optionalBonus, regionAttacks, regionDamage, regionVisibility} from '../mechanics/_module.mjs';
 import {workflowUtils} from '../utilities/_module.mjs';
 async function preTargeting({activity, token, config, dialog, message}) {
+    if (config?.workflow && activity.actor) workflowUtils.setWorkflowProperty(config.workflow, 'usedBefore', {bonus: MidiQOL.hasUsedBonusAction(activity.actor), reaction: MidiQOL.hasUsedReaction(activity.actor)});
     let event = await new Events.PreTargetingWorkflowEvent(constants.workflowPasses.preTargeting, {activity, token, config, dialog, message}).run();
     if (event) return false;
 }
 async function refundAborted(workflow) {
     if (!workflow.aborted || workflowUtils.getWorkflowProperty(workflow, 'keepConsumption')) return;
     await workflow.refundConsumption?.();
+    await workflowUtils.restoreActionEconomy(workflow);
 }
 async function preItemRoll(workflow) {
     if (game.settings.get('cat', 'diceSoNice') && game.modules.get('dice-so-nice')?.active) diceSoNice.preItemRoll(workflow);
