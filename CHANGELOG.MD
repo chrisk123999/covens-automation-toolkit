@@ -10,6 +10,7 @@
 - Settings export and import cover every module that depends on CAT.
 - Features on an NPC with a class item match class feature automations.
 - `workflowUtils.completeActivityUse` and `completeItemUse` roll damage by default.
+- New `automationUtils.remoteMacro` runs a registered remote macro on another client. The macro gets an abort signal that closes its dialogs when the call times out.
 - `activityUtils.getRange` measures through midi-qol, so range bonuses apply.
 - New `document` configuration type and `dialogUtils.abilityDialog`.
 - The CatKit generic feature picker groups generics by category. Search matches a generic's display name, identifier or category.

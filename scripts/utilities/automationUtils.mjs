@@ -894,15 +894,17 @@ function calledEventSync(pass, actor, {multiResult, canOverlap, data} = {}) {
     return new Events.CalledEvent(actor, pass, data).runSync({canOverlap, multiResult});
 }
 /**
- * Run a macro on another client. The macro must be registered as a remote macro.
- * @throws Times out after the number of seconds configured in MidiQOL's reaction timer setting.
+ * Run a macro on another client. The macro must be registered as a remote macro. Its scope gets `signal`, an
+ * AbortSignal that aborts just before the call times out. Pass it as `signal` in dialog configs and `dialogUtils`
+ * options so those dialogs close at that point.
  * @param {string} source             Module id.
  * @param {string} identifier         Macro identifier.
  * @param {'2014'|'2024'|'all'} rules
  * @param {object} macroData          Data provided to the macro scope. Must be serializable.
  * @param {string} userId
  * @returns {Promise}                 Return data from the macro, or an array of return data
- *                                    if the registered macro has many entries.
+ *                                    if the registered macro has many entries. Undefined when the other client
+ *                                    doesn't answer within MidiQOL's reaction timer.
  * @example
  * // register
  * cat.api.registerFnMacro({
@@ -915,14 +917,16 @@ function calledEventSync(pass, actor, {multiResult, canOverlap, data} = {}) {
 })
  * // call
  * const userId = queryUtils.firstOwner(targetActor, true);
- * const prompt = await automationUtils.remoteMacro('chris-premades', 'buildComplicatedDialog', 'all', userId);
+ * const prompt = await automationUtils.remoteMacro('chris-premades', 'buildComplicatedDialog', 'all', {}, userId);
  */
 async function remoteMacro(source, identifier, rules, macroData, userId) {
     const user = game.users.get(userId);
     if (!user) return Logging.addMacroWarning(source, identifier, `Remote macro sent to an unknown user: ${userId}`);
-    if (!game.user.hasPermission('MACRO_SCRIPT'))
-        return Logging.addMacroWarning(source, identifier, `User ${user.name} (${userId}) does not have permission to execute macros.`);
-    return await queryUtils.query('remoteMacro', user, {source, identifier, rules, macroData}, 1000 * MidiQOL.configSettings().reactionTimeout);
+    try {
+        return await queryUtils.query('remoteMacro', user, {source, identifier, rules, macroData}, 1000 * MidiQOL.configSettings().reactionTimeout);
+    } catch (error) {
+        Logging.addMacroWarning(source, identifier, `Remote macro on ${user.name}'s client failed: ${error.message}`);
+    }
 }
 /**
  * The animation selected in a config key, with its resolved config values. Pass `source` and `identifier` when the

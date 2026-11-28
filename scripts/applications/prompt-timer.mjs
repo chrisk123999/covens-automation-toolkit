@@ -6,6 +6,7 @@ export default class PromptTimer {
     left = 0;
     paused = false;
     last = 0;
+    limited = false;
 
     constructor(app, onExpire) {
         this.#app = app;
@@ -24,10 +25,11 @@ export default class PromptTimer {
         return !!this.#interval;
     }
 
-    start() {
-        const seconds = PromptTimer.seconds;
-        if (seconds <= 0 || this.running) return;
-        Object.assign(this, {total: seconds, left: seconds, paused: false, last: Date.now()});
+    start(limit, useSetting = true) {
+        const candidates = [useSetting ? PromptTimer.seconds : 0, limit].filter(value => value > 0);
+        if (!candidates.length || this.running) return;
+        const seconds = Math.min(...candidates);
+        Object.assign(this, {total: seconds, left: seconds, paused: false, last: Date.now(), limited: limit > 0});
         this.#interval = setInterval(() => this.#tick(), 200);
         this.draw();
     }
@@ -38,7 +40,7 @@ export default class PromptTimer {
     }
 
     toggle() {
-        if (this.running) this.setPaused(!this.paused);
+        if (this.running && !this.limited) this.setPaused(!this.paused);
     }
 
     setPaused(paused, left) {
