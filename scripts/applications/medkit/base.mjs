@@ -9,6 +9,7 @@ const {fields} = foundry.data;
 const massApplyTabs = {character: 'CAT.MEDKIT.MassApply.Tabs.Characters', npc: 'CAT.MEDKIT.MassApply.Tabs.NPCs', other: 'CAT.MEDKIT.MassApply.Tabs.Other'};
 const massApplyTabOrder = Object.values(massApplyTabs);
 const massApplyRules = ['2014', '2024'];
+let massApplyQueue = Promise.resolve();
 
 Hooks.once('setup', () => {
     foundry.applications.handlebars.loadTemplates([
@@ -273,7 +274,9 @@ export default class MedkitApp extends CatApp {
      * @param {Item5e[]} [options.items] Items to apply to instead of this medkit's own.
      */
     async massApply({prompt = true, items} = {}) {
-        return await this.#runMassApply({prompt, items});
+        const run = massApplyQueue.then(() => this.#runMassApply({prompt, items}));
+        massApplyQueue = run.catch(() => {});
+        return await run;
     }
 
     async _preparePartContext(partId, context) {
@@ -1347,20 +1350,15 @@ export default class MedkitApp extends CatApp {
         const applying = sortedItems.filter(entry => choices[this.#massApplyID(entry.item)].included);
         const rules = massApplyRules.includes(choices.switchRules) ? choices.switchRules : undefined;
         const progress = genericUtils.notify('CAT.MEDKIT.MassApply.Started', {progress: true});
-        let done = 0;
-        for (const entry of applying) {
+        const updates = applying.map(entry => {
             const options = choices[this.#massApplyID(entry.item)];
             const targets = entry.switchable.includes(rules) ? MedkitApp.#rulesAutomations(entry.item, rules) : [];
-            if (targets.length) {
-                let source = options.source ?? entry.preferred?.source ?? entry.applied?.source;
-                if (!targets.some(automation => automation.source === source)) source = automationUtils.sortByPriority(targets)[0].source;
-                await automationUtils.updateItem(entry.item, {source, rules, massApply: true});
-            } else {
-                await automationUtils.updateItem(entry.item, {source: options.source ?? entry.preferred?.source, massApply: true});
-            }
-            done++;
-            progress.update({pct: done / applying.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: applying.length, name: entry.item.name})});
-        }
+            if (!targets.length) return {item: entry.item, source: options.source ?? entry.preferred?.source};
+            let source = options.source ?? entry.preferred?.source ?? entry.applied?.source;
+            if (!targets.some(automation => automation.source === source)) source = automationUtils.sortByPriority(targets)[0].source;
+            return {item: entry.item, source, rules};
+        });
+        await automationUtils.updateItems(updates, {massApply: true, onProgress: MedkitApp.#progressCallback(progress, updates.length)});
         progress.update({pct: 1, message: _loc('CAT.MEDKIT.MassApply.Done')});
         this.render();
         await this._afterMassApply();
@@ -1395,12 +1393,8 @@ export default class MedkitApp extends CatApp {
         const repairing = entries.filter(({item}) => choices[this.#massApplyID(item)]);
         if (!repairing.length) return;
         const progress = genericUtils.notify('CAT.MEDKIT.DataIssues.Started', {progress: true});
-        let done = 0;
-        for (const {item} of repairing) {
-            await automationUtils.updateItem(item, {source: documentUtils.getSource(item), massApply: true});
-            done++;
-            progress.update({pct: done / repairing.length, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total: repairing.length, name: item.name})});
-        }
+        const updates = repairing.map(({item}) => ({item, source: documentUtils.getSource(item)}));
+        await automationUtils.updateItems(updates, {massApply: true, onProgress: MedkitApp.#progressCallback(progress, updates.length)});
         progress.update({pct: 1, message: _loc('CAT.MEDKIT.DataIssues.Done')});
         this.render();
     }
@@ -1413,6 +1407,10 @@ export default class MedkitApp extends CatApp {
             if (issues.length) entries.push({item, issues});
         }
         return entries;
+    }
+
+    static #progressCallback(progress, total) {
+        return (done, item) => progress.update({pct: done / total, message: _loc('CAT.MEDKIT.MassApply.Progress', {done, total, name: item.name})});
     }
 
     #massApplyID(item) { return item.actor ? `${item.actor.id}|${item.id}` : item.id; }

@@ -582,7 +582,49 @@ function isDefaultImage(img) {
  * @example
  * await automationUtils.updateItem(item, {source: 'chris-premades', openSheet: true});
  */
-async function updateItem(item, {source, rules = documentUtils.getRules(item), skipEvent, openSheet, massApply = false} = {}) {
+async function updateItem(item, {source, rules, skipEvent, openSheet, massApply = false} = {}) {
+    const updated = await updateItems([{item, source, rules}], {skipEvent, massApply});
+    if (updated.length && openSheet) await item.sheet.render(true);
+}
+/**
+ * Apply automations to several items with one write per actor or compendium instead of one per item. Each entry is
+ * prepared as {@link updateItem} would, then scales are written and medkit item events fire in entry order.
+ * @param {{item: Item5e, source?: string, rules?: string}[]} entries  Items to update, with the source and rules each
+ *                                                                     would pass to {@link updateItem}.
+ * @param {object} [options]                                           Additional options.
+ * @param {boolean} [options.skipEvent]                                Skip the medkit item events.
+ * @param {boolean} [options.massApply]                                Tell medkit macros to take defaults instead of
+ *                                                                     prompting.
+ * @param {Function} [options.onProgress]                              Called with the count done and the item after each
+ *                                                                     item finishes.
+ * @returns {Promise<Item5e[]>}                                        The items an automation was applied to.
+ * @example
+ * await automationUtils.updateItems(actor.items.map(item => ({item})), {massApply: true});
+ */
+async function updateItems(entries, {skipEvent, massApply = false, onProgress} = {}) {
+    const prepared = (await Promise.all(entries.map(async ({item, source, rules = documentUtils.getRules(item)}) => {
+        const result = await prepareItemUpdate(item, {source, rules});
+        return result && {item, ...result};
+    }))).filter(Boolean);
+    const options = {recursive: false, diff: false};
+    for (const [key, group] of Map.groupBy(prepared, entry => entry.item.actor ?? entry.item.pack ?? null)) {
+        const updates = group.map(entry => entry.documentData);
+        if (key instanceof Actor) {
+            await documentUtils.updateEmbeddedDocuments(key, 'Item', updates, options);
+            const scaleUpdates = group.filter(entry => !isReplaced(entry.item)).reduce((all, entry) => collectScaleUpdates(entry.item, entry.automation, all), []);
+            if (scaleUpdates.length) await documentUtils.updateEmbeddedDocuments(key, 'Item', scaleUpdates);
+        } else {
+            await documentUtils.modifyBatch([{action: 'update', documentName: 'Item', pack: key ?? undefined, updates, ...options}]);
+        }
+    }
+    const updated = prepared.map(entry => entry.item);
+    for (const [index, {item}] of entries.entries()) {
+        if (!skipEvent && item.actor && updated.includes(item) && !isReplaced(item)) await itemEvents.itemMedkit(item, {massApply});
+        onProgress?.(index + 1, item);
+    }
+    return updated;
+}
+async function prepareItemUpdate(item, {source, rules}) {
     if (isReplaced(item)) return;
     let automation;
     const identifier = documentUtils.getIdentifier(item);
@@ -605,11 +647,11 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
         if (fieldValue) genericUtils.setProperty(documentData, field, fieldValue);
     });
     if (['2014', '2024'].includes(automation.rules)) genericUtils.setProperty(documentData, 'system.source.rules', automation.rules);
-    const existingDescription = genericUtils.getProperty(documentData, 'system.description.value');
-    if (existingDescription) {
-        const stripped = itemUtils.stripDescriptionBlock(existingDescription);
-        genericUtils.setProperty(documentData, 'system.description.value', game.settings.get('cat', 'fixDescriptionEnrichers') ? itemUtils.resolveDescriptionEnrichers(stripped, item) : stripped);
-    }
+    const description = genericUtils.getProperty(documentData, 'system.description.value') ?? '';
+    const resolved = game.settings.get('cat', 'fixDescriptionEnrichers') ? itemUtils.resolveDescriptionEnrichers(description, item) : description;
+    const sourceBlock = itemUtils.getDescriptionBlock(sourceDocument.system.description?.value);
+    const updatedDescription = sourceBlock ? itemUtils.replaceDescriptionBlock(resolved, sourceBlock) : itemUtils.stripDescriptionBlock(resolved);
+    if (updatedDescription) genericUtils.setProperty(documentData, 'system.description.value', updatedDescription);
     genericUtils.setProperty(documentData, 'flags.cat.automation.source', automation.source);
     genericUtils.setProperty(documentData, 'flags.cat.automation.version', automation.version);
     delete documentData.flags.cat.automation.sourceType;
@@ -634,11 +676,7 @@ async function updateItem(item, {source, rules = documentUtils.getRules(item), s
         }
     }
     await relinkCastActivities(documentData);
-    const actor = item.actor;
-    await documentUtils.update(item, documentData, {recursive: false, diff: false});
-    if (actor) await updateScales(item, {automation});
-    if (!skipEvent && actor) await itemEvents.itemMedkit(item, {massApply});
-    if (openSheet) await item.sheet.render(true);
+    return {automation, documentData};
 }
 /**
  * Read one animation config value for an animation selected in a generic macro's config. Checks the document's stored
@@ -711,13 +749,16 @@ function resolveScaleHolder(actor, identifier) {
  * await automationUtils.updateScales(item);
  */
 async function updateScales(item, {automation} = {}) {
+    const updates = collectScaleUpdates(item, automation);
+    if (updates.length) await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
+}
+function collectScaleUpdates(item, automation, updates = []) {
     automation ??= getCurrentAutomation(item);
-    if (!automation) return;
+    if (!automation) return updates;
     const rules = documentUtils.getRules(item);
     const classIdentifier = getConfigValue(item, 'classIdentifier');
     const subclassIdentifier = getConfigValue(item, 'subclassIdentifier');
-    if (!classIdentifier && !subclassIdentifier) return;
-    const updates = [];
+    if (!classIdentifier && !subclassIdentifier) return updates;
     automation.scales?.forEach(scaleData => {
         let scale = constants.scales.getScaleByIdentifier(scaleData.identifier, {rules, source: scaleData.source});
         let targetIdentifier = classIdentifier;
@@ -737,7 +778,7 @@ async function updateScales(item, {automation} = {}) {
         advancementData._id = scaleValue?.id ?? advancementKey;
         advancementData.configuration.identifier = scale.identifier;
         classData.system.advancement[advancementKey] = advancementData;
-        const change = {_id: classItem.id, 'system.advancement': classData.system.advancement};
+        const change = {_id: classItem.id, system: {advancement: classData.system.advancement}};
         const currentUpdate = updates.find(i => i._id === classItem.id);
         if (currentUpdate) {
             genericUtils.mergeObject(currentUpdate, change);
@@ -745,7 +786,7 @@ async function updateScales(item, {automation} = {}) {
             updates.push(change);
         }
     });
-    if (updates.length) await documentUtils.updateEmbeddedDocuments(item.actor, 'Item', updates);
+    return updates;
 }
 /**
  * Areas where an item has drifted from its applied automation's source document. Uses are skipped when CAT preserves
@@ -1013,6 +1054,7 @@ export default {
     getAppliedOrPreferredAutomation,
     sortByPriority,
     updateItem,
+    updateItems,
     updateScales,
     getDataIssues,
     getDocumentHash,

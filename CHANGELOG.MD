@@ -7,6 +7,7 @@
 - New Inspect Data Issues option in the actor and scene CatKits finds and re-applies automated items that no longer match their automation.
 - New Disable Auras option in the scene CatKit.
 - Mass apply takes defaults instead of prompting.
+- Mass apply writes each actor's items in one update.
 - Settings export and import cover every module that depends on CAT.
 - Features on an NPC with a class item match class feature automations.
 - `workflowUtils.completeActivityUse` and `completeItemUse` roll damage by default.

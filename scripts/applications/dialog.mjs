@@ -222,11 +222,12 @@ export default class DialogApp extends CatApp {
      */
     static async route(userIds, [title, content, inputs, buttons, config]) {
         if (config?.signal?.aborted) return null;
-        const localConfig = {...config, id: config?.id ?? 'cat-dialog-' + foundry.utils.randomID(), routed: true};
-        const remoteConfig = DialogApp.remoteConfig(localConfig, userIds.filter(userId => userId !== game.user.id));
+        const routedConfig = {...config, id: config?.id ?? 'cat-dialog-' + foundry.utils.randomID(), routed: true};
+        const remoteConfig = DialogApp.remoteConfig(routedConfig, userIds.filter(userId => userId !== game.user.id));
+        const localConfig = {...routedConfig, timeLimit: remoteConfig.timeLimit};
         const showTo = userId => {
             if (userId === game.user.id) return DialogApp.#show([title, content, inputs, buttons, localConfig]);
-            return queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config: remoteConfig}, 300000);
+            return queryUtils.query('dialog', game.users.get(userId), {title, content, inputs, buttons, config: remoteConfig}, remoteConfig.timeLimit * 1000);
         };
         return await new Promise(resolve => {
             let settled = false;
@@ -255,18 +256,18 @@ export default class DialogApp extends CatApp {
     }
 
     /**
-     * Turn a dialog config into one that can be sent to other clients. The `signal` is replaced by the seconds left on
-     * its `deadline` as `timeLimit`, and aborting it closes the dialog on each of those users' clients.
+     * Turn a dialog config into one that can be sent to other clients. Aborting the signal closes
+     * the dialog on each of those users' clients.
      * @param {object} [config] Dialog config, optionally with an AbortSignal as `signal`.
      * @param {string[]} userIds Users the dialog is sent to.
-     * @returns {object} Config without the signal, with an `id`.
+     * @returns {object} Config without the signal, with an `id` and a `timeLimit` in seconds.
      */
     static remoteConfig(config, userIds) {
         const {signal, ...rest} = config ?? {};
         const id = rest.id ?? 'cat-dialog-' + foundry.utils.randomID();
         signal?.addEventListener('abort', () => userIds.forEach(userId => DialogApp.closeFor(userId, id)), {once: true});
-        const timeLimit = Math.min(rest.timeLimit ?? Infinity, DialogApp.secondsLeft(signal) ?? Infinity);
-        return {...rest, id, ...(Number.isFinite(timeLimit) ? {timeLimit} : {})};
+        const timeLimit = Math.min(rest.timeLimit ?? MidiQOL.configSettings().reactionTimeout, DialogApp.secondsLeft(signal) ?? Infinity);
+        return {...rest, id, timeLimit};
     }
 
     /**
