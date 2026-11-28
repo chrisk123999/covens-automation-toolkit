@@ -15,6 +15,8 @@ export class RegisteredAnimations {
             requirements: new fields.ArrayField(new fields.StringField({required: false, nullable: false}), {required: false}),
             config: new fields.ObjectField({required: false, nullable: false}),
             category: new fields.StringField({required: false, nullable: false}),
+            sound: new fields.StringField({required: false, nullable: false}),
+            impactSound: new fields.StringField({required: false, nullable: false}),
             credits: new fields.ArrayField(new fields.SchemaField({
                 name: new fields.StringField({required: true, nullable: false}),
                 discord: new fields.StringField({required: false, nullable: false}),
@@ -32,7 +34,8 @@ export class RegisteredAnimations {
             Logging.addRegistrationError(data, 'animation', validationError.asError());
             return false;
         }
-        this.animations.set(this.#makeKey(data.source, data.identifier), new Animation(data.source, data.identifier, data.name, data.macros, data.inputs, {requirements: data.requirements, config: data.config, category: data.category, credits: data.credits}));
+        const {source, identifier, name, macros, inputs} = data;
+        this.animations.set(this.#makeKey(source, identifier), new Animation(source, identifier, name, macros, inputs, data));
         return true;
     }
     registerAnimations(data = []) {
@@ -76,14 +79,20 @@ export class RegisteredAnimations {
     }
 }
 class Animation {
-    constructor(source, identifier, name, macros, inputs, {requirements, config, category, credits} = {}) {
+    constructor(source, identifier, name, macros, inputs, {requirements, config, category, credits, sound = '', impactSound = ''} = {}) {
         this.source = source;
         this.identifier = identifier;
         this.name = name;
         this.macros = macros;
         this.inputs = inputs;
         this.requirements = requirements;
-        this.config = config;
+        this.ownSound = Object.keys(config ?? {}).some(key => key.startsWith('sound'));
+        this.config = this.ownSound ? config : {
+            ...config,
+            sound: {default: sound, type: 'file', sequencer: true, fileType: 'audio', label: 'CAT.Sound.Label', hint: 'CAT.Sound.Hint'},
+            impactSound: {default: impactSound, type: 'file', sequencer: true, fileType: 'audio', label: 'CAT.ImpactSound.Label', hint: 'CAT.ImpactSound.Hint'},
+            soundVolume: {default: 0.8, type: 'number', label: 'CAT.SoundVolume.Label', hint: 'CAT.SoundVolume.Hint'}
+        };
         this.category = category ?? 'default';
         this.credits = credits;
     }

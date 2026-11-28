@@ -123,7 +123,7 @@ const sourcesSteps = [
     {id: 'compendiumLists', selector: '#cat-settings-menu-compendiums', setup: () => settingsMenu('compendiums', 'spellCompendiums')},
     {id: 'reapply', setup: closeDemo}
 ];
-const settingsKeys = ['help', 'general', 'automation', 'backups', 'compendiums', 'integration', 'interface', 'manualRolls', 'mechanics', 'permissions', 'devtools'];
+const settingsKeys = ['help', 'general', 'animations', 'automation', 'backups', 'compendiums', 'integration', 'interface', 'manualRolls', 'mechanics', 'permissions', 'devtools'];
 const settingsSteps = [
     {id: 'intro', setup: settings},
     ...settingsKeys.map(key => ({id: key, selector: `[data-key="cat.${key}"]`, setup: settings})),

@@ -932,7 +932,7 @@ async function remoteMacro(source, identifier, rules, macroData, userId) {
  * The animation selected in a config key, with its resolved config values. Pass `source` and `identifier` when the
  * selection lives in a generic macro's config. Returns no animation when none is selected, CAT Animations defers to
  * AA/BLFX for the item, Sequencer is unavailable, or a requirement is not met. A missing requirement also shows a
- * warning.
+ * warning. When a Sound is configured, the first animation macro called also plays it.
  * @param {foundry.abstract.Document} document                   Document holding the config, or an activity.
  * @param {string} settingKey                                    Config key holding the animation selection.
  * @param {object} [options]                                     Additional options.
@@ -961,7 +961,15 @@ function getResolvedAnimation(document, settingKey, {source, identifier, rules} 
     }
     const options = {};
     if (animation.config) Object.keys(animation.config).forEach(key => options[key] = isGeneric ? getGenericAnimationConfig(document, source, identifier, settingKey, key) : getAnimationConfig(document, settingKey, key));
-    return {animation, options};
+    animationUtils.clearUnavailableSounds(options);
+    if (animation.ownSound || !options.sound) return {animation, options};
+    let played = false;
+    const macros = Object.fromEntries(Object.entries(animation.macros).map(([key, macro]) => [key, (...args) => {
+        if (!played) animationUtils.playSound(options.sound, {volume: options.soundVolume});
+        played = true;
+        return macro(...args);
+    }]));
+    return {animation: Object.assign(Object.create(animation), {macros}), options};
 }
 /**
  * Find a document by name, searching the enabled compendiums for that type in the priority order the GM configured.
